@@ -33,7 +33,6 @@ export default {
         {
             pattern: /fill-mountain-(100|200|300)/,
         },
-
     ],
 
     theme: {
@@ -48,8 +47,14 @@ export default {
                     300: '#6e9e7c',
                 },
             },
+            boxShadow: {
+                '3xl': '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.25)',
+            },
+            opacity: {
+                98: '0.98',
+            },
         },
     },
 
     plugins: [forms, typography],
-};
+}

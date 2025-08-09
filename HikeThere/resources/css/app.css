@@ -5,3 +5,249 @@
 [x-cloak] {
     display: none;
 }
+
+@layer base {
+    html {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply bg-gradient-to-br from-[#aec896] via-white to-[#20b6d2] text-gray-800;
+        line-height: 1.6;
+    }
+}
+
+@layer components {
+
+    /* Navigation Styles */
+    .nav-blur {
+        @apply backdrop-blur-xl bg-white bg-opacity-95 border-b border-gray-200/50 transition-all duration-300;
+    }
+
+    .nav-blur.scrolled {
+        @apply bg-white bg-opacity-98 shadow-lg;
+    }
+
+    .nav-link::after {
+        @apply absolute bottom-0 left-0 w-0 h-0.5 bg-[#20b6d2] transition-all duration-300;
+        content: '';
+    }
+
+    .nav-link:hover::after {
+        @apply w-full;
+    }
+
+    /* Button Styles */
+    .btn-mountain {
+        @apply px-8 py-4 rounded-xl font-semibold text-white transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1;
+        background: linear-gradient(135deg, #336d66 0%, #20b6d2 100%);
+    }
+
+    .btn-mountain:hover {
+        @apply scale-105;
+        background: linear-gradient(135deg, #20b6d2 0%, #336d66 100%);
+    }
+
+    .btn-mountain-outline {
+        @apply px-6 py-3 rounded-xl font-semibold text-[#336d66] border-2 border-[#336d66] transition-all duration-300 hover:bg-[#336d66] hover:text-white hover:shadow-lg transform hover:-translate-y-0.5;
+    }
+
+    .btn-mountain-large {
+        @apply px-10 py-5 rounded-2xl font-bold text-white text-lg transition-all duration-300 shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 flex items-center justify-center;
+        background: linear-gradient(135deg, #336d66 0%, #20b6d2 100%);
+    }
+
+    .btn-mountain-large:hover {
+        @apply scale-105;
+        background: linear-gradient(135deg, #20b6d2 0%, #336d66 100%);
+    }
+
+    .btn-video {
+        @apply px-8 py-4 rounded-2xl font-semibold text-white border-2 border-white/30 backdrop-blur-sm transition-all duration-300 hover:bg-white bg-opacity-20 hover:border-white/50 flex items-center justify-center;
+    }
+
+    /* Hero Section */
+    .bg-mountain-gradient {
+        background: linear-gradient(135deg, #336d66 0%, #20b6d2 35%, #e3a746 70%, #dfa648 100%);
+        position: relative;
+    }
+
+    .bg-mountain-gradient::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(51, 109, 102, 0.1) 0%, rgba(32, 182, 210, 0.1) 50%, rgba(227, 167, 70, 0.1) 100%);
+        z-index: 1;
+    }
+
+    .text-mountain-gradient {
+        @apply bg-clip-text text-transparent;
+        background-image: linear-gradient(135deg, #336d66 0%, #dfa648 100%);
+    }
+
+    /* Content Showcases */
+    .planner-showcase {
+        @apply relative overflow-hidden transition-all duration-500 hover:scale-[1.02] bg-white bg-opacity-95 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-200/50;
+    }
+
+    .planner-showcase::before {
+        content: '';
+        @apply absolute inset-0 bg-gradient-to-br from-[#336d66]/5 to-[#20b6d2]/5 rounded-3xl;
+        z-index: -1;
+    }
+
+    .feature-showcase {
+        @apply relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl border border-gray-100/50 p-8 cursor-pointer;
+        animation: fadeInUp 0.6s ease-out forwards;
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    .feature-showcase::before {
+        content: '';
+        @apply absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-gray-50/50 rounded-2xl transition-opacity duration-300;
+        opacity: 0;
+    }
+
+    .feature-showcase:hover::before {
+        opacity: 1;
+    }
+
+    .feature-showcase:hover .feature-icon {
+        @apply transform scale-110 rotate-3 transition-transform duration-300;
+    }
+
+    .feature-icon {
+        @apply w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300;
+    }
+
+    /* Quick Search Cards */
+    .quick-search-card {
+        @apply p-6 rounded-2xl bg-white bg-opacity-90 backdrop-blur-sm border border-gray-100 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer;
+    }
+
+    .quick-search-card:hover {
+        @apply bg-white shadow-xl;
+    }
+
+    /* Stats Items */
+    .stats-item {
+        @apply transition-all duration-300 hover:scale-105;
+    }
+
+    /* Community Features */
+    .community-feature {
+        @apply transition-all duration-300 hover:-translate-y-1;
+    }
+
+    /* Social Links */
+    .social-link {
+        @apply w-10 h-10 bg-gray-100 hover:bg-[#20b6d2] text-gray-600 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-lg;
+    }
+
+    /* Search Input */
+    .mountain-search {
+        @apply bg-white bg-opacity-95 backdrop-blur-sm;
+    }
+
+    .mountain-search:focus {
+        @apply bg-white shadow-2xl;
+    }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 1s ease-out forwards;
+}
+
+/* Animation delays for feature cards */
+.feature-showcase:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.feature-showcase:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.feature-showcase:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.feature-showcase:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.feature-showcase:nth-child(5) {
+    animation-delay: 0.5s;
+}
+
+.feature-showcase:nth-child(6) {
+    animation-delay: 0.6s;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .feature-showcase {
+        @apply hover:transform-none hover:shadow-lg;
+    }
+
+    .btn-mountain-large {
+        @apply px-8 py-4 text-base;
+    }
+
+    .planner-showcase {
+        @apply hover:scale-100;
+    }
+}
+
+/* Utility Classes */
+.shadow-3xl {
+    box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-[#336d66] rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    @apply bg-[#20b6d2];
+}
