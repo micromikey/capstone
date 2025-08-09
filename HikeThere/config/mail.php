@@ -47,7 +47,6 @@ return [
             'password' => env('MAIL_PASSWORD'),
             'timeout' => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
-            'admin_email' => env('ADMIN_EMAIL', 'johnmichaeltorres.stud@gmail.com'),
         ],
 
         'ses' => [
@@ -115,5 +114,13 @@ return [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Email Configuration (CUSTOM ADDITION)
+    |--------------------------------------------------------------------------
+    */
+
+    'admin_email' => env('ADMIN_EMAIL', 'johnmichaeltorres.stud@gmail.com'),
+
 
 ];

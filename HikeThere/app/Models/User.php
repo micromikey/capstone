@@ -10,7 +10,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
     use HasApiTokens;
 
@@ -32,6 +32,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'user_type',
         'organization_name',
         'organization_description',
+        'approval_status',
+        'approved_at',
     ];
 
     /**
@@ -65,6 +67,31 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'approved_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Get the organization profile associated with the user.
+     */
+    public function organizationProfile()
+    {
+        return $this->hasOne(OrganizationProfile::class);
+    }
+
+    /**
+     * Check if user is an approved organization
+     */
+    public function isApprovedOrganization()
+    {
+        return $this->user_type === 'organization' && $this->approval_status === 'approved';
+    }
+
+    /**
+     * Check if user is a pending organization
+     */
+    public function isPendingOrganization()
+    {
+        return $this->user_type === 'organization' && $this->approval_status === 'pending';
     }
 }

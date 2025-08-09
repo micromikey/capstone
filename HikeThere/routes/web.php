@@ -130,3 +130,26 @@ Route::get('/admin/organization/{user}/reject', function ($userId) {
         'action' => 'rejected'
     ]);
 })->name('admin.organization.reject');
+
+// Add these routes to your routes/web.php file
+
+// Organization approval routes (signed URLs for email actions)
+Route::get('/admin/organization/{user}/approve', [OrganizationApprovalController::class, 'approve'])
+    ->name('admin.organization.approve')
+    ->middleware('signed');
+
+Route::get('/admin/organization/{user}/reject', [OrganizationApprovalController::class, 'reject'])
+    ->name('admin.organization.reject')
+    ->middleware('signed');
+
+// Organization registration routes
+Route::get('/register/organization', [RegisteredUserController::class, 'createOrganization'])
+    ->name('register.organization');
+
+Route::post('/register/organization', [RegisteredUserController::class, 'storeOrganization'])
+    ->name('register.organization');
+
+// Pending approval page
+Route::get('/auth/pending-approval', function () {
+    return view('auth.pending-approval');
+})->name('auth.pending-approval');

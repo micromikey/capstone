@@ -40,7 +40,7 @@ class OrganizationRegistrationNotification extends Mailable
     public function build()
     {
         return $this->subject('New Organization Registration - ' . $this->organizationProfile->organization_name)
-            ->view('emails.organization-registration')
+            ->view('emails.organization-registration-admin')
             ->with([
                 'user' => $this->user,
                 'profile' => $this->organizationProfile,

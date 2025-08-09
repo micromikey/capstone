@@ -23,15 +23,16 @@ class OrganizationApprovalNotification extends Mailable
     public function build()
     {
         $subject = $this->approved
-            ? 'Your Organization Registration has been Approved!'
-            : 'Your Organization Registration Status';
+            ? 'Your Organization Registration has been Approved! 🎉'
+            : 'Organization Registration Update';
 
         return $this->subject($subject)
-            ->view('emails.organization-approval')
+            ->view('emails.organization-approval-notification')
             ->with([
                 'user' => $this->user,
                 'approved' => $this->approved,
-                'loginUrl' => route('login')
+                'loginUrl' => route('login'),
+                'organizationProfile' => $this->user->organizationProfile
             ]);
     }
 }
