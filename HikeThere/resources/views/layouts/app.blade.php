@@ -16,6 +16,13 @@
 
         <!-- Styles -->
         @livewireStyles
+
+
+        <!-- Inserted by Sol: 8-2-25 Start: -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+        <!-- Inserted by Sol: 8-2-25 End: -->
+
     </head>
     <body class="font-sans antialiased">
         <x-banner />

@@ -3,8 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ExploreController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -32,6 +30,53 @@ Route::middleware([
         return view('dashboard');
     })->name('dashboard');
 });
+
+Route::fallback(function (){
+    return 'This page is not found. Please try again';
+});
+
+
+
+
+//  SOL START
+Route::group(['prefix' => 'assessment', 'as' => 'assessment.'], function () {
+    
+    // Assessment form pages
+    Route::get('/gear', [AssessmentController::class, 'gear'])->name('gear');
+    Route::get('/fitness', [AssessmentController::class, 'fitness'])->name('fitness');
+    Route::get('/health', [AssessmentController::class, 'health'])->name('health');
+    Route::get('/weather', [AssessmentController::class, 'weather'])->name('weather');
+    Route::get('/emergency', [AssessmentController::class, 'emergency'])->name('emergency');
+    
+    // Assessment form submissions
+    Route::post('/gear', [AssessmentController::class, 'storeGear'])->name('gear.store');
+    Route::post('/fitness', [AssessmentController::class, 'storeFitness'])->name('fitness.store');
+    Route::post('/health', [AssessmentController::class, 'storeHealth'])->name('health.store');
+    Route::post('/weather', [AssessmentController::class, 'storeWeather'])->name('weather.store');
+    Route::post('/emergency', [AssessmentController::class, 'storeEmergency'])->name('emergency.store');
+    
+    // Results page
+    Route::get('/result', [AssessmentController::class, 'result'])->name('result');
+});
+
+// SOL END
+
+
+
+
+// Dummy search route
+Route::get('/search', function (Request $request) {
+    return 'You searched for: ' . $request->query('query');
+})->name('search');
+
+// Example dummy controller for notification handling
+Route::post('/notifications/mark-as-read', function (Request $request) {
+    // Here you can add logic to mark notifications as read
+    // Example: auth()->user()->unreadNotifications->markAsRead();
+    return back()->with('status', 'Notifications marked as read.');
+})->name('notifications.markAsRead');
+
+
 
 
 Route::get('/', [DashboardController::class, 'index']);
