@@ -12,6 +12,8 @@ use App\Http\Controllers\AssessmentController;
 use Illuminate\Support\Facades\Mail;
 use App\Models\User;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\OrganizationTrailController;
+
 
 
 Route::get('/', function () {
@@ -23,10 +25,18 @@ Route::get('/email/verify', function () {
     return view('auth.verify-email');
 })->middleware('auth')->name('verification.notice');
 
+// Guest email verification notice (for newly registered users)
+Route::get('/email/verify/notice', function () {
+    return view('auth.verify-email-notice');
+})->name('verification.notice.guest');
+
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
     $request->fulfill();
-    return redirect('/dashboard');
-})->middleware(['auth', 'signed'])->name('verification.verify');
+    
+    // After verification, redirect to login with success message
+    return redirect()->route('login')
+        ->with('status', 'Email verified successfully! You can now sign in to your account.');
+})->middleware(['auth:sanctum', 'signed'])->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
     $request->user()->sendEmailVerificationNotification();
@@ -40,6 +50,49 @@ Route::middleware([
 ])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/explore', [ExploreController::class, 'index'])->name('explore');
+    
+    // Hiker Tools
+    Route::get('/hiker/hiking-tools', function () {
+        return view('hiker.hiking-tools'); 
+    })->name('hiking-tools');
+    
+    Route::get('/hiker/booking/booking-details', function () {
+        return view('hiker.booking.booking-details'); 
+    })->name('booking.details');
+    
+    Route::get('/hiker/booking/package-details', function () {
+        return view('hiker.booking.package-details'); 
+    })->name('package.details');
+    
+    Route::get('/hiker/itinerary/itinerary-instructions', function () {
+        return view('hiker.itinerary.itinerary-instructions'); 
+    })->name('itinerary.instructions');
+    
+    Route::get('/hiker/itinerary/build', function () {
+        return view('hiker.itinerary.build'); 
+    })->name('itinerary.build');
+    
+    Route::post('/hiker/itinerary/generate', function () {
+        return view('hiker.itinerary.generated'); 
+    })->name('itinerary.generate');
+    
+    // Assessment routes
+    Route::get('/assessment/instruction', [AssessmentController::class, 'instruction'])->name('assessment.instruction');
+    Route::get('/assessment/gear', [AssessmentController::class, 'gear'])->name('assessment.gear');
+    Route::get('/assessment/fitness', [AssessmentController::class, 'fitness'])->name('assessment.fitness');
+    Route::get('/assessment/health', [AssessmentController::class, 'health'])->name('assessment.health');
+    Route::get('/assessment/weather', [AssessmentController::class, 'weather'])->name('assessment.weather');
+    Route::get('/assessment/emergency', [AssessmentController::class, 'emergency'])->name('assessment.emergency');
+    Route::get('/assessment/environment', [AssessmentController::class, 'environment'])->name('assessment.environment');
+    Route::get('/assessment/result', [AssessmentController::class, 'result'])->name('assessment.result');
+    
+    // Assessment form submissions
+    Route::post('/assessment/gear', [AssessmentController::class, 'storeGear'])->name('assessment.gear.store');
+    Route::post('/assessment/fitness', [AssessmentController::class, 'storeFitness'])->name('assessment.fitness.store');
+    Route::post('/assessment/health', [AssessmentController::class, 'storeHealth'])->name('assessment.health.store');
+    Route::post('/assessment/weather', [AssessmentController::class, 'storeWeather'])->name('assessment.weather.store');
+    Route::post('/assessment/emergency', [AssessmentController::class, 'storeEmergency'])->name('assessment.emergency.store');
+    Route::post('/assessment/environment', [AssessmentController::class, 'storeEnvironment'])->name('assessment.environment.store');
 })->middleware('user.type:hiker');
 
 // Routes that require authentication and approval (for organizations only)
@@ -48,6 +101,10 @@ Route::middleware(['auth:sanctum', 'check.approval'])->group(function () {
     Route::get('/org/dashboard', function () {
         return view('org.dashboard');
     })->name('org.dashboard');
+    
+    // Organization trails management
+    Route::resource('org/trails', OrganizationTrailController::class, ['as' => 'org']);
+    Route::patch('/org/trails/{trail}/toggle-status', [OrganizationTrailController::class, 'toggleStatus'])->name('org.trails.toggle-status');
     
     // Protected routes that require approval
     // These routes will be accessible to approved organizations
@@ -109,60 +166,6 @@ Route::get('/organizations/{user}/reject/email', [OrganizationApprovalController
 
 
 
-//jas
-Route::get('/hiker/booking/booking-details', function () {
-    return view('hiker.booking.booking-details'); 
-});
-
-//jas
-Route::get('/hiker/hiking-tools', function () {
-    return view('hiker.tools.hiking-tools'); 
-});
-
-
-
-
 //  SOL START
-Route::group(['prefix' => 'assessment', 'as' => 'assessment.'], function () {
-    
-    Route::get('/instruction', [AssessmentController::class, 'instruction'])->name('instruction');
-
-    // Assessment form pages
-    
-    Route::get('/gear', [AssessmentController::class, 'gear'])->name('gear');
-    Route::get('/fitness', [AssessmentController::class, 'fitness'])->name('fitness');
-    Route::get('/health', [AssessmentController::class, 'health'])->name('health');
-    Route::get('/weather', [AssessmentController::class, 'weather'])->name('weather');
-    Route::get('/emergency', [AssessmentController::class, 'emergency'])->name('emergency');
-    Route::get('/environment', [AssessmentController::class, 'environment'])->name('environment');
-    
-    // Assessment form submissions
-    Route::post('/gear', [AssessmentController::class, 'storeGear'])->name('gear.store');
-    Route::post('/fitness', [AssessmentController::class, 'storeFitness'])->name('fitness.store');
-    Route::post('/health', [AssessmentController::class, 'storeHealth'])->name('health.store');
-    Route::post('/weather', [AssessmentController::class, 'storeWeather'])->name('weather.store');
-    Route::post('/emergency', [AssessmentController::class, 'storeEmergency'])->name('emergency.store');
-    Route::post('/environment', [AssessmentController::class, 'storeEnvironment'])->name('environment.store');
-    
-    // Results page
-    Route::get('/result', [AssessmentController::class, 'result'])->name('result');
-});
-
-
-
-
-
-
-Route::get('/hiker/booking/package-details', function () {
-    return view('hiker.booking.package-details'); 
-});
-
-
-
-Route::get('/hiker/itinerary/itinerary-instructions', function () {
-    return view('hiker.itinerary.itinerary-instructions'); 
-});
-
-
-
+// Assessment routes have been moved to the protected hiker section
 // SOL END

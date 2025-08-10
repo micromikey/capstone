@@ -374,7 +374,7 @@
                 </a>
                 <p class="text-sm text-gray-500">
                     Already completed your assessment? 
-                    <a href="{{ route('dashboard') }}" class="text-green-600 hover:text-green-700 font-semibold underline">
+                    <a href="{{ route('itinerary.build') }}" class="text-green-600 hover:text-green-700 font-semibold underline">
                         Build Your Itinerary Here
                     </a>
                 </p>

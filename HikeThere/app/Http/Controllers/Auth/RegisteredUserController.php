@@ -202,8 +202,8 @@ class RegisteredUserController extends Controller
         // Don't auto-login hikers - they need to verify email first
         // Auth::login($user);
 
-        // Redirect to email verification notice
-        return redirect()->route('verification.notice')
+        // Redirect to guest email verification notice
+        return redirect()->route('verification.notice.guest')
             ->with('success', 'Account created successfully! Please check your email to verify your account before logging in.');
     }
 }

@@ -8,12 +8,12 @@ class AssessmentController extends Controller
 {
     public function instruction()
     {
-        return view('assessment.instruction'); // or wherever your Blade file is located
+        return view('hiker.assessment.instruction');
     }
     // STEP 1: GEAR
     public function gear()
     {
-        return view('assessment.gear');
+        return view('hiker.assessment.gear');
     }
 
     public function storeGear(Request $request)
@@ -25,7 +25,7 @@ class AssessmentController extends Controller
     // STEP 2: FITNESS
     public function fitness()
     {
-        return view('assessment.fitness');
+        return view('hiker.assessment.fitness');
     }
 
     public function storeFitness(Request $request)
@@ -38,7 +38,7 @@ class AssessmentController extends Controller
     public function health()
     {
         $showWarning = session('assessment.health_warning', false);
-        return view('assessment.health', compact('showWarning'));
+        return view('hiker.assessment.health', compact('showWarning'));
     }
 
     public function storeHealth(Request $request)
@@ -62,7 +62,7 @@ class AssessmentController extends Controller
     // STEP 4: WEATHER
     public function weather()
     {
-        return view('assessment.weather');
+        return view('hiker.assessment.weather');
     }
 
     public function storeWeather(Request $request)
@@ -74,7 +74,7 @@ class AssessmentController extends Controller
     // STEP 5: EMERGENCY
     public function emergency()
     {
-        return view('assessment.emergency');
+        return view('hiker.assessment.emergency');
     }
 
     public function storeEmergency(Request $request)
@@ -87,7 +87,7 @@ class AssessmentController extends Controller
     // STEP 6: ENVIRONMENT
     public function environment()
     {
-        return view('assessment.environment');
+        return view('hiker.assessment.environment');
     }
 
     public function storeEnvironment(Request $request)
@@ -149,7 +149,7 @@ class AssessmentController extends Controller
             'environment' => $environmentData
         ]);
 
-        return view('assessment.results', compact('scores', 'readinessLevel', 'recommendations'));
+        return view('hiker.assessment.results', compact('scores', 'readinessLevel', 'recommendations'));
     }
 
     // Score Calculation Methods

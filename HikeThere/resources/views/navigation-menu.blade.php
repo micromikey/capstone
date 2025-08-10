@@ -28,14 +28,20 @@
                         <x-nav-link href="{{ route('org.dashboard') }}" :active="request()->routeIs('org.dashboard')">
                             {{ __('Organization Dashboard') }}
                         </x-nav-link>
+                        <x-nav-link href="{{ route('org.trails.index') }}" :active="request()->routeIs('org.trails.*')">
+                            {{ __('Trails') }}
+                        </x-nav-link>
                     @else
                         <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
                             {{ __('Dashboard') }}
                         </x-nav-link>
+                        <x-nav-link href="{{ route('explore') }}" :active="request()->routeIs('explore')">
+                            {{ __('Explore') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('hiking-tools') }}" :active="request()->routeIs('hiking-tools')">
+                            {{ __('Tools') }}
+                        </x-nav-link>
                     @endif
-                    <x-nav-link href="{{ route('explore') }}" :active="request()->routeIs('explore')">
-                        {{ __('Explore') }}
-                    </x-nav-link>
                 </div>
             </div>
 
@@ -174,14 +180,20 @@
                 <x-responsive-nav-link href="{{ route('org.dashboard') }}" :active="request()->routeIs('org.dashboard')">
                     {{ __('Organization Dashboard') }}
                 </x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('org.trails.index') }}" :active="request()->routeIs('org.trails.*')">
+                    {{ __('Trails') }}
+                </x-responsive-nav-link>
             @else
                 <x-responsive-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
                     {{ __('Dashboard') }}
                 </x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('explore') }}" :active="request()->routeIs('explore')">
+                    {{ __('Explore') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('hiking-tools') }}" :active="request()->routeIs('hiking-tools')">
+                    {{ __('Tools') }}
+                </x-responsive-nav-link>
             @endif
-            <x-responsive-nav-link href="{{ route('explore') }}" :active="request()->routeIs('explore')">
-                {{ __('Explore') }}
-            </x-responsive-nav-link>
         </div>
 
         @auth

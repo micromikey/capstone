@@ -80,7 +80,7 @@
                 <div class="p-6">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <a href="#" class="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#336d66] rounded-lg border border-gray-200 hover:border-[#336d66] transition-colors">
+                        <a href="{{ route('org.trails.create') }}" class="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#336d66] rounded-lg border border-gray-200 hover:border-[#336d66] transition-colors">
                             <div>
                                 <span class="rounded-lg inline-flex p-3 bg-[#336d66]/10 text-[#336d66] ring-4 ring-white">
                                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -97,7 +97,7 @@
                             </div>
                         </a>
 
-                        <a href="#" class="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#336d66] rounded-lg border border-gray-200 hover:border-[#336d66] transition-colors">
+                        <a href="{{ route('profile.show') }}" class="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#336d66] rounded-lg border border-gray-200 hover:border-[#336d66] transition-colors">
                             <div>
                                 <span class="rounded-lg inline-flex p-3 bg-[#20b6d2]/10 text-[#20b6d2] ring-4 ring-white">
                                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,7 +114,7 @@
                             </div>
                         </a>
 
-                        <a href="#" class="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#336d66] rounded-lg border border-gray-200 hover:border-[#336d66] transition-colors">
+                        <a href="{{ route('org.trails.index') }}" class="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#336d66] rounded-lg border border-gray-200 hover:border-[#336d66] transition-colors">
                             <div>
                                 <span class="rounded-lg inline-flex p-3 bg-green-500/10 text-green-500 ring-4 ring-white">
                                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,9 +125,9 @@
                             <div class="mt-4">
                                 <h3 class="text-sm font-medium text-gray-900">
                                     <span class="absolute inset-0" aria-hidden="true"></span>
-                                    View Reports
+                                    Manage Trails
                                 </h3>
-                                <p class="mt-2 text-sm text-gray-500">Access analytics and reports about your trails.</p>
+                                <p class="mt-2 text-sm text-gray-500">View and manage all your hiking trails.</p>
                             </div>
                         </a>
 

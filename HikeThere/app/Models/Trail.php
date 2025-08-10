@@ -5,14 +5,20 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Location;
 use App\Models\TrailImage;
 use App\Models\TrailReview;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Trail extends Model
 {
     protected $fillable = [
-        'location_id', 'name', 'slug', 'difficulty', 'length',
-        'elevation_gain', 'elevation_high', 'elevation_low',
-        'estimated_time', 'summary', 'description', 'features',
+        'user_id', 'location_id', 'mountain_name', 'trail_name', 'slug', 'price',
+        'package_inclusions', 'difficulty', 'difficulty_description', 'duration',
+        'best_season', 'terrain_notes', 'other_trail_notes', 'permit_required',
+        'permit_process', 'departure_point', 'transport_options', 'side_trips',
+        'packing_list', 'health_fitness', 'requirements', 'emergency_contacts',
+        'campsite_info', 'guide_info', 'environmental_practices', 'customers_feedback',
+        'testimonials_faqs', 'length', 'elevation_gain', 'elevation_high',
+        'elevation_low', 'estimated_time', 'summary', 'description', 'features',
         'gpx_file', 'coordinates', 'is_active'
     ];
 
@@ -20,7 +26,14 @@ class Trail extends Model
         'features' => 'array',
         'coordinates' => 'array',
         'is_active' => 'boolean',
+        'permit_required' => 'boolean',
+        'price' => 'decimal:2',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function location()
     {
@@ -50,11 +63,12 @@ class Trail extends Model
     // Accessors
     public function getDifficultyLabelAttribute()
     {
-        return ucwords(str_replace('-', ' ', $this->difficulty));
+        return ucwords($this->difficulty);
     }
 
     public function getEstimatedTimeFormattedAttribute()
     {
+        if (!$this->estimated_time) return null;
         $hours = floor($this->estimated_time / 60);
         $minutes = $this->estimated_time % 60;
         return $hours > 0 ? "{$hours}h {$minutes}m" : "{$minutes}m";
@@ -79,5 +93,10 @@ class Trail extends Model
     public function scopeByLocation($query, $locationId)
     {
         return $query->where('location_id', $locationId);
+    }
+
+    public function scopeByOrganization($query, $userId)
+    {
+        return $query->where('user_id', $userId);
     }
 }
