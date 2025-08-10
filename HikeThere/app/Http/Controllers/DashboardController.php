@@ -10,6 +10,11 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        // Check if user is an organization and redirect them to org dashboard
+        if (auth()->check() && auth()->user()->user_type === 'organization') {
+            return redirect()->route('org.dashboard');
+        }
+
         $lat = $request->session()->get('lat', null);
         $lon = $request->session()->get('lon', null);
 

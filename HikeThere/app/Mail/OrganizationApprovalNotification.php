@@ -24,6 +24,20 @@ class OrganizationApprovalNotification extends Mailable
     {
         $this->user = $user;
         $this->organizationProfile = $user->organizationProfile;
+        
+        // Log the mail construction for debugging
+        \Log::info('OrganizationApprovalNotification mail constructed', [
+            'user_id' => $user->id,
+            'user_email' => $user->email,
+            'organization_name' => $user->organization_name,
+            'has_organization_profile' => $this->organizationProfile ? 'yes' : 'no',
+            'organization_profile_data' => $this->organizationProfile ? [
+                'additional_docs' => $this->organizationProfile->additional_docs,
+                'additional_docs_type' => gettype($this->organizationProfile->additional_docs),
+                'business_permit_path' => $this->organizationProfile->business_permit_path,
+                'government_id_path' => $this->organizationProfile->government_id_path,
+            ] : 'no profile',
+        ]);
     }
 
     /**
@@ -32,6 +46,10 @@ class OrganizationApprovalNotification extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
+            from: new \Illuminate\Mail\Mailables\Address(
+                config('mail.from.address', 'noreply@hikethere.com'),
+                config('mail.from.name', 'HikeThere System')
+            ),
             subject: 'New Organization Registration Requires Approval',
         );
     }

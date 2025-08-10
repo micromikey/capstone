@@ -18,6 +18,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin Email for Notifications
+    |--------------------------------------------------------------------------
+    |
+    | This is the email address where organization approval notifications
+    | will be sent for admin review.
+    |
+    */
+    'admin_email' => env('MAIL_ADMIN_EMAIL', 'admin@hikethere.com'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Mailer Configurations
     |--------------------------------------------------------------------------
     |
@@ -110,33 +121,9 @@ return [
     |
     */
 
-    /*
-    |--------------------------------------------------------------------------
-    | Admin Email Address
-    |--------------------------------------------------------------------------
-    |
-    | This is the email address where organization approval notifications
-    | will be sent for admin review.
-    |
-    */
-    'admin_email' => env('MAIL_ADMIN_EMAIL', 'admin@hikethere.com'),
-
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Admin Email Address
-    |--------------------------------------------------------------------------
-    |
-    | This is the email address where organization approval notifications
-    | will be sent for admin review.
-    |
-    */
-
-    'admin_email' => env('MAIL_ADMIN_EMAIL', 'admin@hikethere.com'),
-
 
 ];

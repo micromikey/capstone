@@ -31,6 +31,16 @@ class RegisteredUserController extends Controller
 
     public function storeOrganization(Request $request)
     {
+        // Log the incoming request data for debugging
+        Log::info('Organization registration attempt', [
+            'request_data' => $request->except(['password', 'password_confirmation']),
+            'files' => $request->allFiles(),
+            'has_business_permit' => $request->hasFile('business_permit'),
+            'has_government_id' => $request->hasFile('government_id'),
+            'terms_accepted' => $request->has('terms'),
+            'documentation_confirmed' => $request->has('documentation_confirm'),
+        ]);
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -90,10 +100,55 @@ class RegisteredUserController extends Controller
 
             // Send approval notification email to admin
             $adminEmail = config('mail.admin_email', 'admin@hikethere.com');
-            Mail::to($adminEmail)->send(new OrganizationApprovalNotification($user));
+            
+            // Log the email attempt for debugging
+            Log::info('Attempting to send approval email', [
+                'admin_email' => $adminEmail,
+                'user_id' => $user->id,
+                'organization_name' => $user->organization_name,
+                'mail_config' => [
+                    'default' => config('mail.default'),
+                    'from_address' => config('mail.from.address'),
+                    'from_name' => config('mail.from.name'),
+                ],
+            ]);
+            
+            try {
+                // Create the mail instance
+                $mailInstance = new \App\Mail\OrganizationApprovalNotification($user);
+                Log::info('Mail instance created successfully', [
+                    'mail_class' => get_class($mailInstance),
+                    'user_data' => [
+                        'id' => $user->id,
+                        'email' => $user->email,
+                        'organization_name' => $user->organization_name,
+                    ],
+                ]);
+                
+                // Send the email
+                Mail::to($adminEmail)->send($mailInstance);
+                Log::info('Approval email sent successfully', [
+                    'admin_email' => $adminEmail,
+                    'user_id' => $user->id,
+                ]);
+            } catch (\Exception $emailException) {
+                Log::error('Failed to send approval email', [
+                    'admin_email' => $adminEmail,
+                    'user_id' => $user->id,
+                    'error' => $emailException->getMessage(),
+                    'error_trace' => $emailException->getTraceAsString(),
+                ]);
+                // Don't fail the registration if email fails, just log it
+            }
 
+            // Log the redirect attempt
+            Log::info('Redirecting to pending approval page', [
+                'route' => 'auth.pending-approval',
+                'user_id' => $user->id,
+            ]);
+            
             return redirect()->route('auth.pending-approval')
-                ->with('success', 'Organization registration submitted successfully! Your application is now pending admin approval. You will receive an email notification once your account has been reviewed.');
+                ->with('success', 'Organization registration submitted successfully! An approval email has been sent. Please check your email and click the approval link to activate your account.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -102,7 +157,25 @@ class RegisteredUserController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return back()->withErrors(['error' => 'Registration failed. Please try again.'])->withInput();
+            
+            // Provide more specific error messages
+            $errorMessage = 'Registration failed. Please try again.';
+            if (str_contains($e->getMessage(), 'SQLSTATE')) {
+                $errorMessage = 'Database error occurred. Please check your information and try again.';
+            } elseif (str_contains($e->getMessage(), 'file')) {
+                $errorMessage = 'File upload error. Please ensure your documents are valid and try again.';
+            }
+            
+            // Log the specific error for debugging
+            Log::error('Specific error details', [
+                'error_type' => get_class($e),
+                'error_message' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+            ]);
+            
+            return back()->withErrors(['error' => $errorMessage])->withInput();
         }
     }
 

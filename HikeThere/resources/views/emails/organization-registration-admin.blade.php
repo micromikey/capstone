@@ -26,11 +26,11 @@ A new hiking organization has registered and requires your approval.
 
 ## Quick Actions
 
-@component('mail::button', ['url' => $approveUrl, 'color' => 'success'])
+@component('mail::button', ['url' => route('organizations.approve.email', $user->id), 'color' => 'success'])
 Approve Organization
 @endcomponent
 
-@component('mail::button', ['url' => $rejectUrl, 'color' => 'error'])
+@component('mail::button', ['url' => route('organizations.reject.email', $user->id), 'color' => 'error'])
 Reject Organization
 @endcomponent
 
@@ -43,7 +43,7 @@ User ID: {{ $user->id }}
 
 Status: {{ ucfirst($user->approval_status) }}
 
-**Important:** These approval links will expire in 30 days.
+**Important:** These approval links will work immediately when clicked.
 @endcomponent
 
 **Document Files:**

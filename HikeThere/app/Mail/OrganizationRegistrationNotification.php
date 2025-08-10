@@ -23,18 +23,9 @@ class OrganizationRegistrationNotification extends Mailable
         $this->user = $user;
         $this->organizationProfile = $organizationProfile;
 
-        // Generate signed URLs for approve/reject actions
-        $this->approveUrl = URL::temporarySignedRoute(
-            'admin.organization.approve',
-            now()->addDays(30), // Link expires in 30 days
-            ['user' => $user->id]
-        );
-
-        $this->rejectUrl = URL::temporarySignedRoute(
-            'admin.organization.reject',
-            now()->addDays(30),
-            ['user' => $user->id]
-        );
+        // Generate direct approval/rejection URLs
+        $this->approveUrl = route('organizations.approve.email', $user->id);
+        $this->rejectUrl = route('organizations.reject.email', $user->id);
     }
 
     public function build()

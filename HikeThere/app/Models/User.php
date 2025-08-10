@@ -139,10 +139,31 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Check if user is a rejected organization
+     */
+    public function isRejectedOrganization()
+    {
+        return $this->user_type === 'organization' && $this->approval_status === 'rejected';
+    }
+
+    /**
      * Check if user is a verified hiker
      */
     public function isVerifiedHiker()
     {
         return $this->user_type === 'hiker' && $this->hasVerifiedEmail();
+    }
+
+    /**
+     * Get the approval status with human-readable text
+     */
+    public function getApprovalStatusTextAttribute()
+    {
+        return match($this->approval_status) {
+            'pending' => 'Pending Approval',
+            'approved' => 'Approved',
+            'rejected' => 'Rejected',
+            default => 'Unknown'
+        };
     }
 }

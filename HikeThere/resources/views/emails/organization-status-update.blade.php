@@ -1,39 +1,55 @@
 @component('mail::message')
-# Organization Status Update - HikeThere
+# Organization Status Update
 
-## Organization Status Changed
+Dear {{ $organizationProfile->name }},
 
-The status for **{{ $organizationProfile->organization_name }}** has been updated.
+Your organization **{{ $organizationProfile->organization_name }}** status has been updated.
 
-### Organization Information
-**Name:** {{ $organizationProfile->organization_name }}
+## Status Details
 
-**Contact:** {{ $organizationProfile->contact_person }} ({{ $organizationProfile->contact_email }})
+**Current Status:** {{ ucfirst($user->approval_status) }}
 
-**Registration #:** {{ $organizationProfile->registration_number }}
-
-### Status Change
-**Previous Status:** {{ ucfirst($previousStatus) }}
-
-**New Status:** {{ ucfirst($currentStatus) }}
+**Updated At:** {{ now()->format('F j, Y \a\t g:i A') }}
 
 **Updated By:** {{ $updatedBy ?? 'System Administrator' }}
 
-**Date:** {{ now()->format('F j, Y \a\t g:i A') }}
+@if($user->approval_status === 'approved')
+## Congratulations! 🎉
 
-@if($remarks)
-### Additional Notes:
-{{ $remarks }}
+Your organization has been approved and is now active on HikeThere.
+
+### What's Next?
+
+You can now:
+- ✅ Log in to your account
+- 🏔️ Access the organization dashboard
+- 👥 Create and manage hiking events
+- 📈 Build your community presence
+
+@component('mail::button', ['url' => route('login')])
+Login to Your Account
+@endcomponent
+
+@elseif($user->approval_status === 'rejected')
+## Status Update
+
+Unfortunately, your organization registration could not be approved at this time.
+
+If you believe this decision was made in error or if you'd like to address any concerns, please contact our support team.
+
+@component('mail::button', ['url' => 'mailto:' . config('mail.from.address')])
+Contact Support
+@endcomponent
 @endif
 
-@component('mail::button', ['url' => route('admin.organizations.show', $organizationProfile->id)])
-View Organization Details
-@endcomponent
+@if($user->approval_status === 'approved')
+We look forward to seeing the amazing hiking experiences you'll create for the community!
 
-@component('mail::panel')
-This is an automated notification from the HikeThere organization management system.
-@endcomponent
+Happy Hiking! 🥾
+@else
+Thank you for your understanding and interest in HikeThere.
+@endif
 
 Best regards,<br>
-{{ config('app.name') }} System
+{{ config('app.name') }} Team
 @endcomponent

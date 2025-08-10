@@ -20,7 +20,7 @@
                             Approval Required
                         </h3>
                         <p class="text-sm text-yellow-700 leading-relaxed">
-                            Your organization registration is pending approval from our admin team. We'll review your documents and get back to you soon.
+                            Your organization registration is pending approval. Please check your email for the approval link to activate your account.
                         </p>
                     </div>
                 </div>
@@ -43,7 +43,7 @@
                             </svg>
                         </div>
                         <p class="ml-3 text-sm text-gray-600 leading-relaxed">
-                            Our team will review your submitted documents
+                            Check your email for the approval link
                         </p>
                     </div>
 
@@ -54,7 +54,7 @@
                             </svg>
                         </div>
                         <p class="ml-3 text-sm text-gray-600 leading-relaxed">
-                            You'll receive an email notification about the approval status
+                            Click the approval link in the email to activate your account
                         </p>
                     </div>
 
@@ -65,7 +65,7 @@
                             </svg>
                         </div>
                         <p class="ml-3 text-sm text-gray-600 leading-relaxed">
-                            Once approved, you can log in to your account
+                            Once approved, you can log in to your organization dashboard
                         </p>
                     </div>
                 </div>
@@ -77,7 +77,7 @@
                     <svg class="h-4 w-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Review process typically takes 1-2 business days
+                    Approval is immediate once you click the email link
                 </p>
             </div>
 

@@ -35,10 +35,6 @@ A new hiking organization has registered and is awaiting approval.
 
 Please review this organization registration and take appropriate action.
 
-@component('mail::button', ['url' => route('admin.organizations.show', $organizationProfile->id)])
-Review Organization
-@endcomponent
-
 @component('mail::panel')
 **Registration Date:** {{ $organizationProfile->created_at->format('F j, Y \a\t g:i A') }}
 

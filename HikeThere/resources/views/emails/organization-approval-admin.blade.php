@@ -87,12 +87,12 @@
 
         <div class="organization-details">
             <h3>Organization Information</h3>
-            <p><strong>Organization Name:</strong> {{ $user->organization_name }}</p>
-            <p><strong>Contact Person:</strong> {{ $user->name }}</p>
-            <p><strong>Email:</strong> {{ $user->email }}</p>
+            <p><strong>Organization Name:</strong> {{ $user->organization_name ?? 'Not provided' }}</p>
+            <p><strong>Contact Person:</strong> {{ $user->name ?? 'Not provided' }}</p>
+            <p><strong>Email:</strong> {{ $user->email ?? 'Not provided' }}</p>
             <p><strong>Phone:</strong> {{ $organizationProfile->phone ?? 'Not provided' }}</p>
             <p><strong>Description:</strong> {{ $user->organization_description ?? 'Not provided' }}</p>
-            <p><strong>Registration Date:</strong> {{ $user->created_at->format('F j, Y \a\t g:i A') }}</p>
+            <p><strong>Registration Date:</strong> {{ $user->created_at ? $user->created_at->format('F j, Y \a\t g:i A') : 'Not available' }}</p>
         </div>
 
         @if($organizationProfile)
@@ -102,7 +102,7 @@
             <p><strong>Website:</strong> {{ $organizationProfile->website ?? 'Not provided' }}</p>
         </div>
 
-        @if($organizationProfile->business_permit_path || $organizationProfile->government_id_path || $organizationProfile->additional_documents_path)
+        @if($organizationProfile->business_permit_path || $organizationProfile->government_id_path || $organizationProfile->additional_docs)
         <div class="organization-details">
             <h3>Submitted Documents</h3>
             <div class="document-links">
@@ -118,10 +118,12 @@
                     </a>
                 @endif
                 
-                @if($organizationProfile->additional_documents_path)
-                    <a href="{{ url('storage/' . $organizationProfile->additional_documents_path) }}" class="document-link" target="_blank">
-                        📋 View Additional Documents
-                    </a>
+                @if($organizationProfile->additional_docs && is_array($organizationProfile->additional_docs))
+                    @foreach($organizationProfile->additional_docs as $index => $docPath)
+                        <a href="{{ url('storage/' . $docPath) }}" class="document-link" target="_blank">
+                            📋 View Additional Document {{ $index + 1 }}
+                        </a>
+                    @endforeach
                 @endif
             </div>
         </div>
@@ -129,15 +131,16 @@
         @endif
 
         <div class="action-buttons">
-            <a href="{{ route('organizations.approve', $user->id) }}" class="btn btn-approve">
+            <a href="{{ URL::signedRoute('organizations.approve.email', $user->id) }}" class="btn btn-approve">
                 ✅ Approve Organization
             </a>
-            <a href="{{ route('organizations.reject', $user->id) }}" class="btn btn-reject">
+            <a href="{{ URL::signedRoute('organizations.reject.email', $user->id) }}" class="btn btn-reject">
                 ❌ Reject Organization
             </a>
         </div>
 
         <p><strong>Note:</strong> Clicking the buttons above will immediately approve or reject this organization. Please review all documents carefully before making your decision.</p>
+        <p><strong>Security:</strong> These approval links are signed and secure. They will expire after 24 hours for security purposes.</p>
     </div>
 
     <div class="footer">

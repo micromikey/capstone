@@ -68,28 +68,6 @@
 
             <x-validation-errors class="mb-4 bg-red-50 text-red-500 p-4 rounded-lg text-sm" />
 
-            @if ($errors->has('error'))
-                <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <h3 class="text-sm font-medium text-red-800">Whoops! Something went wrong.</h3>
-                            <div class="mt-2 text-sm text-red-700">
-                                <ul class="list-disc pl-5 space-y-1">
-                                    @foreach ($errors->get('error') as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
             <form method="POST" action="{{ route('register.organization.store') }}" class="mt-8" enctype="multipart/form-data" @submit="console.log('Form submitting with data:', formData)">
                 @csrf
                 <input type="hidden" name="user_type" value="organization">
@@ -193,7 +171,7 @@
                         <div class="space-y-2 bg-gray-50 p-4 rounded-xl">
                             <x-label for="business_permit" value="{{ __('Business Permit') }}" class="mb-1" />
                             <input type="file" id="business_permit" name="business_permit"
-                                @change="formData.business_permit = $event.target.files[0]?.name; console.log('Business permit file selected:', $event.target.files[0]?.name)"
+                                @change="formData.business_permit = $event.target.files[0]?.name || ''; console.log('Business permit file selected:', $event.target.files[0]?.name)"
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
                                 required
                                 accept=".pdf,.jpg,.jpeg,.png" />
@@ -204,7 +182,7 @@
                         <div class="space-y-2 bg-gray-50 p-4 rounded-xl">
                             <x-label for="government_id" value="{{ __('Government ID') }}" class="mb-1" />
                             <input type="file" id="government_id" name="government_id"
-                                @change="formData.government_id = $event.target.files[0]?.name; console.log('Government ID file selected:', $event.target.files[0]?.name)"
+                                @change="formData.government_id = $event.target.files[0]?.name || ''; console.log('Government ID file selected:', $event.target.files[0]?.name)"
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
                                 required
                                 accept=".pdf,.jpg,.jpeg,.png" />
@@ -215,7 +193,7 @@
                         <div class="space-y-2 bg-gray-50 p-4 rounded-xl">
                             <x-label for="additional_docs" value="{{ __('Additional Supporting Documents') }}" class="mb-1" />
                             <input type="file" id="additional_documents" name="additional_documents[]"
-                                @change="formData.additional_docs = Array.from($event.target.files); console.log('Additional docs selected:', Array.from($event.target.files).map(f => f.name))"
+                                @change="formData.additional_docs = Array.from($event.target.files).map(f => f.name); console.log('Additional docs selected:', Array.from($event.target.files).map(f => f.name))"
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
                                 multiple
                                 accept=".pdf,.jpg,.jpeg,.png" />
@@ -356,7 +334,7 @@
                                                 I confirm all provided information and documents are accurate
                                             </label>
                                             <p class="text-gray-500">
-                                                The submitted information will be reviewed by our admin team for verification
+                                                The submitted information will be verified via email approval
                                             </p>
                                         </div>
                                     </div>

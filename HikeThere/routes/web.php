@@ -33,16 +33,16 @@ Route::post('/email/verification-notification', function (Request $request) {
     return back()->with('message', 'Verification link sent!');
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
 
-// Routes that require authentication and email verification (for hikers)
+// Routes that require authentication and email verification (for hikers only)
 Route::middleware([
     'auth:sanctum',
     'verified',
 ])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/explore', [ExploreController::class, 'index'])->name('explore');
-});
+})->middleware('user.type:hiker');
 
-// Routes that require authentication and approval (for organizations)
+// Routes that require authentication and approval (for organizations only)
 Route::middleware(['auth:sanctum', 'check.approval'])->group(function () {
     // Organization dashboard
     Route::get('/org/dashboard', function () {
@@ -51,7 +51,7 @@ Route::middleware(['auth:sanctum', 'check.approval'])->group(function () {
     
     // Protected routes that require approval
     // These routes will be accessible to approved organizations
-});
+})->middleware('user.type:organization');
 
 // Public routes
 Route::get('/location-weather', [LocationWeatherController::class, 'getWeather']);
@@ -89,29 +89,16 @@ Route::get('/pending-approval', function () {
     return view('auth.pending-approval');
 })->name('auth.pending-approval');
 
-// Admin routes for managing approvals
-Route::middleware(['auth', 'admin'])->group(function () {
-    Route::get('/admin/dashboard', function () {
-        $pendingCount = \App\Models\User::where('user_type', 'organization')
-            ->where('approval_status', 'pending')->count();
-        $approvedCount = \App\Models\User::where('user_type', 'organization')
-            ->where('approval_status', 'approved')->count();
-        $rejectedCount = \App\Models\User::where('user_type', 'organization')
-            ->where('approval_status', 'rejected')->count();
-        $pendingOrganizations = \App\Models\User::where('user_type', 'organization')
-            ->where('approval_status', 'pending')
-            ->with('organizationProfile')
-            ->orderBy('created_at', 'desc')
-            ->get();
-        
-        return view('admin.dashboard', compact('pendingCount', 'approvedCount', 'rejectedCount', 'pendingOrganizations'));
-    })->name('admin.dashboard');
-    
-    Route::post('/organizations/{user}/approve', [OrganizationApprovalController::class, 'approve'])
-        ->name('organizations.approve');
-    Route::post('/organizations/{user}/reject', [OrganizationApprovalController::class, 'reject'])
-        ->name('organizations.reject');
-});
+// Admin routes for managing approvals - REMOVED
+// Organizations are now approved directly via email links
+
+// Organization approval routes (direct from email) - using signed URLs for security
+Route::get('/organizations/{user}/approve/email', [OrganizationApprovalController::class, 'approveFromEmail'])
+    ->name('organizations.approve.email')
+    ->middleware(['signed', 'throttle:3,1']); // Limit to 3 attempts per minute
+Route::get('/organizations/{user}/reject/email', [OrganizationApprovalController::class, 'rejectFromEmail'])
+    ->name('organizations.reject.email')
+    ->middleware(['signed', 'throttle:3,1']); // Limit to 3 attempts per minute
 
 
 

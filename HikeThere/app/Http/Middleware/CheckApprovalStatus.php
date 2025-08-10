@@ -18,7 +18,7 @@ class CheckApprovalStatus
                 if ($user->approval_status === 'pending') {
                     Auth::logout();
                     return redirect()->route('auth.pending-approval')
-                        ->with('error', 'Your organization registration is pending approval. Please wait for admin review.');
+                        ->with('error', 'Your organization registration is pending approval. Please check your email for the approval link.');
                 }
 
                 if ($user->approval_status === 'rejected') {
