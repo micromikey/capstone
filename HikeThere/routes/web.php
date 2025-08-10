@@ -3,8 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ExploreController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -32,6 +30,20 @@ Route::middleware([
         return view('dashboard');
     })->name('dashboard');
 });
+
+
+//generated Fam
+Route::get('/itinerary/generated', function () {
+    return view('itinerary.generated'); // Blade file: resources/views/generated-itinerary.blade.php
+})->middleware('auth')->name('itinerary.generated');
+
+Route::get('/itinerary/build', function () {
+    return view('itinerary.build'); // Blade file: resources/views/generated-itinerary.blade.php
+})->middleware('auth')->name('itinerary.build');
+
+
+
+
 
 
 Route::get('/', [DashboardController::class, 'index']);
