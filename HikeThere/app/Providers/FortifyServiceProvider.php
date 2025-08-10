@@ -8,6 +8,7 @@ use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -37,6 +38,33 @@ class FortifyServiceProvider extends ServiceProvider
 
         Fortify::registerView(function () {
             return view('auth.register');
+        });
+
+        // Custom redirect after login based on user type
+        Fortify::redirects('login', function (Request $request) {
+            if (Auth::check()) {
+                $user = Auth::user();
+                
+                if ($user->user_type === 'organization') {
+                    if ($user->approval_status === 'approved') {
+                        return redirect()->route('org.dashboard');
+                    } elseif ($user->approval_status === 'pending') {
+                        return redirect()->route('auth.pending-approval');
+                    } elseif ($user->approval_status === 'rejected') {
+                        Auth::logout();
+                        return redirect()->route('login')
+                            ->with('error', 'Your organization registration was rejected. Please contact support for more information.');
+                    }
+                }
+                
+                // For hikers, redirect to regular dashboard
+                if ($user->user_type === 'hiker') {
+                    return redirect()->route('dashboard');
+                }
+            }
+            
+            // Default redirect
+            return redirect()->route('dashboard');
         });
 
         RateLimiter::for('login', function (Request $request) {

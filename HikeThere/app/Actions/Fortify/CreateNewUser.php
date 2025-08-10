@@ -29,13 +29,22 @@ class CreateNewUser implements CreatesNewUsers
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature() ? ['accepted', 'required'] : '',
         ])->validate();
 
-        return User::create([
+        $userData = [
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => Hash::make($input['password']),
             'user_type' => $input['user_type'],
             'organization_name' => $input['user_type'] === 'organization' ? $input['organization_name'] : null,
             'organization_description' => $input['user_type'] === 'organization' ? $input['organization_description'] : null,
-        ]);
+        ];
+
+        // Set approval status based on user type
+        if ($input['user_type'] === 'organization') {
+            $userData['approval_status'] = 'pending';
+        } else {
+            $userData['approval_status'] = 'approved';
+        }
+
+        return User::create($userData);
     }
 }

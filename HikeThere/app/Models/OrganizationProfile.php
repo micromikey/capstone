@@ -13,6 +13,7 @@ class OrganizationProfile extends Model
         'email',
         'phone',
         'name',
+        'address',
         'password',
         'business_permit_path',
         'government_id_path',

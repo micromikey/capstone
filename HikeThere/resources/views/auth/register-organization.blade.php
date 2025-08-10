@@ -8,12 +8,17 @@
             organization_description: '',
             email: '',
             phone: '',
+            address: '',
             name: '',
+            password: '',
+            password_confirmation: '',
             business_permit: '',
             government_id: '',
             additional_docs: []
         }
-    }" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#336d66]/5 to-white py-12 px-4 sm:px-6 lg:px-8">
+    }" 
+    x-init="console.log('Form initialized:', $data)"
+    class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#336d66]/5 to-white py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-6xl w-full space-y-8 bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-xl">
             <!-- Header section remains the same -->
             <div class="text-center">
@@ -28,18 +33,23 @@
             <!-- Progress Bar -->
             <div class="relative pt-4">
                 <div class="flex items-center justify-between mb-2">
-                    <div class="w-1/3 text-center">
+                    <div class="w-1/4 text-center">
                         <button @click="step = 1" :class="{'text-[#336d66] font-medium': step >= 1, 'text-gray-400': step < 1}">
                             Organization Info
                         </button>
                     </div>
-                    <div class="w-1/3 text-center">
+                    <div class="w-1/4 text-center">
                         <button @click="step = 2" :class="{'text-[#336d66] font-medium': step >= 2, 'text-gray-400': step < 2}">
+                            Contact & Address
+                        </button>
+                    </div>
+                    <div class="w-1/4 text-center">
+                        <button @click="step = 3" :class="{'text-[#336d66] font-medium': step >= 3, 'text-gray-400': step < 3}">
                             Documentation
                         </button>
                     </div>
-                    <div class="w-1/3 text-center">
-                        <button @click="step = 3" :class="{'text-[#336d66] font-medium': step >= 3, 'text-gray-400': step < 3}">
+                    <div class="w-1/4 text-center">
+                        <button @click="step = 4" :class="{'text-[#336d66] font-medium': step >= 4, 'text-gray-400': step < 4}">
                             Review & Submit
                         </button>
                     </div>
@@ -47,9 +57,10 @@
                 <div class="overflow-hidden h-2 mb-4 flex rounded-full bg-gray-100">
                     <div class="transition-all duration-500 ease-in-out bg-[#336d66]"
                         :class="{
-                            'w-1/3': step === 1,
-                            'w-2/3': step === 2,
-                            'w-full': step === 3
+                            'w-1/4': step === 1,
+                            'w-2/4': step === 2,
+                            'w-3/4': step === 3,
+                            'w-full': step === 4
                          }">
                     </div>
                 </div>
@@ -57,7 +68,29 @@
 
             <x-validation-errors class="mb-4 bg-red-50 text-red-500 p-4 rounded-lg text-sm" />
 
-            <form method="POST" action="{{ route('register.organization') }}" class="mt-8" enctype="multipart/form-data">
+            @if ($errors->has('error'))
+                <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800">Whoops! Something went wrong.</h3>
+                            <div class="mt-2 text-sm text-red-700">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    @foreach ($errors->get('error') as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('register.organization.store') }}" class="mt-8" enctype="multipart/form-data" @submit="console.log('Form submitting with data:', formData)">
                 @csrf
                 <input type="hidden" name="user_type" value="organization">
 
@@ -75,60 +108,84 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                     </svg>
                                 </div>
-                                <x-input id="organization_name" x-model="formData.organization_name" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl" type="text" name="organization_name" :value="old('organization_name')" required autofocus />
+                                <x-input id="organization_name" x-model="formData.organization_name" @input="console.log('Organization name changed:', formData.organization_name)" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl" type="text" name="organization_name" required autofocus />
                             </div>
                         </div>
 
                         <!-- Organization Description -->
                         <div>
                             <x-label for="organization_description" value="{{ __('Organization Description') }}" />
-                            <textarea id="organization_description" x-model="formData.organization_description" name="organization_description" rows="4" class="block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-xl" required>{{ old('organization_description') }}</textarea>
-                        </div>
-
-                        <!-- Contact Information -->
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <x-label for="email" value="{{ __('Contact Email') }}" />
-                                <x-input id="email" x-model="formData.email" class="block w-full" type="email" name="email" :value="old('email')" required />
-                            </div>
-                            <div>
-                                <x-label for="phone" value="{{ __('Contact Phone') }}" />
-                                <x-input id="phone" x-model="formData.phone" class="block w-full" type="tel" name="phone" :value="old('phone')" required />
-                            </div>
+                            <textarea id="organization_description" x-model="formData.organization_description" @input="console.log('Organization description changed:', formData.organization_description)" name="organization_description" rows="4" class="block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-xl" required></textarea>
                         </div>
 
                         <!-- Representative Name -->
                         <div>
                             <x-label for="name" value="{{ __('Representative Name') }}" />
-                            <x-input id="name" x-model="formData.name" class="block w-full" type="text" name="name" :value="old('name')" required />
+                            <x-input id="name" x-model="formData.name" @input="console.log('Name changed:', formData.name)" class="block w-full" type="text" name="name" required />
                         </div>
 
-                        <!-- Password Fields - Moved here -->
+                        <!-- Password Fields -->
                         <div class="space-y-4 pt-4 border-t">
                             <h4 class="font-medium text-gray-700">Account Security</h4>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <x-label for="password" value="{{ __('Password') }}" class="mb-1" />
-                                    <x-input id="password" class="block w-full" type="password" name="password" required autocomplete="new-password" />
+                                    <x-input id="password" x-model="formData.password" class="block w-full" type="password" name="password" required autocomplete="new-password" />
                                 </div>
                                 <div>
                                     <x-label for="password_confirmation" value="{{ __('Confirm Password') }}" class="mb-1" />
-                                    <x-input id="password_confirmation" class="block w-full" type="password" name="password_confirmation" required autocomplete="new-password" />
+                                    <x-input id="password_confirmation" x-model="formData.password_confirmation" class="block w-full" type="password" name="password_confirmation" required autocomplete="new-password" />
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="mt-8 flex justify-end">
-                        <button type="button" @click="step = 2"
+                        <button type="button" @click="step = 2; console.log('Moving to step 2, formData:', formData)"
                             class="px-6 py-2 bg-[#336d66] text-white rounded-xl hover:bg-[#20b6d2] transition-colors">
                             Next Step &rarr;
                         </button>
                     </div>
                 </div>
 
-                <!-- Step 2: Documentation -->
+                <!-- Step 2: Contact Information & Address -->
                 <div x-show="step === 2" x-cloak>
+                    <div class="space-y-6">
+                        <h3 class="text-lg font-semibold text-gray-900">Contact Information & Address</h3>
+
+                        <!-- Contact Information -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <x-label for="email" value="{{ __('Contact Email') }}" />
+                                <x-input id="email" x-model="formData.email" @input="console.log('Email changed:', formData.email)" class="block w-full" type="email" name="email" required />
+                            </div>
+                            <div>
+                                <x-label for="phone" value="{{ __('Contact Phone') }}" />
+                                <x-input id="phone" x-model="formData.phone" @input="console.log('Phone changed:', formData.phone)" class="block w-full" type="tel" name="phone" required />
+                            </div>
+                        </div>
+
+                        <!-- Address Field -->
+                        <div>
+                            <x-label for="address" value="{{ __('Address') }}" />
+                            <textarea id="address" x-model="formData.address" @input="console.log('Address changed:', formData.address)" name="address" rows="3" class="block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-xl" placeholder="Enter your complete address" required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex justify-between">
+                        <button type="button" @click="step = 1"
+                            class="px-6 py-2 text-gray-600 hover:text-[#336d66] transition-colors">
+                            &larr; Previous Step
+                        </button>
+                        <button type="button" @click="step = 3; console.log('Moving to step 3, formData:', formData)"
+                            class="px-6 py-2 bg-[#336d66] text-white rounded-xl hover:bg-[#20b6d2] transition-colors">
+                            Next Step &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Documentation -->
+                <div x-show="step === 3" x-cloak>
                     <div class="space-y-6">
                         <h3 class="text-lg font-semibold text-gray-900">Required Documentation</h3>
 
@@ -136,7 +193,7 @@
                         <div class="space-y-2 bg-gray-50 p-4 rounded-xl">
                             <x-label for="business_permit" value="{{ __('Business Permit') }}" class="mb-1" />
                             <input type="file" id="business_permit" name="business_permit"
-                                @change="formData.business_permit = $event.target.files[0]?.name"
+                                @change="formData.business_permit = $event.target.files[0]?.name; console.log('Business permit file selected:', $event.target.files[0]?.name)"
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
                                 required
                                 accept=".pdf,.jpg,.jpeg,.png" />
@@ -147,7 +204,7 @@
                         <div class="space-y-2 bg-gray-50 p-4 rounded-xl">
                             <x-label for="government_id" value="{{ __('Government ID') }}" class="mb-1" />
                             <input type="file" id="government_id" name="government_id"
-                                @change="formData.government_id = $event.target.files[0]?.name"
+                                @change="formData.government_id = $event.target.files[0]?.name; console.log('Government ID file selected:', $event.target.files[0]?.name)"
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
                                 required
                                 accept=".pdf,.jpg,.jpeg,.png" />
@@ -157,8 +214,8 @@
                         <!-- Additional Documents -->
                         <div class="space-y-2 bg-gray-50 p-4 rounded-xl">
                             <x-label for="additional_docs" value="{{ __('Additional Supporting Documents') }}" class="mb-1" />
-                            <input type="file" id="additional_docs" name="additional_docs[]"
-                                @change="formData.additional_docs = Array.from($event.target.files)"
+                            <input type="file" id="additional_documents" name="additional_documents[]"
+                                @change="formData.additional_docs = Array.from($event.target.files); console.log('Additional docs selected:', Array.from($event.target.files).map(f => f.name))"
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
                                 multiple
                                 accept=".pdf,.jpg,.jpeg,.png" />
@@ -167,19 +224,19 @@
                     </div>
 
                     <div class="mt-8 flex justify-between">
-                        <button type="button" @click="step = 1"
+                        <button type="button" @click="step = 2"
                             class="px-6 py-2 text-gray-600 hover:text-[#336d66] transition-colors">
                             &larr; Previous Step
                         </button>
-                        <button type="button" @click="step = 3"
+                        <button type="button" @click="step = 4; console.log('Moving to step 4, formData:', formData)"
                             class="px-6 py-2 bg-[#336d66] text-white rounded-xl hover:bg-[#20b6d2] transition-colors">
                             Next Step &rarr;
                         </button>
                     </div>
                 </div>
 
-                <!-- Step 3: Review & Submit -->
-                <div x-show="step === 3" x-cloak>
+                <!-- Step 4: Review & Submit -->
+                <div x-show="step === 4" x-cloak>
                     <div class="space-y-6">
                         <h3 class="text-lg font-semibold text-gray-900">Review & Submit</h3>
 
@@ -204,6 +261,11 @@
                                     <p class="text-sm font-medium text-gray-500">Contact Phone</p>
                                     <p class="mt-1" x-text="formData.phone || 'Not filled'"></p>
                                 </div>
+                            </div>
+
+                            <div class="pt-4">
+                                <p class="text-sm font-medium text-gray-500">Address</p>
+                                <p class="mt-1" x-text="formData.address || 'Not filled'"></p>
                             </div>
 
                             <div class="pt-4">
@@ -255,6 +317,7 @@
                                                 name="terms"
                                                 required
                                                 x-model="termsChecked"
+                                                @change="console.log('Terms checkbox changed:', termsChecked)"
                                                 class="h-4 w-4 rounded border-gray-300 text-[#336d66] focus:ring-[#336d66]">
                                         </div>
                                         <div class="text-sm">
@@ -285,6 +348,7 @@
                                                 name="documentation_confirm"
                                                 required
                                                 x-model="documentationConfirmed"
+                                                @change="console.log('Documentation checkbox changed:', documentationConfirmed)"
                                                 class="h-4 w-4 rounded border-gray-300 text-[#336d66] focus:ring-[#336d66]">
                                         </div>
                                         <div class="text-sm">
@@ -309,6 +373,31 @@
                             </div>
                         </div>
 
+                        <!-- Form Status Indicator -->
+                        <div class="mt-4 p-4 bg-gray-50 rounded-xl">
+                            <h5 class="font-medium text-gray-900 mb-2">Form Status</h5>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex items-center space-x-2">
+                                    <span class="w-3 h-3 rounded-full" :class="termsChecked ? 'bg-green-500' : 'bg-red-500'"></span>
+                                    <span :class="termsChecked ? 'text-green-700' : 'text-red-700'">
+                                        Terms & Privacy Policy: <span x-text="termsChecked ? 'Accepted' : 'Not Accepted'"></span>
+                                    </span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="w-3 h-3 rounded-full" :class="documentationConfirmed ? 'bg-green-500' : 'bg-red-500'"></span>
+                                    <span :class="documentationConfirmed ? 'text-green-700' : 'text-red-700'">
+                                        Documentation Confirmed: <span x-text="documentationConfirmed ? 'Confirmed' : 'Not Confirmed'"></span>
+                                    </span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="w-3 h-3 rounded-full" :class="formData.organization_name && formData.email && formData.phone && formData.address ? 'bg-green-500' : 'bg-red-500'"></span>
+                                    <span :class="formData.organization_name && formData.email && formData.phone && formData.address ? 'text-green-700' : 'text-red-700'">
+                                        Required Fields: <span x-text="formData.organization_name && formData.email && formData.phone && formData.address ? 'Complete' : 'Incomplete'"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mt-8 flex justify-between">
                             <button type="button"
                                 @click="step = 2"
@@ -317,7 +406,8 @@
                             </button>
                             <button type="submit"
                                 class="px-8 py-3 bg-[#336d66] text-white rounded-xl hover:bg-[#20b6d2] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                :disabled="!termsChecked || !documentationConfirmed">
+                                :disabled="!termsChecked || !documentationConfirmed"
+                                @click="console.log('Form Data:', formData); console.log('Terms Checked:', termsChecked); console.log('Documentation Confirmed:', documentationConfirmed)">
                                 Submit Registration
                             </button>
                         </div>

@@ -2,58 +2,55 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\User;
-use App\Models\OrganizationProfile;
-use App\Mail\OrganizationApprovalNotification;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use App\Mail\OrganizationApprovalNotification;
+use App\Mail\OrganizationStatusUpdate;
 
 class OrganizationApprovalController extends Controller
 {
-    public function approve(Request $request, User $user)
+    /**
+     * Approve an organization
+     */
+    public function approve(User $user)
     {
-        // Verify the signed URL
-        if (!$request->hasValidSignature()) {
-            abort(401, 'Invalid or expired approval link');
+        // Verify this is an organization user
+        if ($user->user_type !== 'organization') {
+            return back()->with('error', 'Only organization users can be approved.');
         }
 
-        // Update user approval status
+        // Update approval status
         $user->update([
             'approval_status' => 'approved',
-            'approved_at' => now()
+            'approved_at' => now(),
         ]);
 
-        // Send approval notification to the organization
-        Mail::to($user->email)
-            ->send(new OrganizationApprovalNotification($user, true));
+        // Send approval notification email to the organization
+        Mail::to($user->email)->send(new OrganizationStatusUpdate($user, true));
 
-        return view('admin.approval-success', [
-            'action' => 'approved',
-            'organization' => $user->organizationProfile->organization_name ?? $user->name
-        ]);
+        return back()->with('success', 'Organization approved successfully! An approval notification has been sent to ' . $user->email);
     }
 
-    public function reject(Request $request, User $user)
+    /**
+     * Reject an organization
+     */
+    public function reject(User $user)
     {
-        // Verify the signed URL
-        if (!$request->hasValidSignature()) {
-            abort(401, 'Invalid or expired approval link');
+        // Verify this is an organization user
+        if ($user->user_type !== 'organization') {
+            return back()->with('error', 'Only organization users can be rejected.');
         }
 
-        // Send rejection notification to the organization before deleting
-        Mail::to($user->email)
-            ->send(new OrganizationApprovalNotification($user, false));
-
-        // Update status to rejected (or delete if preferred)
-        $user->update(['approval_status' => 'rejected']);
-        
-        // Optional: Delete the user and related data
-        // $user->organizationProfile()->delete();
-        // $user->delete();
-
-        return view('admin.approval-success', [
-            'action' => 'rejected',
-            'organization' => $user->organizationProfile->organization_name ?? $user->name
+        // Update approval status
+        $user->update([
+            'approval_status' => 'rejected',
+            'approved_at' => null,
         ]);
+
+        // Send rejection notification email to the organization
+        Mail::to($user->email)->send(new OrganizationStatusUpdate($user, false));
+
+        return back()->with('success', 'Organization rejected successfully! A rejection notification has been sent to ' . $user->email);
     }
 }

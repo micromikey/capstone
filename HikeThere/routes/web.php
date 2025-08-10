@@ -8,6 +8,7 @@ use App\Http\Controllers\LocationWeatherController;
 use App\Http\Controllers\TrailController;
 use App\Http\Controllers\OrganizationApprovalController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\AssessmentController;
 use Illuminate\Support\Facades\Mail;
 use App\Models\User;
 use App\Http\Controllers\DashboardController;
@@ -17,6 +18,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Email verification routes
 Route::get('/email/verify', function () {
     return view('auth.verify-email');
 })->middleware('auth')->name('verification.notice');
@@ -31,23 +33,33 @@ Route::post('/email/verification-notification', function (Request $request) {
     return back()->with('message', 'Verification link sent!');
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
 
+// Routes that require authentication and email verification (for hikers)
 Route::middleware([
     'auth:sanctum',
     'verified',
 ])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-});
-
-Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/explore', [ExploreController::class, 'index'])->name('explore');
 });
 
-Route::get('/location-weather', [LocationWeatherController::class, 'getWeather']);
+// Routes that require authentication and approval (for organizations)
+Route::middleware(['auth:sanctum', 'check.approval'])->group(function () {
+    // Organization dashboard
+    Route::get('/org/dashboard', function () {
+        return view('org.dashboard');
+    })->name('org.dashboard');
+    
+    // Protected routes that require approval
+    // These routes will be accessible to approved organizations
+});
 
+// Public routes
+Route::get('/location-weather', [LocationWeatherController::class, 'getWeather']);
 Route::get('/trails', [TrailController::class, 'index'])->name('trails.index');
 Route::get('/trails/{trail}', [TrailController::class, 'show'])->name('trails.show');
 Route::get('/trails/search', [TrailController::class, 'search'])->name('trails.search');
 
+// Guest routes (registration and login)
 Route::middleware(['guest'])->group(function () {
     Route::get('/register/select', function () {
         return view('auth.register-select');
@@ -61,95 +73,109 @@ Route::middleware(['guest'])->group(function () {
     Route::get('/register/organization', [RegisteredUserController::class, 'createOrganization'])
         ->name('register.organization');
 
-    Route::post('/register/organization', [RegisteredUserController::class, 'storeOrganization']);
+    Route::post('/register/organization', [RegisteredUserController::class, 'storeOrganization'])->name('register.organization.store');
 });
 
+// Static pages
 Route::get('/policy', function () {
     return view('policy');
 })->name('policy.show');
+
+Route::get('/terms', function () {
+    return view('terms');
+})->name('terms.show');
 
 Route::get('/pending-approval', function () {
     return view('auth.pending-approval');
 })->name('auth.pending-approval');
 
-// Middleware to check approval status
-Route::middleware(['auth', 'check.approval'])->group(function () {
-    // Protected routes that require approval
-});
-
 // Admin routes for managing approvals
 Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/admin/dashboard', function () {
+        $pendingCount = \App\Models\User::where('user_type', 'organization')
+            ->where('approval_status', 'pending')->count();
+        $approvedCount = \App\Models\User::where('user_type', 'organization')
+            ->where('approval_status', 'approved')->count();
+        $rejectedCount = \App\Models\User::where('user_type', 'organization')
+            ->where('approval_status', 'rejected')->count();
+        $pendingOrganizations = \App\Models\User::where('user_type', 'organization')
+            ->where('approval_status', 'pending')
+            ->with('organizationProfile')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return view('admin.dashboard', compact('pendingCount', 'approvedCount', 'rejectedCount', 'pendingOrganizations'));
+    })->name('admin.dashboard');
+    
     Route::post('/organizations/{user}/approve', [OrganizationApprovalController::class, 'approve'])
         ->name('organizations.approve');
     Route::post('/organizations/{user}/reject', [OrganizationApprovalController::class, 'reject'])
         ->name('organizations.reject');
 });
 
-Route::get('/admin/organization/{user}/approve', function ($userId) {
-    if (!request()->hasValidSignature()) {
-        abort(401, 'Invalid or expired link');
-    }
 
-    $user = User::findOrFail($userId);
 
-    if ($user->status !== 'pending') {
-        return response()->json(['message' => 'User has already been processed.'], 400);
-    }
 
-    // Approve the user
-    $user->update(['status' => 'approved']);
 
-    // Send approval email to the organization
-    Mail::to($user->email)->send(new \App\Mail\OrganizationApprovalNotification($user, true));
 
-    return response()->view('admin.organization-processed', [
-        'user' => $user,
-        'action' => 'approved'
-    ]);
-})->name('admin.organization.approve');
 
-Route::get('/admin/organization/{user}/reject', function ($userId) {
-    if (!request()->hasValidSignature()) {
-        abort(401, 'Invalid or expired link');
-    }
 
-    $user = User::findOrFail($userId);
 
-    if ($user->status !== 'pending') {
-        return response()->json(['message' => 'User has already been processed.'], 400);
-    }
 
-    // Reject the user
-    $user->update(['status' => 'rejected']);
+//jas
+Route::get('/hiker/booking/booking-details', function () {
+    return view('hiker.booking.booking-details'); 
+});
 
-    // Send rejection email to the organization
-    Mail::to($user->email)->send(new \App\Mail\OrganizationApprovalNotification($user, false));
+//jas
+Route::get('/hiker/hiking-tools', function () {
+    return view('hiker.tools.hiking-tools'); 
+});
 
-    return response()->view('admin.organization-processed', [
-        'user' => $user,
-        'action' => 'rejected'
-    ]);
-})->name('admin.organization.reject');
 
-// Add these routes to your routes/web.php file
 
-// Organization approval routes (signed URLs for email actions)
-Route::get('/admin/organization/{user}/approve', [OrganizationApprovalController::class, 'approve'])
-    ->name('admin.organization.approve')
-    ->middleware('signed');
 
-Route::get('/admin/organization/{user}/reject', [OrganizationApprovalController::class, 'reject'])
-    ->name('admin.organization.reject')
-    ->middleware('signed');
+//  SOL START
+Route::group(['prefix' => 'assessment', 'as' => 'assessment.'], function () {
+    
+    Route::get('/instruction', [AssessmentController::class, 'instruction'])->name('instruction');
 
-// Organization registration routes
-Route::get('/register/organization', [RegisteredUserController::class, 'createOrganization'])
-    ->name('register.organization');
+    // Assessment form pages
+    
+    Route::get('/gear', [AssessmentController::class, 'gear'])->name('gear');
+    Route::get('/fitness', [AssessmentController::class, 'fitness'])->name('fitness');
+    Route::get('/health', [AssessmentController::class, 'health'])->name('health');
+    Route::get('/weather', [AssessmentController::class, 'weather'])->name('weather');
+    Route::get('/emergency', [AssessmentController::class, 'emergency'])->name('emergency');
+    Route::get('/environment', [AssessmentController::class, 'environment'])->name('environment');
+    
+    // Assessment form submissions
+    Route::post('/gear', [AssessmentController::class, 'storeGear'])->name('gear.store');
+    Route::post('/fitness', [AssessmentController::class, 'storeFitness'])->name('fitness.store');
+    Route::post('/health', [AssessmentController::class, 'storeHealth'])->name('health.store');
+    Route::post('/weather', [AssessmentController::class, 'storeWeather'])->name('weather.store');
+    Route::post('/emergency', [AssessmentController::class, 'storeEmergency'])->name('emergency.store');
+    Route::post('/environment', [AssessmentController::class, 'storeEnvironment'])->name('environment.store');
+    
+    // Results page
+    Route::get('/result', [AssessmentController::class, 'result'])->name('result');
+});
 
-Route::post('/register/organization', [RegisteredUserController::class, 'storeOrganization'])
-    ->name('register.organization');
 
-// Pending approval page
-Route::get('/auth/pending-approval', function () {
-    return view('auth.pending-approval');
-})->name('auth.pending-approval');
+
+
+
+
+Route::get('/hiker/booking/package-details', function () {
+    return view('hiker.booking.package-details'); 
+});
+
+
+
+Route::get('/hiker/itinerary/itinerary-instructions', function () {
+    return view('hiker.itinerary.itinerary-instructions'); 
+});
+
+
+
+// SOL END

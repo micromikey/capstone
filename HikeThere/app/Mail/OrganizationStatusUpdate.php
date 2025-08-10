@@ -10,19 +10,21 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use App\Models\User;
 
-class OrganizationApprovalNotification extends Mailable
+class OrganizationStatusUpdate extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $user;
+    public $approved;
     public $organizationProfile;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(User $user)
+    public function __construct(User $user, bool $approved)
     {
         $this->user = $user;
+        $this->approved = $approved;
         $this->organizationProfile = $user->organizationProfile;
     }
 
@@ -31,8 +33,12 @@ class OrganizationApprovalNotification extends Mailable
      */
     public function envelope(): Envelope
     {
+        $subject = $this->approved
+            ? 'Your Organization Registration has been Approved! 🎉'
+            : 'Organization Registration Update';
+
         return new Envelope(
-            subject: 'New Organization Registration Requires Approval',
+            subject: $subject,
         );
     }
 
@@ -41,8 +47,10 @@ class OrganizationApprovalNotification extends Mailable
      */
     public function content(): Content
     {
+        $view = $this->approved ? 'emails.organization-approval' : 'emails.organization-rejection';
+        
         return new Content(
-            view: 'emails.organization-approval-admin',
+            view: $view,
         );
     }
 
@@ -56,3 +64,4 @@ class OrganizationApprovalNotification extends Mailable
         return [];
     }
 }
+

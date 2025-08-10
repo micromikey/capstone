@@ -10,7 +10,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens;
 
@@ -51,7 +51,7 @@ class User extends Authenticatable
     /**
      * The accessors to append to the model's array form.
      *
-     * @var array<int, string>
+     * @var array<string, string>
      */
     protected $appends = [
         'profile_photo_url',
@@ -69,6 +69,49 @@ class User extends Authenticatable
             'password' => 'hashed',
             'approved_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Determine if the user has verified their email address.
+     * Organizations don't need email verification, only approval.
+     */
+    public function hasVerifiedEmail(): bool
+    {
+        if ($this->user_type === 'organization') {
+            // Organizations don't need email verification, only approval
+            return true;
+        }
+        
+        // Hikers need email verification
+        return ! is_null($this->email_verified_at);
+    }
+
+    /**
+     * Mark the given user's email as verified.
+     */
+    public function markEmailAsVerified(): bool
+    {
+        if ($this->user_type === 'organization') {
+            // Organizations don't need email verification
+            return true;
+        }
+        
+        return $this->forceFill([
+            'email_verified_at' => $this->freshTimestamp(),
+        ])->save();
+    }
+
+    /**
+     * Send the email verification notification.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        if ($this->user_type === 'organization') {
+            // Organizations don't need email verification
+            return;
+        }
+        
+        $this->notify(new \Illuminate\Auth\Notifications\VerifyEmail);
     }
 
     /**
@@ -93,5 +136,13 @@ class User extends Authenticatable
     public function isPendingOrganization()
     {
         return $this->user_type === 'organization' && $this->approval_status === 'pending';
+    }
+
+    /**
+     * Check if user is a verified hiker
+     */
+    public function isVerifiedHiker()
+    {
+        return $this->user_type === 'hiker' && $this->hasVerifiedEmail();
     }
 }

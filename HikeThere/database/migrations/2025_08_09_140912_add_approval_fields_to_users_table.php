@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('approval_status')->default('approved')->after('user_type');
-            $table->timestamp('approved_at')->nullable()->after('approval_status');
+            if (!Schema::hasColumn('users', 'approval_status')) {
+                $table->string('approval_status')->default('approved')->after('user_type');
+            }
+            if (!Schema::hasColumn('users', 'approved_at')) {
+                $table->timestamp('approved_at')->nullable()->after('approval_status');
+            }
         });
     }
 
