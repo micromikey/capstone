@@ -10,10 +10,18 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::prefix('trails')->group(function () {
-    Route::get('/', [TrailController::class, 'index']);
-    Route::get('/{trail}', [TrailController::class, 'show']);
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/', [TrailController::class, 'index']);
+        Route::get('/{trail}', [TrailController::class, 'show']);
+    });
 });
 
 Route::prefix('locations')->group(function () {
-    Route::get('/', [LocationController::class, 'index']);
+    // Public route for location search (needed for trail creation form)
+    Route::get('/search', [LocationController::class, 'search']);
+    
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/', [LocationController::class, 'index']);
+        Route::get('/{id}', [LocationController::class, 'show']);
+    });
 });

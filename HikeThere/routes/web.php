@@ -13,6 +13,13 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\User;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrganizationTrailController;
+use App\Http\Controllers\ItineraryController;
+use App\Http\Controllers\MapController;
+use App\Http\Controllers\CommunityController;
+use App\Http\Controllers\TrailReviewController;
+
+// Include Jetstream routes
+require __DIR__.'/jetstream.php';
 
 
 
@@ -68,13 +75,9 @@ Route::middleware([
         return view('hiker.itinerary.itinerary-instructions'); 
     })->name('itinerary.instructions');
     
-    Route::get('/hiker/itinerary/build', function () {
-        return view('hiker.itinerary.build'); 
-    })->name('itinerary.build');
+    Route::get('/hiker/itinerary/build', [ItineraryController::class, 'build'])->name('itinerary.build');
     
-    Route::post('/hiker/itinerary/generate', function () {
-        return view('hiker.itinerary.generated'); 
-    })->name('itinerary.generate');
+    Route::post('/hiker/itinerary/generate', [ItineraryController::class, 'generate'])->name('itinerary.generate');
     
     // Assessment routes
     Route::get('/assessment/instruction', [AssessmentController::class, 'instruction'])->name('assessment.instruction');
@@ -85,6 +88,8 @@ Route::middleware([
     Route::get('/assessment/emergency', [AssessmentController::class, 'emergency'])->name('assessment.emergency');
     Route::get('/assessment/environment', [AssessmentController::class, 'environment'])->name('assessment.environment');
     Route::get('/assessment/result', [AssessmentController::class, 'result'])->name('assessment.result');
+    Route::get('/assessment/saved-results', [AssessmentController::class, 'viewSavedResults'])->name('assessment.saved-results');
+    Route::post('/assessment/save-results', [AssessmentController::class, 'saveResults'])->name('assessment.save-results');
     
     // Assessment form submissions
     Route::post('/assessment/gear', [AssessmentController::class, 'storeGear'])->name('assessment.gear.store');
@@ -93,6 +98,27 @@ Route::middleware([
     Route::post('/assessment/weather', [AssessmentController::class, 'storeWeather'])->name('assessment.weather.store');
     Route::post('/assessment/emergency', [AssessmentController::class, 'storeEmergency'])->name('assessment.emergency.store');
     Route::post('/assessment/environment', [AssessmentController::class, 'storeEnvironment'])->name('assessment.environment.store');
+    
+    // Itinerary routes
+    Route::get('/itinerary/build', [ItineraryController::class, 'build'])->name('itinerary.build');
+    Route::post('/itinerary/generate', [ItineraryController::class, 'generate'])->name('itinerary.generate');
+    Route::get('/itinerary/{itinerary}/pdf', [ItineraryController::class, 'pdf'])->name('itinerary.pdf');
+    Route::get('/itinerary/{itinerary}', [ItineraryController::class, 'show'])->name('itinerary.show');
+    
+    // Community routes
+    Route::get('/community', [CommunityController::class, 'index'])->name('community.index');
+    
+    // AJAX Community routes
+    Route::post('/api/community/follow', [CommunityController::class, 'follow'])->name('api.community.follow');
+    Route::post('/api/community/unfollow', [CommunityController::class, 'unfollow'])->name('api.community.unfollow');
+    Route::get('/api/community/followed-trails', [CommunityController::class, 'getFollowedTrails'])->name('api.community.followed-trails');
+    Route::get('/api/community/organization/{organization}', [CommunityController::class, 'getOrganization'])->name('api.community.organization');
+    Route::get('/api/community/organization/{organization}/trails', [CommunityController::class, 'getOrganizationTrails'])->name('api.community.organization.trails');
+    
+    // AJAX Trail Review routes
+    Route::post('/api/trails/reviews', [TrailReviewController::class, 'store'])->name('api.trails.reviews.store');
+    Route::put('/api/trails/reviews/{review}', [TrailReviewController::class, 'update'])->name('api.trails.reviews.update');
+    Route::delete('/api/trails/reviews/{review}', [TrailReviewController::class, 'destroy'])->name('api.trails.reviews.destroy');
 })->middleware('user.type:hiker');
 
 // Routes that require authentication and approval (for organizations only)
@@ -115,6 +141,37 @@ Route::get('/location-weather', [LocationWeatherController::class, 'getWeather']
 Route::get('/trails', [TrailController::class, 'index'])->name('trails.index');
 Route::get('/trails/{trail}', [TrailController::class, 'show'])->name('trails.show');
 Route::get('/trails/search', [TrailController::class, 'search'])->name('trails.search');
+
+// Public AJAX routes for trail reviews (anyone can view reviews)
+Route::get('/api/trails/{trail}/reviews', [TrailReviewController::class, 'getTrailReviews'])->name('api.trails.reviews.index');
+
+// Map routes (temporarily public for testing)
+Route::get('/map', [MapController::class, 'index'])->name('map.index');
+Route::get('/map/demo', [MapController::class, 'demo'])->name('map.demo');
+Route::get('/map/trails', [MapController::class, 'getTrails'])->name('map.trails');
+Route::get('/map/trails/{id}', [MapController::class, 'getTrailDetails'])->name('map.trail.details');
+Route::post('/map/search-nearby', [MapController::class, 'searchNearby'])->name('map.search.nearby');
+
+// Profile routes (require authentication)
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('custom.profile.show');
+    Route::get('/profile/edit', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile/picture', [App\Http\Controllers\ProfileController::class, 'deleteProfilePicture'])->name('profile.picture.delete');
+    
+    // Account Settings route
+    Route::get('/account/settings', [App\Http\Controllers\AccountSettingsController::class, 'index'])->name('account.settings');
+    
+
+    
+    // Account Settings - Preferences
+    Route::get('/account/preferences', [App\Http\Controllers\AccountSettings\PreferencesController::class, 'index'])->name('preferences.index');
+    Route::post('/account/preferences', [App\Http\Controllers\AccountSettings\PreferencesController::class, 'update'])->name('preferences.update');
+    Route::post('/account/preferences/reset', [App\Http\Controllers\AccountSettings\PreferencesController::class, 'reset'])->name('preferences.reset');
+    Route::get('/account/preferences/export', [App\Http\Controllers\AccountSettings\PreferencesController::class, 'export'])->name('preferences.export');
+    
+
+});
 
 // Guest routes (registration and login)
 Route::middleware(['guest'])->group(function () {
@@ -156,6 +213,17 @@ Route::get('/organizations/{user}/approve/email', [OrganizationApprovalControlle
 Route::get('/organizations/{user}/reject/email', [OrganizationApprovalController::class, 'rejectFromEmail'])
     ->name('organizations.reject.email')
     ->middleware(['signed', 'throttle:3,1']); // Limit to 3 attempts per minute
+
+// Admin routes
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/review-moderation', [App\Http\Controllers\Admin\ReviewModerationController::class, 'index'])->name('review-moderation.index');
+    Route::post('/review-moderation/{review}/approve', [App\Http\Controllers\Admin\ReviewModerationController::class, 'approve'])->name('review-moderation.approve');
+    Route::post('/review-moderation/{review}/reject', [App\Http\Controllers\Admin\ReviewModerationController::class, 'reject'])->name('review-moderation.reject');
+    Route::post('/review-moderation/{review}/remoderate', [App\Http\Controllers\Admin\ReviewModerationController::class, 'remoderate'])->name('review-moderation.remoderate');
+    Route::get('/review-moderation/{review}', [App\Http\Controllers\Admin\ReviewModerationController::class, 'show'])->name('review-moderation.show');
+    Route::post('/review-moderation/bulk-approve', [App\Http\Controllers\Admin\ReviewModerationController::class, 'bulkApprove'])->name('review-moderation.bulk-approve');
+    Route::get('/review-moderation/statistics', [App\Http\Controllers\Admin\ReviewModerationController::class, 'statistics'])->name('review-moderation.statistics');
+});
 
 
 

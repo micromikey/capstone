@@ -9,6 +9,24 @@
 
     <div class="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-10">
 
+      <!-- Success Message -->
+      @if(session('success'))
+      <div class="mb-6 rounded-lg bg-green-50 border border-green-200 p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm font-medium text-green-800">
+              {{ session('success') }}
+            </p>
+          </div>
+        </div>
+      </div>
+      @endif
+
       <div class="rounded-2xl p-[1px] bg-gradient-to-r from-emerald-300/60 via-cyan-300/60 to-indigo-300/60 shadow-xl">
         <div class="rounded-2xl bg-white/80 px-8 py-10 text-center ring-1 ring-black/5 backdrop-blur-xl">
           <!-- Animated star + halo -->
@@ -25,12 +43,12 @@
             </span>
           </h1>
           <p class="mx-auto max-w-2xl text-base text-slate-600">
-            Your Mt. Pulag trip plan is ready. Review the details and prepare for your hike!
+            Your {{ $itinerary->trail_name }} trip plan is ready. Review the details and prepare for your hike!
           </p>
 
           <!-- Actions-->
           <div class="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <a href="{{ route('itinerary.pdf') }}"
+            <a href="{{ route('itinerary.pdf', $itinerary) }}"
                class="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg ring-1 ring-emerald-400/40 transition active:scale-[.98]">
               <span class="absolute inset-0 translate-x-[-120%] bg-white/20 transition-all duration-500 group-hover:translate-x-[120%]"></span>
               <svg class="h-4 w-4 transition group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
@@ -49,7 +67,7 @@
               Favorite
             </button>
 
-            <a href="{{ route('itinerary.generate') }}"
+            <a href="{{ route('itinerary.build') }}"
                class="inline-flex items-center gap-2 rounded-full bg-white/80 px-6 py-2.5 text-sm font-semibold text-emerald-700 shadow ring-1 ring-emerald-300/50 backdrop-blur transition hover:bg-white">
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
               Back to Planner
@@ -58,132 +76,256 @@
         </div>
       </div>
 
-      <!-- Favorites History -->
-      <div class="mt-8 rounded-2xl border border-white/70 bg-white/80 p-5 shadow-xl ring-1 ring-black/5 backdrop-blur">
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 class="text-base font-semibold text-slate-900">
-            <span class="bg-gradient-to-r from-emerald-700 via-teal-700 to-cyan-700 bg-clip-text text-transparent">Favorite History</span>
-          </h2>
-          <div class="relative">
-            <div class="rounded-full bg-gradient-to-r from-emerald-300/60 to-cyan-300/60 p-[1px]">
-              <input id="favSearch" type="text" placeholder="Search favorites..."
-                class="w-56 rounded-full bg-white px-4 py-2 text-sm placeholder-gray-500 outline-none ring-1 ring-gray-200 focus:ring-2 focus:ring-transparent">
+      <!-- Itinerary Details -->
+      <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Left Column: Basic Info -->
+        <div class="space-y-6">
+          
+          <!-- Trail Information -->
+          <div class="rounded-2xl border border-white/70 bg-white/80 p-6 shadow-xl ring-1 ring-black/5 backdrop-blur">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Trail Information</h2>
+            <div class="space-y-3">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Trail Name:</span>
+                <span class="font-semibold">{{ $itinerary->trail_name }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Difficulty:</span>
+                <span class="font-semibold text-{{ $itinerary->difficulty_color }}-600">{{ $itinerary->difficulty_level }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Duration:</span>
+                <span class="font-semibold">{{ $itinerary->estimated_duration }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Distance:</span>
+                <span class="font-semibold">{{ $itinerary->distance }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Elevation Gain:</span>
+                <span class="font-semibold">{{ $itinerary->elevation_gain }}</span>
+              </div>
             </div>
-            <svg class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-3.5-3.5"/></svg>
           </div>
+
+          <!-- Schedule -->
+          @if($itinerary->schedule)
+          <div class="rounded-2xl border border-white/70 bg-white/80 p-6 shadow-xl ring-1 ring-black/5 backdrop-blur">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Schedule</h2>
+            <div class="space-y-3">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Date:</span>
+                <span class="font-semibold">{{ \Carbon\Carbon::parse($itinerary->schedule['date'])->format('M d, Y') }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Start Time:</span>
+                <span class="font-semibold">{{ $itinerary->schedule['start_time'] }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Estimated Completion:</span>
+                <span class="font-semibold">{{ $itinerary->schedule['estimated_completion'] }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Transportation:</span>
+                <span class="font-semibold">{{ $itinerary->transportation }}</span>
+              </div>
+            </div>
+          </div>
+          @endif
+
+          <!-- Weather & Safety -->
+          <div class="rounded-2xl border border-white/70 bg-white/80 p-6 shadow-xl ring-1 ring-black/5 backdrop-blur">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Weather & Safety</h2>
+            <div class="space-y-3">
+              <div>
+                <span class="text-gray-600 font-medium">Weather Conditions:</span>
+                <p class="text-sm text-gray-700 mt-1">{{ $itinerary->weather_conditions }}</p>
+              </div>
+              <div>
+                <span class="text-gray-600 font-medium">Safety Tips:</span>
+                <ul class="text-sm text-gray-700 mt-1 space-y-1">
+                  @foreach($itinerary->safety_tips as $tip)
+                    <li>• {{ $tip }}</li>
+                  @endforeach
+                </ul>
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        <div id="favList" class="space-y-3">
-          <!-- Entry -->
-          <div class="favorite-entry flex items-center justify-between rounded-xl border border-gray-100 bg-white px-5 py-3 shadow-sm transition hover:shadow-md">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-200">Mt. Pulag</span>
-              <span class="text-sm text-slate-800">Itinerary — July 2025</span>
-            </div>
-            <div class="flex items-center gap-4 text-xs font-semibold">
-              <a href="#" class="text-emerald-600 hover:underline">View</a>
-              <button onclick="removeFavorite(this)" class="text-red-600 hover:underline">Remove</button>
-            </div>
+        <!-- Right Column: Route & Gear -->
+        <div class="space-y-6">
+          
+          <!-- Route Description -->
+          <div class="rounded-2xl border border-white/70 bg-white/80 p-6 shadow-xl ring-1 ring-black/5 backdrop-blur">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Route Description</h2>
+            <p class="text-gray-700">{{ $itinerary->route_description }}</p>
           </div>
 
-          <div class="favorite-entry flex items-center justify-between rounded-xl border border-gray-100 bg-white px-5 py-3 shadow-sm transition hover:shadow-md">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-0.5 text-[11px] font-medium text-sky-700 ring-1 ring-sky-200">Mt. Apo</span>
-              <span class="text-sm text-slate-800">Expedition — May 2025</span>
-            </div>
-            <div class="flex items-center gap-4 text-xs font-semibold">
-              <a href="#" class="text-emerald-600 hover:underline">View</a>
-              <button onclick="removeFavorite(this)" class="text-red-600 hover:underline">Remove</button>
+          <!-- Waypoints -->
+          @if($itinerary->waypoints)
+          <div class="rounded-2xl border border-white/70 bg-white/80 p-6 shadow-xl ring-1 ring-black/5 backdrop-blur">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Route Waypoints</h2>
+            <div class="space-y-3">
+              @foreach($itinerary->waypoints as $waypoint)
+              <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                <div class="w-2 h-2 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div class="flex-1">
+                  <h4 class="font-semibold text-gray-900">{{ $waypoint['name'] }}</h4>
+                  <p class="text-sm text-gray-600">{{ $waypoint['description'] }}</p>
+                  <div class="flex gap-4 mt-1 text-xs text-gray-500">
+                    <span>{{ $waypoint['distance'] }}</span>
+                    <span>{{ $waypoint['elevation'] }}</span>
+                    @if(isset($waypoint['time']))
+                      <span>{{ $waypoint['time'] }}</span>
+                    @endif
+                  </div>
+                </div>
+              </div>
+              @endforeach
             </div>
           </div>
+          @endif
 
-          <div class="favorite-entry flex items-center justify-between rounded-xl border border-gray-100 bg-white px-5 py-3 shadow-sm transition hover:shadow-md">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-medium text-amber-700 ring-1 ring-amber-200">Mt. Ugo</span>
-              <span class="text-sm text-slate-800">Trail Plan — March 2025</span>
-            </div>
-            <div class="flex items-center gap-4 text-xs font-semibold">
-              <a href="#" class="text-emerald-600 hover:underline">View</a>
-              <button onclick="removeFavorite(this)" class="text-red-600 hover:underline">Remove</button>
+          <!-- Gear Recommendations -->
+          @if($itinerary->gear_recommendations)
+          <div class="rounded-2xl border border-white/70 bg-white/80 p-6 shadow-xl ring-1 ring-black/5 backdrop-blur">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Gear Recommendations</h2>
+            <ul class="space-y-2">
+              @foreach($itinerary->gear_recommendations as $gear)
+                <li class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <span class="text-gray-700">{{ $gear }}</span>
+                </li>
+              @endforeach
+            </ul>
+          </div>
+          @endif
+
+          <!-- Emergency Contacts -->
+          @if($itinerary->emergency_contacts)
+          <div class="rounded-2xl border border-white/70 bg-white/80 p-6 shadow-xl ring-1 ring-black/5 backdrop-blur">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Emergency Contacts</h2>
+            <div class="space-y-2">
+              @foreach($itinerary->emergency_contacts as $type => $contact)
+                <div class="flex justify-between">
+                  <span class="text-gray-600 capitalize">{{ str_replace('_', ' ', $type) }}:</span>
+                  <span class="font-semibold">{{ $contact }}</span>
+                </div>
+              @endforeach
             </div>
           </div>
+          @endif
+
         </div>
 
-        <!-- Empty state -->
-        <div id="emptyState" class="hidden mt-3 rounded-xl border border-dashed border-gray-200 bg-white p-8 text-center text-gray-500">
-          No favorites yet.
+      </div>
+
+      <!-- Stopovers and Side Trips -->
+      @if(($itinerary->stopovers && count($itinerary->stopovers) > 0) || ($itinerary->sidetrips && count($itinerary->sidetrips) > 0))
+      <div class="mt-8 rounded-2xl border border-white/70 bg-white/80 p-6 shadow-xl ring-1 ring-black/5 backdrop-blur">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Additional Stops</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          @if($itinerary->stopovers && count($itinerary->stopovers) > 0)
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Stopovers</h3>
+            <ul class="space-y-2">
+              @foreach($itinerary->stopovers as $stopover)
+                <li class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <span class="text-gray-700">{{ $stopover }}</span>
+                </li>
+              @endforeach
+            </ul>
+          </div>
+          @endif
+
+          @if($itinerary->sidetrips && count($itinerary->sidetrips) > 0)
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Side Trips</h3>
+            <ul class="space-y-2">
+              @foreach($itinerary->sidetrips as $sidetrip)
+                <li class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                  </svg>
+                  <span class="text-gray-700">{{ $sidetrip }}</span>
+                </li>
+              @endforeach
+            </ul>
+          </div>
+          @endif
+
         </div>
       </div>
+      @endif
 
       <!-- Footer -->
       <footer class="mt-8 text-center text-xs text-gray-600">
         <p class="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-1 ring-1 ring-gray-200 backdrop-blur">
-          &copy; {{ date('Y') }} Hiking Planner • All rights reserved
+          Itinerary created on {{ $itinerary->created_at->format('M d, Y \a\t g:i A') }}
         </p>
       </footer>
+
     </div>
   </div>
 
-  <!-- Animations -->
-  <style>
-    @keyframes floaty { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
-    @keyframes pop { 0% { transform: scale(.85); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
-    #star { animation: pop .5s ease-out, floaty 2.6s ease-in-out infinite }
-  </style>
-
+  <!--Scripts -->
   <script>
-    // Delete favorite with fade + empty toggle
-    function removeFavorite(button) {
-      const list = document.getElementById('favList');
-      const empty = document.getElementById('emptyState');
-      const entry = button.closest('.favorite-entry');
-      entry.classList.add('opacity-0','translate-y-1','transition');
+    // Star animation
+    document.getElementById('starBtn')?.addEventListener('click', function() {
+      const star = document.getElementById('star');
+      star.style.transform = 'scale(1.2) rotate(360deg)';
+      star.style.transition = 'all 0.5s ease';
+      
       setTimeout(() => {
-        entry.remove();
-        const anyLeft = Array.from(list.children).some(c => c.classList.contains('favorite-entry'));
-        empty.classList.toggle('hidden', anyLeft);
-      }, 180);
-    }
+        star.style.transform = 'scale(1) rotate(0deg)';
+      }, 500);
+    });
 
-    // Filter favorites
-    const favSearch = document.getElementById('favSearch');
-    if (favSearch) {
-      favSearch.addEventListener('input', () => {
-        const q = favSearch.value.toLowerCase().trim();
-        const entries = document.querySelectorAll('#favList .favorite-entry');
-        let any = false;
-        entries.forEach(e => {
-          const show = e.innerText.toLowerCase().includes(q);
-          e.style.display = show ? '' : 'none';
-          if (show) any = true;
+    // Share functionality
+    document.getElementById('shareBtn')?.addEventListener('click', function() {
+      if (navigator.share) {
+        navigator.share({
+          title: '{{ $itinerary->title }}',
+          text: 'Check out my hiking itinerary for {{ $itinerary->trail_name }}!',
+          url: window.location.href
         });
-        document.getElementById('emptyState').classList.toggle('hidden', any);
-      });
-    }
+      } else {
+        // Fallback for browsers that don't support Web Share API
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          alert('Link copied to clipboard!');
+        });
+      }
+    });
 
-    // Share
-    const shareBtn = document.getElementById('shareBtn');
-    if (shareBtn) {
-      shareBtn.addEventListener('click', () => {
-        if (navigator.share) {
-          navigator.share({
-            title: 'Mt. Pulag Itinerary',
-            text: 'Check out my hiking plan!',
-            url: window.location.href
-          }).catch(()=>{});
-        } else {
-          alert('Sharing is not supported on your browser.');
-        }
-      });
-    }
-
-    // Favorite visual feedback
-    const favBtn = document.getElementById('favBtn');
-    if (favBtn) {
-      favBtn.addEventListener('click', () => {
-        favBtn.classList.add('ring-2','ring-yellow-300');
-        setTimeout(()=>favBtn.classList.remove('ring-2','ring-yellow-300'), 400);
-      });
-    }
+    // Favorite functionality
+    document.getElementById('favBtn')?.addEventListener('click', function() {
+      this.classList.toggle('bg-red-500');
+      this.classList.toggle('hover:bg-red-600');
+      
+      if (this.classList.contains('bg-red-500')) {
+        this.innerHTML = `
+          <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+          </svg>
+          Favorited
+        `;
+      } else {
+        this.innerHTML = `
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 0 1 6.364 0L12 7.636l1.318-1.318a4.5 4.5 0 1 1 6.364 6.364L12 21.364l-7.682-7.682a4.5 4.5 0 0 1 0-6.364z"/>
+          </svg>
+          Favorite
+        `;
+      }
+    });
   </script>
 </x-app-layout>

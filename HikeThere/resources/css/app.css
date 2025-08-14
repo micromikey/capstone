@@ -29,14 +29,15 @@
         @apply bg-white bg-opacity-98 shadow-lg;
     }
 
-    .nav-link::after {
+    /* Navigation underline removed to prevent doubling with custom styles */
+    /* .nav-link::after {
         @apply absolute bottom-0 left-0 w-0 h-0.5 bg-[#20b6d2] transition-all duration-300;
         content: '';
     }
 
     .nav-link:hover::after {
         @apply w-full;
-    }
+    } */
 
     /* Button Styles */
     .btn-mountain {
@@ -98,61 +99,249 @@
     }
 
     .feature-showcase {
-        @apply relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl border border-gray-100/50 p-8 cursor-pointer;
-        animation: fadeInUp 0.6s ease-out forwards;
-        opacity: 0;
-        transform: translateY(30px);
+        @apply relative overflow-hidden transition-all duration-500 hover:scale-[1.02] bg-white bg-opacity-95 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-200/50;
     }
 
     .feature-showcase::before {
         content: '';
-        @apply absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-gray-50/50 rounded-2xl transition-opacity duration-300;
-        opacity: 0;
+        @apply absolute inset-0 bg-gradient-to-br from-[#336d66]/5 to-[#20b6d2]/5 rounded-3xl;
+        z-index: -1;
     }
 
     .feature-showcase:hover::before {
-        opacity: 1;
+        @apply from-[#336d66]/10 to-[#20b6d2]/10;
     }
 
     .feature-showcase:hover .feature-icon {
-        @apply transform scale-110 rotate-3 transition-transform duration-300;
+        @apply scale-110;
     }
 
     .feature-icon {
-        @apply w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300;
+        @apply transition-transform duration-300;
     }
 
-    /* Quick Search Cards */
     .quick-search-card {
-        @apply p-6 rounded-2xl bg-white bg-opacity-90 backdrop-blur-sm border border-gray-100 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer;
+        @apply bg-white bg-opacity-90 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 transition-all duration-300;
     }
 
     .quick-search-card:hover {
-        @apply bg-white shadow-xl;
+        @apply bg-opacity-95 shadow-xl transform -translate-y-1;
     }
 
-    /* Stats Items */
     .stats-item {
-        @apply transition-all duration-300 hover:scale-105;
+        @apply text-center p-6 bg-white bg-opacity-90 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50;
     }
 
-    /* Community Features */
     .community-feature {
-        @apply transition-all duration-300 hover:-translate-y-1;
+        @apply bg-white bg-opacity-95 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-200/50 p-8;
     }
 
-    /* Social Links */
     .social-link {
-        @apply w-10 h-10 bg-gray-100 hover:bg-[#20b6d2] text-gray-600 hover:text-white rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-lg;
+        @apply w-12 h-12 bg-white bg-opacity-20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-opacity-30 transition-all duration-300;
     }
 
-    /* Search Input */
     .mountain-search {
-        @apply bg-white bg-opacity-95 backdrop-blur-sm;
+        @apply w-full px-4 py-3 bg-white bg-opacity-90 backdrop-blur-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#20b6d2] focus:border-transparent transition-all duration-300;
     }
 
     .mountain-search:focus {
-        @apply bg-white shadow-2xl;
+        @apply bg-opacity-95 shadow-lg;
+    }
+
+    /* Hiking Tools Enhanced Styles */
+    .hiking-tool-card {
+        @apply relative overflow-hidden transition-all duration-500 transform hover:-translate-y-3;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    .hiking-tool-card:hover {
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    .hiking-tool-header {
+        @apply relative h-56 overflow-hidden;
+    }
+
+    .hiking-tool-emoji {
+        @apply text-7xl transition-transform duration-500;
+    }
+
+    .hiking-tool-status {
+        @apply absolute top-6 right-6 z-20;
+    }
+
+    .hiking-tool-content {
+        @apply p-8;
+    }
+
+    .hiking-tool-info-card {
+        @apply p-4 rounded-2xl border transition-all duration-300;
+    }
+
+    .hiking-tool-info-card.assessment {
+        @apply bg-gradient-to-r from-green-50 to-emerald-50 border-green-200;
+    }
+
+    .hiking-tool-info-card.itinerary {
+        @apply bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200;
+    }
+
+    .hiking-tool-button {
+        @apply block w-full text-center py-4 px-6 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg;
+    }
+
+    .hiking-tool-button.primary {
+        @apply text-white;
+    }
+
+    .hiking-tool-button.primary.assessment {
+        @apply bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700;
+    }
+
+    .hiking-tool-button.primary.itinerary {
+        @apply bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700;
+    }
+
+    .hiking-tool-button.secondary {
+        @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
+    }
+
+    /* Trail Card Enhanced Styles */
+    .trail-card {
+        @apply bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 overflow-hidden;
+    }
+
+    .trail-card-image {
+        @apply relative h-48 overflow-hidden;
+    }
+
+    .trail-card-image img {
+        @apply w-full h-full object-cover transition-transform duration-300;
+    }
+
+    .trail-card-overlay {
+        @apply absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent;
+    }
+
+    .trail-card-badge {
+        @apply text-xs font-medium text-white px-2 py-1 rounded-full;
+    }
+
+    .trail-card-badge.beginner {
+        @apply bg-green-600;
+    }
+
+    .trail-card-badge.moderate {
+        @apply bg-yellow-600;
+    }
+
+    .trail-card-badge.advanced {
+        @apply bg-red-600;
+    }
+
+    .trail-card-content {
+        @apply p-6;
+    }
+
+    .trail-card-title {
+        @apply text-xl font-bold text-gray-800 mb-2 transition-colors duration-300;
+    }
+
+    .trail-card-title.beginner {
+        @apply text-gray-800;
+    }
+
+    .trail-card-title.moderate {
+        @apply text-gray-800;
+    }
+
+    .trail-card-title.advanced {
+        @apply text-gray-800;
+    }
+
+    .trail-card-location {
+        @apply text-sm text-gray-500 mb-3;
+    }
+
+    .trail-card-rating {
+        @apply flex items-center justify-between mb-4;
+    }
+
+    .trail-card-stars {
+        @apply flex text-yellow-400;
+    }
+
+    .trail-card-stars svg {
+        @apply w-4 h-4 fill-current;
+    }
+
+    .trail-card-review-count {
+        @apply text-sm text-gray-600 ml-2;
+    }
+
+    .trail-card-button {
+        @apply block w-full text-center py-3 px-4 rounded-xl font-semibold transition-all duration-300;
+    }
+
+    .trail-card-button.beginner {
+        @apply bg-green-600 text-white hover:bg-green-700;
+    }
+
+    .trail-card-button.moderate {
+        @apply bg-blue-600 text-white hover:bg-blue-700;
+    }
+
+    .trail-card-button.advanced {
+        @apply bg-red-600 text-white hover:bg-red-700;
+    }
+
+    /* Quick Access Bar */
+    .quick-access-bar {
+        @apply bg-white rounded-2xl shadow-lg p-6 border border-gray-100;
+    }
+
+    .quick-access-button {
+        @apply inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-300;
+    }
+
+    .quick-access-button.tools {
+        @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
+    }
+
+    .quick-access-button.explore {
+        @apply bg-green-100 text-green-700 hover:bg-green-200;
+    }
+
+    /* Progress Bar Animation */
+    .progress-bar {
+        @apply w-full bg-green-200 rounded-full h-2 overflow-hidden;
+    }
+
+    .progress-bar-fill {
+        @apply bg-green-600 h-2 rounded-full transition-all duration-1000 ease-out;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .hiking-tool-card {
+            @apply transform-none hover:-translate-y-0;
+        }
+        
+        .hiking-tool-header {
+            @apply h-40;
+        }
+        
+        .hiking-tool-emoji {
+            @apply text-5xl;
+        }
+        
+        .hiking-tool-content {
+            @apply p-6;
+        }
+        
+        .trail-card-image {
+            @apply h-40;
+        }
     }
 }
 

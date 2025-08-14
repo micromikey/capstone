@@ -46,6 +46,19 @@ export default {
                     200: '#8cb398',
                     300: '#6e9e7c',
                 },
+                // HikeThere Blue Palette
+                blue: {
+                    50: '#eff6ff',
+                    100: '#dbeafe',
+                    200: '#bfdbfe',
+                    300: '#93c5fd',
+                    400: '#60a5fa',
+                    500: '#3b82f6',
+                    600: '#2563eb',
+                    700: '#1d4ed8',
+                    800: '#1e40af',
+                    900: '#1e3a8a',
+                },
             },
             boxShadow: {
                 '3xl': '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.25)',

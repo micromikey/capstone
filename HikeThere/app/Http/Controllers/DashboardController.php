@@ -75,9 +75,36 @@ class DashboardController extends Controller
             ];
         })->take(5);
 
+        // Get user data for hikers
+        $user = null;
+        $latestAssessment = null;
+        $latestItinerary = null;
+        $followedTrails = collect();
+        $followingCount = 0;
+        
+        if (auth()->check() && auth()->user()->user_type === 'hiker') {
+            $user = auth()->user();
+            $latestAssessment = $user->latestAssessmentResult;
+            $latestItinerary = $user->latestItinerary;
+            
+            // Get trails from followed organizations
+            $followedTrails = $user->followedOrganizationsTrails()
+                ->with(['user', 'location', 'primaryImage'])
+                ->limit(6)
+                ->get();
+            
+            // Get count of organizations being followed
+            $followingCount = $user->following()->count();
+        }
+
         return view('dashboard', [
             'weather' => $weather,
             'forecast' => $forecast,
+            'user' => $user,
+            'latestAssessment' => $latestAssessment,
+            'latestItinerary' => $latestItinerary,
+            'followedTrails' => $followedTrails,
+            'followingCount' => $followingCount,
         ]);
     }
 }

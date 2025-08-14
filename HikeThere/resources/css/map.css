@@ -1,0 +1,358 @@
+/* HikeThere Map Styles */
+
+/* Map Container */
+#map {
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Trail Info Window */
+.trail-info-window {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.trail-info-window h3 {
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.25rem;
+}
+
+.trail-info-window p {
+    color: #6b7280;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+/* Trail Info Panel */
+#trail-info-panel {
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.95);
+    border-top: 1px solid #e5e7eb;
+    box-shadow: 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+#trail-info-panel.translate-y-full {
+    transform: translateY(100%);
+}
+
+/* Loading Spinner */
+#loading-spinner {
+    backdrop-filter: blur(4px);
+}
+
+#loading-spinner .animate-spin {
+    border-color: #059669;
+    border-top-color: transparent;
+}
+
+/* Custom Map Controls */
+.trail-count-control {
+    transition: all 0.2s ease-in-out;
+}
+
+.trail-count-control:hover {
+    background-color: #f3f4f6;
+    border-color: #9ca3af;
+    transform: translateY(-1px);
+}
+
+/* Map Search and Filters */
+#map-search:focus,
+#difficulty-filter:focus,
+#radius-filter:focus {
+    border-color: #059669;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+/* Action Buttons */
+#use-location-btn,
+#reset-map-btn,
+#cluster-toggle-btn {
+    transition: all 0.2s ease-in-out;
+    transform: translateY(0);
+}
+
+#use-location-btn:hover,
+#reset-map-btn:hover,
+#cluster-toggle-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#use-location-btn:active,
+#reset-map-btn:active,
+#cluster-toggle-btn:active {
+    transform: translateY(0);
+}
+
+/* Difficulty Badges */
+.difficulty-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.difficulty-badge.beginner {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.difficulty-badge.intermediate {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.difficulty-badge.advanced {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+/* Trail Info Content */
+#trail-info-content img {
+    transition: transform 0.2s ease-in-out;
+}
+
+#trail-info-content img:hover {
+    transform: scale(1.02);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #map {
+        height: 400px !important;
+    }
+    
+    .trail-count-control {
+        font-size: 12px;
+        padding: 6px;
+    }
+    
+    #trail-info-panel {
+        max-height: 80vh;
+    }
+}
+
+@media (max-width: 640px) {
+    #map {
+        height: 350px !important;
+    }
+    
+    .trail-count-control {
+        display: none;
+    }
+}
+
+/* Google Maps Customization */
+.gm-style-iw {
+    padding: 0 !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.gm-style-iw-d {
+    overflow: hidden !important;
+}
+
+.gm-style-iw-c {
+    padding: 0 !important;
+    border-radius: 0.5rem !important;
+}
+
+/* Custom Marker Animations */
+@keyframes markerBounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+.marker-bounce {
+    animation: markerBounce 1s ease-in-out;
+}
+
+/* Trail Info Panel Animations */
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(100%);
+    }
+}
+
+#trail-info-panel:not(.translate-y-full) {
+    animation: slideUp 0.3s ease-out;
+}
+
+#trail-info-panel.translate-y-full {
+    animation: slideDown 0.3s ease-in;
+}
+
+/* Search Results Highlighting */
+.search-highlight {
+    background-color: #fef3c7;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+}
+
+/* Map Type Controls */
+.gm-style-mtc {
+    border-radius: 0.375rem !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.gm-style-mtc button {
+    border-radius: 0.375rem !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+/* Zoom Controls */
+.gm-control-active {
+    border-radius: 0.375rem !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Fullscreen Control */
+.gm-fullscreen-control {
+    border-radius: 0.375rem !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Error Notifications */
+.error-notification {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    background-color: #dc2626;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Success Notifications */
+.success-notification {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    background-color: #059669;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    animation: slideInRight 0.3s ease-out;
+}
+
+/* Loading States */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #059669;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Accessibility Improvements */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus Indicators */
+button:focus,
+input:focus,
+select:focus {
+    outline: 2px solid #059669;
+    outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .difficulty-badge.beginner {
+        background-color: #000;
+        color: #fff;
+        border: 2px solid #166534;
+    }
+    
+    .difficulty-badge.intermediate {
+        background-color: #000;
+        color: #fff;
+        border: 2px solid #92400e;
+    }
+    
+    .difficulty-badge.advanced {
+        background-color: #000;
+        color: #fff;
+        border: 2px solid #991b1b;
+    }
+}
+
+/* Print Styles */
+@media print {
+    #map {
+        display: none;
+    }
+    
+    #trail-info-panel {
+        position: static;
+        transform: none;
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+}

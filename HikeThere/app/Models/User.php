@@ -8,11 +8,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
-use Laravel\Sanctum\HasApiTokens;
+
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens;
+
 
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory;
@@ -34,6 +34,16 @@ class User extends Authenticatable implements MustVerifyEmail
         'organization_description',
         'approval_status',
         'approved_at',
+        'profile_picture',
+        'phone',
+        'bio',
+        'location',
+        'birth_date',
+        'gender',
+        'hiking_preferences',
+        'emergency_contact_name',
+        'emergency_contact_phone',
+        'emergency_contact_relationship',
     ];
 
     /**
@@ -68,6 +78,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'approved_at' => 'datetime',
+            'birth_date' => 'date',
+            'hiking_preferences' => 'array',
         ];
     }
 
@@ -122,6 +134,48 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(OrganizationProfile::class);
     }
 
+
+
+    /**
+     * Get the user's preferences
+     */
+    public function preferences()
+    {
+        return $this->hasOne(UserPreference::class);
+    }
+
+    /**
+     * Get the user's assessment results
+     */
+    public function assessmentResults()
+    {
+        return $this->hasMany(AssessmentResult::class);
+    }
+
+    /**
+     * Get the user's latest assessment result
+     */
+    public function latestAssessmentResult()
+    {
+        return $this->hasOne(AssessmentResult::class)->latestOfMany();
+    }
+
+    /**
+     * Get the user's itineraries
+     */
+    public function itineraries()
+    {
+        return $this->hasMany(Itinerary::class);
+    }
+
+    /**
+     * Get the user's latest itinerary
+     */
+    public function latestItinerary()
+    {
+        return $this->hasOne(Itinerary::class)->latestOfMany();
+    }
+
     /**
      * Check if user is an approved organization
      */
@@ -165,5 +219,176 @@ class User extends Authenticatable implements MustVerifyEmail
             'rejected' => 'Rejected',
             default => 'Unknown'
         };
+    }
+
+    /**
+     * Get the profile picture URL
+     */
+    public function getProfilePictureUrlAttribute()
+    {
+        if ($this->profile_picture) {
+            return asset('storage/' . $this->profile_picture);
+        }
+        
+        // Return default avatar based on user type
+        if ($this->user_type === 'organization') {
+            return asset('img/default-org-avatar.png');
+        }
+        
+        return asset('img/default-hiker-avatar.png');
+    }
+
+    /**
+     * Get the user's age
+     */
+    public function getAgeAttribute()
+    {
+        if ($this->birth_date) {
+            return $this->birth_date->age;
+        }
+        return null;
+    }
+
+    /**
+     * Check if user has completed profile
+     */
+    public function hasCompletedProfile()
+    {
+        if ($this->user_type === 'hiker') {
+            return !empty($this->phone) && !empty($this->bio) && !empty($this->location);
+        }
+        
+        return !empty($this->phone) && !empty($this->bio);
+    }
+
+    /**
+     * Get profile completion percentage
+     */
+    public function getProfileCompletionPercentageAttribute()
+    {
+        if ($this->user_type === 'hiker') {
+            $fields = ['name', 'email', 'phone', 'bio', 'location', 'profile_picture'];
+            $completed = collect($fields)->filter(fn($field) => !empty($this->$field))->count();
+            return round(($completed / count($fields)) * 100);
+        }
+        
+        $fields = ['name', 'email', 'phone', 'bio', 'profile_picture'];
+        $completed = collect($fields)->filter(fn($field) => !empty($this->$field))->count();
+        return round(($completed / count($fields)) * 100);
+    }
+
+    // =================== Community Feature Relationships ===================
+
+    /**
+     * Organizations that this hiker is following
+     * (Only applicable for hiker users)
+     */
+    public function following()
+    {
+        return $this->belongsToMany(User::class, 'user_follows', 'hiker_id', 'organization_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Hikers that are following this organization
+     * (Only applicable for organization users)
+     */
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'user_follows', 'organization_id', 'hiker_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Check if this hiker is following a specific organization
+     */
+    public function isFollowing($organizationId)
+    {
+        if ($this->user_type !== 'hiker') {
+            return false;
+        }
+        
+        return $this->following()->where('organization_id', $organizationId)->exists();
+    }
+
+    /**
+     * Follow an organization
+     */
+    public function followOrganization($organizationId)
+    {
+        if ($this->user_type !== 'hiker') {
+            return false;
+        }
+        
+        if ($this->isFollowing($organizationId)) {
+            return false; // Already following
+        }
+        
+        $this->following()->attach($organizationId);
+        return true;
+    }
+
+    /**
+     * Unfollow an organization
+     */
+    public function unfollowOrganization($organizationId)
+    {
+        if ($this->user_type !== 'hiker') {
+            return false;
+        }
+        
+        $this->following()->detach($organizationId);
+        return true;
+    }
+
+    /**
+     * Get trails from followed organizations
+     * (Only applicable for hiker users)
+     */
+    public function followedOrganizationsTrails()
+    {
+        if ($this->user_type !== 'hiker') {
+            return collect();
+        }
+        
+        $followedOrgIds = $this->following()->pluck('users.id');
+        return \App\Models\Trail::whereIn('user_id', $followedOrgIds)
+            ->where('is_active', true)
+            ->with(['user', 'location', 'primaryImage', 'reviews'])
+            ->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get the user's trail reviews
+     */
+    public function trailReviews()
+    {
+        return $this->hasMany(\App\Models\TrailReview::class);
+    }
+
+    /**
+     * Get trails created by this organization
+     * (Only applicable for organization users)
+     */
+    public function organizationTrails()
+    {
+        if ($this->user_type !== 'organization') {
+            return collect();
+        }
+        
+        return $this->hasMany(\App\Models\Trail::class);
+    }
+
+    /**
+     * Get the display name for the user
+     * For organizations, returns organization_name; for hikers, returns name
+     */
+    public function getDisplayNameAttribute()
+    {
+        if ($this->user_type === 'organization') {
+            return $this->organization_name ?? 'Unknown Organization';
+        }
+        
+        return $this->name ?? 'Unknown User';
     }
 }

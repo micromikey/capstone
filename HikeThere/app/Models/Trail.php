@@ -74,6 +74,16 @@ class Trail extends Model
         return $hours > 0 ? "{$hours}h {$minutes}m" : "{$minutes}m";
     }
 
+    public function getAverageRatingAttribute()
+    {
+        return $this->reviews()->avg('rating') ?? 0;
+    }
+
+    public function getTotalReviewsAttribute()
+    {
+        return $this->reviews()->count();
+    }
+
     public function getRouteKeyName()
     {
         return 'slug';

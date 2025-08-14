@@ -1,4 +1,320 @@
 <x-guest-layout>
+    <style>
+        /* Navigation Styles */
+        .nav-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+        }
+        
+        .nav-container.scrolled {
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-blur {
+            backdrop-filter: blur(20px);
+        }
+        
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+            text-decoration: none !important;
+            border-bottom: none !important;
+            outline: none !important;
+        }
+        
+        .nav-link:hover {
+            text-decoration: none !important;
+            border-bottom: none !important;
+            outline: none !important;
+        }
+        
+        /* Override any ::after pseudo-elements */
+        .nav-link::after,
+        .nav-link::before {
+            display: none !important;
+            content: none !important;
+            background: none !important;
+            border: none !important;
+        }
+        
+        .nav-link:hover::after,
+        .nav-link:hover::before {
+            display: none !important;
+            content: none !important;
+            background: none !important;
+            border: none !important;
+        }
+        
+        /* Override any other underline styles */
+        .nav-link {
+            text-decoration: none !important;
+            border-bottom: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        
+        .nav-link:hover {
+            text-decoration: none !important;
+            border-bottom: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        
+        .nav-underline {
+            position: absolute !important;
+            bottom: -8px !important;
+            left: 0 !important;
+            width: 0 !important;
+            height: 2px !important;
+            background: linear-gradient(90deg, #20b6d2, #336d66) !important;
+            transition: width 0.3s ease !important;
+            z-index: 999 !important;
+            pointer-events: none !important;
+        }
+        
+        .nav-link:hover .nav-underline {
+            width: 100% !important;
+        }
+        
+        /* Button Styles */
+        .btn-mountain {
+            background: linear-gradient(135deg, #336d66, #20b6d2);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(51, 109, 102, 0.3);
+        }
+        
+        .btn-mountain:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(51, 109, 102, 0.4);
+        }
+        
+        .btn-mountain-outline {
+            border: 2px solid #336d66;
+            color: #336d66;
+            padding: 10px 22px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-mountain-outline:hover {
+            background: #336d66;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .btn-mountain-large {
+            background: linear-gradient(135deg, #336d66, #20b6d2);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(51, 109, 102, 0.4);
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .btn-mountain-large:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(51, 109, 102, 0.5);
+        }
+        
+        .btn-video {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .btn-video:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+        
+        /* Hero Section */
+        .hero-container {
+            background: linear-gradient(135deg, #336d66 0%, #20b6d2 50%, #aec896 100%);
+            position: relative;
+        }
+        
+        .mountain-gradient {
+            background: linear-gradient(135deg, #336d66 0%, #20b6d2 50%, #aec896 100%);
+        }
+        
+        .mountain-logo {
+            transition: all 0.3s ease;
+        }
+        
+        .mountain-logo:hover {
+            transform: scale(1.05);
+        }
+        
+        /* Animation Classes */
+        .animate-fade-in {
+            animation: fadeIn 1s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Stats Section */
+        .stats-item {
+            transition: all 0.3s ease;
+        }
+        
+        .stats-item:hover {
+            transform: translateY(-5px);
+        }
+        
+        /* Plan Trip Section */
+        .plan-trip-container {
+            background: linear-gradient(135deg, rgba(174, 200, 150, 0.05) 0%, white 100%);
+        }
+        
+        .planner-showcase {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(174, 200, 150, 0.2);
+        }
+        
+        .mountain-search {
+            background: white;
+            transition: all 0.3s ease;
+        }
+        
+        .mountain-search:focus {
+            box-shadow: 0 0 0 4px rgba(32, 182, 210, 0.2);
+        }
+        
+        .quick-search-card {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid rgba(174, 200, 150, 0.2);
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .quick-search-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            border-color: rgba(51, 109, 102, 0.3);
+        }
+        
+        /* Features Section */
+        .features-container {
+            background: white;
+        }
+        
+        .feature-showcase {
+            background: white;
+            padding: 32px;
+            border-radius: 20px;
+            border: 1px solid rgba(174, 200, 150, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .feature-showcase::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #336d66, #20b6d2);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-showcase:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .feature-showcase:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12);
+            border-color: rgba(51, 109, 102, 0.3);
+        }
+        
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px auto;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-showcase:hover .feature-icon {
+            transform: scale(1.1);
+        }
+        
+        /* Footer */
+        .footer-container {
+            background: white;
+        }
+        
+        .social-link {
+            width: 40px;
+            height: 40px;
+            background: rgba(51, 109, 102, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #336d66;
+            transition: all 0.3s ease;
+        }
+        
+        .social-link:hover {
+            background: #336d66;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero-container {
+                padding-top: 24px;
+                padding-bottom: 16px;
+            }
+            
+            h1 {
+                font-size: 3rem;
+            }
+            
+            .planner-showcase {
+                padding: 24px;
+            }
+            
+            .feature-showcase {
+                padding: 24px;
+            }
+        }
+    </style>
+    
     <!-- Navigation -->
     <nav class="nav-container nav-blur fixed w-full top-0 left-0 z-50 shadow-lg">
         <div class="max-w-7xl mx-auto px-6 flex justify-between items-center h-20">
@@ -154,24 +470,24 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-                    <div class="quick-search-card">
-                        <div class="w-12 h-12 bg-[#336d66]/10 rounded-xl flex items-center justify-center mb-4">
+                    <div class="quick-search-card text-center">
+                        <div class="w-12 h-12 bg-[#336d66]/10 rounded-xl flex items-center justify-center mb-4 mx-auto">
                             <span class="iconify text-blue-500" data-icon="heroicons:sparkles-solid" style="font-size:1.5rem;"></span>
                         </div>
                         <h3 class="font-semibold text-lg mb-2">Beginner Trails</h3>
                         <p class="text-gray-600 text-sm">Perfect for first-time hikers</p>
                     </div>
 
-                    <div class="quick-search-card">
-                        <div class="w-12 h-12 bg-[#20b6d2]/10 rounded-xl flex items-center justify-center mb-4">
+                    <div class="quick-search-card text-center">
+                        <div class="w-12 h-12 bg-[#20b6d2]/10 rounded-xl flex items-center justify-center mb-4 mx-auto">
                             <span class="iconify text-yellow-500" data-icon="heroicons:star-solid" style="font-size:1.5rem;"></span>
                         </div>
                         <h3 class="font-semibold text-lg mb-2">Popular Routes</h3>
                         <p class="text-gray-600 text-sm">Community favorites</p>
                     </div>
 
-                    <div class="quick-search-card">
-                        <div class="w-12 h-12 bg-[#e3a746]/10 rounded-xl flex items-center justify-center mb-4">
+                    <div class="quick-search-card text-center">
+                        <div class="w-12 h-12 bg-[#e3a746]/10 rounded-xl flex items-center justify-center mb-4 mx-auto">
                             <span class="iconify text-red-500" data-icon="heroicons:map-pin-solid" style="font-size:1.5rem;"></span>
                         </div>
                         <h3 class="font-semibold text-lg mb-2">Nearby Trails</h3>

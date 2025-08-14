@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'check.approval' => \App\Http\Middleware\CheckApprovalStatus::class,
             'user.type' => \App\Http\Middleware\CheckUserType::class,
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

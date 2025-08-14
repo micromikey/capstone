@@ -5,7 +5,17 @@
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                     PRE-HIKE SELF-ASSESSMENT RESULTS
                 </h2>
-                <p class="text-gray-600">Your comprehensive hiking readiness evaluation</p>
+                <p class="text-gray-600">
+                    @if(isset($scores['overall']) && $scores['overall'] > 0)
+                        @if(Session::has('assessment.gear') || Session::has('assessment.fitness') || Session::has('assessment.health') || Session::has('assessment.weather') || Session::has('assessment.emergency') || Session::has('assessment.environment'))
+                            Your comprehensive hiking readiness evaluation (Live Results)
+                        @else
+                            Your saved hiking readiness evaluation from the database
+                        @endif
+                    @else
+                        Your comprehensive hiking readiness evaluation
+                    @endif
+                </p>
             </div>
         </div>
     </x-slot>
@@ -275,22 +285,43 @@
                         <span class="mr-2">📤</span>
                         Share Results
                     </button>
+
                 </div>
             </div>
 
-            <!-- Create Itinerary Button -->
+            <!-- Save Results and Create Itinerary Buttons -->
             <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-center">
-                    <h3 class="text-xl font-bold mb-4 text-gray-800">Ready for Your Adventure?</h3>
-                    <p class="text-gray-600 mb-6">Based on your assessment results, create a personalized hiking itinerary that matches your readiness level.</p>
-                    <a href="{{ route('dashboard') }}"
-                       class="inline-flex items-center px-8 py-4 text-white text-lg font-semibold rounded-lg shadow-lg transition duration-150 hover:shadow-xl hover:scale-105"
-                       style="background: linear-gradient(135deg, #e3a746 0%, #f4b942 100%);">
-                        Create Personalized Itinerary
-                        <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                        </svg>
-                    </a>
+                <div class="text-center space-y-4">
+                    <!-- Save Results Button -->
+                    <div>
+                        <h3 class="text-xl font-bold mb-4 text-gray-800">Save Your Assessment Results</h3>
+                        <p class="text-gray-600 mb-6">Save these results to your profile to track your progress and generate personalized itineraries.</p>
+                        <form action="{{ route('assessment.save-results') }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit"
+                               class="inline-flex items-center px-8 py-4 text-white text-lg font-semibold rounded-lg shadow-lg transition duration-150 hover:shadow-xl hover:scale-105"
+                               style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                                💾 Save Results to Profile
+                                <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Create Itinerary Button -->
+                    <div class="pt-6 border-t border-gray-200">
+                        <h3 class="text-xl font-bold mb-4 text-gray-800">Ready for Your Adventure?</h3>
+                        <p class="text-gray-600 mb-6">Based on your assessment results, create a personalized hiking itinerary that matches your readiness level.</p>
+                        <a href="{{ route('itinerary.build') }}"
+                           class="inline-flex items-center px-8 py-4 text-white text-lg font-semibold rounded-lg shadow-lg transition duration-150 hover:shadow-xl hover:scale-105"
+                           style="background: linear-gradient(135deg, #e3a746 0%, #f4b942 100%);">
+                            Create Personalized Itinerary
+                            <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -314,6 +345,8 @@
                 });
             }
         }
+        
+
         document.addEventListener('DOMContentLoaded', function() {
             // Animate the overall score
             const scoreElement = document.getElementById('overall-score');

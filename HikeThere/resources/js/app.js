@@ -21,6 +21,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Add Custom Animations
     addCustomAnimations();
+
+    // Trail Explorer Component
+    const trailExplorerComponent = trailExplorer();
+    trailExplorerComponent.init();
 });
 
 function initializeFeatureCards() {
@@ -163,3 +167,194 @@ function addCustomAnimations() {
     `;
     document.head.appendChild(style);
 }
+
+// Trail Explorer Component
+function trailExplorer() {
+    return {
+        searchQuery: '',
+        selectedLocation: '',
+        filters: {
+            difficulty: '',
+            season: ''
+        },
+        sortBy: 'name',
+        trails: [],
+        filteredTrails: [],
+        locations: [],
+        loading: false,
+
+
+        init() {
+            console.log('Initializing trailExplorer');
+            this.loadLocations();
+            this.fetchTrails();
+        },
+
+        async loadLocations() {
+            try {
+                const response = await fetch('/api/locations');
+                const allLocations = await response.json();
+                // Filter out any locations with blank or null names
+                this.locations = allLocations.filter(location => 
+                    location.name && location.name.trim() !== '' && location.slug
+                );
+                console.log('Loaded locations:', this.locations); // Debug log
+            } catch (error) {
+                console.error('Error loading locations:', error);
+                this.locations = [];
+            }
+        },
+
+        getValidLocations() {
+            return this.locations.filter(location => 
+                location.name && location.name.trim() !== '' && location.slug
+            );
+        },
+
+        async fetchTrails() {
+            this.loading = true;
+            try {
+                let url = '/api/trails';
+                const params = new URLSearchParams();
+                
+                if (this.selectedLocation) {
+                    params.append('location', this.selectedLocation);
+                }
+                if (this.filters.difficulty) {
+                    params.append('difficulty', this.filters.difficulty);
+                }
+                if (this.filters.season) {
+                    params.append('season', this.filters.season);
+                }
+                
+                if (params.toString()) {
+                    url += '?' + params.toString();
+                }
+                
+                const response = await fetch(url);
+                this.trails = await response.json();
+                this.filteredTrails = [...this.trails];
+                this.sortTrails();
+            } catch (error) {
+                console.error('Error fetching trails:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        debounceSearch() {
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => {
+                this.performSearch();
+            }, 300);
+        },
+
+        performSearch() {
+            if (!this.searchQuery.trim()) {
+                this.filteredTrails = [...this.trails];
+            } else {
+                const query = this.searchQuery.toLowerCase();
+                this.filteredTrails = this.trails.filter(trail => 
+                    trail.name.toLowerCase().includes(query) ||
+                    trail.mountain_name.toLowerCase().includes(query) ||
+                    trail.location_name?.toLowerCase().includes(query) ||
+                    trail.organization?.toLowerCase().includes(query)
+                );
+            }
+            this.sortTrails();
+        },
+
+
+
+
+
+        sortTrails() {
+            if (!this.sortBy) return;
+            
+            this.filteredTrails.sort((a, b) => {
+                switch (this.sortBy) {
+                    case 'name':
+                        return a.name.localeCompare(b.name);
+                    case 'difficulty':
+                        const difficultyOrder = { 'beginner': 1, 'intermediate': 2, 'advanced': 3 };
+                        return difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty];
+                    case 'length':
+                        return parseFloat(a.length) - parseFloat(b.length);
+                    case 'rating':
+                        return (b.average_rating || 0) - (a.average_rating || 0);
+                    case 'price':
+                        return parseFloat(a.price) - parseFloat(b.price);
+                    default:
+                        return 0;
+                }
+            });
+        },
+
+        resetFilters() {
+            this.searchQuery = '';
+            this.selectedLocation = '';
+            this.filters.difficulty = '';
+            this.filters.season = '';
+            this.sortBy = 'name';
+            this.fetchTrails();
+        },
+
+
+
+
+
+        viewFullTrail(trail) {
+            window.location.href = `/trails/${trail.slug}`;
+        },
+
+        downloadTrail(trail) {
+            // Implementation for downloading trail information
+            console.log('Downloading trail:', trail.name);
+            // You can implement actual download functionality here
+            alert(`Downloading trail information for ${trail.name}`);
+        },
+
+        getTrailImage(trail) {
+            // Fallback image if no primary image is available
+            const fallbackImages = [
+                'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&h=600&fit=crop',
+                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop',
+                'https://images.unsplash.com/photo-1464822759844-d150baec0134?w=800&h=600&fit=crop',
+                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop',
+                'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&h=600&fit=crop'
+            ];
+            
+            // Use trail ID to consistently get the same image for the same trail
+            const index = trail.id % fallbackImages.length;
+            return fallbackImages[index];
+        },
+
+        getDifficultyBadgeClass(difficulty) {
+            const classes = {
+                'beginner': 'bg-green-500 text-white',
+                'intermediate': 'bg-yellow-500 text-white',
+                'advanced': 'bg-red-500 text-white'
+            };
+            return classes[difficulty] || 'bg-gray-500 text-white';
+        },
+
+        getDifficultyLabel(difficulty) {
+            const labels = {
+                'beginner': 'Beginner',
+                'intermediate': 'Intermediate',
+                'advanced': 'Advanced'
+            };
+            return labels[difficulty] || difficulty;
+        },
+
+        formatPrice(price) {
+            return new Intl.NumberFormat('en-PH', {
+                style: 'currency',
+                currency: 'PHP'
+            }).format(price);
+        }
+    };
+}
+
+// Make it globally available
+window.trailExplorer = trailExplorer;

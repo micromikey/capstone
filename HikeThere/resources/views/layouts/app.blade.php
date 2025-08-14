@@ -13,7 +13,9 @@
    
 
         <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/map.js'])
+
+
 
         <!-- Styles -->
         @livewireStyles
@@ -35,11 +37,13 @@
 
             <!-- Page Content -->
             <main>
+                @yield('content')
                 {{ $slot }}
             </main>
         </div>
 
         @stack('modals')
+        @stack('scripts')
 
         @livewireScripts
     </body>

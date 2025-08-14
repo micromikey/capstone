@@ -1,8 +1,9 @@
 @props([
     'name',
     'type' => 'standard',
-    'radioClasses' => 'w-4 h-4 border-2 border-gray-300 text-blue-600 rounded-full focus:ring-2 focus:ring-blue-500 transition-all duration-150',
-    'labelClasses' => 'flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded px-2 py-1.5 transition-all duration-150'
+    'value' => null,
+    'radioClasses' => 'w-6 h-6 border-2 border-yellow-400 text-yellow-500 rounded-full focus:ring-2 focus:ring-yellow-400 transition-all duration-150',
+    'labelClasses' => 'flex items-center space-x-3 cursor-pointer hover:bg-yellow-50 rounded px-3 py-2 transition-all duration-150'
 ])
 
 @php
@@ -26,14 +27,15 @@
 @endphp
 
 <div class="space-y-2">
-    @foreach($options as $value => $label)
+    @foreach($options as $optionValue => $label)
         <label class="{{ $labelClasses }}">
             <input 
                 type="radio" 
                 name="{{ $name }}" 
-                value="{{ $value }}" 
+                value="{{ $optionValue }}" 
                 class="{{ $radioClasses }}"
-                required
+                {{ $value === $optionValue ? 'checked' : '' }}
+                {{ $loop->first ? 'required' : '' }}
             >
             <span class="text-sm font-medium text-gray-700">{{ $label }}</span>
         </label>
