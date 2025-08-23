@@ -145,11 +145,19 @@ Route::get('/trails/search', [TrailController::class, 'search'])->name('trails.s
 // Public AJAX routes for trail reviews (anyone can view reviews)
 Route::get('/api/trails/{trail}/reviews', [TrailReviewController::class, 'getTrailReviews'])->name('api.trails.reviews.index');
 
-// Map routes (temporarily public for testing)
+// Enhanced Map routes (temporarily public for testing)
 Route::get('/map', [MapController::class, 'index'])->name('map.index');
+Route::get('/map/simple', function() {
+    return view('map.simple');
+})->name('map.simple');
 Route::get('/map/demo', [MapController::class, 'demo'])->name('map.demo');
 Route::get('/map/trails', [MapController::class, 'getTrails'])->name('map.trails');
 Route::get('/map/trails/{id}', [MapController::class, 'getTrailDetails'])->name('map.trail.details');
+Route::get('/map/trails/{id}/images', [MapController::class, 'getTrailImages'])->name('map.trail.images');
+Route::get('/map/trails/{id}/elevation', [MapController::class, 'getTrailElevation'])->name('map.trail.elevation');
+Route::get('/map/trail-paths', [MapController::class, 'getTrailPaths'])->name('map.trail.paths');
+Route::get('/map/enhanced-trails', [MapController::class, 'getEnhancedTrails'])->name('map.enhanced.trails');
+Route::get('/map/weather', [MapController::class, 'getWeatherData'])->name('map.weather');
 Route::post('/map/search-nearby', [MapController::class, 'searchNearby'])->name('map.search.nearby');
 
 // Profile routes (require authentication)

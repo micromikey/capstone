@@ -3,305 +3,373 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class TrailImageService
 {
-    protected $unsplashApiKey;
-    protected $pexelsApiKey;
-    protected $pixabayApiKey;
+    protected $unsplashKey;
+    protected $pexelsKey;
+    protected $pixabayKey;
+    protected $googleMapsKey;
 
     public function __construct()
     {
-        $this->unsplashApiKey = config('services.unsplash.access_key');
-        $this->pexelsApiKey = config('services.pexels.api_key');
-        $this->pixabayApiKey = config('services.pixabay.api_key');
+        $this->unsplashKey = config('services.unsplash.access_key');
+        $this->pexelsKey = config('services.pexels.api_key');
+        $this->pixabayKey = config('services.pixabay.api_key');
+        $this->googleMapsKey = config('services.google.maps_api_key');
     }
 
     /**
-     * Get trail image from various sources
+     * Get trail images with organization images having priority
      */
-    public function getTrailImage($trail, $type = 'primary', $size = 'medium')
+    public function getTrailImages($trail, $limit = 5)
     {
-        $cacheKey = "trail_image_{$trail->id}_{$type}_{$size}";
-        
-        return Cache::remember($cacheKey, 3600, function () use ($trail, $type, $size) {
-            // Try to get from existing trail images first
-            if ($trail->images && $trail->images->count() > 0) {
-                $image = $type === 'primary' ? $trail->images->first() : $trail->images->random();
-                if ($image && $image->image_url) {
-                    return $image->image_url;
+        $images = [];
+
+        // 1. First priority: Organization uploaded images (but skip placeholders)
+        if ($trail->images && $trail->images->count() > 0) {
+            foreach ($trail->images as $orgImage) {
+                // Skip placeholder/demo images
+                if (!$this->isPlaceholderImage($orgImage->url)) {
+                    $images[] = [
+                        'url' => $orgImage->url,
+                        'source' => 'organization',
+                        'caption' => $orgImage->caption ?? $trail->trail_name,
+                        'photographer' => $trail->organization->name ?? 'Trail Organization'
+                    ];
                 }
             }
+        }
 
-            // Fallback to API images
-            return $this->getApiImage($trail, $type, $size);
+        // 2. If we need more images, fetch from APIs
+        $remainingSlots = $limit - count($images);
+        if ($remainingSlots > 0) {
+            $apiImages = $this->fetchApiImages($trail, $remainingSlots);
+            $images = array_merge($images, $apiImages);
+        }
+
+        return array_slice($images, 0, $limit);
+    }
+
+    /**
+     * Get primary trail image (organization first, then API)
+     */
+    public function getPrimaryTrailImage($trail)
+    {
+        // Check for organization's primary image first, but skip placeholder images
+        if ($trail->images && $trail->images->count() > 0) {
+            $primaryImage = $trail->images->where('is_primary', true)->first() 
+                         ?? $trail->images->first();
+            
+            // Skip placeholder/demo images (Picsum, Lorem Picsum, etc.)
+            if ($primaryImage && !$this->isPlaceholderImage($primaryImage->url)) {
+                return [
+                    'url' => $primaryImage->url,
+                    'source' => 'organization',
+                    'caption' => $primaryImage->caption ?? $trail->trail_name
+                ];
+            }
+        }
+
+        // Fall back to API images
+        $apiImages = $this->fetchApiImages($trail, 1);
+        return $apiImages[0] ?? [
+            'url' => '/img/default-trail.jpg',
+            'source' => 'default',
+            'caption' => $trail->trail_name
+        ];
+    }
+
+    /**
+     * Fetch images from external APIs
+     */
+    protected function fetchApiImages($trail, $limit = 3)
+    {
+        $searchTerms = $this->generateSearchTerms($trail);
+        $images = [];
+
+        foreach ($searchTerms as $term) {
+            if (count($images) >= $limit) break;
+
+            // Try different APIs in order of preference
+            $apiMethods = [
+                'fetchUnsplashImages',
+                'fetchGooglePlacesImages', 
+                'fetchPexelsImages',
+                'fetchPixabayImages'
+            ];
+
+            foreach ($apiMethods as $method) {
+                if (count($images) >= $limit) break;
+                
+                try {
+                    $newImages = $this->$method($term, $limit - count($images));
+                    $images = array_merge($images, $newImages);
+                } catch (\Exception $e) {
+                    Log::warning("Failed to fetch images from {$method}: " . $e->getMessage());
+                }
+            }
+        }
+
+        return array_slice($images, 0, $limit);
+    }
+
+    /**
+     * Generate search terms for the trail
+     */
+    protected function generateSearchTerms($trail)
+    {
+        $terms = [];
+        
+        // Primary terms
+        if ($trail->mountain_name) {
+            $terms[] = $trail->mountain_name . ' hiking';
+            $terms[] = $trail->mountain_name . ' mountain';
+        }
+        
+        if ($trail->trail_name) {
+            $terms[] = $trail->trail_name;
+        }
+
+        // Location-based terms
+        if ($trail->location && $trail->location->name) {
+            $terms[] = $trail->location->name . ' hiking';
+            $terms[] = $trail->location->name . ' nature';
+        }
+
+        // Generic terms based on features
+        if ($trail->features) {
+            foreach ($trail->features as $feature) {
+                $terms[] = $feature . ' hiking philippines';
+            }
+        }
+
+        // Fallback terms
+        $terms[] = 'hiking trail philippines';
+        $terms[] = 'mountain hiking philippines';
+
+        return array_unique($terms);
+    }
+
+    /**
+     * Fetch images from Unsplash API
+     */
+    protected function fetchUnsplashImages($query, $limit = 3)
+    {
+        if (!$this->unsplashKey) {
+            return [];
+        }
+
+        $cacheKey = "unsplash_images_" . md5($query . $limit);
+        
+        return Cache::remember($cacheKey, 3600, function () use ($query, $limit) {
+            try {
+                $response = Http::withHeaders([
+                    'Authorization' => 'Client-ID ' . $this->unsplashKey
+                ])->get('https://api.unsplash.com/search/photos', [
+                    'query' => $query,
+                    'per_page' => $limit,
+                    'orientation' => 'landscape'
+                ]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $images = [];
+
+                    foreach ($data['results'] as $photo) {
+                        $images[] = [
+                            'url' => $photo['urls']['regular'],
+                            'thumb_url' => $photo['urls']['small'],
+                            'source' => 'unsplash',
+                            'caption' => $photo['alt_description'] ?? $query,
+                            'photographer' => $photo['user']['name'] ?? 'Unknown',
+                            'photographer_url' => $photo['user']['links']['html'] ?? null
+                        ];
+                    }
+
+                    return $images;
+                }
+            } catch (\Exception $e) {
+                Log::error('Unsplash API error: ' . $e->getMessage());
+            }
+
+            return [];
         });
     }
 
     /**
-     * Get image from API based on trail information
+     * Fetch images from Google Places API
      */
-    protected function getApiImage($trail, $type, $size)
+    protected function fetchGooglePlacesImages($query, $limit = 2)
     {
-        $keywords = $this->buildSearchKeywords($trail, $type);
-        
-        // Try different APIs in order of preference
-        $image = $this->getUnsplashImage($keywords, $size);
-        if ($image) {
-            \Log::info("Using Unsplash image for trail {$trail->id}");
-            return $image;
-        }
-        
-        $image = $this->getPexelsImage($keywords, $size);
-        if ($image) {
-            \Log::info("Using Pexels image for trail {$trail->id}");
-            return $image;
-        }
-        
-        $image = $this->getPixabayImage($keywords, $size);
-        if ($image) {
-            \Log::info("Using Pixabay image for trail {$trail->id}");
-            return $image;
-        }
-        
-        \Log::info("Using fallback image for trail {$trail->id}");
-        return $this->getFallbackImage($trail, $type);
-    }
-
-    /**
-     * Build search keywords for image search
-     */
-    protected function buildSearchKeywords($trail, $type)
-    {
-        $keywords = [];
-        
-        // Add mountain name (cleaned)
-        if ($trail->mountain_name) {
-            $keywords[] = str_replace(['Mt.', 'Mount'], '', $trail->mountain_name);
-        }
-        
-        // Add location context (Philippines)
-        $keywords[] = 'Philippines';
-        
-        // Add type-specific keywords
-        if ($type === 'primary') {
-            $keywords[] = 'hiking trail';
-            $keywords[] = 'mountain';
-            $keywords[] = 'summit';
-            $keywords[] = 'landscape';
-        } elseif ($type === 'map') {
-            $keywords[] = 'trail map';
-            $keywords[] = 'hiking route';
-            $keywords[] = 'topographic map';
-        } else {
-            $keywords[] = 'mountain hiking';
-            $keywords[] = 'trail';
-            $keywords[] = 'nature';
-        }
-        
-        return implode(' ', array_unique(array_filter($keywords)));
-    }
-
-    /**
-     * Get image from Unsplash API
-     */
-    protected function getUnsplashImage($keywords, $size)
-    {
-        if (!$this->unsplashApiKey) {
-            return null;
+        if (!$this->googleMapsKey) {
+            return [];
         }
 
-        try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Client-ID ' . $this->unsplashApiKey
-            ])->get('https://api.unsplash.com/search/photos', [
-                'query' => $keywords,
-                'orientation' => 'landscape',
-                'per_page' => 1,
-                'order_by' => 'relevant'
-            ]);
+        $cacheKey = "google_places_images_" . md5($query . $limit);
+        
+        return Cache::remember($cacheKey, 3600, function () use ($query, $limit) {
+            try {
+                // First, search for places
+                $response = Http::get('https://maps.googleapis.com/maps/api/place/textsearch/json', [
+                    'query' => $query,
+                    'key' => $this->googleMapsKey,
+                    'type' => 'natural_feature|tourist_attraction'
+                ]);
 
-            if ($response->successful()) {
-                $data = $response->json();
-                if (isset($data['results'][0])) {
-                    $photo = $data['results'][0];
-                    return $this->getUnsplashImageUrl($photo, $size);
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $images = [];
+
+                    foreach (array_slice($data['results'], 0, 2) as $place) {
+                        if (isset($place['photos']) && count($place['photos']) > 0) {
+                            foreach (array_slice($place['photos'], 0, 1) as $photo) {
+                                $photoUrl = "https://maps.googleapis.com/maps/api/place/photo?" . http_build_query([
+                                    'maxwidth' => 800,
+                                    'photo_reference' => $photo['photo_reference'],
+                                    'key' => $this->googleMapsKey
+                                ]);
+
+                                $images[] = [
+                                    'url' => $photoUrl,
+                                    'thumb_url' => str_replace('maxwidth=800', 'maxwidth=400', $photoUrl),
+                                    'source' => 'google_places',
+                                    'caption' => $place['name'] ?? $query,
+                                    'photographer' => 'Google Places',
+                                    'attribution' => $photo['html_attributions'][0] ?? null
+                                ];
+
+                                if (count($images) >= $limit) break 2;
+                            }
+                        }
+                    }
+
+                    return $images;
                 }
+            } catch (\Exception $e) {
+                Log::error('Google Places API error: ' . $e->getMessage());
             }
-        } catch (\Exception $e) {
-            Log::warning('Unsplash API error: ' . $e->getMessage());
-        }
 
-        return null;
+            return [];
+        });
     }
 
     /**
-     * Get image from Pexels API
+     * Fetch images from Pexels API
      */
-    protected function getPexelsImage($keywords, $size)
+    protected function fetchPexelsImages($query, $limit = 3)
     {
-        if (!$this->pexelsApiKey) {
-            return null;
+        if (!$this->pexelsKey) {
+            return [];
         }
 
-        try {
-            $response = Http::withHeaders([
-                'Authorization' => $this->pexelsApiKey
-            ])->get('https://api.pexels.com/v1/search', [
-                'query' => $keywords,
-                'orientation' => 'landscape',
-                'per_page' => 1
-            ]);
+        $cacheKey = "pexels_images_" . md5($query . $limit);
+        
+        return Cache::remember($cacheKey, 3600, function () use ($query, $limit) {
+            try {
+                $response = Http::withHeaders([
+                    'Authorization' => $this->pexelsKey
+                ])->get('https://api.pexels.com/v1/search', [
+                    'query' => $query,
+                    'per_page' => $limit,
+                    'orientation' => 'landscape'
+                ]);
 
-            if ($response->successful()) {
-                $data = $response->json();
-                if (isset($data['photos'][0])) {
-                    $photo = $data['photos'][0];
-                    return $this->getPexelsImageUrl($photo, $size);
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $images = [];
+
+                    foreach ($data['photos'] as $photo) {
+                        $images[] = [
+                            'url' => $photo['src']['large'],
+                            'thumb_url' => $photo['src']['medium'],
+                            'source' => 'pexels',
+                            'caption' => $photo['alt'] ?? $query,
+                            'photographer' => $photo['photographer'] ?? 'Unknown',
+                            'photographer_url' => $photo['photographer_url'] ?? null
+                        ];
+                    }
+
+                    return $images;
                 }
+            } catch (\Exception $e) {
+                Log::error('Pexels API error: ' . $e->getMessage());
             }
-        } catch (\Exception $e) {
-            Log::warning('Pexels API error: ' . $e->getMessage());
-        }
 
-        return null;
+            return [];
+        });
     }
 
     /**
-     * Get image from Pixabay API
+     * Fetch images from Pixabay API
      */
-    protected function getPixabayImage($keywords, $size)
+    protected function fetchPixabayImages($query, $limit = 3)
     {
-        if (!$this->pixabayApiKey) {
-            return null;
+        if (!$this->pixabayKey) {
+            return [];
         }
 
-        try {
-            $response = Http::get('https://pixabay.com/api/', [
-                'key' => $this->pixabayApiKey,
-                'q' => $keywords,
-                'orientation' => 'horizontal',
-                'per_page' => 1,
-                'safesearch' => 'true'
-            ]);
+        $cacheKey = "pixabay_images_" . md5($query . $limit);
+        
+        return Cache::remember($cacheKey, 3600, function () use ($query, $limit) {
+            try {
+                $response = Http::get('https://pixabay.com/api/', [
+                    'key' => $this->pixabayKey,
+                    'q' => $query,
+                    'image_type' => 'photo',
+                    'orientation' => 'horizontal',
+                    'category' => 'nature',
+                    'per_page' => $limit,
+                    'min_width' => 800
+                ]);
 
-            if ($response->successful()) {
-                $data = $response->json();
-                if (isset($data['hits'][0])) {
-                    $photo = $data['hits'][0];
-                    return $this->getPixabayImageUrl($photo, $size);
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $images = [];
+
+                    foreach ($data['hits'] as $photo) {
+                        $images[] = [
+                            'url' => $photo['largeImageURL'],
+                            'thumb_url' => $photo['webformatURL'],
+                            'source' => 'pixabay',
+                            'caption' => $photo['tags'] ?? $query,
+                            'photographer' => $photo['user'] ?? 'Pixabay User'
+                        ];
+                    }
+
+                    return $images;
                 }
+            } catch (\Exception $e) {
+                Log::error('Pixabay API error: ' . $e->getMessage());
             }
-        } catch (\Exception $e) {
-            Log::warning('Pixabay API error: ' . $e->getMessage());
-        }
 
-        return null;
+            return [];
+        });
     }
 
     /**
-     * Get Unsplash image URL with appropriate size
+     * Check if an image URL is a placeholder/demo image
      */
-    protected function getUnsplashImageUrl($photo, $size)
+    protected function isPlaceholderImage($url)
     {
-        $sizes = [
-            'small' => 'small',
-            'medium' => 'regular',
-            'large' => 'full'
+        $placeholderDomains = [
+            'picsum.photos',
+            'lorem.picsum',
+            'placeholder.com',
+            'placehold.it',
+            'placekitten.com',
+            'via.placeholder.com',
+            'dummyimage.com'
         ];
 
-        $sizeKey = $sizes[$size] ?? 'regular';
-        return $photo['urls'][$sizeKey] ?? $photo['urls']['regular'];
-    }
-
-    /**
-     * Get Pexels image URL with appropriate size
-     */
-    protected function getPexelsImageUrl($photo, $size)
-    {
-        $sizes = [
-            'small' => 'small',
-            'medium' => 'medium',
-            'large' => 'large'
-        ];
-
-        $sizeKey = $sizes[$size] ?? 'medium';
-        return $photo['src'][$sizeKey] ?? $photo['src']['medium'];
-    }
-
-    /**
-     * Get Pixabay image URL with appropriate size
-     */
-    protected function getPixabayImageUrl($photo, $size)
-    {
-        $sizes = [
-            'small' => 'previewURL',
-            'medium' => 'webformatURL',
-            'large' => 'largeImageURL'
-        ];
-
-        $sizeKey = $sizes[$size] ?? 'webformatURL';
-        return $photo[$sizeKey] ?? $photo['webformatURL'];
-    }
-
-    /**
-     * Get fallback image when APIs fail
-     */
-    protected function getFallbackImage($trail, $type)
-    {
-        // Use Lorem Picsum with nature-themed seed based on trail ID
-        $seed = $trail->id + ($type === 'map' ? 1000 : 0);
-        $width = 800;
-        $height = 600;
-        
-        if ($type === 'primary') {
-            // Use Lorem Picsum with blur effect for beautiful nature photos
-            return "https://picsum.photos/seed/{$seed}/{$width}/{$height}";
-        } elseif ($type === 'map') {
-            // Different seed for map-style images
-            return "https://picsum.photos/seed/" . ($seed + 500) . "/{$width}/{$height}";
+        foreach ($placeholderDomains as $domain) {
+            if (strpos($url, $domain) !== false) {
+                return true;
+            }
         }
-        
-        return "https://picsum.photos/seed/{$seed}/{$width}/{$height}";
-    }
 
-    /**
-     * Get multiple images for a trail
-     */
-    public function getTrailImages($trail, $count = 3)
-    {
-        $images = [];
-        
-        // Get primary image
-        $images[] = $this->getTrailImage($trail, 'primary', 'large');
-        
-        // Get additional images
-        for ($i = 1; $i < $count; $i++) {
-            $images[] = $this->getTrailImage($trail, 'secondary', 'medium');
-        }
-        
-        return array_filter($images);
-    }
-
-    /**
-     * Refresh cached images for a trail
-     */
-    public function refreshTrailImages($trail)
-    {
-        $cacheKeys = [
-            "trail_image_{$trail->id}_primary_small",
-            "trail_image_{$trail->id}_primary_medium",
-            "trail_image_{$trail->id}_primary_large",
-            "trail_image_{$trail->id}_map_medium",
-            "trail_image_{$trail->id}_secondary_medium"
-        ];
-        
-        foreach ($cacheKeys as $key) {
-            Cache::forget($key);
-        }
-        
-        return true;
+        return false;
     }
 }

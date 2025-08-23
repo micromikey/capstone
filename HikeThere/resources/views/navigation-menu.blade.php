@@ -23,6 +23,7 @@
                 </div>
 
                 <!-- Navigation Links -->
+                @auth
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     @if(Auth::user()->user_type === 'organization')
                         <x-nav-link href="{{ route('org.dashboard') }}" :active="request()->routeIs('org.dashboard')">
@@ -49,6 +50,7 @@
                         </x-nav-link>
                     @endif
                 </div>
+                @endauth
             </div>
 
             @auth

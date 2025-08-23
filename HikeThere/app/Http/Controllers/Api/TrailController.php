@@ -137,6 +137,161 @@ class TrailController extends Controller
             'duration' => $trail->duration,
             'best_season' => $trail->best_season,
             'package_inclusions' => $trail->package_inclusions,
+            // Hiking-specific fields
+            'trail_conditions' => $trail->trail_conditions ?? 'Good - Dry and clear',
+            'cell_coverage' => $trail->cell_coverage ?? 'Partial coverage',
+            'water_sources' => $trail->water_sources ?? 'Bring your own water',
+            'camping_allowed' => $trail->camping_allowed ?? false,
+            'permit_required' => $trail->permit_required ?? false,
         ]);
+    }
+
+    /**
+     * Get elevation data for a trail
+     */
+    public function getElevation(Trail $trail)
+    {
+        // Mock elevation data - replace with actual elevation API or GPX parsing
+        $elevationData = [
+            'trail_id' => $trail->id,
+            'total_gain' => $trail->elevation_gain,
+            'max_elevation' => $trail->elevation_high,
+            'min_elevation' => $trail->elevation_low,
+            'points' => []
+        ];
+
+        // Generate sample elevation points along the trail
+        $numPoints = 20;
+        $currentElevation = $trail->elevation_low;
+        $elevationStep = ($trail->elevation_high - $trail->elevation_low) / $numPoints;
+
+        for ($i = 0; $i < $numPoints; $i++) {
+            $elevationData['points'][] = [
+                'distance' => ($trail->length / $numPoints) * $i,
+                'elevation' => round($currentElevation + ($elevationStep * $i)),
+                'grade' => round(($elevationStep / ($trail->length / $numPoints)) * 100, 1)
+            ];
+        }
+
+        return response()->json($elevationData);
+    }
+
+    /**
+     * Get trail path coordinates for map visualization
+     */
+    public function getTrailPaths()
+    {
+        $trails = Trail::active()
+            ->with(['location'])
+            ->whereNotNull('coordinates')
+            ->get();
+
+        return $trails->map(function ($trail) {
+            // Generate sample path coordinates if GPX file is not available
+            $pathCoordinates = [];
+            
+            if ($trail->gpx_file) {
+                // TODO: Parse GPX file to get actual coordinates
+                // For now, generate sample coordinates around the trail center
+                $centerLat = $trail->coordinates['lat'] ?? $trail->location->latitude;
+                $centerLng = $trail->coordinates['lng'] ?? $trail->location->longitude;
+                
+                $numPoints = 10;
+                for ($i = 0; $i < $numPoints; $i++) {
+                    $pathCoordinates[] = [
+                        'lat' => $centerLat + (rand(-50, 50) / 10000),
+                        'lng' => $centerLng + (rand(-50, 50) / 10000)
+                    ];
+                }
+            } else {
+                // Generate a simple path from start to end
+                $startLat = $trail->coordinates['lat'] ?? $trail->location->latitude;
+                $startLng = $trail->coordinates['lng'] ?? $trail->location->longitude;
+                
+                $pathCoordinates = [
+                    ['lat' => $startLat, 'lng' => $startLng],
+                    ['lat' => $startLat + 0.001, 'lng' => $startLng + 0.001],
+                    ['lat' => $startLat + 0.002, 'lng' => $startLng + 0.002]
+                ];
+            }
+
+            return [
+                'id' => $trail->id,
+                'name' => $trail->trail_name,
+                'difficulty' => $trail->difficulty,
+                'path_coordinates' => $pathCoordinates,
+                'length' => $trail->length,
+                'elevation_gain' => $trail->elevation_gain
+            ];
+        });
+    }
+
+    /**
+     * Search for trails near a specific location
+     */
+    public function searchNearby(Request $request)
+    {
+        $request->validate([
+            'lat' => 'required|numeric|between:-90,90',
+            'lng' => 'required|numeric|between:-180,180',
+            'radius' => 'required|numeric|min:1|max:100'
+        ]);
+
+        $lat = $request->lat;
+        $lng = $request->lng;
+        $radius = $request->radius;
+
+        // Calculate distance using Haversine formula
+        $trails = Trail::active()
+            ->with(['location', 'primaryImage'])
+            ->get()
+            ->filter(function ($trail) use ($lat, $lng, $radius) {
+                if (!$trail->coordinates && !$trail->location) {
+                    return false;
+                }
+
+                $trailLat = $trail->coordinates['lat'] ?? $trail->location->latitude;
+                $trailLng = $trail->coordinates['lng'] ?? $trail->location->longitude;
+
+                $distance = $this->calculateDistance($lat, $lng, $trailLat, $trailLng);
+                return $distance <= $radius;
+            })
+            ->map(function ($trail) {
+                return [
+                    'id' => $trail->id,
+                    'name' => $trail->trail_name,
+                    'difficulty' => $trail->difficulty,
+                    'length' => $trail->length,
+                    'elevation_gain' => $trail->elevation_gain,
+                    'location_name' => $trail->location->name . ', ' . $trail->location->province,
+                    'image_url' => $trail->primaryImage?->url ?? $this->imageService->getTrailImage($trail, 'primary', 'medium'),
+                    'coordinates' => $trail->coordinates ?? [
+                        'lat' => $trail->location->latitude,
+                        'lng' => $trail->location->longitude
+                    ]
+                ];
+            })
+            ->values();
+
+        return response()->json($trails);
+    }
+
+    /**
+     * Calculate distance between two points using Haversine formula
+     */
+    private function calculateDistance($lat1, $lng1, $lat2, $lng2)
+    {
+        $earthRadius = 6371; // Earth's radius in kilometers
+
+        $latDelta = deg2rad($lat2 - $lat1);
+        $lngDelta = deg2rad($lng2 - $lng1);
+
+        $a = sin($latDelta / 2) * sin($latDelta / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($lngDelta / 2) * sin($lngDelta / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
     }
 }

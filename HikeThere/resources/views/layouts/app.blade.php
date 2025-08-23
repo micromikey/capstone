@@ -13,12 +13,13 @@
    
 
         <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/map.js'])
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
 
 
 
         <!-- Styles -->
         @livewireStyles
+        @stack('styles')
     </head>
     <body class="font-sans antialiased">
         <x-banner />
@@ -38,7 +39,7 @@
             <!-- Page Content -->
             <main>
                 @yield('content')
-                {{ $slot }}
+                {{ $slot ?? '' }}
             </main>
         </div>
 

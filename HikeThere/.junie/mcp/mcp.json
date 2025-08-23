@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "C:\\php-8.4.3\\php.exe",
+            "args": [
+                "C:\\Users\\Michael Torres\\Documents\\Torres, John Michael M\\codes ++\\capstone\\HikeThere\\artisan",
+                "boost:mcp"
+            ]
+        }
+    }
+}

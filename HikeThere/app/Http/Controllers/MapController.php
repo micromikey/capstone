@@ -6,9 +6,17 @@ use Illuminate\Http\Request;
 use App\Models\Trail;
 use App\Models\Location;
 use Illuminate\Support\Facades\Cache;
+use App\Services\TrailImageService;
 
 class MapController extends Controller
 {
+    protected $imageService;
+
+    public function __construct(TrailImageService $imageService)
+    {
+        $this->imageService = $imageService;
+    }
+
     public function index()
     {
         return view('map.index');
@@ -24,10 +32,10 @@ class MapController extends Controller
         \Log::info('MapController::getTrails called');
         
         try {
-            $trails = Cache::remember('map_trails', 3600, function () {
-                \Log::info('Fetching trails from database');
+            $trails = Cache::remember('enhanced_map_trails', 1800, function () {
+                \Log::info('Fetching enhanced trails from database');
                 
-                $trails = Trail::with(['location', 'images'])
+                $trails = Trail::with(['location', 'images', 'user'])
                     ->where('is_active', true)
                     ->get();
                 
@@ -42,21 +50,54 @@ class MapController extends Controller
                     
                     \Log::info("Processing trail: {$trail->trail_name} at location: {$trail->location->name}");
                     
+                    // Get enhanced primary image using the image service
+                    try {
+                        $primaryImageData = $this->imageService->getPrimaryTrailImage($trail);
+                    } catch (\Exception $e) {
+                        \Log::error("Error getting primary image for trail {$trail->id}: " . $e->getMessage());
+                        $primaryImageData = [
+                            'url' => '/img/default-trail.jpg',
+                            'source' => 'default',
+                            'caption' => $trail->trail_name
+                        ];
+                    }
+                    
                     return [
                         'id' => $trail->id,
                         'slug' => $trail->slug,
                         'name' => $trail->trail_name,
+                        'mountain_name' => $trail->mountain_name,
                         'difficulty' => $trail->difficulty,
                         'length' => $trail->length,
                         'elevation_gain' => $trail->elevation_gain,
+                        'elevation_high' => $trail->elevation_high,
+                        'elevation_low' => $trail->elevation_low,
+                        'estimated_time' => $trail->estimated_time_formatted,
+                        'duration' => $trail->duration,
+                        'best_season' => $trail->best_season,
                         'coordinates' => [
                             'lat' => (float) $trail->location->latitude,
                             'lng' => (float) $trail->location->longitude
                         ],
-                        'location_name' => $trail->location->name,
-                        'image_url' => $trail->images->first()?->url ?? '/img/default-trail.jpg',
+                        'location_name' => $trail->location->name . ', ' . $trail->location->province,
+                        'image_url' => $primaryImageData['url'],
+                        'image_source' => $primaryImageData['source'],
+                        'image_caption' => $primaryImageData['caption'],
                         'description' => $trail->description,
-                        'estimated_time' => $trail->estimated_time
+                        'summary' => $trail->summary,
+                        'features' => $trail->features ?? [],
+                        'organization' => $trail->user->display_name ?? 'Unknown',
+                        'organization_id' => $trail->user_id,
+                        'price' => $trail->price,
+                        'permit_required' => $trail->permit_required,
+                        'average_rating' => number_format($trail->average_rating, 1),
+                        'total_reviews' => $trail->total_reviews,
+                        // Enhanced hiking data
+                        'trail_conditions' => $this->getTrailConditions($trail),
+                        'cell_coverage' => $this->getCellCoverage($trail),
+                        'water_sources' => $this->getWaterSources($trail),
+                        'camping_allowed' => $trail->camping_allowed ?? false,
+                        'last_updated' => $trail->updated_at->toISOString(),
                     ];
                 })
                 ->filter() // Remove null entries
@@ -75,8 +116,11 @@ class MapController extends Controller
 
     public function getTrailDetails($id)
     {
-        $trail = Trail::with(['location', 'images', 'reviews'])
+        $trail = Trail::with(['location', 'images', 'reviews', 'user'])
             ->findOrFail($id);
+
+        // Get enhanced images using the image service
+        $images = $this->imageService->getTrailImages($trail, 8);
 
         return response()->json([
             'id' => $trail->id,
@@ -90,9 +134,7 @@ class MapController extends Controller
                 'lng' => (float) $trail->location->longitude
             ],
             'location_name' => $trail->location->name,
-            'images' => $trail->images->map(function ($image) {
-                return $image->url;
-            }),
+            'images' => $images,
             'description' => $trail->description,
             'estimated_time' => $trail->estimated_time,
             'reviews' => $trail->reviews->take(5)->map(function ($review) {
@@ -103,6 +145,23 @@ class MapController extends Controller
                     'created_at' => $review->created_at->format('M d, Y')
                 ];
             })
+        ]);
+    }
+
+    /**
+     * Get trail images with priority to organization images
+     */
+    public function getTrailImages($id)
+    {
+        $trail = Trail::with(['location', 'images', 'user'])
+            ->findOrFail($id);
+
+        $images = $this->imageService->getTrailImages($trail, 10);
+
+        return response()->json([
+            'trail_id' => $trail->id,
+            'trail_name' => $trail->trail_name,
+            'images' => $images
         ]);
     }
 
@@ -166,5 +225,207 @@ class MapController extends Controller
         $dist = rad2deg($dist);
         $miles = $dist * 60 * 1.1515;
         return $miles * 1.609344; // Convert to kilometers
+    }
+
+    /**
+     * Get trail conditions with enhanced data
+     */
+    private function getTrailConditions($trail)
+    {
+        // Mock trail conditions - replace with actual data source
+        $conditions = [
+            'Good - Dry and clear',
+            'Fair - Some muddy sections',
+            'Poor - Heavy rainfall, slippery',
+            'Excellent - Perfect conditions',
+            'Caution - Steep and rocky areas'
+        ];
+        
+        return $conditions[array_rand($conditions)];
+    }
+
+    /**
+     * Get cell coverage information
+     */
+    private function getCellCoverage($trail)
+    {
+        // Mock cell coverage data - replace with actual data
+        $coverage = [
+            'Full coverage',
+            'Partial coverage',
+            'Limited coverage at summit',
+            'No coverage - emergency radio recommended',
+            'Good coverage on main trail'
+        ];
+        
+        return $coverage[array_rand($coverage)];
+    }
+
+    /**
+     * Get water sources information
+     */
+    private function getWaterSources($trail)
+    {
+        // Mock water sources data - replace with actual data
+        $sources = [
+            'Natural springs available',
+            'Bring your own water',
+            'Stream crossings - treat water',
+            'Water available at basecamp',
+            'Limited water sources - bring extra'
+        ];
+        
+        return $sources[array_rand($sources)];
+    }
+
+    /**
+     * Get enhanced trail data for map display
+     */
+    public function getEnhancedTrails(Request $request)
+    {
+        $query = Trail::with(['location', 'images', 'user', 'reviews'])
+            ->where('is_active', true);
+
+        // Apply filters
+        if ($request->has('difficulty')) {
+            $query->where('difficulty', $request->difficulty);
+        }
+
+        if ($request->has('location_id')) {
+            $query->where('location_id', $request->location_id);
+        }
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('trail_name', 'like', "%{$search}%")
+                  ->orWhere('mountain_name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        $trails = $query->get()->map(function ($trail) {
+            if (!$trail->location) return null;
+
+            return [
+                'id' => $trail->id,
+                'name' => $trail->trail_name,
+                'mountain_name' => $trail->mountain_name,
+                'difficulty' => $trail->difficulty,
+                'coordinates' => [
+                    'lat' => (float) $trail->location->latitude,
+                    'lng' => (float) $trail->location->longitude
+                ],
+                'location_name' => $trail->location->name . ', ' . $trail->location->province,
+                'image_url' => $trail->images->first()?->url ?? '/img/default-trail.jpg',
+                'elevation_gain' => $trail->elevation_gain,
+                'length' => $trail->length,
+                'estimated_time' => $trail->estimated_time_formatted,
+                'average_rating' => $trail->average_rating,
+                'total_reviews' => $trail->total_reviews,
+                'description' => $trail->description,
+                'features' => $trail->features ?? [],
+                'last_updated' => $trail->updated_at->toISOString(),
+            ];
+        })->filter()->values();
+
+        return response()->json($trails);
+    }
+
+    /**
+     * Get trail path coordinates for visualization
+     */
+    public function getTrailPaths()
+    {
+        $trails = Trail::with(['location'])
+            ->where('is_active', true)
+            ->whereNotNull('coordinates')
+            ->get();
+
+        $paths = $trails->map(function ($trail) {
+            // Generate sample path coordinates - replace with actual GPX data
+            $centerLat = $trail->coordinates['lat'] ?? $trail->location->latitude;
+            $centerLng = $trail->coordinates['lng'] ?? $trail->location->longitude;
+            
+            $pathCoordinates = [];
+            $numPoints = 10;
+            
+            for ($i = 0; $i < $numPoints; $i++) {
+                $pathCoordinates[] = [
+                    'lat' => $centerLat + (rand(-50, 50) / 10000),
+                    'lng' => $centerLng + (rand(-50, 50) / 10000)
+                ];
+            }
+
+            return [
+                'id' => $trail->id,
+                'name' => $trail->trail_name,
+                'difficulty' => $trail->difficulty,
+                'path_coordinates' => $pathCoordinates,
+                'length' => $trail->length,
+                'elevation_gain' => $trail->elevation_gain
+            ];
+        });
+
+        return response()->json($paths);
+    }
+
+    /**
+     * Get elevation profile for a specific trail
+     */
+    public function getTrailElevation($id)
+    {
+        $trail = Trail::findOrFail($id);
+        
+        // Generate sample elevation data - replace with actual elevation API
+        $elevationData = [
+            'trail_id' => $trail->id,
+            'total_gain' => $trail->elevation_gain,
+            'max_elevation' => $trail->elevation_high,
+            'min_elevation' => $trail->elevation_low,
+            'points' => []
+        ];
+
+        $numPoints = 20;
+        $currentElevation = $trail->elevation_low ?? 500;
+        $elevationStep = ($trail->elevation_high - $trail->elevation_low) / $numPoints;
+
+        for ($i = 0; $i <= $numPoints; $i++) {
+            $elevationData['points'][] = [
+                'distance' => ($trail->length / $numPoints) * $i,
+                'elevation' => round($currentElevation + ($elevationStep * $i)),
+                'grade' => $elevationStep > 0 ? round(($elevationStep / ($trail->length / $numPoints)) * 100, 1) : 0
+            ];
+        }
+
+        return response()->json($elevationData);
+    }
+
+    /**
+     * Get weather data for a location
+     */
+    public function getWeatherData(Request $request)
+    {
+        $lat = $request->query('lat');
+        $lng = $request->query('lng');
+        
+        // Mock weather data - replace with actual weather API integration
+        return response()->json([
+            'temperature' => rand(15, 30),
+            'conditions' => ['Sunny', 'Partly Cloudy', 'Cloudy', 'Light Rain', 'Clear'][rand(0, 4)],
+            'wind_speed' => rand(5, 25),
+            'wind_direction' => ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][rand(0, 7)],
+            'visibility' => rand(5, 20),
+            'humidity' => rand(40, 80),
+            'pressure' => rand(1000, 1020),
+            'uv_index' => rand(1, 10),
+            'sunrise' => '06:00',
+            'sunset' => '18:00',
+            'forecast' => [
+                ['day' => 'Today', 'high' => rand(25, 32), 'low' => rand(18, 24), 'conditions' => 'Sunny'],
+                ['day' => 'Tomorrow', 'high' => rand(25, 32), 'low' => rand(18, 24), 'conditions' => 'Partly Cloudy'],
+                ['day' => 'Day 3', 'high' => rand(25, 32), 'low' => rand(18, 24), 'conditions' => 'Cloudy']
+            ]
+        ]);
     }
 }
