@@ -37,7 +37,7 @@ class TrailImageService
                         'url' => $orgImage->url,
                         'source' => 'organization',
                         'caption' => $orgImage->caption ?? $trail->trail_name,
-                        'photographer' => $trail->organization->name ?? 'Trail Organization'
+                        'photographer' => $trail->user->display_name ?? 'Trail Organization'
                     ];
                 }
             }
@@ -76,7 +76,7 @@ class TrailImageService
         // Fall back to API images
         $apiImages = $this->fetchApiImages($trail, 1);
         return $apiImages[0] ?? [
-            'url' => '/img/default-trail.jpg',
+            'url' => 'https://images.unsplash.com/photo-1551632811-561732d1e306?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
             'source' => 'default',
             'caption' => $trail->trail_name
         ];
@@ -347,6 +347,25 @@ class TrailImageService
 
             return [];
         });
+    }
+
+    /**
+     * Get trail image - wrapper method for backward compatibility
+     * @param $trail Trail model
+     * @param string $type 'primary' or 'gallery'
+     * @param string $size 'small', 'medium', 'large' (ignored for now)
+     * @return string Image URL
+     */
+    public function getTrailImage($trail, $type = 'primary', $size = 'medium')
+    {
+        if ($type === 'primary') {
+            $imageData = $this->getPrimaryTrailImage($trail);
+            return $imageData['url'];
+        }
+        
+        // For gallery type, return first image from getTrailImages
+        $images = $this->getTrailImages($trail, 1);
+        return $images[0]['url'] ?? 'https://images.unsplash.com/photo-1551632811-561732d1e306?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
     }
 
     /**
