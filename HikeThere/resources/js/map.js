@@ -28,6 +28,7 @@ class HikeThereMap {
         this.trailPaths = new Map();
         this.elevationCharts = new Map();
         this.weatherData = new Map();
+        this.weatherRefreshIntervals = {};
         this.activeTrail = null;
         this.hikingLayers = {};
         this.searchAutocomplete = null;
@@ -65,6 +66,9 @@ class HikeThereMap {
             this.setupDirections();
             this.setupPerformanceMonitoring();
             
+            // Initialize weather system and bounds restrictions
+            this.initializeWeatherAndBounds();
+            
             // Setup auto-hiding scrollbars for the entire page
             this.setupAutoHideScrollbars();
             
@@ -99,7 +103,10 @@ class HikeThereMap {
             minZoom: this.config.minZoom,
             backgroundColor: '#f8fafc',
             scaleControl: true,
-            rotateControl: false,
+            rotateControl: true,
+            rotateControlOptions: {
+                position: google.maps.ControlPosition.RIGHT_TOP
+            },
             // Enhanced performance options
             disableDefaultUI: false,
             clickableIcons: true,
@@ -128,7 +135,6 @@ class HikeThereMap {
         this.directionsRenderer.setMap(this.map);
         
         this.addEnhancedControls();
-        this.addHikingControls();
         this.setupMapEvents();
     }
 
@@ -301,45 +307,11 @@ class HikeThereMap {
         return control;
     }
 
-    addHikingControls() {
-        // Add hiking-specific controls to the map
-        const hikingControlDiv = document.createElement('div');
-        hikingControlDiv.className = 'flex flex-col gap-2 p-2';
-        hikingControlDiv.innerHTML = `
-            <button id="get-directions-btn" class="w-10 h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center text-lg hover:bg-green-50 hover:border-green-300 transition-colors" title="Get Directions">
-                🧭
-            </button>
-            <button id="measure-distance-btn" class="w-10 h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center text-lg hover:bg-blue-50 hover:border-blue-300 transition-colors" title="Measure Distance">
-                📏
-            </button>
-            <button id="save-location-btn" class="w-10 h-10 bg-white rounded-lg shadow-lg border border-gray-200 flex items-center justify-center text-lg hover:bg-purple-50 hover:border-purple-300 transition-colors" title="Save Location">
-                💾
-            </button>
-        `;
-        
-        this.map.controls[google.maps.ControlPosition.RIGHT_TOP].push(hikingControlDiv);
-        
-        // Add event listeners
-        this.setupHikingControlEvents();
-    }
 
-    setupHikingControlEvents() {
-        const directionsBtn = document.getElementById('get-directions-btn');
-        const measureBtn = document.getElementById('measure-distance-btn');
-        const saveBtn = document.getElementById('save-location-btn');
-        
-        if (directionsBtn) {
-            directionsBtn.addEventListener('click', () => this.showDirectionsDialog());
-        }
-        
-        if (measureBtn) {
-            measureBtn.addEventListener('click', () => this.toggleDistanceMeasurement());
-        }
-        
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => this.saveCurrentLocation());
-        }
-    }
+
+
+
+
 
     setupMapEvents() {
         // Map click events
@@ -944,6 +916,9 @@ class HikeThereMap {
         
         if (!panel || !content || !title) return;
         
+        // Set active trail for weather management
+        this.activeTrail = trail;
+        
         title.textContent = trail.name;
         content.innerHTML = this.createDetailedTrailContent(trail);
         
@@ -969,6 +944,11 @@ class HikeThereMap {
         if (panel) {
             panel.classList.remove('show');
             panel.style.transform = 'translateY(100%)';
+            
+            // Clear weather auto-refresh for the current trail
+            if (this.activeTrail) {
+                this.clearWeatherAutoRefresh(this.activeTrail.id);
+            }
         }
     }
 
@@ -1161,22 +1141,68 @@ class HikeThereMap {
             const weatherData = await this.fetchWeatherData(lat, lng);
             
             weatherElement.innerHTML = `
-                <div class="space-y-2">
+                <div class="space-y-3">
+                    <!-- Weather Header with Refresh Button -->
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Temperature:</span>
-                        <span class="text-sm font-medium text-gray-900">${weatherData.temperature || '24°C'}</span>
+                        <h6 class="text-sm font-semibold text-gray-700">Current Weather</h6>
+                        <button onclick="window.hikeThereMap.refreshWeatherForTrail('${trailId}', ${lat}, ${lng})" 
+                                class="p-1 text-gray-400 hover:text-blue-600 transition-colors" 
+                                title="Refresh weather data">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                        </button>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Conditions:</span>
-                        <span class="text-sm font-medium text-gray-900">${weatherData.conditions || 'Partly Cloudy'}</span>
+                    
+                    <!-- Main Weather Info -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="text-center p-2 bg-blue-50 rounded-lg">
+                            <div class="text-lg font-bold text-blue-600">${weatherData.temperature}</div>
+                            <div class="text-xs text-blue-500">Temperature</div>
+                        </div>
+                        <div class="text-center p-2 bg-cyan-50 rounded-lg">
+                            <div class="text-lg font-bold text-cyan-600">${weatherData.conditions}</div>
+                            <div class="text-xs text-cyan-500">Conditions</div>
+                        </div>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Humidity:</span>
-                        <span class="text-sm font-medium text-gray-900">${weatherData.humidity || '65%'}</span>
+                    
+                    <!-- Detailed Weather Info -->
+                    <div class="space-y-2 text-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600">Humidity:</span>
+                            <span class="font-medium text-gray-900">${weatherData.humidity}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600">Wind Speed:</span>
+                            <span class="font-medium text-gray-900">${weatherData.wind}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600">UV Index:</span>
+                            <span class="font-medium text-gray-900">${weatherData.uvIndex}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600">Pressure:</span>
+                            <span class="font-medium text-gray-900">${weatherData.pressure} hPa</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600">Visibility:</span>
+                            <span class="font-medium text-gray-900">${weatherData.visibility} km</span>
+                        </div>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">Wind:</span>
-                        <span class="text-sm font-medium text-gray-900">${weatherData.wind || '5 km/h'}</span>
+                    
+                    <!-- Weather Description -->
+                    ${weatherData.description ? `
+                        <div class="pt-2 border-t border-gray-200">
+                            <p class="text-xs text-gray-600 italic">${weatherData.description}</p>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Last Updated with Auto-refresh Indicator -->
+                    <div class="text-center text-xs text-gray-400">
+                        <div class="flex items-center justify-center gap-2">
+                            <span>Last updated: ${new Date(weatherData.timestamp).toLocaleTimeString()}</span>
+                            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="Auto-refreshing"></div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1190,6 +1216,60 @@ class HikeThereMap {
                     Weather data unavailable
                 </div>
             `;
+        }
+    }
+
+    // Manual refresh function for weather data
+    async refreshWeatherForTrail(trailId, lat, lng) {
+        const weatherElement = document.getElementById(`weather-data-${trailId}`);
+        if (!weatherElement) return;
+        
+        // Show refreshing state
+        const refreshButton = weatherElement.querySelector('button');
+        if (refreshButton) {
+            const originalContent = refreshButton.innerHTML;
+            refreshButton.innerHTML = `
+                <div class="animate-spin rounded-full h-4 w-4 border-2 border-blue-200 border-t-blue-600"></div>
+            `;
+            refreshButton.disabled = true;
+            
+            try {
+                await this.autoLoadWeatherForTrail(trailId, lat, lng);
+            } finally {
+                refreshButton.innerHTML = originalContent;
+                refreshButton.disabled = false;
+            }
+        }
+    }
+
+    // Set up auto-refresh for weather data every 5 minutes
+    setupWeatherAutoRefresh(trailId, lat, lng) {
+        // Clear any existing interval for this trail
+        if (this.weatherRefreshIntervals && this.weatherRefreshIntervals[trailId]) {
+            clearInterval(this.weatherRefreshIntervals[trailId]);
+        }
+        
+        // Initialize intervals object if it doesn't exist
+        if (!this.weatherRefreshIntervals) {
+            this.weatherRefreshIntervals = {};
+        }
+        
+        // Set up new interval (5 minutes = 300000 ms)
+        this.weatherRefreshIntervals[trailId] = setInterval(async () => {
+            try {
+                await this.autoLoadWeatherForTrail(trailId, lat, lng);
+                console.log(`Auto-refreshed weather for trail ${trailId}`);
+            } catch (error) {
+                console.error(`Error auto-refreshing weather for trail ${trailId}:`, error);
+            }
+        }, 300000); // 5 minutes
+    }
+
+    // Clear weather auto-refresh for a specific trail
+    clearWeatherAutoRefresh(trailId) {
+        if (this.weatherRefreshIntervals && this.weatherRefreshIntervals[trailId]) {
+            clearInterval(this.weatherRefreshIntervals[trailId]);
+            delete this.weatherRefreshIntervals[trailId];
         }
     }
 
@@ -1237,18 +1317,49 @@ class HikeThereMap {
         }
     }
 
-    // Mock API methods - replace with actual API calls
+    // Real API methods for weather and trail conditions
     async fetchWeatherData(lat, lng) {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Return mock weather data - replace with actual weather API
-        return {
-            temperature: Math.round(20 + Math.random() * 15) + '°C',
-            conditions: ['Sunny', 'Partly Cloudy', 'Cloudy', 'Light Rain'][Math.floor(Math.random() * 4)],
-            humidity: Math.round(50 + Math.random() * 30) + '%',
-            wind: Math.round(3 + Math.random() * 10) + ' km/h'
-        };
+        try {
+            const response = await fetch(`/api/weather?lat=${lat}&lng=${lng}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Weather API error: ${response.status}`);
+            }
+
+            const weatherData = await response.json();
+            
+            return {
+                temperature: `${weatherData.temperature}°C`,
+                conditions: weatherData.condition || 'Unknown',
+                humidity: `${weatherData.humidity}%`,
+                wind: `${weatherData.windSpeed} km/h`,
+                uvIndex: weatherData.uvIndex || 'N/A',
+                pressure: weatherData.pressure || 'N/A',
+                visibility: weatherData.visibility || 'N/A',
+                description: weatherData.description || '',
+                timestamp: weatherData.timestamp || new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Error fetching weather data:', error);
+            // Return fallback data if API fails
+            return {
+                temperature: 'N/A',
+                conditions: 'Unavailable',
+                humidity: 'N/A',
+                wind: 'N/A',
+                uvIndex: 'N/A',
+                pressure: 'N/A',
+                visibility: 'N/A',
+                description: 'Weather data temporarily unavailable',
+                timestamp: new Date().toISOString()
+            };
+        }
     }
 
     async fetchTrailConditions(trailId) {
@@ -1328,10 +1439,86 @@ class HikeThereMap {
         const searchInput = document.getElementById('map-search');
         if (searchInput && google.maps.places) {
             this.searchAutocomplete = new google.maps.places.Autocomplete(searchInput, {
-                types: ['geocode'],
-                componentRestrictions: { country: 'ph' } // Philippines
+                types: ['establishment', 'geocode', 'natural_feature'], // Include businesses, addresses, and natural features
+                componentRestrictions: { country: 'ph' }, // Philippines
+                fields: ['formatted_address', 'name', 'place_id', 'geometry', 'types']
+            });
+
+            // Add place_changed event listener
+            this.searchAutocomplete.addListener('place_changed', () => {
+                const place = this.searchAutocomplete.getPlace();
+                if (place.geometry) {
+                    // Center map on selected location
+                    const position = new google.maps.LatLng(place.geometry.location.lat(), place.geometry.location.lng());
+                    this.map.panTo(position);
+                    this.map.setZoom(14);
+                    
+                    // Add a marker for the searched location
+                    this.addSearchResultMarker(place);
+                    
+                    // Update search input placeholder to show what was found
+                    searchInput.placeholder = `Found: ${place.name || place.formatted_address}`;
+                    
+                    // Clear search input after a delay
+                    setTimeout(() => {
+                        searchInput.value = '';
+                        searchInput.placeholder = 'Search trails by name, mountain, or location...';
+                    }, 2000);
+                }
             });
         }
+    }
+
+    addSearchResultMarker(place) {
+        // Remove previous search marker if exists
+        if (this.searchResultMarker) {
+            this.searchResultMarker.setMap(null);
+        }
+
+        const position = new google.maps.LatLng(place.geometry.location.lat(), place.geometry.location.lng());
+        
+        // Create a special marker for search results
+        this.searchResultMarker = new google.maps.Marker({
+            position: position,
+            map: this.map,
+            title: place.name || place.formatted_address,
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 14,
+                fillColor: '#3B82F6', // Blue color for search results
+                fillOpacity: 0.8,
+                strokeColor: '#FFFFFF',
+                strokeWeight: 2
+            },
+            animation: google.maps.Animation.BOUNCE
+        });
+
+        // Add info window for search result
+        const infoWindow = new google.maps.InfoWindow({
+            content: `
+                <div class="p-3 max-w-[250px]">
+                    <h3 class="font-semibold text-gray-900 text-sm mb-2">${place.name || 'Location'}</h3>
+                    <p class="text-sm text-gray-600 mb-2">${place.formatted_address}</p>
+                    <div class="text-xs text-gray-500">
+                        <span class="font-medium">Type:</span> ${place.types ? place.types[0].replace(/_/g, ' ') : 'Location'}
+                    </div>
+                </div>
+            `
+        });
+
+        this.searchResultMarker.addListener('click', () => {
+            infoWindow.open(this.map, this.searchResultMarker);
+        });
+
+        // Auto-open info window
+        infoWindow.open(this.map, this.searchResultMarker);
+
+        // Stop bouncing after 2 seconds
+        setTimeout(() => {
+            if (this.searchResultMarker) {
+                this.searchResultMarker.setAnimation(null);
+            }
+        }, 2000);
     }
 
     initializeHeatmap() {
@@ -1988,6 +2175,307 @@ class HikeThereMap {
             });
         });
     }
+
+
+
+    /**
+     * Map bounds restrictions to prevent scrolling to extreme areas
+     */
+    setupMapBoundsRestrictions() {
+        // Define safe bounds (prevent scrolling to Antarctica, extreme poles, etc.)
+        const safeBounds = {
+            north: 85, // Prevent going too close to North Pole
+            south: -60, // Prevent going to Antarctica
+            east: 180, // Full longitude range
+            west: -180
+        };
+
+        // Add bounds change listener to enforce restrictions
+        this.map.addListener('bounds_changed', () => {
+            const bounds = this.map.getBounds();
+            if (bounds) {
+                const ne = bounds.getNorthEast();
+                const sw = bounds.getSouthWest();
+                
+                let needsAdjustment = false;
+                let newCenter = this.map.getCenter();
+                
+                // Check if map has moved outside safe bounds
+                if (ne.lat() > safeBounds.north) {
+                    newCenter = new google.maps.LatLng(
+                        Math.min(ne.lat() - (ne.lat() - safeBounds.north), this.map.getCenter().lat()),
+                        this.map.getCenter().lng()
+                    );
+                    needsAdjustment = true;
+                }
+                
+                if (sw.lat() < safeBounds.south) {
+                    newCenter = new google.maps.LatLng(
+                        Math.max(sw.lat() + (safeBounds.south - sw.lat()), this.map.getCenter().lat()),
+                        this.map.getCenter().lng()
+                    );
+                    needsAdjustment = true;
+                }
+                
+                // Apply adjustment if needed
+                if (needsAdjustment) {
+                    this.map.setCenter(newCenter);
+                    console.log('Map bounds restricted to safe area');
+                }
+            }
+        });
+
+        // Add drag listener to prevent dragging to restricted areas
+        this.map.addListener('drag', () => {
+            const center = this.map.getCenter();
+            let newLat = center.lat();
+            let newLng = center.lng();
+            
+            // Restrict latitude
+            if (newLat > safeBounds.north) {
+                newLat = safeBounds.north;
+            } else if (newLat < safeBounds.south) {
+                newLat = safeBounds.south;
+            }
+            
+            // Restrict longitude (handle wrapping)
+            if (newLng > safeBounds.east) {
+                newLng = safeBounds.west;
+            } else if (newLng < safeBounds.west) {
+                newLng = safeBounds.east;
+            }
+            
+            // Apply restrictions if needed
+            if (newLat !== center.lat() || newLng !== center.lng()) {
+                this.map.setCenter(new google.maps.LatLng(newLat, newLng));
+            }
+        });
+    }
+
+    /**
+     * Initialize weather system and bounds restrictions
+     */
+    initializeWeatherAndBounds() {
+        // Set up bounds restrictions
+        this.setupMapBoundsRestrictions();
+        
+        // Initialize weather system
+        this.initializeWeatherSystem();
+    }
+
+    /**
+     * Initialize weather system for hiking locations
+     */
+    initializeWeatherSystem() {
+        // Create weather control panel
+        this.createWeatherControl();
+        
+        // Set up weather data fetching
+        this.setupWeatherData();
+        
+        // Add weather layer to map
+        this.addWeatherLayer();
+        
+        // Load weather for map center automatically
+        this.loadInitialWeather();
+        
+        // Set up automatic refresh
+        this.setupAutoRefresh();
+    }
+
+    /**
+     * Create weather control panel
+     */
+    createWeatherControl() {
+        const weatherControl = document.createElement('div');
+        weatherControl.className = 'bg-white rounded-lg shadow-lg border border-gray-200 p-4';
+        weatherControl.innerHTML = `
+            <div class="text-center mb-4">
+                <div class="flex items-center justify-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                    <span>🌤️</span>
+                    <span>Weather</span>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div class="text-center">
+                    <div id="current-weather" class="text-lg font-bold text-blue-600 mb-2">--</div>
+                    <div id="weather-location" class="text-xs text-gray-500 mb-3">Click on map</div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <div class="text-center">
+                        <div class="text-gray-500 mb-1">Temp:</div>
+                        <div id="weather-temp" class="font-medium">--</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-gray-500 mb-1">Humidity:</div>
+                        <div id="weather-humidity" class="font-medium">--</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-gray-500 mb-1">Wind:</div>
+                        <div id="weather-wind" class="font-medium">--</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-gray-500 mb-1">UV:</div>
+                        <div id="weather-uv" class="font-medium">--</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Weather will load automatically when map is ready
+        
+        // Create container with same spacing as left panels
+        const weatherContainer = document.createElement('div');
+        weatherContainer.className = 'p-3';
+        weatherContainer.appendChild(weatherControl);
+        
+        // Add to map controls - positioned on the right side below full-screen button
+        this.map.controls[google.maps.ControlPosition.RIGHT_TOP].push(weatherContainer);
+    }
+
+    /**
+     * Set up weather data fetching
+     */
+    setupWeatherData() {
+        // Add click listener to map for weather data
+        this.map.addListener('click', (event) => {
+            this.getWeatherForLocation(event.latLng);
+        });
+    }
+
+    /**
+     * Get weather data for a specific location
+     */
+    async getWeatherForLocation(latLng) {
+        try {
+            // Store the last weather location for auto-refresh
+            this.lastWeatherLocation = latLng;
+            
+            const response = await fetch(`/api/weather?lat=${latLng.lat()}&lng=${latLng.lng()}`);
+            if (!response.ok) {
+                throw new Error('Weather data unavailable');
+            }
+            
+            const weatherData = await response.json();
+            
+            // Check if there's an error in the response
+            if (weatherData.error) {
+                throw new Error(weatherData.message || 'Weather data unavailable');
+            }
+            
+            this.updateWeatherDisplay(weatherData, latLng);
+            
+        } catch (error) {
+            console.error('Error fetching weather:', error);
+            this.showWeatherError();
+        }
+    }
+
+    /**
+     * Update weather display
+     */
+    updateWeatherDisplay(weatherData, latLng) {
+        const currentWeather = document.getElementById('current-weather');
+        const weatherLocation = document.getElementById('weather-location');
+        const weatherTemp = document.getElementById('weather-temp');
+        const weatherHumidity = document.getElementById('weather-humidity');
+        const weatherWind = document.getElementById('weather-wind');
+        const weatherUV = document.getElementById('weather-uv');
+        
+        if (currentWeather) currentWeather.textContent = weatherData.condition || '--';
+        if (weatherLocation) weatherLocation.textContent = `${latLng.lat().toFixed(2)}, ${latLng.lng().toFixed(2)}`;
+        if (weatherTemp) weatherTemp.textContent = `${weatherData.temperature}°C`;
+        if (weatherHumidity) weatherHumidity.textContent = `${weatherData.humidity}%`;
+        if (weatherWind) weatherWind.textContent = `${weatherData.windSpeed} km/h`;
+        if (weatherUV) weatherUV.textContent = weatherData.uvIndex || '--';
+        
+        // Add last updated timestamp
+        const timestamp = new Date(weatherData.timestamp).toLocaleTimeString();
+        console.log(`Weather updated at ${timestamp}`);
+    }
+
+    /**
+     * Show weather error
+     */
+    showWeatherError() {
+        const currentWeather = document.getElementById('current-weather');
+        if (currentWeather) currentWeather.textContent = 'Error';
+    }
+
+
+
+    /**
+     * Add weather layer to map
+     */
+    addWeatherLayer() {
+        // This would integrate with a weather service API
+        // For now, we'll just show the control panel
+        console.log('Weather system initialized');
+    }
+
+    /**
+     * Load initial weather for map center
+     */
+    loadInitialWeather() {
+        // Wait a bit for the map to be fully loaded
+        setTimeout(() => {
+            const center = this.map.getCenter();
+            if (center) {
+                console.log('Loading initial weather for map center:', center.lat(), center.lng());
+                this.getWeatherForLocation(center);
+            }
+        }, 1000);
+    }
+
+    /**
+     * Set up automatic weather refresh
+     */
+    setupAutoRefresh() {
+        this.autoRefreshInterval = null;
+        
+        // Start auto-refresh
+        this.startAutoRefresh();
+    }
+
+    /**
+     * Start automatic refresh
+     */
+    startAutoRefresh() {
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+        }
+        
+        // Refresh every 2 minutes (120,000 ms)
+        this.autoRefreshInterval = setInterval(() => {
+            if (this.lastWeatherLocation) {
+                this.getWeatherForLocation(this.lastWeatherLocation);
+            }
+        }, 120000); // 2 minutes
+        
+        console.log('Auto-refresh started (every 2 minutes)');
+    }
+
+
+
+    /**
+     * Stop auto-refresh
+     */
+    stopAutoRefresh() {
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
+            this.autoRefreshInterval = null;
+        }
+    }
+
+    /**
+     * Cleanup weather system
+     */
+    cleanupWeatherSystem() {
+        this.stopAutoRefresh();
+        console.log('Weather system cleaned up');
+    }
+
+
 }
 
 // Initialize map when script loads

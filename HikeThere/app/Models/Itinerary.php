@@ -13,6 +13,7 @@ class Itinerary extends Model
         'user_id',
         'title',
         'trail_name',
+        'user_location',
         'difficulty_level',
         'estimated_duration',
         'distance',
@@ -49,7 +50,7 @@ class Itinerary extends Model
 
     public function getDifficultyColorAttribute()
     {
-        return match($this->difficulty_level) {
+        return match ($this->difficulty_level) {
             'Easy' => 'green',
             'Moderate' => 'blue',
             'Hard' => 'orange',
@@ -60,7 +61,7 @@ class Itinerary extends Model
 
     public function getDifficultyIconAttribute()
     {
-        return match($this->difficulty_level) {
+        return match ($this->difficulty_level) {
             'Easy' => '🟢',
             'Moderate' => '🔵',
             'Hard' => '🟠',

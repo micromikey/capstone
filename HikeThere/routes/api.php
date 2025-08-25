@@ -1,9 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\LocationController;
+use App\Http\Controllers\Api\TrailController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\TrailController;
-use App\Http\Controllers\Api\LocationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,30 +35,8 @@ Route::prefix('locations')->group(function () {
     Route::get('/{location}', [LocationController::class, 'show']);
 });
 
-// Enhanced Weather API endpoint
-Route::get('/weather', function (Request $request) {
-    $lat = $request->query('lat');
-    $lng = $request->query('lng');
-    
-    // Enhanced mock weather data - replace with actual weather API integration
-    return response()->json([
-        'temperature' => rand(15, 30),
-        'conditions' => ['Sunny', 'Partly Cloudy', 'Cloudy', 'Light Rain', 'Clear'][rand(0, 4)],
-        'wind_speed' => rand(5, 25),
-        'wind_direction' => ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][rand(0, 7)],
-        'visibility' => rand(5, 20),
-        'humidity' => rand(40, 80),
-        'pressure' => rand(1000, 1020),
-        'uv_index' => rand(1, 10),
-        'sunrise' => '06:00',
-        'sunset' => '18:00',
-        'forecast' => [
-            ['day' => 'Today', 'high' => rand(25, 32), 'low' => rand(18, 24), 'conditions' => 'Sunny'],
-            ['day' => 'Tomorrow', 'high' => rand(25, 32), 'low' => rand(18, 24), 'conditions' => 'Partly Cloudy'],
-            ['day' => 'Day 3', 'high' => rand(25, 32), 'low' => rand(18, 24), 'conditions' => 'Cloudy']
-        ]
-    ]);
-});
+// Weather API endpoint
+Route::get('/weather', [App\Http\Controllers\Api\WeatherController::class, 'getWeather']);
 
 // Enhanced Hiking-specific API endpoints
 Route::prefix('hiking')->group(function () {
@@ -73,7 +51,7 @@ Route::prefix('hiking')->group(function () {
                     'conditions' => 'Excellent - Clear skies and dry trail',
                     'last_updated' => now()->subHours(2)->toISOString(),
                     'hazards' => [],
-                    'recommendations' => ['Bring warm clothing', 'Start early to catch sunrise', 'Bring extra water']
+                    'recommendations' => ['Bring warm clothing', 'Start early to catch sunrise', 'Bring extra water'],
                 ],
                 [
                     'id' => 2,
@@ -82,7 +60,7 @@ Route::prefix('hiking')->group(function () {
                     'conditions' => 'Fair - Recent rainfall, some muddy sections',
                     'last_updated' => now()->subHours(4)->toISOString(),
                     'hazards' => ['Slippery rocks near stream crossing', 'Limited visibility at summit'],
-                    'recommendations' => ['Bring trekking poles', 'Waterproof gear essential', 'Check weather forecast']
+                    'recommendations' => ['Bring trekking poles', 'Waterproof gear essential', 'Check weather forecast'],
                 ],
                 [
                     'id' => 3,
@@ -91,18 +69,18 @@ Route::prefix('hiking')->group(function () {
                     'conditions' => 'Closed - Volcanic activity alert level 2',
                     'last_updated' => now()->subDays(1)->toISOString(),
                     'hazards' => ['Volcanic activity', 'Restricted access'],
-                    'recommendations' => ['Trail temporarily closed', 'Monitor PHIVOLCS updates', 'Alternative trails available']
-                ]
+                    'recommendations' => ['Trail temporarily closed', 'Monitor PHIVOLCS updates', 'Alternative trails available'],
+                ],
             ],
             'general_conditions' => [
                 'weather_status' => 'Good',
                 'overall_safety' => 'Normal precautions advised',
                 'peak_season' => 'Dry season (November to April)',
-                'last_updated' => now()->toISOString()
-            ]
+                'last_updated' => now()->toISOString(),
+            ],
         ]);
     });
-    
+
     Route::get('/safety-info', function () {
         return response()->json([
             'emergency_contacts' => [
@@ -111,7 +89,7 @@ Route::prefix('hiking')->group(function () {
                 'forest_service' => 'Contact local DENR office',
                 'emergency' => '911',
                 'coast_guard' => '143-247-8727',
-                'red_cross' => '143-527-8385'
+                'red_cross' => '143-527-8385',
             ],
             'safety_tips' => [
                 'Always inform someone of your hiking plans and expected return',
@@ -123,14 +101,14 @@ Route::prefix('hiking')->group(function () {
                 'Travel in groups and never hike alone in remote areas',
                 'Bring proper hiking gear and dress in layers',
                 'Start early to avoid afternoon thunderstorms',
-                'Inform local guides or park rangers of your presence'
+                'Inform local guides or park rangers of your presence',
             ],
             'current_conditions' => [
                 'weather' => 'Generally fair, expect afternoon showers',
                 'trail_status' => 'Most trails open, check individual trail conditions',
                 'hazards' => 'Standard hiking precautions apply',
                 'visibility' => 'Good to excellent in most areas',
-                'temperature_range' => '18-28°C at lower elevations, 10-20°C at peaks'
+                'temperature_range' => '18-28°C at lower elevations, 10-20°C at peaks',
             ],
             'essential_gear' => [
                 'navigation' => ['Map', 'Compass', 'GPS device or smartphone with offline maps'],
@@ -142,11 +120,11 @@ Route::prefix('hiking')->group(function () {
                 'repair_tools' => ['Multi-tool', 'Duct tape', 'Gear repair kit'],
                 'nutrition' => ['Extra food', 'Water', 'Water purification method'],
                 'hydration' => ['Water bottles', 'Hydration system', 'Electrolyte supplements'],
-                'emergency_shelter' => ['Emergency blanket', 'Tarp', 'Bivy sack']
-            ]
+                'emergency_shelter' => ['Emergency blanket', 'Tarp', 'Bivy sack'],
+            ],
         ]);
     });
-    
+
     Route::get('/emergency-procedures', function () {
         return response()->json([
             'general_emergency' => [
@@ -156,7 +134,7 @@ Route::prefix('hiking')->group(function () {
                 'step_4' => 'Provide your exact location using GPS coordinates',
                 'step_5' => 'Administer first aid if trained and safe to do so',
                 'step_6' => 'Stay with the injured person if possible',
-                'step_7' => 'Signal for help using whistle, mirror, or bright colors'
+                'step_7' => 'Signal for help using whistle, mirror, or bright colors',
             ],
             'getting_lost' => [
                 'stop' => 'Stop moving immediately',
@@ -165,19 +143,19 @@ Route::prefix('hiking')->group(function () {
                 'plan' => 'Plan your next move carefully',
                 'signal' => 'Use whistle (3 sharp blasts) to signal for help',
                 'shelter' => 'Find or create shelter if weather deteriorates',
-                'conserve' => 'Conserve energy and water'
+                'conserve' => 'Conserve energy and water',
             ],
             'severe_weather' => [
                 'lightning' => 'Avoid peaks, ridges, and isolated trees',
                 'rain' => 'Seek shelter and avoid stream crossings',
                 'fog' => 'Stay put until visibility improves',
-                'wind' => 'Avoid exposed areas and unstable trees'
+                'wind' => 'Avoid exposed areas and unstable trees',
             ],
             'wildlife_encounters' => [
                 'snakes' => 'Back away slowly, do not make sudden movements',
                 'wild_boar' => 'Make noise, appear large, back away slowly',
-                'hornets' => 'Cover face and run to shelter if attacked'
-            ]
+                'hornets' => 'Cover face and run to shelter if attacked',
+            ],
         ]);
     });
 });

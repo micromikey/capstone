@@ -100,9 +100,29 @@
     @apply flex items-center gap-2 text-sm cursor-pointer hover:text-orange-200 transition-colors;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .control-text {
     @apply text-orange-100;
 }
+
+
+
+
+
+
 
 .control-label input[type="checkbox"] {
     @apply w-4 h-4 text-orange-600 bg-white border-2 border-orange-300 rounded;
