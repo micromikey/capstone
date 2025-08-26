@@ -428,7 +428,7 @@ class ItineraryMap {
 
         this.infoWindow = new google.maps.InfoWindow({
             content: this.createTrailInfoContent(trail),
-            maxWidth: 400,
+            maxWidth: 300,
             pixelOffset: new google.maps.Size(0, -10)
         });
 
@@ -450,84 +450,68 @@ class ItineraryMap {
         };
 
         return `
-            <div class="enhanced-trail-info-window max-w-sm bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
-                <div class="relative h-40 overflow-hidden">
+            <!-- Profile-style layout: Image + Trail Info side by side -->
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                <!-- Small square image -->
+                <div style="flex-shrink: 0;">
                     <img src="${trail.image_url || '/img/default-trail.jpg'}" 
                          alt="${trail.name}" 
-                         class="w-full h-full object-cover"
+                         style="width: 56px; height: 56px; border-radius: 8px; object-fit: cover; border: 1px solid #e5e7eb;"
                          onerror="this.src='/img/default-trail.jpg';">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
                 </div>
                 
-                <div class="p-3">
-                    <!-- Trail Header -->
-                    <div class="mb-3">
-                        <h3 class="text-base font-bold text-gray-900 mb-1 leading-tight">${trail.name}</h3>
-                        <div class="flex items-center text-xs text-gray-600">
-                            <svg class="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 0 1111.314 0z"></path>
-                            </svg>
-                            <span class="truncate">${trail.location_name || trail.location || 'Location not specified'}</span>
-                        </div>
+                <!-- Trail details -->
+                <div style="flex: 1; min-width: 0;">
+                    <h3 style="font-size: 14px; font-weight: bold; color: #111827; margin-bottom: 4px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${trail.name}</h3>
+                    <div style="display: flex; align-items: center; font-size: 12px; color: #6b7280; margin-bottom: 6px;">
+                        <svg style="width: 12px; height: 12px; margin-right: 4px; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 0 1111.314 0z"></path>
+                        </svg>
+                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${trail.location_name || trail.location || 'Location not specified'}</span>
                     </div>
-
-                    <!-- Trail Metadata -->
-                    <div class="flex flex-wrap gap-1.5 mb-3">
-                        <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${difficultyStyles[trail.difficulty] || difficultyStyles['intermediate']}">
-                            <span class="mr-1">${difficultyIcons[trail.difficulty] || '🟡'}</span>
+                    
+                    <!-- Compact metadata badges -->
+                    <div style="display: flex; gap: 1px;">
+                        <span style="display: inline-flex; align-items: center; padding: 1px 3px; border-radius: 3px; font-size: 10px; font-weight: 500; border: 1px solid ${difficultyStyles[trail.difficulty] === 'beginner' ? '#16a34a' : difficultyStyles[trail.difficulty] === 'intermediate' ? '#d97706' : '#dc2626'}; background-color: ${difficultyStyles[trail.difficulty] === 'beginner' ? '#dcfce7' : difficultyStyles[trail.difficulty] === 'intermediate' ? '#fef3c7' : '#fee2e2'}; color: ${difficultyStyles[trail.difficulty] === 'beginner' ? '#166534' : difficultyStyles[trail.difficulty] === 'intermediate' ? '#92400e' : '#991b1b'};">
+                            <span style="margin-right: 1px; font-size: 10px;">${difficultyIcons[trail.difficulty] || '🟡'}</span>
                             ${trail.difficulty ? trail.difficulty.charAt(0).toUpperCase() + trail.difficulty.slice(1) : 'Intermediate'}
                         </span>
                         ${trail.length ? `
-                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <span style="display: inline-flex; align-items: center; padding: 1px 3px; border-radius: 3px; font-size: 10px; font-weight: 500; background-color: #dbeafe; color: #1e40af; border: 1px solid #93c5fd;">
+                                <svg style="width: 8px; height: 8px; margin-right: 1px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"></path>
                                 </svg>
                                 ${trail.length} km
                             </span>
                         ` : ''}
                         ${trail.elevation_gain ? `
-                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
-                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <span style="display: inline-flex; align-items: center; padding: 1px 3px; border-radius: 3px; font-size: 10px; font-weight: 500; background-color: #f3e8ff; color: #7c3aed; border: 1px solid #c4b5fd;">
+                                <svg style="width: 8px; height: 8px; margin-right: 1px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
                                 </svg>
                                 +${trail.elevation_gain}m
                             </span>
                         ` : ''}
                     </div>
+                </div>
+            </div>
 
-                    <!-- Trail Description (if available) -->
-                    ${trail.description ? `
-                        <div class="mb-3">
-                            <p class="text-xs text-gray-700 line-clamp-2 leading-relaxed">${trail.description}</p>
-                        </div>
-                    ` : ''}
-
-                    <!-- Action Buttons -->
-                    <div class="space-y-2">
-                        <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.itineraryMap.selectTrail(${trail.id})" 
-                                class="w-full inline-flex items-center justify-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 transition-colors shadow-sm">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"></path>
-                            </svg>
-                            Select for Itinerary
-                        </button>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.itineraryMap.getDirections('${trail.coordinates.lat},${trail.coordinates.lng}')" 
-                                    class="inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors shadow-sm">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"></path>
-                                </svg>
-                                Directions
-                            </button>
-                            <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.itineraryMap.showTrailDetails(${trail.id})" 
-                                    class="inline-flex items-center justify-center px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1 transition-colors shadow-sm">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                Details
-                            </button>
-                        </div>
-                    </div>
+            <!-- Action Buttons -->
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.itineraryMap.selectTrail(${trail.id})" 
+                        style="width: 100%; display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px; background-color: #059669; color: white; font-size: 12px; font-weight: 500; border-radius: 4px; border: none; cursor: pointer; transition: background-color 0.2s;">
+                    <svg style="width: 12px; height: 12px; margin-right: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"></path>
+                    </svg>
+                    Select Trail
+                </button>
+                
+                <!-- Text link for details -->
+                <div style="text-align: center;">
+                    <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.itineraryMap.showTrailDetails(${trail.id})" 
+                            style="font-size: 12px; color: #2563eb; text-decoration: underline; background: none; border: none; cursor: pointer; transition: color 0.2s;">
+                        View full trail details →
+                    </button>
                 </div>
             </div>
         `;
@@ -549,21 +533,90 @@ class ItineraryMap {
         }
         
         this.updateMapStatus(`Selected: ${trail.name}`);
+        
+        // Load weather for the selected trail - same logic as dropdown
+        setTimeout(() => {
+            console.log('Map trying to load weather for:', trail.name);
+            console.log('Available functions:', Object.keys(window).filter(k => k.includes('Weather')));
+            
+            if (window.selectTrailAndLoadWeather) {
+                console.log('Calling selectTrailAndLoadWeather');
+                window.selectTrailAndLoadWeather(trail.name);
+            } else if (window.loadWeatherForSelectedTrail) {
+                console.log('Calling loadWeatherForSelectedTrail directly');
+                window.loadWeatherForSelectedTrail();
+            } else {
+                console.log('No weather functions available');
+            }
+        }, 200);
     }
 
     updateTrailForm(trail) {
         const displayElement = document.getElementById('selectedTrailDisplay');
         const inputElement = document.getElementById('trailNameInput');
         const destinationElement = document.getElementById('destinationDisplay');
+        const trailSelect = document.getElementById('trailSelect');
+        const selectedTrailCount = document.getElementById('selectedTrailCount');
+        const trailDifficultyDisplay = document.getElementById('trailDifficultyDisplay');
         
         if (displayElement) displayElement.textContent = trail.name;
         if (inputElement) inputElement.value = trail.name;
-        if (destinationElement) destinationElement.textContent = trail.name;
         
-        // Also update the dropdown
-        const selectElement = document.getElementById('trailSelect');
-        if (selectElement) {
-            selectElement.value = trail.name;
+        // Show trail name and full address in destination
+        if (destinationElement) {
+            let address = 'Address not specified';
+            
+            // Try to get address from location relationship (API response)
+            if (trail.location && trail.location.full_address) {
+                address = trail.location.full_address;
+            } else if (trail.location) {
+                // Build address from individual components
+                const addressParts = [];
+                if (trail.location.province) addressParts.push(trail.location.province);
+                if (trail.location.region) addressParts.push(trail.location.region);
+                if (trail.location.country) addressParts.push(trail.location.country);
+                
+                if (addressParts.length > 0) {
+                    address = addressParts.join(', ');
+                }
+            }
+            
+            // Fallback to location_name if available
+            if (address === 'Address not specified' && trail.location_name) {
+                address = trail.location_name;
+            }
+            
+            // Fallback to mountain_name if location relationship is not available
+            if (address === 'Address not specified' && trail.mountain_name) {
+                address = trail.mountain_name;
+            }
+            
+            const fullAddress = `${trail.name}\nAddress: ${address}`;
+            destinationElement.innerHTML = fullAddress.replace(/\n/g, '<br>');
+        }
+        
+        // Update the dropdown selection
+        if (trailSelect) {
+            // Find the option that matches the trail name
+            const option = Array.from(trailSelect.options).find(opt => 
+                opt.value === trail.name || opt.text.includes(trail.name)
+            );
+            if (option) {
+                trailSelect.value = option.value;
+                // Trigger change event to update other displays
+                trailSelect.dispatchEvent(new Event('change'));
+            }
+        }
+        
+        // Update trail count to show selected trail
+        if (selectedTrailCount) {
+            selectedTrailCount.textContent = `Selected: ${trail.name}`;
+            selectedTrailCount.className = 'text-sm font-medium text-emerald-700';
+        }
+        
+        // Update difficulty display if available
+        if (trailDifficultyDisplay && trail.difficulty) {
+            trailDifficultyDisplay.textContent = `Difficulty: ${trail.difficulty.charAt(0).toUpperCase() + trail.difficulty.slice(1)}`;
         }
     }
 

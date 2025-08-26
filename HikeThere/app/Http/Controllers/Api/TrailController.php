@@ -16,6 +16,36 @@ class TrailController extends Controller
         $this->imageService = $imageService;
     }
 
+    public function search(Request $request)
+    {
+        $name = $request->get('name');
+
+        if (! $name) {
+            return response()->json(['error' => 'Trail name is required'], 400);
+        }
+
+        $trail = Trail::active()
+            ->with(['location', 'user'])
+            ->where('trail_name', 'like', '%'.$name.'%')
+            ->orWhere('mountain_name', 'like', '%'.$name.'%')
+            ->first();
+
+        if (! $trail) {
+            return response()->json(['error' => 'Trail not found'], 404);
+        }
+
+        return response()->json([
+            'trail' => [
+                'id' => $trail->id,
+                'name' => $trail->trail_name,
+                'mountain_name' => $trail->mountain_name,
+                'difficulty' => $trail->difficulty,
+                'coordinates' => $trail->coordinates,
+                'location' => $trail->location ? $trail->location->name.', '.$trail->location->province : 'Location N/A',
+            ],
+        ]);
+    }
+
     public function index(Request $request)
     {
         $query = Trail::active()
@@ -25,7 +55,7 @@ class TrailController extends Controller
         if (auth()->check() && auth()->user()->user_type === 'hiker') {
             // For hikers, only show trails from organizations they follow
             $followingIds = auth()->user()->following()->pluck('users.id')->toArray();
-            if (!empty($followingIds)) {
+            if (! empty($followingIds)) {
                 $query->whereIn('user_id', $followingIds);
             } else {
                 // If not following any organizations, return empty result
@@ -53,9 +83,9 @@ class TrailController extends Controller
 
         // Search by name
         if ($request->has('search')) {
-            $query->where(function($q) use ($request) {
-                $q->where('trail_name', 'like', '%' . $request->search . '%')
-                  ->orWhere('mountain_name', 'like', '%' . $request->search . '%');
+            $query->where(function ($q) use ($request) {
+                $q->where('trail_name', 'like', '%'.$request->search.'%')
+                    ->orWhere('mountain_name', 'like', '%'.$request->search.'%');
             });
         }
 
@@ -75,7 +105,7 @@ class TrailController extends Controller
                 'description' => $trail->description,
                 'average_rating' => number_format($trail->average_rating, 1),
                 'total_reviews' => $trail->total_reviews,
-                'location' => $trail->location->name . ', ' . $trail->location->province,
+                'location' => $trail->location->name.', '.$trail->location->province,
                 'location_id' => $trail->location->id,
                 'location_slug' => $trail->location->slug,
                 'primary_image' => $trail->primaryImage?->url ?? $this->imageService->getTrailImage($trail, 'primary', 'medium'),
@@ -115,17 +145,17 @@ class TrailController extends Controller
             'total_reviews' => $trail->total_reviews,
             'location' => [
                 'name' => $trail->location->name,
-                'full_name' => $trail->location->name . ', ' . $trail->location->province,
+                'full_name' => $trail->location->name.', '.$trail->location->province,
                 'coordinates' => [
                     'lat' => $trail->location->latitude,
                     'lng' => $trail->location->longitude,
-                ]
+                ],
             ],
             'organization' => [
                 'name' => $trail->user->display_name,
                 'id' => $trail->user->id,
             ],
-            'images' => $trail->images->map(fn($img) => [
+            'images' => $trail->images->map(fn ($img) => [
                 'url' => $img->url,
                 'type' => $img->image_type,
                 'caption' => $img->caption,
@@ -157,7 +187,7 @@ class TrailController extends Controller
             'total_gain' => $trail->elevation_gain,
             'max_elevation' => $trail->elevation_high,
             'min_elevation' => $trail->elevation_low,
-            'points' => []
+            'points' => [],
         ];
 
         // Generate sample elevation points along the trail
@@ -169,7 +199,7 @@ class TrailController extends Controller
             $elevationData['points'][] = [
                 'distance' => ($trail->length / $numPoints) * $i,
                 'elevation' => round($currentElevation + ($elevationStep * $i)),
-                'grade' => round(($elevationStep / ($trail->length / $numPoints)) * 100, 1)
+                'grade' => round(($elevationStep / ($trail->length / $numPoints)) * 100, 1),
             ];
         }
 
@@ -189,29 +219,29 @@ class TrailController extends Controller
         return $trails->map(function ($trail) {
             // Generate sample path coordinates if GPX file is not available
             $pathCoordinates = [];
-            
+
             if ($trail->gpx_file) {
                 // TODO: Parse GPX file to get actual coordinates
                 // For now, generate sample coordinates around the trail center
                 $centerLat = $trail->coordinates['lat'] ?? $trail->location->latitude;
                 $centerLng = $trail->coordinates['lng'] ?? $trail->location->longitude;
-                
+
                 $numPoints = 10;
                 for ($i = 0; $i < $numPoints; $i++) {
                     $pathCoordinates[] = [
                         'lat' => $centerLat + (rand(-50, 50) / 10000),
-                        'lng' => $centerLng + (rand(-50, 50) / 10000)
+                        'lng' => $centerLng + (rand(-50, 50) / 10000),
                     ];
                 }
             } else {
                 // Generate a simple path from start to end
                 $startLat = $trail->coordinates['lat'] ?? $trail->location->latitude;
                 $startLng = $trail->coordinates['lng'] ?? $trail->location->longitude;
-                
+
                 $pathCoordinates = [
                     ['lat' => $startLat, 'lng' => $startLng],
                     ['lat' => $startLat + 0.001, 'lng' => $startLng + 0.001],
-                    ['lat' => $startLat + 0.002, 'lng' => $startLng + 0.002]
+                    ['lat' => $startLat + 0.002, 'lng' => $startLng + 0.002],
                 ];
             }
 
@@ -221,7 +251,7 @@ class TrailController extends Controller
                 'difficulty' => $trail->difficulty,
                 'path_coordinates' => $pathCoordinates,
                 'length' => $trail->length,
-                'elevation_gain' => $trail->elevation_gain
+                'elevation_gain' => $trail->elevation_gain,
             ];
         });
     }
@@ -234,7 +264,7 @@ class TrailController extends Controller
         $request->validate([
             'lat' => 'required|numeric|between:-90,90',
             'lng' => 'required|numeric|between:-180,180',
-            'radius' => 'required|numeric|min:1|max:100'
+            'radius' => 'required|numeric|min:1|max:100',
         ]);
 
         $lat = $request->lat;
@@ -246,7 +276,7 @@ class TrailController extends Controller
             ->with(['location', 'primaryImage'])
             ->get()
             ->filter(function ($trail) use ($lat, $lng, $radius) {
-                if (!$trail->coordinates && !$trail->location) {
+                if (! $trail->coordinates && ! $trail->location) {
                     return false;
                 }
 
@@ -254,6 +284,7 @@ class TrailController extends Controller
                 $trailLng = $trail->coordinates['lng'] ?? $trail->location->longitude;
 
                 $distance = $this->calculateDistance($lat, $lng, $trailLat, $trailLng);
+
                 return $distance <= $radius;
             })
             ->map(function ($trail) {
@@ -263,12 +294,12 @@ class TrailController extends Controller
                     'difficulty' => $trail->difficulty,
                     'length' => $trail->length,
                     'elevation_gain' => $trail->elevation_gain,
-                    'location_name' => $trail->location->name . ', ' . $trail->location->province,
+                    'location_name' => $trail->location->name.', '.$trail->location->province,
                     'image_url' => $trail->primaryImage?->url ?? $this->imageService->getTrailImage($trail, 'primary', 'medium'),
                     'coordinates' => $trail->coordinates ?? [
                         'lat' => $trail->location->latitude,
-                        'lng' => $trail->location->longitude
-                    ]
+                        'lng' => $trail->location->longitude,
+                    ],
                 ];
             })
             ->values();

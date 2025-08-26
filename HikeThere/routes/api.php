@@ -23,6 +23,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // Trail API endpoints
 Route::prefix('trails')->group(function () {
     Route::get('/', [TrailController::class, 'index']);
+    Route::get('/search', [TrailController::class, 'search']);
     Route::get('/{trail}', [TrailController::class, 'show']);
     Route::get('/{trail}/elevation', [TrailController::class, 'getElevation']);
     Route::get('/paths', [TrailController::class, 'getTrailPaths']);
@@ -37,6 +38,7 @@ Route::prefix('locations')->group(function () {
 
 // Weather API endpoint
 Route::get('/weather', [App\Http\Controllers\Api\WeatherController::class, 'getWeather']);
+Route::get('/weather/forecast', [App\Http\Controllers\Api\WeatherController::class, 'getForecast']);
 
 // Enhanced Hiking-specific API endpoints
 Route::prefix('hiking')->group(function () {

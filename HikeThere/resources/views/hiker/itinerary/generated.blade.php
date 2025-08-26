@@ -7,7 +7,7 @@
       <div class="absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-gradient-to-br from-amber-300/40 via-rose-300/40 to-emerald-300/40 blur-3xl"></div>
     </div>
 
-    <div class="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-10">
+    <div class="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 py-10">
 
       <!-- Success Message -->
       @if(session('success'))
@@ -76,6 +76,304 @@
         </div>
       </div>
 
+      <!-- Route Summary -->
+      @if($itinerary->route_summary)
+      <div class="mt-8 rounded-2xl border border-white/70 bg-white/80 p-6 shadow-xl ring-1 ring-black/5 backdrop-blur">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Route Summary</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 bg-emerald-500 rounded-full"></div>
+              <div>
+                <p class="text-sm font-medium text-gray-600">Departure</p>
+                <p class="text-base font-semibold text-gray-900">{{ $itinerary->route_summary['departure'] }}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+              <div>
+                <p class="text-sm font-medium text-gray-600">Destination</p>
+                <p class="text-base font-semibold text-gray-900">{{ $itinerary->route_summary['destination'] }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 bg-purple-500 rounded-full"></div>
+              <div>
+                <p class="text-sm font-medium text-gray-600">Transportation</p>
+                <p class="text-base font-semibold text-gray-900">{{ $itinerary->route_summary['transportation'] }}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-3 h-3 bg-amber-500 rounded-full"></div>
+              <div>
+                <p class="text-sm font-medium text-gray-600">Total Distance</p>
+                <p class="text-base font-semibold text-gray-900">{{ $itinerary->route_summary['total_distance'] }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      @endif
+
+      <!-- Route Map -->
+      @if($itinerary->static_map_url || ($itinerary->route_coordinates && count($itinerary->route_coordinates) > 0))
+      <div class="mt-8 rounded-2xl border border-white/70 bg-white/80 p-6 shadow-xl ring-1 ring-black/5 backdrop-blur">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Route Map</h2>
+        
+        @if($itinerary->static_map_url)
+        <!-- Static Map for PDF compatibility -->
+        <div class="text-center">
+          <img src="{{ $itinerary->static_map_url }}" 
+               alt="Route Map from {{ $itinerary->route_summary['departure'] ?? 'departure' }} to {{ $itinerary->route_summary['destination'] ?? 'destination' }}"
+               class="w-full h-96 object-cover rounded-xl border border-gray-200 shadow-lg"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          
+          <!-- Fallback if static map fails -->
+          <div class="hidden h-96 w-full rounded-xl bg-gray-100 flex items-center justify-center">
+            <div class="text-center p-4">
+              <div class="text-gray-400 text-4xl mb-2">🗺️</div>
+              <p class="text-sm text-gray-600 font-medium mb-1">Route Map</p>
+              <p class="text-xs text-gray-500">Map visualization not available</p>
+            </div>
+          </div>
+        </div>
+        @else
+        <!-- Interactive Map Fallback -->
+        <div class="relative">
+          <div id="route-map" class="h-96 w-full rounded-xl bg-gray-100 flex items-center justify-center">
+            <div id="map-loading" class="text-center p-4">
+              <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-emerald-200 border-t-emerald-600 mb-3"></div>
+              <p class="text-sm text-gray-600 font-medium">Loading route map...</p>
+            </div>
+          </div>
+        </div>
+        @endif
+      </div>
+      @endif
+
+      <!-- Daily Schedule -->
+      @if($itinerary->daily_schedule && count($itinerary->daily_schedule) > 0)
+      <div class="mt-8 rounded-2xl border border-white/70 bg-white/80 p-6 shadow-xl ring-1 ring-black/5 backdrop-blur">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Detailed Itinerary Schedule</h2>
+        
+        @foreach($itinerary->daily_schedule as $day)
+        <div class="mb-8 last:mb-0">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ $day['day_label'] ?? 'Day '.$day['day_number'] }} - {{ \Carbon\Carbon::parse($day['date'])->format('l, M d, Y') }}</h3>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse border border-gray-200 rounded-lg overflow-hidden">
+              <thead class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
+                <tr>
+                  <th class="px-4 py-3 text-left text-sm font-semibold border-r border-emerald-400">Time</th>
+                  <th class="px-4 py-3 text-left text-sm font-semibold border-r border-emerald-400">Location</th>
+                  <th class="px-4 py-3 text-left text-sm font-semibold border-r border-emerald-400">Condition</th>
+                  <th class="px-4 py-3 text-left text-sm font-semibold border-r border-emerald-400">Temperature</th>
+                  <th class="px-4 py-3 text-left text-sm font-semibold border-r border-emerald-400">Transport Mode</th>
+                  <th class="px-4 py-3 text-left text-sm font-semibold border-r border-emerald-400">Duration</th>
+                  <th class="px-4 py-3 text-left text-sm font-semibold">Notes</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white">
+                @foreach($day['activities'] as $activity)
+                <tr class="hover:bg-gray-50 border-b border-gray-100">
+                  <td class="px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-100">
+                    {{ $activity['time'] }}
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-800 border-r border-gray-100">
+                    {{ $activity['location'] }}
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-700 border-r border-gray-100">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium 
+                      {{ str_contains(strtolower($activity['condition']), 'hot') ? 'bg-red-100 text-red-800' : 
+                         (str_contains(strtolower($activity['condition']), 'warm') ? 'bg-orange-100 text-orange-800' : 
+                         (str_contains(strtolower($activity['condition']), 'mild') ? 'bg-yellow-100 text-yellow-800' : 
+                         (str_contains(strtolower($activity['condition']), 'cool') ? 'bg-blue-100 text-blue-800' : 
+                         (str_contains(strtolower($activity['condition']), 'cold') ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800')))) }}">
+                      {{ $activity['condition'] }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-700 border-r border-gray-100">
+                    {{ $activity['temperature'] }}
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-700 border-r border-gray-100">
+                    @php
+                      $transportClass = match($activity['activity_type'] ?? '') {
+                          'departure' => 'bg-emerald-100 text-emerald-800',
+                          'arrival' => 'bg-blue-100 text-blue-800',
+                          'transit' => 'bg-purple-100 text-purple-800',
+                          'walking' => 'bg-green-100 text-green-800',
+                          'driving' => 'bg-orange-100 text-orange-800',
+                          'stopover' => 'bg-cyan-100 text-cyan-800',
+                          'sidetrip' => 'bg-pink-100 text-pink-800',
+                          default => 'bg-gray-100 text-gray-800'
+                      };
+                    @endphp
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $transportClass }}">
+                      {{ $activity['transport_mode'] }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-700 border-r border-gray-100">
+                    {{ $activity['duration'] }}
+                  </td>
+                  <td class="px-4 py-3 text-sm text-gray-600">
+                    <div class="space-y-1">
+                      <div>{{ $activity['note'] }}</div>
+                      
+                      @if(isset($activity['transit_details']))
+                      <div class="text-xs text-purple-600 bg-purple-50 p-2 rounded border-l-2 border-purple-300">
+                        <div class="font-medium">🚌 Transit Details:</div>
+                        <div>{{ $activity['transit_details']['line_name'] }} ({{ $activity['transit_details']['vehicle_type'] }})</div>
+                        <div class="text-xs text-purple-500">
+                          From: {{ $activity['transit_details']['departure_stop'] }} → 
+                          To: {{ $activity['transit_details']['arrival_stop'] }}
+                        </div>
+                        <div class="text-xs text-purple-500">
+                          {{ $activity['transit_details']['departure_time'] }} - {{ $activity['transit_details']['arrival_time'] }}
+                          ({{ $activity['transit_details']['num_stops'] }} stops)
+                        </div>
+                      </div>
+                      @endif
+                      
+                      @if(isset($activity['walking_details']))
+                      <div class="text-xs text-green-600 bg-green-50 p-2 rounded border-l-2 border-green-300">
+                        <div class="font-medium">🚶 Walking:</div>
+                        <div>{{ $activity['walking_details']['instruction'] }}</div>
+                        <div class="text-xs text-green-500">
+                          {{ $activity['walking_details']['distance_km'] }} km, {{ $activity['walking_details']['duration_minutes'] }} min
+                        </div>
+                      </div>
+                      @endif
+                    </div>
+                  </td>
+                </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+        </div>
+        @endforeach
+      </div>
+      @endif
+
+      <!-- Transport Details for Commute Mode -->
+      @if($itinerary->transportation === 'Commute' && $itinerary->transport_details && count($itinerary->transport_details) > 0)
+      <div class="mt-8 rounded-2xl border border-white/70 bg-white/80 p-6 shadow-xl ring-1 ring-black/5 backdrop-blur">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Public Transportation Summary</h2>
+        
+        <!-- Transit Overview -->
+        @if(isset($itinerary->route_data['transit_summary']))
+        <div class="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="text-center">
+              <div class="text-2xl font-bold text-purple-600">{{ $itinerary->route_data['transit_summary']['total_transit_legs'] ?? 0 }}</div>
+              <div class="text-sm text-purple-700">Transit Segments</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-green-600">{{ $itinerary->route_data['transit_summary']['total_walking_legs'] ?? 0 }}</div>
+              <div class="text-sm text-green-700">Walking Segments</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-blue-600">{{ $itinerary->route_data['transit_summary']['transit_modes'] ? count($itinerary->route_data['transit_summary']['transit_modes']) : 0 }}</div>
+              <div class="text-sm text-blue-700">Transport Modes</div>
+            </div>
+          </div>
+          
+          @if(isset($itinerary->route_data['transit_summary']['transit_modes']))
+          <div class="mt-4 text-center">
+            <div class="text-sm text-gray-600 mb-2">Transport Modes Used:</div>
+            <div class="flex flex-wrap justify-center gap-2">
+              @foreach($itinerary->route_data['transit_summary']['transit_modes'] as $mode)
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                @switch($mode)
+                  @case('Bus')
+                    🚌
+                    @break
+                  @case('Jeepney')
+                    🚐
+                    @break
+                  @case('Train')
+                    🚆
+                    @break
+                  @case('Subway')
+                    🚇
+                    @break
+                  @default
+                    🚗
+                @endswitch
+                {{ $mode }}
+              </span>
+              @endforeach
+            </div>
+          </div>
+          @endif
+          
+          @if(isset($itinerary->route_data['transit_summary']['total_cost_estimate']))
+          <div class="mt-4 text-center">
+            <div class="text-sm text-gray-600 mb-2">Estimated Total Cost:</div>
+            <div class="text-2xl font-bold text-emerald-600">
+              ₱{{ $itinerary->route_data['transit_summary']['total_cost_estimate']['total'] }}
+            </div>
+            <div class="text-xs text-gray-500">{{ $itinerary->route_data['transit_summary']['total_cost_estimate']['currency'] }}</div>
+          </div>
+          @endif
+        </div>
+        @endif
+        
+        <div class="space-y-4">
+          @foreach($itinerary->transport_details as $transport)
+          <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-gray-600">Step {{ $transport['step'] }}</span>
+              <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium 
+                {{ $transport['mode'] === 'Public Transport' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' }}">
+                {{ $transport['mode'] }}
+              </span>
+            </div>
+            
+            @if($transport['mode'] === 'Public Transport')
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p class="text-sm text-gray-600">Line/Vehicle</p>
+                <p class="text-base font-semibold text-gray-900">{{ $transport['line'] }} ({{ $transport['vehicle'] }})</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600">Duration</p>
+                <p class="text-base font-semibold text-gray-900">{{ $transport['duration'] }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600">From</p>
+                <p class="text-base font-semibold text-gray-900">{{ $transport['departure_stop'] }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600">To</p>
+                <p class="text-base font-semibold text-gray-900">{{ $transport['arrival_stop'] }}</p>
+              </div>
+            </div>
+            @else
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p class="text-sm text-gray-600">Distance</p>
+                <p class="text-base font-semibold text-gray-900">{{ $transport['distance'] }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600">Duration</p>
+                <p class="text-base font-semibold text-gray-900">{{ $transport['duration'] }}</p>
+              </div>
+            </div>
+            @endif
+            
+            <div class="mt-3 pt-3 border-t border-gray-200">
+              <p class="text-sm text-gray-600">Instructions</p>
+              <p class="text-sm text-gray-800">{{ $transport['instruction'] }}</p>
+            </div>
+          </div>
+          @endforeach
+        </div>
+      </div>
+      @endif
+
       <!-- Itinerary Details -->
       <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
         
@@ -122,10 +420,12 @@
                 <span class="text-gray-600">Start Time:</span>
                 <span class="font-semibold">{{ $itinerary->schedule['start_time'] }}</span>
               </div>
+              @if(isset($itinerary->schedule['estimated_arrival']))
               <div class="flex justify-between">
-                <span class="text-gray-600">Estimated Completion:</span>
-                <span class="font-semibold">{{ $itinerary->schedule['estimated_completion'] }}</span>
+                <span class="text-gray-600">Estimated Arrival:</span>
+                <span class="font-semibold">{{ $itinerary->schedule['estimated_arrival'] }}</span>
               </div>
+              @endif
               <div class="flex justify-between">
                 <span class="text-gray-600">Transportation:</span>
                 <span class="font-semibold">{{ $itinerary->transportation }}</span>
@@ -328,4 +628,136 @@
       }
     });
   </script>
+
+  <!-- Route Map Integration -->
+  @if($itinerary->route_coordinates && count($itinerary->route_coordinates) > 0)
+  <script>
+    // Initialize route map when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeRouteMap();
+    });
+
+    function initializeRouteMap() {
+      const mapElement = document.getElementById('route-map');
+      if (!mapElement) return;
+
+      // Check if Google Maps is available
+      if (typeof google === 'undefined' || !google.maps) {
+        // Load Google Maps API
+        loadGoogleMapsAPI();
+        return;
+      }
+
+      createRouteMap();
+    }
+
+    function loadGoogleMapsAPI() {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_api_key') }}&libraries=geometry&callback=createRouteMap`;
+      document.head.appendChild(script);
+    }
+
+    function createRouteMap() {
+      const mapElement = document.getElementById('route-map');
+      if (!mapElement) return;
+
+      // Hide loading state
+      document.getElementById('map-loading').style.display = 'none';
+
+      // Get route coordinates from the itinerary
+      const routeCoordinates = @json($itinerary->route_coordinates);
+      const departureInfo = @json($itinerary->departure_info);
+      const arrivalInfo = @json($itinerary->arrival_info);
+
+      if (!routeCoordinates || routeCoordinates.length === 0) {
+        mapElement.innerHTML = '<div class="text-center p-4"><p class="text-gray-500">Route map not available</p></div>';
+        return;
+      }
+
+      // Create map
+      const map = new google.maps.Map(mapElement, {
+        zoom: 10,
+        center: routeCoordinates[Math.floor(routeCoordinates.length / 2)],
+        mapTypeId: google.maps.MapTypeId.TERRAIN,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+      });
+
+      // Draw route polyline
+      const routePath = new google.maps.Polyline({
+        path: routeCoordinates,
+        geodesic: true,
+        strokeColor: '#10B981',
+        strokeOpacity: 1.0,
+        strokeWeight: 4,
+        map: map
+      });
+
+      // Add departure marker
+      if (departureInfo && departureInfo.coordinates) {
+        new google.maps.Marker({
+          position: departureInfo.coordinates,
+          map: map,
+          title: 'Departure: ' + departureInfo.location,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 10,
+            fillColor: '#10B981',
+            fillOpacity: 0.8,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 2
+          }
+        });
+      }
+
+      // Add arrival marker
+      if (arrivalInfo && arrivalInfo.coordinates) {
+        new google.maps.Marker({
+          position: arrivalInfo.coordinates,
+          map: map,
+          title: 'Destination: ' + arrivalInfo.trail_name,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 10,
+            fillColor: '#3B82F6',
+            fillOpacity: 0.8,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 2
+          }
+        });
+      }
+
+      // Fit map to show entire route
+      const bounds = new google.maps.LatLngBounds();
+      routeCoordinates.forEach(coord => bounds.extend(coord));
+      map.fitBounds(bounds);
+
+      // Add map controls
+      setupMapControls(map);
+    }
+
+    function setupMapControls(map) {
+      // Zoom in
+      document.getElementById('map-zoom-in')?.addEventListener('click', () => {
+        map.setZoom(map.getZoom() + 1);
+      });
+
+      // Zoom out
+      document.getElementById('map-zoom-out')?.addEventListener('click', () => {
+        map.setZoom(map.getZoom() - 1);
+      });
+
+      // Reset view
+      document.getElementById('map-reset')?.addEventListener('click', () => {
+        const routeCoordinates = @json($itinerary->route_coordinates);
+        if (routeCoordinates && routeCoordinates.length > 0) {
+          const bounds = new google.maps.LatLngBounds();
+          routeCoordinates.forEach(coord => bounds.extend(coord));
+          map.fitBounds(bounds);
+        }
+      });
+    }
+  </script>
+  @endif
 </x-app-layout>

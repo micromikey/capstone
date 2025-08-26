@@ -169,7 +169,12 @@
 
 /* Enhanced Info Windows */
 .enhanced-trail-info-window {
-    @apply max-w-sm bg-white rounded-xl shadow-2xl border border-gray-200/50 overflow-hidden;
+    max-width: 24rem;
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(229, 231, 235, 0.5);
+    overflow: hidden;
 }
 
 .trail-info-header {
@@ -323,8 +328,16 @@
 
 /* Weather Overlay */
 .weather-overlay {
-    @apply fixed top-4 right-4 z-50 bg-white rounded-xl shadow-2xl border border-gray-200;
-    @apply p-4 max-w-sm;
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 50;
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid #e5e7eb;
+    padding: 1rem;
+    max-width: 24rem;
 }
 
 .weather-content {
@@ -644,8 +657,8 @@
 
 /* Custom Google Maps styling overrides */
 .gm-style .gm-style-iw-c {
-    @apply rounded-xl overflow-hidden;
-    max-width: 350px !important;
+    @apply rounded-lg overflow-hidden;
+    max-width: 300px !important;
     padding: 0 !important;
 }
 
@@ -657,6 +670,44 @@
 /* Enhanced info window content styling */
 .gm-style .enhanced-trail-info-window {
     @apply w-full;
+}
+
+/* Profile-style trail info window for small maps */
+.gm-style .enhanced-trail-info-window.max-w-sm {
+    max-width: 320px !important;
+}
+
+/* Ensure proper sizing for the new profile layout */
+.gm-style .enhanced-trail-info-window .w-14 {
+    width: 3.5rem !important;
+}
+
+.gm-style .enhanced-trail-info-window .h-14 {
+    height: 3.5rem !important;
+}
+
+/* Profile layout specific styles */
+.gm-style .enhanced-trail-info-window .flex {
+    display: flex !important;
+}
+
+.gm-style .enhanced-trail-info-window .gap-3 {
+    gap: 0.75rem !important;
+}
+
+.gm-style .enhanced-trail-info-window .mb-3 {
+    margin-bottom: 0.75rem !important;
+}
+
+.gm-style .enhanced-trail-info-window .text-center {
+    text-align: center !important;
+}
+
+.gm-style .enhanced-trail-info-window .line-clamp-1 {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 1 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
 }
 
 .gm-style .enhanced-trail-info-window .flex {
