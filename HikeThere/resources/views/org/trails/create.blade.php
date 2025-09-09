@@ -16,6 +16,11 @@
         </div>
     </x-slot>
 
+    <!-- Google Maps API Key Meta Tag -->
+    <meta name="google-maps-api-key" content="{{ config('services.google.maps_api_key') }}">
+    <!-- CSRF Token Meta Tag -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <div class="py-12">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
@@ -57,74 +62,78 @@
 
                 <form method="POST" action="{{ route('org.trails.store') }}" class="p-6" id="trailForm" enctype="multipart/form-data">
                     @csrf
-                    
+                    <!-- Hidden field to store accepted trail geometry (array of {lat,lng,elevation}) -->
+                    <input type="hidden" id="trail_coordinates" name="trail_coordinates" />
+                    <!-- Hidden field for estimated_time since it was removed from the form but still expected by backend -->
+                    <input type="hidden" name="estimated_time" value="" />
+
                     <!-- Debug: Display any validation errors at the top -->
                     @if ($errors->any())
-                        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-                            <div class="flex">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                                    </svg>
-                                </div>
-                                <div class="ml-3">
-                                    <h3 class="text-sm font-medium text-red-800">
-                                        There were some errors with your submission:
-                                    </h3>
-                                    <div class="mt-2 text-sm text-red-700">
-                                        <ul class="list-disc pl-5 space-y-1">
-                                            @foreach ($errors->all() as $error)
-                                                <li>{{ $error }}</li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
+                    <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-800">
+                                    There were some errors with your submission:
+                                </h3>
+                                <div class="mt-2 text-sm text-red-700">
+                                    <ul class="list-disc pl-5 space-y-1">
+                                        @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
                                 </div>
                             </div>
                         </div>
+                    </div>
                     @endif
-                    
+
                     <!-- Debug: Display any success/error messages -->
                     @if (session('success'))
-                        <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
-                            <div class="flex">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                    </svg>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm font-medium text-green-800">
-                                        {{ session('success') }}
-                                    </p>
-                                </div>
+                    <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium text-green-800">
+                                    {{ session('success') }}
+                                </p>
                             </div>
                         </div>
+                    </div>
                     @endif
-                    
+
                     @if (session('error'))
-                        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-                            <div class="flex">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                                    </svg>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm font-medium text-red-800">
-                                        {{ session('error') }}
-                                    </p>
-                                </div>
+                    <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium text-red-800">
+                                    {{ session('error') }}
+                                </p>
                             </div>
                         </div>
+                    </div>
                     @endif
-                    
+
                     <!-- Step 1: Basic Information -->
                     <div id="step-1" class="step-content">
                         <div class="mb-6">
                             <h3 class="text-lg font-medium text-gray-900 mb-4">Step 1: Basic Information</h3>
                             <p class="text-gray-600 text-sm">Start with the essential details about your trail.</p>
                         </div>
-                        
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <x-label for="mountain_name" value="Mountain Name *" />
@@ -141,11 +150,11 @@
                             <div class="md:col-span-2">
                                 <x-label for="location_search" value="Location *" />
                                 <div class="relative mt-1">
-                                    <input type="text" id="location_search" placeholder="Search for a location..." class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]">
+                                    <input type="text" id="location_search" placeholder="Search for mountains, parks, cities, or landmarks..."
+                                        class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" autocomplete="off">
                                     <input type="hidden" id="location_id" name="location_id" required>
-                                    <div id="location_results" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg hidden">
-                                        <!-- Location results will be populated here -->
-                                    </div>
+                                    <input type="hidden" id="location_latitude" name="location_latitude">
+                                    <input type="hidden" id="location_longitude" name="location_longitude">
                                     <div id="location_loading" class="absolute right-3 top-1/2 transform -translate-y-1/2 hidden">
                                         <svg class="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -154,10 +163,41 @@
                                     </div>
                                 </div>
                                 <div class="mt-2 text-sm text-gray-600">
-                                    <button type="button" onclick="showAllLocations()" class="text-[#336d66] hover:text-[#2a5a54] underline">
-                                        Or view all locations
-                                    </button>
+                                    🏔️ Search for mountains, national parks, tourist spots, or any location in the Philippines
                                 </div>
+
+                                <!-- Manual coordinate entry option -->
+                                <div class="mt-3 p-3 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-sm font-medium text-gray-700">Can't find your location?</span>
+                                        <button type="button" onclick="toggleManualCoordinates()" class="text-xs text-blue-600 hover:text-blue-800">
+                                            Enter coordinates manually
+                                        </button>
+                                    </div>
+                                    <div id="manual_coordinates" class="hidden">
+                                        <div class="grid grid-cols-2 gap-3 mt-2">
+                                            <div>
+                                                <label class="block text-xs text-gray-600 mb-1">Latitude</label>
+                                                <input type="number" id="manual_lat" placeholder="e.g., 14.6091" step="any"
+                                                    class="w-full text-sm border-gray-300 rounded focus:ring-[#336d66] focus:border-[#336d66]">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs text-gray-600 mb-1">Longitude</label>
+                                                <input type="number" id="manual_lng" placeholder="e.g., 121.0223" step="any"
+                                                    class="w-full text-sm border-gray-300 rounded focus:ring-[#336d66] focus:border-[#336d66]">
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <input type="text" id="manual_location_name" placeholder="Location name (e.g., Mount Arayat)"
+                                                class="w-full text-sm border-gray-300 rounded focus:ring-[#336d66] focus:border-[#336d66]">
+                                        </div>
+                                        <button type="button" onclick="useManualCoordinates()"
+                                            class="mt-2 w-full bg-blue-600 text-white text-xs py-2 rounded hover:bg-blue-700">
+                                            Use These Coordinates
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <x-input-error for="location_id" class="mt-2" />
                             </div>
 
@@ -206,7 +246,7 @@
                             <h3 class="text-lg font-medium text-gray-900 mb-4">Step 2: Trail Details</h3>
                             <p class="text-gray-600 text-sm">Define the difficulty, duration, and terrain characteristics.</p>
                         </div>
-                        
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <x-label for="duration" value="Duration *" />
@@ -221,7 +261,15 @@
                             </div>
 
                             <div>
-                                <x-label for="length" value="Trail Length (km)" />
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2">
+                                        <x-label for="length" value="Trail Length (km)" />
+                                        <span class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full" title="This field will be auto-calculated when you draw or upload a trail route">Auto</span>
+                                    </div>
+                                    <button type="button" onclick="resetFieldToAuto('length')" class="reset-auto-btn text-xs text-gray-500 hover:text-blue-600 hidden" title="Reset to auto-calculation">
+                                        🔄 Reset
+                                    </button>
+                                </div>
                                 <div class="relative mt-1">
                                     <x-input id="length" type="number" name="length" step="0.1" min="0" class="pr-12 block w-full" placeholder="5.2" />
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -232,7 +280,15 @@
                             </div>
 
                             <div>
-                                <x-label for="elevation_gain" value="Elevation Gain (m)" />
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2">
+                                        <x-label for="elevation_gain" value="Elevation Gain (m)" />
+                                        <span class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full" title="This field will be auto-calculated from trail elevation data">Auto</span>
+                                    </div>
+                                    <button type="button" onclick="resetFieldToAuto('elevation_gain')" class="reset-auto-btn text-xs text-gray-500 hover:text-blue-600 hidden" title="Reset to auto-calculation">
+                                        🔄 Reset
+                                    </button>
+                                </div>
                                 <div class="relative mt-1">
                                     <x-input id="elevation_gain" type="number" name="elevation_gain" min="0" class="pr-12 block w-full" placeholder="500" />
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -243,7 +299,15 @@
                             </div>
 
                             <div>
-                                <x-label for="elevation_high" value="Highest Point (m)" />
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2">
+                                        <x-label for="elevation_high" value="Highest Point (m)" />
+                                        <span class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full" title="This field will be auto-calculated from trail elevation data">Auto</span>
+                                    </div>
+                                    <button type="button" onclick="resetFieldToAuto('elevation_high')" class="reset-auto-btn text-xs text-gray-500 hover:text-blue-600 hidden" title="Reset to auto-calculation">
+                                        🔄 Reset
+                                    </button>
+                                </div>
                                 <div class="relative mt-1">
                                     <x-input id="elevation_high" type="number" name="elevation_high" min="0" class="pr-12 block w-full" placeholder="1030" />
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -254,7 +318,15 @@
                             </div>
 
                             <div>
-                                <x-label for="elevation_low" value="Lowest Point (m)" />
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2">
+                                        <x-label for="elevation_low" value="Lowest Point (m)" />
+                                        <span class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full" title="This field will be auto-calculated from trail elevation data">Auto</span>
+                                    </div>
+                                    <button type="button" onclick="resetFieldToAuto('elevation_low')" class="reset-auto-btn text-xs text-gray-500 hover:text-blue-600 hidden" title="Reset to auto-calculation">
+                                        🔄 Reset
+                                    </button>
+                                </div>
                                 <div class="relative mt-1">
                                     <x-input id="elevation_low" type="number" name="elevation_low" min="0" class="pr-12 block w-full" placeholder="200" />
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -262,17 +334,6 @@
                                     </div>
                                 </div>
                                 <x-input-error for="elevation_low" class="mt-2" />
-                            </div>
-
-                            <div>
-                                <x-label for="estimated_time" value="Estimated Time (minutes)" />
-                                <div class="relative mt-1">
-                                    <x-input id="estimated_time" type="number" name="estimated_time" min="0" class="pr-20 block w-full" placeholder="180" />
-                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                        <span class="text-gray-500 sm:text-sm">min</span>
-                                    </div>
-                                </div>
-                                <x-input-error for="estimated_time" class="mt-2" />
                             </div>
 
                             <div class="md:col-span-2">
@@ -285,6 +346,92 @@
                                 <x-label for="terrain_notes" value="Terrain Notes *" />
                                 <textarea id="terrain_notes" name="terrain_notes" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="e.g., Rocky, River Crossings, Dense Forest, Steep Slopes" required></textarea>
                                 <x-input-error for="terrain_notes" class="mt-2" />
+                            </div>
+
+                            <!-- Trail Route Configuration -->
+                            <div class="md:col-span-2">
+                                <x-label value="Trail Route Configuration" />
+                                <div class="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                    <div class="flex flex-wrap gap-4 mb-4">
+                                        <button type="button" id="draw_trail_btn" onclick="enableTrailDrawing()"
+                                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                            </svg>
+                                            Draw Trail Manually
+                                        </button>
+
+                                        <button type="button" id="upload_gpx_btn" onclick="document.getElementById('gpx_file').click()"
+                                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                            </svg>
+                                            Upload GPX File
+                                        </button>
+
+                                        <button type="button" id="preview_route_btn" onclick="previewRoute()"
+                                            class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3v10" />
+                                            </svg>
+                                            Preview Auto-Route
+                                        </button>
+
+                                        <button type="button" id="clear_trail_btn" onclick="clearTrail()"
+                                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            Clear
+                                        </button>
+                                    </div>
+
+                                    <!-- Hidden GPX file input -->
+                                    <input type="file" id="gpx_file" name="gpx_file" accept=".gpx,.kml,.kmz" style="display: none;" onchange="handleGPXUpload(this)">
+
+                                    <!-- Trail Drawing Map -->
+                                    <div id="trail_drawing_map" class="h-96 w-full rounded-lg border-2 border-dashed border-gray-300 bg-white"></div>
+
+                                    <!-- Trail Statistics -->
+                                    <div id="trail_stats" class="mt-4 p-3 bg-white rounded border hidden">
+                                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
+                                            <div>
+                                                <span class="font-medium">Distance:</span>
+                                                <span id="trail_distance">0 km</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-medium">Points:</span>
+                                                <span id="trail_points">0</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-medium">Elevation Gain:</span>
+                                                <span id="trail_elevation_gain">0 m</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-medium">Highest Point:</span>
+                                                <span id="trail_highest_point">N/A</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-medium">Lowest Point:</span>
+                                                <span id="trail_lowest_point">N/A</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-medium">Source:</span>
+                                                <span id="trail_source">Manual</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Instructions -->
+                                    <div class="mt-3 text-sm text-gray-600">
+                                        <p><strong>Drawing Instructions:</strong> Click "Draw Trail Manually" then click on the map to add points along your trail. Double-click to finish drawing.</p>
+                                        <p><strong>GPX Upload:</strong> Upload a GPX file exported from GPS devices or apps like Garmin Connect, Strava, or AllTrails.</p>
+                                        <p><strong>Auto-Route:</strong> Generate an approximate route based on trail name and location (least accurate).</p>
+                                    </div>
+                                </div>
+
+                                <!-- Provider/Source info -->
+                                <div id="preview_provider" class="mt-2 text-sm text-gray-600"></div>
                             </div>
 
                             <div class="md:col-span-2">
@@ -316,7 +463,7 @@
                             <h3 class="text-lg font-medium text-gray-900 mb-4">Step 3: Access & Safety</h3>
                             <p class="text-gray-600 text-sm">Provide transportation details and safety information.</p>
                         </div>
-                        
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <x-label for="departure_point" value="Departure Point *" />
@@ -383,7 +530,7 @@
                             <h3 class="text-lg font-medium text-gray-900 mb-4">Step 4: Additional Information</h3>
                             <p class="text-gray-600 text-sm">Complete the trail profile with permits, requirements, and feedback.</p>
                         </div>
-                        
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="md:col-span-2">
                                 <div class="flex items-center">
@@ -475,12 +622,12 @@
                                     Primary Trail Image (Required)
                                 </h4>
                                 <p class="text-sm text-gray-600 mb-4">This will be the main image displayed on the explore page</p>
-                                
-                                <div class="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md" 
-                                     id="primary-drop-zone"
-                                     ondrop="handleDrop(event, 'primary')" 
-                                     ondragover="handleDragOver(event)"
-                                     ondragleave="handleDragLeave(event)">
+
+                                <div class="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md"
+                                    id="primary-drop-zone"
+                                    ondrop="handleDrop(event, 'primary')"
+                                    ondragover="handleDragOver(event)"
+                                    ondragleave="handleDragLeave(event)">
                                     <div class="space-y-1 text-center">
                                         <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -507,11 +654,11 @@
                                     Additional Trail Photos (Optional)
                                 </h4>
                                 <p class="text-sm text-gray-600 mb-4">Add more photos to showcase different views, trail features, or seasonal variations (up to 5 images)</p>
-                                
+
                                 <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                                     <!-- Additional Image Slots -->
                                     <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors"
-                                         onclick="document.getElementById('additional_1').click()">
+                                        onclick="document.getElementById('additional_1').click()">
                                         <div class="space-y-2">
                                             <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -523,7 +670,7 @@
                                     </div>
 
                                     <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors"
-                                         onclick="document.getElementById('additional_2').click()">
+                                        onclick="document.getElementById('additional_2').click()">
                                         <div class="space-y-2">
                                             <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -535,7 +682,7 @@
                                     </div>
 
                                     <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors"
-                                         onclick="document.getElementById('additional_3').click()">
+                                        onclick="document.getElementById('additional_3').click()">
                                         <div class="space-y-2">
                                             <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -547,7 +694,7 @@
                                     </div>
 
                                     <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors"
-                                         onclick="document.getElementById('additional_4').click()">
+                                        onclick="document.getElementById('additional_4').click()">
                                         <div class="space-y-2">
                                             <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -559,7 +706,7 @@
                                     </div>
 
                                     <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors"
-                                         onclick="document.getElementById('additional_5').click()">
+                                        onclick="document.getElementById('additional_5').click()">
                                         <div class="space-y-2">
                                             <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -581,16 +728,16 @@
                                     Trail Map (Optional)
                                 </h4>
                                 <p class="text-sm text-gray-600 mb-4">Upload a trail map, elevation profile, or route diagram</p>
-                                
-                                <div class="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-blue-300 border-dashed rounded-md" 
-                                     id="map-drop-zone"
-                                     ondrop="handleDrop(event, 'map')" 
-                                     ondragover="handleDragOver(event)"
-                                     ondragleave="handleDragLeave(event)">
+
+                                <div class="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-blue-300 border-dashed rounded-md"
+                                    id="map-drop-zone"
+                                    ondrop="handleDrop(event, 'map')"
+                                    ondragover="handleDragOver(event)"
+                                    ondragleave="handleDragLeave(event)">
                                     <div class="space-y-1 text-center">
                                         <svg class="mx-auto h-12 w-12 text-blue-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                            <path d="M24 8l-8 8h16l-8-8z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                            <path d="M8 24h32M8 32h32" stroke-width="2" stroke-linecap="round"/>
+                                            <path d="M24 8l-8 8h16l-8-8z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                            <path d="M8 24h32M8 32h32" stroke-width="2" stroke-linecap="round" />
                                         </svg>
                                         <div class="flex text-sm text-gray-600">
                                             <label for="map_image" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
@@ -635,249 +782,255 @@
         // Add form submission debugging
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('trailForm');
-            
+
             form.addEventListener('submit', function(e) {
                 console.log('Form submission started');
-                
+
                 // Log form data
                 const formData = new FormData(form);
                 console.log('Form data:');
                 for (let [key, value] of formData.entries()) {
                     console.log(key + ': ' + value);
                 }
-                
+
                 // Check if all required fields are filled
                 const requiredFields = form.querySelectorAll('[required]');
                 let missingFields = [];
-                
+
                 requiredFields.forEach(field => {
                     if (!field.value.trim()) {
                         missingFields.push(field.name);
                     }
                 });
-                
+
                 // Special check for location_id
                 const locationId = document.getElementById('location_id').value;
                 const locationSearch = document.getElementById('location_search').value;
-                
+
                 if (!locationId && locationSearch) {
                     missingFields.push('location_id (please select a location from the search results)');
                 }
-                
+
                 if (missingFields.length > 0) {
                     console.error('Missing required fields:', missingFields);
                     e.preventDefault();
                     alert('Please fill in all required fields: ' + missingFields.join(', '));
                     return false;
                 }
-                
+
                 console.log('Form validation passed, submitting...');
             });
 
             // Initialize location search
             initializeLocationSearch();
+
+            // Add event listeners for trail metrics fields to detect manual edits
+            const trailMetricFields = ['length', 'elevation_gain', 'elevation_high', 'elevation_low'];
+            trailMetricFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    // Mark as manually edited when user changes the value
+                    field.addEventListener('input', function() {
+                        if (this.value && this.value.trim() !== '') {
+                            markFieldAsManuallyEdited(fieldId);
+                        }
+                    });
+
+                    // Also detect when user focuses and then changes the field
+                    field.addEventListener('change', function() {
+                        if (this.value && this.value.trim() !== '') {
+                            markFieldAsManuallyEdited(fieldId);
+                        }
+                    });
+                }
+            });
         });
 
-        // Location search functionality
+        // Location search functionality using Google Places
         function initializeLocationSearch() {
-            console.log('Initializing location search...');
-            
-            const searchInput = document.getElementById('location_search');
-            const resultsDiv = document.getElementById('location_results');
-            const hiddenInput = document.getElementById('location_id');
+            console.log('Initializing Google Places location search...');
 
-            if (!searchInput || !resultsDiv || !hiddenInput) {
-                console.error('Location search elements not found:', {
-                    searchInput: !!searchInput,
-                    resultsDiv: !!resultsDiv,
-                    hiddenInput: !!hiddenInput
-                });
-                return;
-            }
-
-            console.log('Location search elements found, setting up event listeners...');
-
-            searchInput.addEventListener('input', function() {
-                console.log('Input event triggered, value:', this.value);
-                clearTimeout(locationSearchTimeout);
-                const query = this.value.trim();
-                
-                // Clear previous selection if user is typing
-                if (this.value !== this.dataset.lastSelectedValue) {
-                    clearLocationSelection();
-                }
-                
-                if (query.length < 2) {
-                    console.log('Query too short, hiding results');
-                    resultsDiv.classList.add('hidden');
+            loadMapsScript(() => {
+                const searchInput = document.getElementById('location_search');
+                if (!searchInput) {
+                    console.error('Location search input not found');
                     return;
                 }
 
-                console.log('Setting timeout for search...');
-                locationSearchTimeout = setTimeout(() => {
-                    searchLocations(query);
-                }, 300);
-            });
+                // Initialize Places Autocomplete with enhanced search for hiking locations
+                const autocomplete = new google.maps.places.Autocomplete(searchInput, {
+                    componentRestrictions: {
+                        country: 'PH'
+                    },
+                    // Remove restrictive types to allow ALL place types including natural features, mountains, parks
+                    // This will include: natural_feature, park, establishment, point_of_interest, tourist_attraction, etc.
+                    fields: ['place_id', 'formatted_address', 'geometry', 'name', 'address_components', 'types', 'plus_code']
+                    // No types restriction = search everything
+                });
 
-            // Hide results when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
-                    resultsDiv.classList.add('hidden');
-                }
-            });
+                // Set bias to Philippines bounds
+                const philippinesBounds = new google.maps.LatLngBounds(
+                    new google.maps.LatLng(4.2158064, 114.0952145), // Southwest
+                    new google.maps.LatLng(21.3217806, 127.6062314) // Northeast
+                );
+                autocomplete.setBounds(philippinesBounds);
 
-            console.log('Location search initialization complete');
+                // Handle place selection
+                autocomplete.addListener('place_changed', function() {
+                    const place = autocomplete.getPlace();
+
+                    if (!place.geometry) {
+                        console.warn('No geometry for selected place');
+                        // Instead of clearing, offer text search fallback
+                        handleTextSearchFallback(searchInput.value);
+                        return;
+                    }
+
+                    console.log('Google Places selection:', place);
+                    handleGooglePlaceSelection(place);
+                });
+
+                // Add input event listener for text search fallback
+                let searchTimeout;
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        const query = this.value.trim();
+                        if (query.length >= 3 && !document.getElementById('location_id').value) {
+                            // Show suggestion for text search after 2 seconds of no Google Places match
+                            showTextSearchSuggestion(query);
+                        }
+                    }, 2000);
+                });
+
+                console.log('Google Places Autocomplete initialized');
+            });
         }
 
-        function searchLocations(query) {
-            const resultsDiv = document.getElementById('location_results');
+        function handleGooglePlaceSelection(place) {
             const searchInput = document.getElementById('location_search');
             const hiddenInput = document.getElementById('location_id');
+            const latInput = document.getElementById('location_latitude');
+            const lngInput = document.getElementById('location_longitude');
             const loadingDiv = document.getElementById('location_loading');
 
-            console.log('Searching for locations with query:', query);
-            
-            // Show loading state
+            // Show loading
             loadingDiv.classList.remove('hidden');
-            resultsDiv.classList.add('hidden');
 
-            fetch(`/api/locations/search?q=${encodeURIComponent(query)}`)
-                .then(response => {
-                    console.log('API response status:', response.status);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
+            // Prepare data for backend processing
+            const locationData = {
+                place_id: place.place_id,
+                formatted_address: place.formatted_address,
+                latitude: place.geometry.location.lat(),
+                longitude: place.geometry.location.lng(),
+                name: place.name || place.formatted_address.split(',')[0]
+            };
+
+            console.log('Processing Google Places location:', locationData);
+
+            // Send to backend to create/find location
+            fetch('/api/locations/google-places', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(locationData)
                 })
+                .then(response => response.json())
                 .then(data => {
-                    console.log('API response data:', data);
                     loadingDiv.classList.add('hidden');
-                    
-                    if (data.data && data.data.length > 0) {
-                        console.log('Found locations:', data.data);
-                        displayLocationResults(data.data);
-                        resultsDiv.classList.remove('hidden');
+
+                    if (data.success && data.location) {
+                        // Update form fields
+                        hiddenInput.value = data.location.id;
+                        latInput.value = locationData.latitude;
+                        lngInput.value = locationData.longitude;
+
+                        // Update search input display
+                        searchInput.value = data.location.name + ', ' + data.location.province;
+                        searchInput.dataset.lastSelectedValue = searchInput.value;
+
+                        // Add visual feedback
+                        searchInput.classList.add('border-green-500', 'bg-green-50');
+                        searchInput.classList.remove('border-gray-300');
+
+                        // Add checkmark
+                        addLocationCheckmark();
+
+                        console.log('Location processed successfully:', data.location);
+
+                        // Update the map if it's initialized
+                        if (drawingMap) {
+                            drawingMap.setCenter(place.geometry.location);
+                            drawingMap.setZoom(13);
+                        }
+
                     } else {
-                        console.log('No locations found');
-                        resultsDiv.classList.add('hidden');
-                        // Show "no results" message
-                        resultsDiv.innerHTML = '<div class="px-4 py-2 text-gray-500 text-center">No locations found. Try a different search term.</div>';
-                        resultsDiv.classList.remove('hidden');
+                        console.error('Failed to process location:', data.error || 'Unknown error');
+                        clearLocationSelection();
+                        alert('Failed to process the selected location. Please try again.');
                     }
                 })
                 .catch(error => {
-                    console.error('Error searching locations:', error);
                     loadingDiv.classList.add('hidden');
-                    resultsDiv.classList.add('hidden');
-                    // Show error message
-                    resultsDiv.innerHTML = '<div class="px-4 py-2 text-red-500 text-center">Error searching locations. Please try again.</div>';
-                    resultsDiv.classList.remove('hidden');
+                    console.error('Error processing location:', error);
+                    clearLocationSelection();
+                    alert('Error processing location. Please check your connection and try again.');
                 });
         }
 
-        function displayLocationResults(locations) {
-            const resultsDiv = document.getElementById('location_results');
+        // Remove visual selection/checkmark if user edits the search input after selecting a location
+        (function bindLocationInputEditHandler(){
             const searchInput = document.getElementById('location_search');
-            const hiddenInput = document.getElementById('location_id');
+            if (!searchInput) return;
 
-            resultsDiv.innerHTML = locations.map(location => `
-                <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-200 last:border-b-0" 
-                     onclick="selectLocation(${location.id}, '${location.name}, ${location.province}')">
-                    <div class="font-medium text-gray-900">${location.name}</div>
-                    <div class="text-sm text-gray-600">${location.province}, ${location.region}</div>
-                </div>
-            `).join('');
-        }
+            // When user types and the value differs from the last confirmed selection,
+            // clear the hidden location id and remove the visual checkmark/loading.
+            searchInput.addEventListener('input', function() {
+                const last = this.dataset.lastSelectedValue || '';
+                if (this.value && this.value.trim() !== last) {
+                    // Clear the hidden id so the form validation knows the selection is no longer valid
+                    const hid = document.getElementById('location_id');
+                    if (hid) hid.value = '';
 
-        function selectLocation(id, displayName) {
+                    // Remove green success styles and checkmark
+                    this.classList.remove('border-green-500', 'bg-green-50');
+                    this.classList.add('border-gray-300');
+                    const existing = this.parentNode.querySelector('.location-selected-checkmark');
+                    if (existing) existing.remove();
+                }
+            });
+        })();
+
+        function addLocationCheckmark() {
             const searchInput = document.getElementById('location_search');
-            const hiddenInput = document.getElementById('location_id');
-            const resultsDiv = document.getElementById('location_results');
-            
-            searchInput.value = displayName;
-            hiddenInput.value = id;
-            resultsDiv.classList.add('hidden');
-            
-            // Add visual feedback
-            searchInput.classList.add('border-green-500', 'bg-green-50');
-            searchInput.classList.remove('border-gray-300');
-            
-            // Add a checkmark icon
             const existingCheckmark = searchInput.parentNode.querySelector('.location-selected-checkmark');
+
             if (!existingCheckmark) {
                 const checkmark = document.createElement('div');
                 checkmark.className = 'location-selected-checkmark absolute right-10 top-1/2 transform -translate-y-1/2 text-green-500';
                 checkmark.innerHTML = '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>';
                 searchInput.parentNode.appendChild(checkmark);
             }
-            
-            console.log('Location selected:', { id, displayName });
-            
-            // Store the selected value for comparison
-            searchInput.dataset.lastSelectedValue = displayName;
         }
 
         function clearLocationSelection() {
             const searchInput = document.getElementById('location_search');
             const hiddenInput = document.getElementById('location_id');
-            
+            const latInput = document.getElementById('location_latitude');
+            const lngInput = document.getElementById('location_longitude');
+
             hiddenInput.value = '';
+            latInput.value = '';
+            lngInput.value = '';
             searchInput.classList.remove('border-green-500', 'bg-green-50');
             searchInput.classList.add('border-gray-300');
-            
+
             // Remove checkmark
             const checkmark = searchInput.parentNode.querySelector('.location-selected-checkmark');
             if (checkmark) {
                 checkmark.remove();
-            }
-        }
-
-        function showAllLocations() {
-            const resultsDiv = document.getElementById('location_results');
-            const searchInput = document.getElementById('location_search');
-            const loadingDiv = document.getElementById('location_loading');
-            
-            // Show loading state
-            loadingDiv.classList.remove('hidden');
-            resultsDiv.classList.add('hidden');
-            
-            // Get all locations from the server
-            fetch('/api/locations')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(locations => {
-                    loadingDiv.classList.add('hidden');
-                    if (locations && locations.length > 0) {
-                        displayLocationResults(locations);
-                        resultsDiv.classList.remove('hidden');
-                        searchInput.placeholder = 'All locations shown below...';
-                    } else {
-                        // Fallback to showing locations from the view data
-                        showLocationsFromView();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching all locations:', error);
-                    loadingDiv.classList.add('hidden');
-                    // Fallback to showing locations from the view data
-                    showLocationsFromView();
-                });
-        }
-
-        function showLocationsFromView() {
-            const resultsDiv = document.getElementById('location_results');
-            const searchInput = document.getElementById('location_search');
-            
-            // This will use the locations passed from the controller
-            const locations = @json($locations);
-            if (locations && locations.length > 0) {
-                displayLocationResults(locations);
-                resultsDiv.classList.remove('hidden');
-                searchInput.placeholder = 'All locations shown below...';
             }
         }
 
@@ -886,13 +1039,20 @@
             document.querySelectorAll('.step-content').forEach(content => {
                 content.classList.add('hidden');
             });
-            
+
             // Show selected step
             document.getElementById(`step-${step}`).classList.remove('hidden');
-            
+
             // Update navigation styling
             updateNavigation(step);
-            
+
+            // Initialize drawing map when step 2 is shown
+            if (step === 2) {
+                setTimeout(() => {
+                    ensureDrawingMapInitialized();
+                }, 100);
+            }
+
             currentStep = step;
         }
 
@@ -914,7 +1074,7 @@
                 const stepNumber = index + 1;
                 const circle = nav.querySelector('span span');
                 const text = nav.querySelector('span');
-                
+
                 if (stepNumber <= activeStep) {
                     nav.classList.remove('border-transparent', 'text-gray-500');
                     nav.classList.add('border-[#336d66]', 'text-[#336d66]');
@@ -963,7 +1123,7 @@
             e.preventDefault();
             e.stopPropagation();
             e.currentTarget.classList.remove('border-green-400', 'bg-green-50');
-            
+
             const files = e.dataTransfer.files;
             if (files.length > 0) {
                 const file = files[0];
@@ -972,7 +1132,7 @@
                     const dt = new DataTransfer();
                     dt.items.add(file);
                     input.files = dt.files;
-                    
+
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         showImagePreview(e.target.result, type, file.name);
@@ -985,7 +1145,7 @@
         function showImagePreview(src, type, fileName) {
             const previewId = type + (type.includes('additional') ? '_preview' : '-preview');
             const previewElement = document.getElementById(previewId);
-            
+
             previewElement.innerHTML = `
                 <div class="relative inline-block">
                     <img src="${src}" alt="Preview" class="h-32 w-32 object-cover rounded-lg shadow-md">
@@ -1000,10 +1160,10 @@
         }
 
         function removeImage(type) {
-            const input = type === 'primary' ? 'primary_image' : 
-                         type === 'map' ? 'map_image' : type;
+            const input = type === 'primary' ? 'primary_image' :
+                type === 'map' ? 'map_image' : type;
             const previewId = type + (type.includes('additional') ? '_preview' : '-preview');
-            
+
             document.getElementById(input).value = '';
             document.getElementById(previewId).classList.add('hidden');
             document.getElementById(previewId).innerHTML = '';
@@ -1013,7 +1173,10 @@
         function scrollToFirstError() {
             const firstError = document.querySelector('.border-red-300, .border-red-500, [class*="error"]');
             if (firstError) {
-                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstError.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
                 firstError.focus();
             }
         }
@@ -1022,7 +1185,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('trailForm');
             const submitBtn = form.querySelector('button[type="submit"]');
-            
+
             form.addEventListener('submit', function(e) {
                 // Show loading state
                 submitBtn.disabled = true;
@@ -1049,5 +1212,895 @@
                 });
             });
         });
+
+        // --- Trail Drawing and Mapping Functions ---
+        let drawingMap = null;
+        let drawingPolyline = null;
+        let isDrawing = false;
+        let drawingPath = [];
+        let currentTrailCoords = [];
+        let drawingModeEnabled = false;
+
+        function loadMapsScript(cb) {
+            if (typeof google !== 'undefined' && google.maps) {
+                cb();
+                return;
+            }
+            if (window.__gmapsLoading) {
+                (window.__gmapsCallbacks || []).push(cb);
+                return;
+            }
+            window.__gmapsLoading = true;
+            window.__gmapsCallbacks = [cb];
+            const key = document.querySelector('meta[name="google-maps-api-key"]')?.content;
+            if (!key) {
+                console.warn('No Google Maps key');
+                cb();
+                return;
+            }
+            const s = document.createElement('script');
+            s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=geometry,places&v=weekly`;
+            s.async = true;
+            s.defer = true;
+            s.onload = () => {
+                (window.__gmapsCallbacks || []).forEach(fn => fn());
+                window.__gmapsCallbacks = [];
+            };
+            document.head.appendChild(s);
+        }
+
+        function initializeDrawingMap() {
+            loadMapsScript(() => {
+                const mapElement = document.getElementById('trail_drawing_map');
+                if (!mapElement) return;
+
+                // Initialize map centered on Philippines
+                const defaultCenter = {
+                    lat: 14.6091,
+                    lng: 121.0223
+                };
+                drawingMap = new google.maps.Map(mapElement, {
+                    center: defaultCenter,
+                    zoom: 10,
+                    mapTypeId: google.maps.MapTypeId.HYBRID,
+                    gestureHandling: 'greedy'
+                });
+
+                // Try to center on selected location using stored coordinates
+                const latInput = document.getElementById('location_latitude');
+                const lngInput = document.getElementById('location_longitude');
+                if (latInput && lngInput && latInput.value && lngInput.value) {
+                    const lat = parseFloat(latInput.value);
+                    const lng = parseFloat(lngInput.value);
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                        drawingMap.setCenter({
+                            lat: lat,
+                            lng: lng
+                        });
+                        drawingMap.setZoom(13);
+                    }
+                }
+            });
+        }
+
+        function enableTrailDrawing() {
+            if (!drawingMap) {
+                initializeDrawingMap();
+                setTimeout(() => enableTrailDrawing(), 1000);
+                return;
+            }
+
+            drawingModeEnabled = true;
+            isDrawing = true;
+            drawingPath = [];
+
+            // Update button states
+            updateDrawingButtons();
+
+            // Change cursor
+            drawingMap.setOptions({
+                draggableCursor: 'crosshair'
+            });
+
+            // Add click listener for drawing
+            const clickListener = drawingMap.addListener('click', (event) => {
+                if (!isDrawing) return;
+
+                const lat = event.latLng.lat();
+                const lng = event.latLng.lng();
+
+                addPointToPath(lat, lng);
+            });
+
+            // Add double-click listener to finish drawing
+            const dblClickListener = drawingMap.addListener('dblclick', (event) => {
+                if (!isDrawing) return;
+
+                finishDrawing();
+                google.maps.event.removeListener(clickListener);
+                google.maps.event.removeListener(dblClickListener);
+            });
+
+            showStatus('Click on the map to add trail points. Double-click to finish.', 'blue');
+        }
+
+        function addPointToPath(lat, lng) {
+            drawingPath.push({
+                lat: lat,
+                lng: lng
+            });
+
+            // Update or create polyline
+            if (drawingPolyline) {
+                drawingPolyline.setPath(drawingPath);
+            } else {
+                drawingPolyline = new google.maps.Polyline({
+                    path: drawingPath,
+                    geodesic: true,
+                    strokeColor: '#FF0000',
+                    strokeOpacity: 1.0,
+                    strokeWeight: 3,
+                    map: drawingMap
+                });
+            }
+
+            // Add marker for the point
+            new google.maps.Marker({
+                position: {
+                    lat: lat,
+                    lng: lng
+                },
+                map: drawingMap,
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 4,
+                    fillColor: '#FF0000',
+                    fillOpacity: 1,
+                    strokeWeight: 1,
+                    strokeColor: '#FFFFFF'
+                }
+            });
+
+            updateTrailStats();
+        }
+
+        function finishDrawing() {
+            if (drawingPath.length < 2) {
+                showStatus('Please add at least 2 points to create a trail.', 'red');
+                return;
+            }
+
+            isDrawing = false;
+            drawingModeEnabled = false;
+            currentTrailCoords = [...drawingPath];
+
+            // Update hidden input
+            document.getElementById('trail_coordinates').value = JSON.stringify(currentTrailCoords);
+
+            // Change cursor back
+            drawingMap.setOptions({
+                draggableCursor: 'default'
+            });
+
+            updateDrawingButtons();
+            updateTrailStats();
+            showStatus(`Trail drawn successfully! ${currentTrailCoords.length} points added.`, 'green');
+        }
+
+        function clearTrail() {
+            // Clear drawing state
+            isDrawing = false;
+            drawingModeEnabled = false;
+            drawingPath = [];
+            currentTrailCoords = [];
+
+            // Clear map
+            if (drawingPolyline) {
+                drawingPolyline.setMap(null);
+                drawingPolyline = null;
+            }
+
+            // Clear markers
+            if (drawingMap) {
+                // Clear all markers and polylines
+                const bounds = new google.maps.LatLngBounds();
+                drawingMap.setCenter({
+                    lat: 14.6091,
+                    lng: 121.0223
+                });
+                drawingMap.setZoom(10);
+
+                // Remove all overlays
+                google.maps.event.trigger(drawingMap, 'resize');
+            }
+
+            // Clear hidden input
+            document.getElementById('trail_coordinates').value = '';
+
+            // Update UI
+            updateDrawingButtons();
+            updateTrailStats();
+            hideTrailStats();
+            showStatus('Trail cleared.', 'gray');
+        }
+
+        function handleGPXUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const gpxContent = e.target.result;
+                    const coordinates = parseGPX(gpxContent);
+
+                    if (coordinates && coordinates.length > 0) {
+                        loadTrailCoordinates(coordinates, 'GPX Upload');
+                        showStatus(`GPX file loaded successfully! ${coordinates.length} points imported.`, 'green');
+                    } else {
+                        showStatus('Invalid GPX file or no track points found.', 'red');
+                    }
+                } catch (error) {
+                    console.error('GPX parsing error:', error);
+                    showStatus('Error parsing GPX file.', 'red');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function parseGPX(gpxContent) {
+            try {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(gpxContent, 'text/xml');
+
+                const coordinates = [];
+
+                // Try to find track points (trkpt)
+                const trackPoints = xmlDoc.getElementsByTagName('trkpt');
+                for (let i = 0; i < trackPoints.length; i++) {
+                    const point = trackPoints[i];
+                    const lat = parseFloat(point.getAttribute('lat'));
+                    const lng = parseFloat(point.getAttribute('lon'));
+
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                        const coord = {
+                            lat: lat,
+                            lng: lng
+                        };
+
+                        // Try to get elevation
+                        const eleElement = point.getElementsByTagName('ele')[0];
+                        if (eleElement && eleElement.textContent) {
+                            coord.elevation = parseFloat(eleElement.textContent);
+                        }
+
+                        coordinates.push(coord);
+                    }
+                }
+
+                // If no track points, try waypoints (wpt)
+                if (coordinates.length === 0) {
+                    const waypoints = xmlDoc.getElementsByTagName('wpt');
+                    for (let i = 0; i < waypoints.length; i++) {
+                        const point = waypoints[i];
+                        const lat = parseFloat(point.getAttribute('lat'));
+                        const lng = parseFloat(point.getAttribute('lon'));
+
+                        if (!isNaN(lat) && !isNaN(lng)) {
+                            coordinates.push({
+                                lat: lat,
+                                lng: lng
+                            });
+                        }
+                    }
+                }
+
+                return coordinates;
+            } catch (error) {
+                console.error('GPX parsing error:', error);
+                return [];
+            }
+        }
+
+        function loadTrailCoordinates(coordinates, source = 'Manual') {
+            if (!drawingMap) {
+                initializeDrawingMap();
+                setTimeout(() => loadTrailCoordinates(coordinates, source), 1000);
+                return;
+            }
+
+            currentTrailCoords = coordinates;
+            document.getElementById('trail_coordinates').value = JSON.stringify(coordinates);
+
+            // Clear existing polyline
+            if (drawingPolyline) {
+                drawingPolyline.setMap(null);
+            }
+
+            // Create new polyline
+            drawingPolyline = new google.maps.Polyline({
+                path: coordinates,
+                geodesic: true,
+                strokeColor: '#0066CC',
+                strokeOpacity: 1.0,
+                strokeWeight: 4,
+                map: drawingMap
+            });
+
+            // Fit bounds to show entire trail
+            const bounds = new google.maps.LatLngBounds();
+            coordinates.forEach(coord => {
+                bounds.extend(new google.maps.LatLng(coord.lat, coord.lng));
+            });
+            drawingMap.fitBounds(bounds);
+
+            // Add start and end markers
+            if (coordinates.length > 0) {
+                new google.maps.Marker({
+                    position: coordinates[0],
+                    map: drawingMap,
+                    title: 'Trail Start',
+                    icon: {
+                        url: 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="green"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" fill="white" font-size="12">S</text></svg>'),
+                        scaledSize: new google.maps.Size(24, 24)
+                    }
+                });
+
+                new google.maps.Marker({
+                    position: coordinates[coordinates.length - 1],
+                    map: drawingMap,
+                    title: 'Trail End',
+                    icon: {
+                        url: 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="red"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" fill="white" font-size="12">E</text></svg>'),
+                        scaledSize: new google.maps.Size(24, 24)
+                    }
+                });
+            }
+
+            updateTrailStats(source);
+        }
+
+        function previewRoute() {
+            const previewBtn = document.getElementById('preview_route_btn');
+            previewBtn.disabled = true;
+            previewBtn.textContent = 'Loading...';
+
+            const payload = {
+                mountain_name: document.getElementById('mountain_name').value || '',
+                trail_name: document.getElementById('trail_name').value || '',
+                location_name: document.getElementById('location_search').value || '',
+                location_id: document.getElementById('location_id').value || ''
+            };
+
+            // Debug logging
+            console.log('Auto-route request payload:', payload);
+            showStatus('Searching for trail data...', 'blue');
+
+            const previewUrl = "{{ route('org.trails.preview-coordinates') }}";
+
+            fetch(previewUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(r => r.json())
+                .then(data => {
+                    previewBtn.disabled = false;
+                    previewBtn.textContent = 'Preview Auto-Route';
+
+                    // Debug logging
+                    console.log('Auto-route response:', data);
+
+                    if (!data || (!data.coordinates && !data.data?.coordinates)) {
+                        showStatus('No preview available for auto-route. Try: 1) Check trail/mountain spelling, 2) Use a more specific location, 3) Try manual drawing instead.', 'yellow');
+                        return;
+                    }
+
+                    const coords = data.coordinates || data.data?.coordinates;
+                    const provider = data.provider || data.data?.provider || data.data?.generation_method || 'unknown';
+                    const confidence = data.metrics_confidence || data.data?.metrics_confidence || '';
+
+                    loadTrailCoordinates(coords, `Auto-Route (${provider})`);
+                    showStatus(`Auto-route loaded from ${provider} ${confidence ? `— confidence: ${confidence}` : ''}`, 'blue');
+                })
+                .catch(err => {
+                    console.error('Preview error', err);
+                    previewBtn.disabled = false;
+                    previewBtn.textContent = 'Preview Auto-Route';
+                    showStatus('Error generating preview route. Check console for details.', 'red');
+                });
+        }
+
+        function updateTrailStats(source = 'Manual') {
+            const statsDiv = document.getElementById('trail_stats');
+
+            if (!currentTrailCoords || currentTrailCoords.length === 0) {
+                hideTrailStats();
+                return;
+            }
+
+            // Calculate distance
+            let totalDistance = 0;
+            for (let i = 1; i < currentTrailCoords.length; i++) {
+                totalDistance += calculateDistance(
+                    currentTrailCoords[i - 1].lat,
+                    currentTrailCoords[i - 1].lng,
+                    currentTrailCoords[i].lat,
+                    currentTrailCoords[i].lng
+                );
+            }
+
+            // Calculate elevation statistics if elevation data available
+            let elevationGain = 0;
+            let highestPoint = null;
+            let lowestPoint = null;
+            const hasElevation = currentTrailCoords.some(coord => coord.elevation !== undefined);
+
+            if (hasElevation) {
+                let lastElevation = null;
+                const elevations = [];
+
+                for (const coord of currentTrailCoords) {
+                    if (coord.elevation !== undefined) {
+                        elevations.push(coord.elevation);
+
+                        // Calculate elevation gain (cumulative upward elevation changes)
+                        if (lastElevation !== null && coord.elevation > lastElevation) {
+                            elevationGain += coord.elevation - lastElevation;
+                        }
+                        lastElevation = coord.elevation;
+                    }
+                }
+
+                // Find highest and lowest points
+                if (elevations.length > 0) {
+                    highestPoint = Math.max(...elevations);
+                    lowestPoint = Math.min(...elevations);
+                }
+            }
+
+            // Update stats display
+            document.getElementById('trail_distance').textContent = (totalDistance / 1000).toFixed(2) + ' km';
+            document.getElementById('trail_points').textContent = currentTrailCoords.length;
+            document.getElementById('trail_elevation_gain').textContent = hasElevation ? Math.round(elevationGain) + ' m' : 'N/A';
+            document.getElementById('trail_highest_point').textContent = hasElevation && highestPoint !== null ? Math.round(highestPoint) + ' m' : 'N/A';
+            document.getElementById('trail_lowest_point').textContent = hasElevation && lowestPoint !== null ? Math.round(lowestPoint) + ' m' : 'N/A';
+            document.getElementById('trail_source').textContent = source;
+
+            // Auto-populate form fields (only if they appear to be auto-generated, not manually edited)
+            updateFieldIfAutoGenerated('length', (totalDistance / 1000).toFixed(1));
+
+            if (hasElevation) {
+                updateFieldIfAutoGenerated('elevation_gain', Math.round(elevationGain));
+                updateFieldIfAutoGenerated('elevation_high', Math.round(highestPoint));
+                updateFieldIfAutoGenerated('elevation_low', Math.round(lowestPoint));
+            }
+
+            statsDiv.classList.remove('hidden');
+        }
+
+        // Helper function to intelligently update fields that haven't been manually edited
+        function updateFieldIfAutoGenerated(fieldId, newValue) {
+            const field = document.getElementById(fieldId);
+            if (!field) return;
+
+            const currentValue = field.value;
+            const isAutoGenerated = field.dataset.autoGenerated === 'true';
+            const isEmpty = !currentValue || currentValue.trim() === '';
+
+            // Update if field is empty OR if it was previously auto-generated
+            if (isEmpty || isAutoGenerated) {
+                field.value = newValue;
+                field.dataset.autoGenerated = 'true';
+
+                // Add visual indicator that this field was auto-populated
+                addAutoPopulatedIndicator(field);
+            }
+        }
+
+        // Add visual indicator for auto-populated fields
+        function addAutoPopulatedIndicator(field) {
+            // Remove existing indicators
+            removeAllIndicators(field);
+
+            // Find the relative container (should be the div.relative that contains the input)
+            const relativeContainer = field.closest('.relative');
+            if (!relativeContainer) {
+                console.warn('No relative container found for field:', field.id);
+                return;
+            }
+
+            // Add new indicator - position it to the left of the unit label (km, m, etc.)
+            const indicator = document.createElement('div');
+            indicator.className = 'auto-populated-indicator absolute right-14 top-1/2 transform -translate-y-1/2 text-blue-500 text-xs z-10';
+            indicator.innerHTML = '<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+            indicator.title = 'Auto-calculated from trail data';
+
+            relativeContainer.appendChild(indicator);
+        }
+
+        // Remove all indicators from a field
+        function removeAllIndicators(field) {
+            const relativeContainer = field.closest('.relative');
+            if (relativeContainer) {
+                const indicators = relativeContainer.querySelectorAll('.auto-populated-indicator, .manual-edit-indicator');
+                indicators.forEach(indicator => indicator.remove());
+            }
+        }
+
+        // Reset field to auto-calculation mode
+        function resetFieldToAuto(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                // Clear the field value
+                field.value = '';
+
+                // Mark as auto-generated
+                field.dataset.autoGenerated = 'true';
+
+                // Remove all indicators
+                removeAllIndicators(field);
+
+                // Hide the reset button
+                const resetBtn = field.closest('div').querySelector('.reset-auto-btn');
+                if (resetBtn) {
+                    resetBtn.classList.add('hidden');
+                }
+
+                // If we have trail coordinates, recalculate and populate immediately
+                if (currentTrailCoords && currentTrailCoords.length > 0) {
+                    updateTrailStats('Manual');
+                }
+            }
+        }
+
+        // Show/hide reset button for auto-calculated fields
+        function toggleResetButton(fieldId, show) {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                const resetBtn = field.closest('div').querySelector('.reset-auto-btn');
+                if (resetBtn) {
+                    if (show) {
+                        resetBtn.classList.remove('hidden');
+                    } else {
+                        resetBtn.classList.add('hidden');
+                    }
+                }
+            }
+        }
+
+        // Force recalculate all auto fields from current trail data
+        function recalculateAllFields() {
+            if (!currentTrailCoords || currentTrailCoords.length === 0) {
+                alert('No trail data available to calculate from. Please draw a trail, upload a GPX file, or use the auto-route feature first.');
+                return;
+            }
+
+            const autoFields = ['length', 'elevation_gain', 'elevation_high', 'elevation_low'];
+            let recalculatedCount = 0;
+
+            autoFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    // Reset to auto mode
+                    field.dataset.autoGenerated = 'true';
+                    removeAllIndicators(field);
+                    toggleResetButton(fieldId, false);
+                    recalculatedCount++;
+                }
+            });
+
+            // Recalculate everything
+            updateTrailStats('Recalculated');
+
+            // Show feedback
+            showStatus(`Recalculated ${recalculatedCount} fields from trail data`, 'green');
+        }
+
+        // Mark field as manually edited when user changes it
+        function markFieldAsManuallyEdited(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.dataset.autoGenerated = 'false';
+
+                // Remove all existing indicators
+                removeAllIndicators(field);
+
+                // Show the reset button
+                toggleResetButton(fieldId, true);
+
+                // Find the relative container
+                const relativeContainer = field.closest('.relative');
+                if (!relativeContainer) {
+                    console.warn('No relative container found for field:', fieldId);
+                    return;
+                }
+
+                // Add manual edit indicator
+                const manualIndicator = document.createElement('div');
+                manualIndicator.className = 'manual-edit-indicator absolute right-14 top-1/2 transform -translate-y-1/2 text-green-600 text-xs z-10';
+                manualIndicator.innerHTML = '<svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path></svg>';
+                manualIndicator.title = 'Manually edited';
+
+                relativeContainer.appendChild(manualIndicator);
+            }
+        }
+
+        function hideTrailStats() {
+            document.getElementById('trail_stats').classList.add('hidden');
+        }
+
+        function updateDrawingButtons() {
+            const drawBtn = document.getElementById('draw_trail_btn');
+            const clearBtn = document.getElementById('clear_trail_btn');
+
+            if (isDrawing) {
+                drawBtn.textContent = 'Drawing... (double-click to finish)';
+                drawBtn.disabled = true;
+                drawBtn.classList.add('bg-orange-500');
+                drawBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            } else {
+                drawBtn.textContent = 'Draw Trail Manually';
+                drawBtn.disabled = false;
+                drawBtn.classList.remove('bg-orange-500');
+                drawBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            }
+
+            clearBtn.disabled = currentTrailCoords.length === 0 && drawingPath.length === 0;
+        }
+
+        function showStatus(message, type = 'info') {
+            const providerDiv = document.getElementById('preview_provider');
+            const colors = {
+                'green': 'text-green-600',
+                'red': 'text-red-600',
+                'blue': 'text-blue-600',
+                'yellow': 'text-yellow-600',
+                'gray': 'text-gray-600'
+            };
+
+            providerDiv.className = `mt-2 text-sm ${colors[type] || 'text-gray-600'}`;
+            providerDiv.textContent = message;
+        }
+
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371000; // Earth's radius in meters
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        // Initialize drawing map when step 2 is shown
+        function ensureDrawingMapInitialized() {
+            if (!drawingMap) {
+                initializeDrawingMap();
+            }
+        }
+
+        // Text search fallback functions
+        function handleTextSearchFallback(query) {
+            console.log('Attempting text search fallback for:', query);
+
+            // Create a simple geocoding request using Google Maps Geocoding API
+            if (typeof google !== 'undefined' && google.maps && google.maps.Geocoder) {
+                const geocoder = new google.maps.Geocoder();
+
+                geocoder.geocode({
+                    address: query + ', Philippines',
+                    componentRestrictions: {
+                        country: 'PH'
+                    }
+                }, function(results, status) {
+                    if (status === 'OK' && results.length > 0) {
+                        const result = results[0];
+                        console.log('Geocoding fallback successful:', result);
+
+                        // Convert geocoding result to place-like object
+                        const fallbackPlace = {
+                            place_id: result.place_id || 'geocoding_' + Date.now(),
+                            formatted_address: result.formatted_address,
+                            geometry: result.geometry,
+                            name: query,
+                            types: result.types || ['geocode']
+                        };
+
+                        handleGooglePlaceSelection(fallbackPlace);
+                    } else {
+                        console.log('Geocoding fallback failed:', status);
+                        showTextSearchSuggestion(query);
+                    }
+                });
+            } else {
+                showTextSearchSuggestion(query);
+            }
+        }
+
+        function showTextSearchSuggestion(query) {
+            // Show a suggestion to use manual coordinates
+            const searchInput = document.getElementById('location_search');
+            const parent = searchInput.parentNode;
+
+            // Remove existing suggestion
+            const existingSuggestion = parent.querySelector('.search-suggestion');
+            if (existingSuggestion) {
+                existingSuggestion.remove();
+            }
+
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                if (suggestion.parentNode) {
+                    suggestion.remove();
+                }
+            }, 10000);
+        }
+
+        function openManualCoordinatesForSearch(query) {
+            // Pre-fill location name and open manual coordinates
+            document.getElementById('manual_location_name').value = query;
+            toggleManualCoordinates();
+
+            // Remove the suggestion
+            const suggestion = document.querySelector('.search-suggestion');
+            if (suggestion) {
+                suggestion.remove();
+            }
+        }
+
+        // Manual coordinate entry functions
+        function toggleManualCoordinates() {
+            const manualDiv = document.getElementById('manual_coordinates');
+            if (manualDiv.classList.contains('hidden')) {
+                manualDiv.classList.remove('hidden');
+            } else {
+                manualDiv.classList.add('hidden');
+            }
+        }
+
+        function useManualCoordinates() {
+            const latInput = document.getElementById('manual_lat');
+            const lngInput = document.getElementById('manual_lng');
+            const nameInput = document.getElementById('manual_location_name');
+
+            const lat = parseFloat(latInput.value);
+            const lng = parseFloat(lngInput.value);
+            const locationName = nameInput.value.trim();
+
+            // Validate inputs
+            if (isNaN(lat) || isNaN(lng)) {
+                alert('Please enter valid latitude and longitude values.');
+                return;
+            }
+
+            if (lat < 4.0 || lat > 21.5 || lng < 114.0 || lng > 127.0) {
+                alert('Coordinates must be within the Philippines bounds.');
+                return;
+            }
+
+            if (!locationName) {
+                alert('Please enter a location name.');
+                return;
+            }
+
+            // Create a fake place object similar to Google Places result
+            const manualPlace = {
+                place_id: 'manual_' + Date.now(),
+                formatted_address: locationName + ', Philippines',
+                geometry: {
+                    location: {
+                        lat: () => lat,
+                        lng: () => lng
+                    }
+                },
+                name: locationName,
+                types: ['establishment']
+            };
+
+            // Process the manual location
+            handleManualLocationSelection(manualPlace);
+
+            // Hide manual input section
+            toggleManualCoordinates();
+
+            // Clear manual inputs
+            latInput.value = '';
+            lngInput.value = '';
+            nameInput.value = '';
+        }
+
+        function handleManualLocationSelection(place) {
+            const searchInput = document.getElementById('location_search');
+            const hiddenInput = document.getElementById('location_id');
+            const latInput = document.getElementById('location_latitude');
+            const lngInput = document.getElementById('location_longitude');
+            const loadingDiv = document.getElementById('location_loading');
+
+            // Show loading
+            loadingDiv.classList.remove('hidden');
+
+            // Prepare data for backend processing
+            const locationData = {
+                place_id: place.place_id,
+                formatted_address: place.formatted_address,
+                latitude: place.geometry.location.lat(),
+                longitude: place.geometry.location.lng(),
+                name: place.name,
+                is_manual: true
+            };
+
+            console.log('Processing manual location:', locationData);
+
+            // Send to backend to create/find location
+            fetch('/api/locations/google-places', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(locationData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loadingDiv.classList.add('hidden');
+
+                    if (data.success && data.location) {
+                        // Update form fields
+                        hiddenInput.value = data.location.id;
+                        latInput.value = locationData.latitude;
+                        lngInput.value = locationData.longitude;
+
+                        // Update search input display
+                        searchInput.value = data.location.name + (data.location.province ? ', ' + data.location.province : '');
+                        searchInput.dataset.lastSelectedValue = searchInput.value;
+
+                        // Add visual feedback
+                        searchInput.classList.add('border-green-500', 'bg-green-50');
+                        searchInput.classList.remove('border-gray-300');
+
+                        // Add checkmark
+                        addLocationCheckmark();
+
+                        console.log('Manual location processed successfully:', data.location);
+
+                        // Update the map if it's initialized
+                        if (drawingMap) {
+                            const coords = {
+                                lat: locationData.latitude,
+                                lng: locationData.longitude
+                            };
+                            drawingMap.setCenter(coords);
+                            drawingMap.setZoom(13);
+
+                            // Add a marker for the manual location
+                            new google.maps.Marker({
+                                position: coords,
+                                map: drawingMap,
+                                title: place.name,
+                                icon: {
+                                    url: 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="red"><path d="M16 2C10.477 2 6 6.477 6 12c0 7.5 10 18 10 18s10-10.5 10-18c0-5.523-4.477-10-10-10zm0 14c-2.209 0-4-1.791-4-4s1.791-4 4-4 4 1.791 4 4-1.791 4-4 4z"/></svg>'),
+                                    scaledSize: new google.maps.Size(32, 32)
+                                }
+                            });
+                        }
+
+                    } else {
+                        console.error('Failed to process manual location:', data.error || 'Unknown error');
+                        clearLocationSelection();
+                        alert('Failed to process the location. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    loadingDiv.classList.add('hidden');
+                    console.error('Error processing manual location:', error);
+                    clearLocationSelection();
+                    alert('Error processing location. Please check your connection and try again.');
+                });
+        }
     </script>
 </x-app-layout>

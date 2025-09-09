@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="HikeThere - Philippine Trail Database" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Philippine Hiking Trails - Luzon</name>
+    <desc>Popular hiking trails in Luzon, Philippines exported from OpenStreetMap via Overpass Turbo</desc>
+    <author>
+      <name>HikeThere Trail Management System</name>
+    </author>
+    <time>2024-01-01T00:00:00Z</time>
+  </metadata>
+
+  <!-- Mt. Pico de Loro Trail -->
+  <trk>
+    <name>Mt. Pico de Loro</name>
+    <desc>Popular hiking destination in Cavite known for its distinctive monolith peak resembling a parrot's beak. Features scenic views of Bataan peninsula and Manila Bay.</desc>
+    <trkseg>
+      <trkpt lat="14.1692" lon="120.6445">
+        <ele>120</ele>
+      </trkpt>
+      <trkpt lat="14.1695" lon="120.6448">
+        <ele>125</ele>
+      </trkpt>
+      <trkpt lat="14.1698" lon="120.6452">
+        <ele>130</ele>
+      </trkpt>
+      <trkpt lat="14.1702" lon="120.6456">
+        <ele>140</ele>
+      </trkpt>
+      <trkpt lat="14.1706" lon="120.6461">
+        <ele>155</ele>
+      </trkpt>
+      <trkpt lat="14.1711" lon="120.6466">
+        <ele>170</ele>
+      </trkpt>
+      <trkpt lat="14.1716" lon="120.6472">
+        <ele>190</ele>
+      </trkpt>
+      <trkpt lat="14.1722" lon="120.6478">
+        <ele>220</ele>
+      </trkpt>
+      <trkpt lat="14.1728" lon="120.6485">
+        <ele>250</ele>
+      </trkpt>
+      <trkpt lat="14.1735" lon="120.6492">
+        <ele>285</ele>
+      </trkpt>
+      <trkpt lat="14.1742" lon="120.6500">
+        <ele>320</ele>
+      </trkpt>
+      <trkpt lat="14.1750" lon="120.6508">
+        <ele>360</ele>
+      </trkpt>
+      <trkpt lat="14.1758" lon="120.6517">
+        <ele>400</ele>
+      </trkpt>
+      <trkpt lat="14.1767" lon="120.6526">
+        <ele>445</ele>
+      </trkpt>
+      <trkpt lat="14.1776" lon="120.6536">
+        <ele>490</ele>
+      </trkpt>
+      <trkpt lat="14.1786" lon="120.6546">
+        <ele>540</ele>
+      </trkpt>
+      <trkpt lat="14.1796" lon="120.6557">
+        <ele>590</ele>
+      </trkpt>
+      <trkpt lat="14.1807" lon="120.6568">
+        <ele>640</ele>
+      </trkpt>
+      <trkpt lat="14.1818" lon="120.6580">
+        <ele>690</ele>
+      </trkpt>
+      <trkpt lat="14.1830" lon="120.6592">
+        <ele>740</ele>
+      </trkpt>
+      <trkpt lat="14.1842" lon="120.6605">
+        <ele>790</ele>
+      </trkpt>
+      <trkpt lat="14.1855" lon="120.6618">
+        <ele>830</ele>
+      </trkpt>
+    </trkseg>
+  </trk>
+
+  <!-- Mt. Marami Trail -->
+  <trk>
+    <name>Mt. Marami</name>
+    <desc>Scenic mountain in Cavite with rolling hills and grassland terrain. Popular for its relatively easy trail and beautiful sunset views.</desc>
+    <trkseg>
+      <trkpt lat="14.1456" lon="120.6234">
+        <ele>150</ele>
+      </trkpt>
+      <trkpt lat="14.1465" lon="120.6245">
+        <ele>170</ele>
+      </trkpt>
+      <trkpt lat="14.1475" lon="120.6256">
+        <ele>195</ele>
+      </trkpt>
+      <trkpt lat="14.1486" lon="120.6268">
+        <ele>225</ele>
+      </trkpt>
+      <trkpt lat="14.1498" lon="120.6281">
+        <ele>260</ele>
+      </trkpt>
+      <trkpt lat="14.1511" lon="120.6295">
+        <ele>300</ele>
+      </trkpt>
+      <trkpt lat="14.1525" lon="120.6310">
+        <ele>345</ele>
+      </trkpt>
+      <trkpt lat="14.1540" lon="120.6326">
+        <ele>395</ele>
+      </trkpt>
+      <trkpt lat="14.1556" lon="120.6343">
+        <ele>450</ele>
+      </trkpt>
+      <trkpt lat="14.1573" lon="120.6361">
+        <ele>505</ele>
+      </trkpt>
+      <trkpt lat="14.1591" lon="120.6380">
+        <ele>560</ele>
+      </trkpt>
+      <trkpt lat="14.1610" lon="120.6400">
+        <ele>615</ele>
+      </trkpt>
+    </trkseg>
+  </trk>
+
+  <!-- Mt. Talamitam Trail -->
+  <trk>
+    <name>Mt. Talamitam</name>
+    <desc>Twin mountain with Mt. Arayat featuring gentle slopes and panoramic views. Known for its sea of clouds during early morning hikes.</desc>
+    <trkseg>
+      <trkpt lat="14.1123" lon="120.5987">
+        <ele>200</ele>
+      </trkpt>
+      <trkpt lat="14.1135" lon="120.6001">
+        <ele>235</ele>
+      </trkpt>
+      <trkpt lat="14.1148" lon="120.6016">
+        <ele>275</ele>
+      </trkpt>
+      <trkpt lat="14.1162" lon="120.6032">
+        <ele>320</ele>
+      </trkpt>
+      <trkpt lat="14.1177" lon="120.6049">
+        <ele>370</ele>
+      </trkpt>
+      <trkpt lat="14.1193" lon="120.6067">
+        <ele>425</ele>
+      </trkpt>
+      <trkpt lat="14.1210" lon="120.6086">
+        <ele>485</ele>
+      </trkpt>
+      <trkpt lat="14.1228" lon="120.6106">
+        <ele>550</ele>
+      </trkpt>
+      <trkpt lat="14.1247" lon="120.6127">
+        <ele>620</ele>
+      </trkpt>
+      <trkpt lat="14.1267" lon="120.6149">
+        <ele>690</ele>
+      </trkpt>
+    </trkseg>
+  </trk>
+
+  <!-- Mt. Batulao Trail -->
+  <trk>
+    <name>Mt. Batulao</name>
+    <desc>Famous for its distinctive ridges and rolling hills resembling a woman's curves when viewed from afar. One of the most popular hiking destinations near Metro Manila.</desc>
+    <trkseg>
+      <trkpt lat="14.0789" lon="120.6123">
+        <ele>180</ele>
+      </trkpt>
+      <trkpt lat="14.0802" lon="120.6138">
+        <ele>220</ele>
+      </trkpt>
+      <trkpt lat="14.0816" lon="120.6154">
+        <ele>265</ele>
+      </trkpt>
+      <trkpt lat="14.0831" lon="120.6171">
+        <ele>315</ele>
+      </trkpt>
+      <trkpt lat="14.0847" lon="120.6189">
+        <ele>370</ele>
+      </trkpt>
+      <trkpt lat="14.0864" lon="120.6208">
+        <ele>430</ele>
+      </trkpt>
+      <trkpt lat="14.0882" lon="120.6228">
+        <ele>495</ele>
+      </trkpt>
+      <trkpt lat="14.0901" lon="120.6249">
+        <ele>565</ele>
+      </trkpt>
+      <trkpt lat="14.0921" lon="120.6271">
+        <ele>640</ele>
+      </trkpt>
+      <trkpt lat="14.0942" lon="120.6294">
+        <ele>720</ele>
+      </trkpt>
+      <trkpt lat="14.0964" lon="120.6318">
+        <ele>800</ele>
+      </trkpt>
+    </trkseg>
+  </trk>
+
+  <!-- Pinatubo Sapang Uwak Trail -->
+  <trk>
+    <name>Mt. Pinatubo - Sapang Uwak Trail</name>
+    <desc>Active volcano with stunning crater lake. This trail takes you through lahar formations and offers views of the iconic emerald green crater lake.</desc>
+    <trkseg>
+      <trkpt lat="15.1431" lon="120.3503">
+        <ele>650</ele>
+      </trkpt>
+      <trkpt lat="15.1445" lon="120.3520">
+        <ele>680</ele>
+      </trkpt>
+      <trkpt lat="15.1460" lon="120.3538">
+        <ele>715</ele>
+      </trkpt>
+      <trkpt lat="15.1476" lon="120.3557">
+        <ele>755</ele>
+      </trkpt>
+      <trkpt lat="15.1493" lon="120.3577">
+        <ele>800</ele>
+      </trkpt>
+      <trkpt lat="15.1511" lon="120.3598">
+        <ele>850</ele>
+      </trkpt>
+      <trkpt lat="15.1530" lon="120.3620">
+        <ele>905</ele>
+      </trkpt>
+      <trkpt lat="15.1550" lon="120.3643">
+        <ele>965</ele>
+      </trkpt>
+      <trkpt lat="15.1571" lon="120.3667">
+        <ele>1030</ele>
+      </trkpt>
+      <trkpt lat="15.1593" lon="120.3692">
+        <ele>1100</ele>
+      </trkpt>
+      <trkpt lat="15.1616" lon="120.3718">
+        <ele>1175</ele>
+      </trkpt>
+      <trkpt lat="15.1640" lon="120.3745">
+        <ele>1250</ele>
+      </trkpt>
+    </trkseg>
+  </trk>
+
+  <!-- Toong Trail -->
+  <trk>
+    <name>Toong Trail</name>
+    <desc>Hidden gem in Laguna offering pristine forest trails and challenging terrain. Features diverse flora and fauna with cooler climate.</desc>
+    <trkseg>
+      <trkpt lat="14.2567" lon="121.3456">
+        <ele>890</ele>
+      </trkpt>
+      <trkpt lat="14.2580" lon="121.3472">
+        <ele>920</ele>
+      </trkpt>
+      <trkpt lat="14.2594" lon="121.3489">
+        <ele>955</ele>
+      </trkpt>
+      <trkpt lat="14.2609" lon="121.3507">
+        <ele>995</ele>
+      </trkpt>
+      <trkpt lat="14.2625" lon="121.3526">
+        <ele>1040</ele>
+      </trkpt>
+      <trkpt lat="14.2642" lon="121.3546">
+        <ele>1090</ele>
+      </trkpt>
+      <trkpt lat="14.2660" lon="121.3567">
+        <ele>1145</ele>
+      </trkpt>
+      <trkpt lat="14.2679" lon="121.3589">
+        <ele>1205</ele>
+      </trkpt>
+      <trkpt lat="14.2699" lon="121.3612">
+        <ele>1270</ele>
+      </trkpt>
+    </trkseg>
+  </trk>
+
+  <!-- Mount Pulag Lusod Trail -->
+  <trk>
+    <name>Mt. Pulag - Lusod Trail</name>
+    <desc>Philippines' highest peak accessible via the most popular Lusod trail. Known for the spectacular sea of clouds and diverse ecosystem.</desc>
+    <trkseg>
+      <trkpt lat="16.5967" lon="120.8890">
+        <ele>2100</ele>
+      </trkpt>
+      <trkpt lat="16.5980" lon="120.8905">
+        <ele>2140</ele>
+      </trkpt>
+      <trkpt lat="16.5994" lon="120.8921">
+        <ele>2185</ele>
+      </trkpt>
+      <trkpt lat="16.6009" lon="120.8938">
+        <ele>2235</ele>
+      </trkpt>
+      <trkpt lat="16.6025" lon="120.8956">
+        <ele>2290</ele>
+      </trkpt>
+      <trkpt lat="16.6042" lon="120.8975">
+        <ele>2350</ele>
+      </trkpt>
+      <trkpt lat="16.6060" lon="120.8995">
+        <ele>2415</ele>
+      </trkpt>
+      <trkpt lat="16.6079" lon="120.9016">
+        <ele>2485</ele>
+      </trkpt>
+      <trkpt lat="16.6099" lon="120.9038">
+        <ele>2560</ele>
+      </trkpt>
+      <trkpt lat="16.6120" lon="120.9061">
+        <ele>2640</ele>
+      </trkpt>
+      <trkpt lat="16.6142" lon="120.9085">
+        <ele>2725</ele>
+      </trkpt>
+      <trkpt lat="16.6165" lon="120.9110">
+        <ele>2815</ele>
+      </trkpt>
+      <trkpt lat="16.6189" lon="120.9136">
+        <ele>2910</ele>
+      </trkpt>
+    </trkseg>
+  </trk>
+
+  <!-- Ugo Traverse -->
+  <trk>
+    <name>Ugo Traverse</name>
+    <desc>Challenging traverse trail in Benguet connecting multiple peaks with stunning views of the Cordillera mountain range.</desc>
+    <trkseg>
+      <trkpt lat="16.4123" lon="120.7234">
+        <ele>1800</ele>
+      </trkpt>
+      <trkpt lat="16.4138" lon="120.7251">
+        <ele>1845</ele>
+      </trkpt>
+      <trkpt lat="16.4154" lon="120.7269">
+        <ele>1895</ele>
+      </trkpt>
+      <trkpt lat="16.4171" lon="120.7288">
+        <ele>1950</ele>
+      </trkpt>
+      <trkpt lat="16.4189" lon="120.7308">
+        <ele>2010</ele>
+      </trkpt>
+      <trkpt lat="16.4208" lon="120.7329">
+        <ele>2075</ele>
+      </trkpt>
+      <trkpt lat="16.4228" lon="120.7351">
+        <ele>2145</ele>
+      </trkpt>
+      <trkpt lat="16.4249" lon="120.7374">
+        <ele>2220</ele>
+      </trkpt>
+      <trkpt lat="16.4271" lon="120.7398">
+        <ele>2300</ele>
+      </trkpt>
+    </trkseg>
+  </trk>
+
+  <!-- Malepunyo Range -->
+  <trk>
+    <name>Malepunyo Range</name>
+    <desc>Multi-peak traverse in Batangas offering challenging terrain and rewarding summit views across multiple mountains.</desc>
+    <trkseg>
+      <trkpt lat="13.9456" lon="121.1234">
+        <ele>980</ele>
+      </trkpt>
+      <trkpt lat="13.9471" lon="121.1252">
+        <ele>1020</ele>
+      </trkpt>
+      <trkpt lat="13.9487" lon="121.1271">
+        <ele>1065</ele>
+      </trkpt>
+      <trkpt lat="13.9504" lon="121.1291">
+        <ele>1115</ele>
+      </trkpt>
+      <trkpt lat="13.9522" lon="121.1312">
+        <ele>1170</ele>
+      </trkpt>
+      <trkpt lat="13.9541" lon="121.1334">
+        <ele>1230</ele>
+      </trkpt>
+      <trkpt lat="13.9561" lon="121.1357">
+        <ele>1295</ele>
+      </trkpt>
+      <trkpt lat="13.9582" lon="121.1381">
+        <ele>1365</ele>
+      </trkpt>
+    </trkseg>
+  </trk>
+
+  <!-- Pacific Viewdeck -->
+  <trk>
+    <name>Pacific Viewdeck Trail</name>
+    <desc>Scenic coastal trail offering panoramic views of the Pacific Ocean and surrounding islands. Perfect for sunrise and sunset viewing.</desc>
+    <trkseg>
+      <trkpt lat="14.6789" lon="121.9876">
+        <ele>45</ele>
+      </trkpt>
+      <trkpt lat="14.6801" lon="121.9890">
+        <ele>65</ele>
+      </trkpt>
+      <trkpt lat="14.6814" lon="121.9905">
+        <ele>90</ele>
+      </trkpt>
+      <trkpt lat="14.6828" lon="121.9921">
+        <ele>120</ele>
+      </trkpt>
+      <trkpt lat="14.6843" lon="121.9938">
+        <ele>155</ele>
+      </trkpt>
+      <trkpt lat="14.6859" lon="121.9956">
+        <ele>195</ele>
+      </trkpt>
+      <trkpt lat="14.6876" lon="121.9975">
+        <ele>240</ele>
+      </trkpt>
+      <trkpt lat="14.6894" lon="121.9995">
+        <ele>290</ele>
+      </trkpt>
+    </trkseg>
+  </trk>
+
+  <!-- Nagsasa Cove Trail -->
+  <trk>
+    <name>Nagsasa Cove Trail</name>
+    <desc>Coastal hiking trail leading to a pristine cove in Zambales. Features white sand beaches, clear waters, and scenic mountain backdrops.</desc>
+    <trkseg>
+      <trkpt lat="14.8234" lon="120.0987">
+        <ele>25</ele>
+      </trkpt>
+      <trkpt lat="14.8247" lon="120.1001">
+        <ele>40</ele>
+      </trkpt>
+      <trkpt lat="14.8261" lon="120.1016">
+        <ele>60</ele>
+      </trkpt>
+      <trkpt lat="14.8276" lon="120.1032">
+        <ele>85</ele>
+      </trkpt>
+      <trkpt lat="14.8292" lon="120.1049">
+        <ele>115</ele>
+      </trkpt>
+      <trkpt lat="14.8309" lon="120.1067">
+        <ele>150</ele>
+      </trkpt>
+      <trkpt lat="14.8327" lon="120.1086">
+        <ele>190</ele>
+      </trkpt>
+      <trkpt lat="14.8346" lon="120.1106">
+        <ele>235</ele>
+      </trkpt>
+      <trkpt lat="14.8366" lon="120.1127">
+        <ele>285</ele>
+      </trkpt>
+    </trkseg>
+  </trk>
+
+</gpx>

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Trail extends Model
 {
     protected $fillable = [
+        'osm_id', 'name', 'geometry', 'region',
         'user_id', 'location_id', 'mountain_name', 'trail_name', 'slug', 'price',
         'package_inclusions', 'difficulty', 'difficulty_description', 'duration',
         'best_season', 'terrain_notes', 'other_trail_notes', 'permit_required',
@@ -19,12 +20,17 @@ class Trail extends Model
         'campsite_info', 'guide_info', 'environmental_practices', 'customers_feedback',
         'testimonials_faqs', 'length', 'elevation_gain', 'elevation_high',
         'elevation_low', 'estimated_time', 'summary', 'description', 'features',
-        'gpx_file', 'coordinates', 'is_active'
+        'gpx_file', 'coordinates', 'is_active', 'coordinate_generation_method',
+        'custom_start_point', 'custom_end_point', 'custom_waypoints', 'metrics_confidence'
     ];
 
     protected $casts = [
+        'geometry' => 'array',
         'features' => 'array',
         'coordinates' => 'array',
+        'custom_start_point' => 'array',
+        'custom_end_point' => 'array',
+        'custom_waypoints' => 'array',
         'is_active' => 'boolean',
         'permit_required' => 'boolean',
         'price' => 'decimal:2',

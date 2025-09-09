@@ -5,12 +5,14 @@
                 {{ $trail->trail_name }}
             </h2>
             
-            <a href="{{ route('explore') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                </svg>
-                Back to Explore
-            </a>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('explore') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Explore
+                </a>
+            </div>
         </div>
     </x-slot>
 
@@ -193,6 +195,134 @@
                                 @foreach($trail->features as $feature)
                                     <span class="bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full">{{ $feature }}</span>
                                 @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Interactive Trail Map with Route -->
+                    @if($trail->coordinates && count($trail->coordinates) > 0)
+                        <div class="mb-8">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="text-lg font-semibold text-gray-900">Trail Route & Map</h3>
+                                <div class="flex gap-2">
+                                    <button id="start-tracking" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        </svg>
+                                        Start Tracking
+                                    </button>
+                                    <div class="flex flex-col gap-1">
+                                        <a href="{{ route('trails.download-map-tcpdf', $trail) }}" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                            </svg>
+                                            Download PDF Map
+                                        </a>
+                                        <a href="{{ route('trails.download-map', $trail) }}" class="inline-flex items-center px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs font-medium rounded transition-colors">
+                                            Alternative PDF (requires GD extension)
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Location Tracking Status -->
+                            <div id="tracking-status" class="hidden mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="animate-pulse w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+                                        <span class="text-blue-800 font-medium">Tracking your location...</span>
+                                    </div>
+                                    <button id="stop-tracking" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Stop Tracking</button>
+                                </div>
+                                <div class="mt-2 text-sm text-blue-700">
+                                    <span id="distance-from-trail">Distance from trail: Calculating...</span>
+                                    <br>
+                                    <span id="progress-percentage">Progress: 0%</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div id="interactive-trail-map" style="height: 500px; width: 100%; border-radius: 8px;"></div>
+                                <div class="mt-4 flex flex-wrap gap-4 text-sm text-gray-600">
+                                    <div class="flex items-center">
+                                        <div class="w-4 h-1 bg-red-500 mr-2"></div>
+                                        Trail Route
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                                        Start Point
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                                        End Point
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                                        Your Location
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="mb-8">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="text-lg font-semibold text-gray-900">Trail Route & Map</h3>
+                                @auth
+                                    @if(auth()->user()->user_type === 'organization' && $trail->user_id === auth()->id())
+                                        <a href="/admin/trails/coordinates" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m0 0L9 7"/>
+                                            </svg>
+                                            Generate Coordinates
+                                        </a>
+                                    @endif
+                                @endauth
+                            </div>
+                            
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+                                <svg class="w-12 h-12 text-yellow-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m0 0L9 7"/>
+                                </svg>
+                                <h4 class="text-lg font-semibold text-yellow-800 mb-2">Trail Coordinates Not Available</h4>
+                                <p class="text-yellow-700 mb-4">This trail doesn't have GPS coordinates yet. Coordinates are needed for the interactive map, tracking features, and downloadable PDF maps.</p>
+                                @auth
+                                    @if(auth()->user()->user_type === 'organization' && $trail->user_id === auth()->id())
+                                        <p class="text-sm text-yellow-600">As the trail owner, you can generate coordinates using Google Maps data.</p>
+                                    @else
+                                        <p class="text-sm text-yellow-600">Please contact the trail organization to add GPS coordinates for this trail.</p>
+                                    @endif
+                                @else
+                                    <p class="text-sm text-yellow-600">GPS coordinates will be available once the trail organization adds them.</p>
+                                @endauth
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Elevation Profile -->
+                    @if($trail->coordinates && count($trail->coordinates) > 0)
+                        <div class="mb-8">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Elevation Profile</h3>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div id="elevation-chart" style="height: 300px; width: 100%;"></div>
+                                <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                    <div class="text-center">
+                                        <div class="font-semibold text-gray-900">{{ $trail->elevation_high ?? 'N/A' }}m</div>
+                                        <div class="text-gray-600">Highest Point</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="font-semibold text-gray-900">{{ $trail->elevation_low ?? 'N/A' }}m</div>
+                                        <div class="text-gray-600">Lowest Point</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="font-semibold text-gray-900">{{ $trail->elevation_gain ?? 'N/A' }}m</div>
+                                        <div class="text-gray-600">Total Gain</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="font-semibold text-gray-900">{{ $trail->length ?? 'N/A' }}km</div>
+                                        <div class="text-gray-600">Distance</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     @endif
@@ -512,16 +642,28 @@
                 </div>
 
                 <!-- Additional Images Section -->
-                @if($trail->images && $trail->images->count() > 1)
+                @php
+                    $imageService = app(App\Services\TrailImageService::class);
+                    $allImages = $imageService->getTrailImages($trail, 10);
+                @endphp
+                
+                @if(count($allImages) > 1)
                     <div class="border-t border-gray-200 p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Trail Photos ({{ $trail->images->count() }})</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Trail Photos ({{ count($allImages) }})</h3>
                         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                            @foreach($trail->images as $index => $image)
+                            @foreach($allImages as $index => $image)
                                 <button onclick="window.trailGalleryComponent.setImage({{ $index }})"
-                                        class="aspect-square rounded-lg overflow-hidden hover:opacity-75 transition-opacity">
-                                    <img src="{{ $image->url }}" 
-                                         alt="{{ $image->caption }}"
+                                        class="aspect-square rounded-lg overflow-hidden hover:opacity-75 transition-opacity group">
+                                    <img src="{{ $image['url'] }}" 
+                                         alt="{{ $image['caption'] }}"
                                          class="w-full h-full object-cover">
+                                    
+                                    <!-- Image source badge -->
+                                    @if($image['source'] !== 'organization')
+                                        <div class="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                            {{ ucfirst($image['source']) }}
+                                        </div>
+                                    @endif
                                 </button>
                             @endforeach
                         </div>
@@ -584,22 +726,25 @@
                 },
                 
                 loadImages() {
-                    const trailImages = [
-                        @if($trail->images && $trail->images->count() > 0)
-                            @foreach($trail->images as $image)
-                                '{{ $image->url }}',
-                            @endforeach
-                        @else
-                            @php
-                                // Use the TrailImageService to get API images
-                                $imageService = app(App\Services\TrailImageService::class);
-                                $primaryImage = $imageService->getTrailImage($trail, 'primary', 'large');
-                            @endphp
-                            '{{ $primaryImage }}',
-                        @endif
-                    ];
+                    @php
+                        // Use the enhanced TrailImageService to get all available images
+                        $imageService = app(App\Services\TrailImageService::class);
+                        $allImages = $imageService->getTrailImages($trail, 10);
+                        $imageUrls = [];
+                        $imageCaptions = [];
+                        
+                        foreach ($allImages as $image) {
+                            $imageUrls[] = $image['url'];
+                            $imageCaptions[] = $image['caption'] ?? $trail->trail_name;
+                        }
+                    @endphp
+                    
+                    const trailImages = @json($imageUrls);
+                    const imageCaptions = @json($imageCaptions);
                     
                     this.images = trailImages.filter(img => img);
+                    this.captions = imageCaptions;
+                    
                     if (this.images.length > 0) {
                         this.currentImage = this.images[0];
                         this.currentIndex = 0;
@@ -979,5 +1124,301 @@
                 feedbackElement.textContent = feedback.length > 0 ? feedback.join(', ') : 'Content looks good!';
             }
         });
+
+        // Interactive Trail Map and Tracking Features
+        let map, trailPath, userMarker, userLocation;
+        let isTracking = false;
+        let watchId = null;
+        const trailCoordinates = @json($trail->coordinates ?? []);
+
+        // Initialize Google Maps
+        function initTrailMap() {
+            if (!trailCoordinates || trailCoordinates.length === 0) return;
+
+            // Calculate bounds for the trail
+            const bounds = new google.maps.LatLngBounds();
+            trailCoordinates.forEach(coord => {
+                bounds.extend(new google.maps.LatLng(coord.lat, coord.lng));
+            });
+
+            // Initialize map
+            map = new google.maps.Map(document.getElementById('interactive-trail-map'), {
+                zoom: 13,
+                center: bounds.getCenter(),
+                mapTypeId: 'terrain',
+                mapTypeControl: true,
+                streetViewControl: false,
+                fullscreenControl: true
+            });
+
+            // Fit map to trail bounds
+            map.fitBounds(bounds);
+
+            // Create trail path
+            trailPath = new google.maps.Polyline({
+                path: trailCoordinates,
+                geodesic: true,
+                strokeColor: '#ff0000',
+                strokeOpacity: 1.0,
+                strokeWeight: 4
+            });
+            trailPath.setMap(map);
+
+            // Add start marker
+            new google.maps.Marker({
+                position: trailCoordinates[0],
+                map: map,
+                title: 'Trail Start',
+                icon: {
+                    url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
+                    scaledSize: new google.maps.Size(32, 32)
+                }
+            });
+
+            // Add end marker
+            new google.maps.Marker({
+                position: trailCoordinates[trailCoordinates.length - 1],
+                map: map,
+                title: 'Trail End',
+                icon: {
+                    url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                    scaledSize: new google.maps.Size(32, 32)
+                }
+            });
+
+            // Add waypoint markers for every 10th coordinate
+            for (let i = 10; i < trailCoordinates.length - 1; i += 10) {
+                new google.maps.Marker({
+                    position: trailCoordinates[i],
+                    map: map,
+                    title: `Waypoint ${Math.floor(i / 10)}`,
+                    icon: {
+                        url: 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
+                        scaledSize: new google.maps.Size(20, 20)
+                    }
+                });
+            }
+        }
+
+        // Start location tracking
+        function startTracking() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by this browser.');
+                return;
+            }
+
+            isTracking = true;
+            document.getElementById('tracking-status').classList.remove('hidden');
+            document.getElementById('start-tracking').disabled = true;
+            document.getElementById('start-tracking').innerHTML = '<svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" class="opacity-75"></path></svg>Tracking...';
+
+            watchId = navigator.geolocation.watchPosition(
+                updateUserLocation,
+                handleLocationError,
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 30000,
+                    timeout: 27000
+                }
+            );
+        }
+
+        // Update user location
+        function updateUserLocation(position) {
+            userLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+
+            // Update or create user marker
+            if (userMarker) {
+                userMarker.setPosition(userLocation);
+            } else {
+                userMarker = new google.maps.Marker({
+                    position: userLocation,
+                    map: map,
+                    title: 'Your Location',
+                    icon: {
+                        url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+                        scaledSize: new google.maps.Size(24, 24)
+                    }
+                });
+            }
+
+            // Calculate distance from trail and progress
+            calculateTrailProgress();
+        }
+
+        // Calculate trail progress and distance
+        function calculateTrailProgress() {
+            if (!userLocation || !trailCoordinates.length) return;
+
+            let minDistance = Infinity;
+            let closestPointIndex = 0;
+
+            // Find closest point on trail
+            trailCoordinates.forEach((coord, index) => {
+                const distance = calculateDistance(userLocation, coord);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestPointIndex = index;
+                }
+            });
+
+            // Update UI
+            const distanceText = minDistance < 1 ? 
+                Math.round(minDistance * 1000) + 'm' : 
+                minDistance.toFixed(1) + 'km';
+            
+            const progress = Math.round((closestPointIndex / (trailCoordinates.length - 1)) * 100);
+
+            document.getElementById('distance-from-trail').textContent = `Distance from trail: ${distanceText}`;
+            document.getElementById('progress-percentage').textContent = `Progress: ${progress}%`;
+        }
+
+        // Calculate distance between two coordinates (Haversine formula)
+        function calculateDistance(pos1, pos2) {
+            const R = 6371; // Earth's radius in kilometers
+            const dLat = toRad(pos2.lat - pos1.lat);
+            const dLon = toRad(pos2.lng - pos1.lng);
+            const lat1 = toRad(pos1.lat);
+            const lat2 = toRad(pos2.lat);
+
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            
+            return R * c;
+        }
+
+        function toRad(degrees) {
+            return degrees * (Math.PI/180);
+        }
+
+        // Handle location errors
+        function handleLocationError(error) {
+            let message = 'Unknown error occurred.';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    message = 'Location access denied by user.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    message = 'Location information is unavailable.';
+                    break;
+                case error.TIMEOUT:
+                    message = 'Location request timed out.';
+                    break;
+            }
+            alert('Geolocation error: ' + message);
+            stopTracking();
+        }
+
+        // Stop location tracking
+        function stopTracking() {
+            isTracking = false;
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            
+            document.getElementById('tracking-status').classList.add('hidden');
+            document.getElementById('start-tracking').disabled = false;
+            document.getElementById('start-tracking').innerHTML = '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Start Tracking';
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize map when page loads
+            if (document.getElementById('interactive-trail-map')) {
+                initTrailMap();
+            }
+
+            // Load elevation profile
+            loadElevationProfile();
+
+            // Tracking buttons
+            document.getElementById('start-tracking').addEventListener('click', startTracking);
+            document.getElementById('stop-tracking').addEventListener('click', stopTracking);
+        });
+
+        // Load and display elevation profile using Chart.js
+        function loadElevationProfile() {
+            fetch(`{{ route('trails.elevation-profile', $trail) }}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.elevations && data.elevations.length > 0) {
+                        createElevationChart(data.elevations, data.trail_length);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading elevation data:', error);
+                });
+        }
+
+        // Create elevation chart using Chart.js
+        function createElevationChart(elevations, trailLength) {
+            const ctx = document.getElementById('elevation-chart');
+            if (!ctx) return;
+
+            // Prepare data
+            const distances = elevations.map((_, index) => {
+                return (index / (elevations.length - 1)) * (trailLength || 10);
+            });
+
+            const elevationData = elevations.map(point => Math.round(point.elevation));
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: distances.map(d => d.toFixed(1) + 'km'),
+                    datasets: [{
+                        label: 'Elevation (m)',
+                        data: elevationData,
+                        borderColor: '#16a34a',
+                        backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Trail Elevation Profile'
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Distance'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Elevation (m)'
+                            }
+                        }
+                    },
+                    elements: {
+                        point: {
+                            radius: 2
+                        }
+                    }
+                }
+            });
+        }
     </script>
+
+    <!-- Load Google Maps API -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_api_key') }}&callback=initTrailMap&libraries=geometry"></script>
+
+    <!-- Load Chart.js for elevation profile -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </x-app-layout>

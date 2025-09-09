@@ -14,6 +14,7 @@
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <meta name="google-maps-api-key" content="{{ config('services.google.maps_api_key') }}" />
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>

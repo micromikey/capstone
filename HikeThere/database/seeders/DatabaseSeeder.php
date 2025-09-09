@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-use App\Models\Trail;
 use App\Models\Location;
+// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Trail;
+use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
@@ -16,6 +16,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Seed peak data first (required for auto-route functionality)
+        $this->call([
+            LuzonPeaksSeeder::class,
+        ]);
+
         // Create a sample organization user
         $organizationUser = User::create([
             'name' => 'Sample Organization',
@@ -163,20 +168,20 @@ class DatabaseSeeder extends Seeder
             $trailData['location_id'] = $mtPulag->id;
             $trailData['slug'] = Str::slug($trailData['trail_name']);
             $trailData['is_active'] = true; // Ensure trails are active
-            
+
             // Add missing required fields
-            if (!isset($trailData['description'])) {
+            if (! isset($trailData['description'])) {
                 $trailData['description'] = $trailData['summary'];
             }
-            if (!isset($trailData['coordinates'])) {
+            if (! isset($trailData['coordinates'])) {
                 $trailData['coordinates'] = null;
             }
-            if (!isset($trailData['gpx_file'])) {
+            if (! isset($trailData['gpx_file'])) {
                 $trailData['gpx_file'] = null;
             }
 
             $trail = Trail::create($trailData);
-            
+
             // Create trail images using the image service
             $this->createTrailImages($trail);
         }
@@ -207,9 +212,9 @@ class DatabaseSeeder extends Seeder
         for ($i = 2; $i <= 4; $i++) {
             \App\Models\TrailImage::create([
                 'trail_id' => $trail->id,
-                'image_path' => "https://picsum.photos/seed/" . ($trail->id + $i * 100) . "/800/600",
+                'image_path' => 'https://picsum.photos/seed/'.($trail->id + $i * 100).'/800/600',
                 'image_type' => 'photo',
-                'caption' => "Trail view " . ($i - 1),
+                'caption' => 'Trail view '.($i - 1),
                 'sort_order' => $i,
                 'is_primary' => false,
             ]);
@@ -218,7 +223,7 @@ class DatabaseSeeder extends Seeder
         // Create map image
         \App\Models\TrailImage::create([
             'trail_id' => $trail->id,
-            'image_path' => "https://picsum.photos/seed/" . ($trail->id + 1000) . "/800/600",
+            'image_path' => 'https://picsum.photos/seed/'.($trail->id + 1000).'/800/600',
             'image_type' => 'map',
             'caption' => "{$trail->trail_name} Trail Map",
             'sort_order' => 5,
@@ -232,7 +237,7 @@ class DatabaseSeeder extends Seeder
     protected function createMoreTrails($organizationUser)
     {
         $locations = Location::all();
-        
+
         $additionalTrails = [
             // Mt. Arayat trails
             [
@@ -251,8 +256,8 @@ class DatabaseSeeder extends Seeder
                         'price' => 1800.00,
                         'duration' => '4-5 hours',
                         'best_season' => 'October to April',
-                    ]
-                ]
+                    ],
+                ],
             ],
             // Mt. Pinatubo trails
             [
@@ -271,8 +276,8 @@ class DatabaseSeeder extends Seeder
                         'price' => 2200.00,
                         'duration' => '5-6 hours',
                         'best_season' => 'November to May',
-                    ]
-                ]
+                    ],
+                ],
             ],
             // Mt. Batulao trails
             [
@@ -291,8 +296,8 @@ class DatabaseSeeder extends Seeder
                         'price' => 1500.00,
                         'duration' => '4-5 hours',
                         'best_season' => 'October to March',
-                    ]
-                ]
+                    ],
+                ],
             ],
             // Mt. Daraitan trails
             [
@@ -311,8 +316,9 @@ class DatabaseSeeder extends Seeder
                         'price' => 1200.00,
                         'duration' => '3-4 hours',
                         'best_season' => 'March to June',
-                    ]
-                ]
+                        'coordinates' => json_encode(['lat' => 14.6167, 'lng' => 121.4000]), // Mt. Daraitan coordinates
+                    ],
+                ],
             ],
             // Mt. Pico de Loro trails
             [
@@ -331,14 +337,14 @@ class DatabaseSeeder extends Seeder
                         'price' => 2800.00,
                         'duration' => '6-7 hours',
                         'best_season' => 'November to April',
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
         ];
 
         foreach ($additionalTrails as $locationTrails) {
             $location = $locations->where('name', $locationTrails['location_name'])->first();
-            
+
             if ($location) {
                 foreach ($locationTrails['trails'] as $trailData) {
                     $trailData['user_id'] = $organizationUser->id;

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Trail;
 use App\Services\TrailImageService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class TrailController extends Controller
 {
@@ -42,6 +43,274 @@ class TrailController extends Controller
                 'difficulty' => $trail->difficulty,
                 'coordinates' => $trail->coordinates,
                 'location' => $trail->location ? $trail->location->name.', '.$trail->location->province : 'Location N/A',
+            ],
+        ]);
+    }
+
+    public function searchOSM(Request $request)
+    {
+        $request->validate([
+            'mountain_name' => 'required|string|max:255',
+            'trail_name' => 'required|string|max:255'
+        ]);
+
+        $mountainName = $request->get('mountain_name');
+        $trailName = $request->get('trail_name');
+
+        // Search in the OSM trails database with multiple strategies
+        $osmTrails = Trail::where(function ($query) use ($mountainName, $trailName) {
+                // Strategy 1: Combined search - "Mount Arayat Ambangeg Trail"
+                $combined = $mountainName . ' ' . $trailName;
+                $query->where('name', 'LIKE', '%' . $combined . '%');
+                
+                // Strategy 2: Mountain name in trail name - "Old Trail to Mount Arayat North Peak"
+                $query->orWhere('name', 'LIKE', '%' . $mountainName . '%');
+                
+                // Strategy 3: Trail name only - "Makiling Trail", "Talamitam Trail"
+                $query->orWhere('name', 'LIKE', '%' . $trailName . '%');
+                
+                // Strategy 4: Dash separated - "Mount Pulag - Ambangeg Trail"
+                $dashCombined = $mountainName . ' - ' . $trailName;
+                $query->orWhere('name', 'LIKE', '%' . $dashCombined . '%');
+                
+                // Strategy 5: Reverse dash - "Ambangeg Trail - Mount Pulag"
+                $reverseDash = $trailName . ' - ' . $mountainName;
+                $query->orWhere('name', 'LIKE', '%' . $reverseDash . '%');
+            })
+            ->whereNotNull('osm_id') // Only OSM trails
+            ->whereNotNull('geometry')
+            ->orderByRaw("
+                CASE 
+                    WHEN name LIKE ? THEN 1
+                    WHEN name LIKE ? THEN 2
+                    WHEN name LIKE ? THEN 3
+                    WHEN name LIKE ? THEN 4
+                    ELSE 5
+                END
+            ", [
+                '%' . $mountainName . ' ' . $trailName . '%',
+                '%' . $mountainName . ' - ' . $trailName . '%',
+                '%' . $mountainName . '%',
+                '%' . $trailName . '%'
+            ])
+            ->limit(5)
+            ->get();
+
+        $results = [];
+        
+        // Add OSM results
+        foreach ($osmTrails as $trail) {
+            $results[] = [
+                'id' => $trail->id,
+                'name' => $trail->name,
+                'osm_id' => $trail->osm_id,
+                'region' => $trail->region,
+                'difficulty' => $trail->difficulty,
+                'geometry' => $trail->geometry,
+                'source' => 'osm',
+                'created_at' => $trail->created_at,
+            ];
+        }
+
+        // If OSM didn't return enough results, search Google Places
+        if (count($results) < 3) {
+            $googlePlacesResults = $this->searchGooglePlaces($mountainName, $trailName);
+            $results = array_merge($results, $googlePlacesResults);
+        }
+
+        if (count($results) > 0) {
+            return response()->json([
+                'found' => true,
+                'trails' => array_slice($results, 0, 5), // Limit to 5 total results
+                'sources' => array_unique(array_column($results, 'source'))
+            ]);
+        }
+
+        return response()->json([
+            'found' => false,
+            'message' => 'Trail not found in OpenStreetMap database or Google Places. You can upload a GPX file instead.'
+        ]);
+    }
+
+    private function searchGooglePlaces($mountainName, $trailName)
+    {
+        $apiKey = config('services.google.maps_api_key');
+        if (!$apiKey) {
+            return [];
+        }
+
+        $results = [];
+        $queries = [
+            $mountainName . ' ' . $trailName . ' trail hiking',
+            $mountainName . ' - ' . $trailName,
+            $trailName . ' ' . $mountainName,
+            $mountainName . ' trail',
+            $trailName . ' hiking'
+        ];
+
+        foreach ($queries as $query) {
+            try {
+                $url = "https://maps.googleapis.com/maps/api/place/textsearch/json?" . http_build_query([
+                    'query' => $query,
+                    'location' => '14.5995,120.9842', // Philippines center
+                    'radius' => 500000, // 500km radius
+                    'key' => $apiKey,
+                    'type' => 'tourist_attraction',
+                ]);
+
+                $response = file_get_contents($url);
+                $data = json_decode($response, true);
+
+                if ($data['status'] === 'OK' && !empty($data['results'])) {
+                    foreach (array_slice($data['results'], 0, 2) as $place) {
+                        // Filter for hiking/trail related places
+                        $name = $place['name'];
+                        $types = $place['types'] ?? [];
+                        
+                        if ($this->isHikingRelated($name, $types)) {
+                            $results[] = [
+                                'id' => 'google_' . $place['place_id'],
+                                'name' => $name,
+                                'place_id' => $place['place_id'],
+                                'address' => $place['formatted_address'] ?? '',
+                                'rating' => $place['rating'] ?? null,
+                                'geometry' => [
+                                    'lat' => $place['geometry']['location']['lat'],
+                                    'lng' => $place['geometry']['location']['lng']
+                                ],
+                                'source' => 'google_places',
+                                'types' => $types
+                            ];
+                        }
+                    }
+                }
+
+                if (count($results) >= 3) break; // Stop if we have enough results
+                
+            } catch (\Exception $e) {
+                \Log::warning('Google Places search failed: ' . $e->getMessage());
+                continue;
+            }
+        }
+
+        return array_unique($results, SORT_REGULAR);
+    }
+
+    private function isHikingRelated($name, $types)
+    {
+        $hikingKeywords = ['trail', 'hike', 'hiking', 'mountain', 'peak', 'summit', 'trek', 'climb'];
+        $relevantTypes = ['tourist_attraction', 'natural_feature', 'park'];
+        
+        $nameHasKeyword = false;
+        foreach ($hikingKeywords as $keyword) {
+            if (stripos($name, $keyword) !== false) {
+                $nameHasKeyword = true;
+                break;
+            }
+        }
+        
+        $hasRelevantType = !empty(array_intersect($types, $relevantTypes));
+        
+        return $nameHasKeyword || $hasRelevantType;
+    }
+
+    public function getMapData(Request $request)
+    {
+        // For map data, we want to show all active trails regardless of authentication
+        // This provides a comprehensive view for the map
+        $trails = Trail::active()
+            ->with(['location', 'primaryImage', 'reviews'])
+            ->get()
+            ->map(function ($trail) {
+                return [
+                    'id' => $trail->id,
+                    'trail_name' => $trail->trail_name,
+                    'mountain_name' => $trail->mountain_name,
+                    'difficulty' => $trail->difficulty,
+                    'difficulty_label' => $trail->difficulty_label,
+                    'length' => $trail->length,
+                    'elevation_gain' => $trail->elevation_gain,
+                    'elevation_high' => $trail->elevation_high,
+                    'elevation_low' => $trail->elevation_low,
+                    'estimated_time' => $trail->estimated_time,
+                    'estimated_time_formatted' => $trail->estimated_time_formatted,
+                    'coordinates' => $trail->coordinates,
+                        'gpx_file' => $trail->gpx_file ? Storage::url($trail->gpx_file) : null,
+                    'average_rating' => $trail->average_rating,
+                    'total_reviews' => $trail->total_reviews,
+                    'location' => $trail->location ? [
+                        'id' => $trail->location->id,
+                        'name' => $trail->location->name,
+                        'province' => $trail->location->province,
+                        'latitude' => $trail->location->latitude,
+                        'longitude' => $trail->location->longitude,
+                    ] : null,
+                    'primary_image' => $trail->primaryImage?->url ?? $this->imageService->getTrailImage($trail, 'primary', 'medium'),
+                ];
+            });
+
+        return response()->json([
+            'trails' => $trails,
+            'total' => $trails->count(),
+        ]);
+    }
+
+    public function getDetails(Trail $trail)
+    {
+        $trail->load(['location', 'images', 'reviews.user', 'user']);
+
+        return response()->json([
+            'id' => $trail->id,
+            'trail_name' => $trail->trail_name,
+            'mountain_name' => $trail->mountain_name,
+            'slug' => $trail->slug,
+            'difficulty' => $trail->difficulty,
+            'difficulty_label' => $trail->difficulty_label,
+            'difficulty_description' => $trail->difficulty_description,
+            'length' => $trail->length,
+            'elevation_gain' => $trail->elevation_gain,
+            'elevation_high' => $trail->elevation_high,
+            'elevation_low' => $trail->elevation_low,
+            'estimated_time' => $trail->estimated_time,
+            'estimated_time_formatted' => $trail->estimated_time_formatted,
+            'coordinates' => $trail->coordinates,
+                'gpx_file' => $trail->gpx_file ? Storage::url($trail->gpx_file) : null,
+            'summary' => $trail->summary,
+            'description' => $trail->description,
+            'features' => $trail->features,
+            'best_season' => $trail->best_season,
+            'terrain_notes' => $trail->terrain_notes,
+            'permit_required' => $trail->permit_required,
+            'permit_process' => $trail->permit_process,
+            'departure_point' => $trail->departure_point,
+            'transport_options' => $trail->transport_options,
+            'packing_list' => $trail->packing_list,
+            'health_fitness' => $trail->health_fitness,
+            'emergency_contacts' => $trail->emergency_contacts,
+            'campsite_info' => $trail->campsite_info,
+            'environmental_practices' => $trail->environmental_practices,
+            'average_rating' => $trail->average_rating,
+            'total_reviews' => $trail->total_reviews,
+            'location' => $trail->location ? [
+                'id' => $trail->location->id,
+                'name' => $trail->location->name,
+                'province' => $trail->location->province,
+                'full_name' => $trail->location->name.', '.$trail->location->province,
+                'latitude' => $trail->location->latitude,
+                'longitude' => $trail->location->longitude,
+            ] : null,
+            'images' => $trail->images->map(function ($image) {
+                return [
+                    'id' => $image->id,
+                    'url' => $image->url,
+                    'image_type' => $image->image_type,
+                    'is_primary' => $image->is_primary,
+                    'sort_order' => $image->sort_order,
+                ];
+            }),
+            'organization' => [
+                'id' => $trail->user->id,
+                'name' => $trail->user->display_name,
             ],
         ]);
     }
@@ -117,7 +386,7 @@ class TrailController extends Controller
                 'duration' => $trail->duration,
                 'best_season' => $trail->best_season,
                 'coordinates' => $trail->coordinates,
-                'gpx_file' => $trail->gpx_file ? \Storage::url($trail->gpx_file) : null,
+                    'gpx_file' => $trail->gpx_file ? Storage::url($trail->gpx_file) : null,
             ];
         });
 
@@ -213,36 +482,33 @@ class TrailController extends Controller
     {
         $trails = Trail::active()
             ->with(['location'])
-            ->whereNotNull('coordinates')
+            ->where(function($q){
+                $q->whereNotNull('coordinates');
+            })
             ->get();
 
         return $trails->map(function ($trail) {
-            // Generate sample path coordinates if GPX file is not available
+            // Use coordinates as the source of trail path data
             $pathCoordinates = [];
-
-            if ($trail->gpx_file) {
-                // TODO: Parse GPX file to get actual coordinates
-                // For now, generate sample coordinates around the trail center
-                $centerLat = $trail->coordinates['lat'] ?? $trail->location->latitude;
-                $centerLng = $trail->coordinates['lng'] ?? $trail->location->longitude;
-
-                $numPoints = 10;
-                for ($i = 0; $i < $numPoints; $i++) {
-                    $pathCoordinates[] = [
-                        'lat' => $centerLat + (rand(-50, 50) / 10000),
-                        'lng' => $centerLng + (rand(-50, 50) / 10000),
-                    ];
-                }
+            if (is_array($trail->coordinates) && count($trail->coordinates)) {
+                $pathCoordinates = collect($trail->coordinates)
+                    ->map(function($pt){
+                        if (is_array($pt) && isset($pt['lat'],$pt['lng'])) return $pt;
+                        if (is_array($pt) && count($pt)===2) return ['lat'=>$pt[1],'lng'=>$pt[0]]; // [lng,lat] fallback
+                        return null;
+                    })
+                    ->filter()->values()->all();
+            } elseif (is_array($trail->coordinates) && isset($trail->coordinates[0]) && is_array($trail->coordinates[0])) {
+                $pathCoordinates = collect($trail->coordinates)
+                    ->map(function($pt){
+                        if (isset($pt['lat'],$pt['lng'])) return $pt;
+                        if (count($pt)===2) return ['lat'=>$pt[1],'lng'=>$pt[0]]; // numeric index likely [lng,lat]
+                        return null;
+                    })->filter()->values()->all();
+            } elseif (isset($trail->coordinates['lat'],$trail->coordinates['lng'])) {
+                $pathCoordinates = $this->generateRouteFromPoint($trail->coordinates['lat'],$trail->coordinates['lng']);
             } else {
-                // Generate a simple path from start to end
-                $startLat = $trail->coordinates['lat'] ?? $trail->location->latitude;
-                $startLng = $trail->coordinates['lng'] ?? $trail->location->longitude;
-
-                $pathCoordinates = [
-                    ['lat' => $startLat, 'lng' => $startLng],
-                    ['lat' => $startLat + 0.001, 'lng' => $startLng + 0.001],
-                    ['lat' => $startLat + 0.002, 'lng' => $startLng + 0.002],
-                ];
+                $pathCoordinates = $this->generateRouteFromPoint($trail->location->latitude,$trail->location->longitude);
             }
 
             return [
@@ -252,6 +518,7 @@ class TrailController extends Controller
                 'path_coordinates' => $pathCoordinates,
                 'length' => $trail->length,
                 'elevation_gain' => $trail->elevation_gain,
+                'coordinate_generation_method' => $trail->coordinate_generation_method,
             ];
         });
     }
@@ -305,6 +572,60 @@ class TrailController extends Controller
             ->values();
 
         return response()->json($trails);
+    }
+
+    /**
+     * Get trail route coordinates for a specific trail
+     */
+    public function getTrailRoute(Trail $trail)
+    {
+        $trail->load(['location']);
+        if (is_array($trail->coordinates) && count($trail->coordinates)) {
+            // Check if it's an array of coordinate points
+            if (isset($trail->coordinates[0]) && is_array($trail->coordinates[0])) {
+                $coordinates = $trail->coordinates;
+            } elseif (isset($trail->coordinates['lat'],$trail->coordinates['lng'])) {
+                // Single coordinate point
+                $coordinates = $this->generateRouteFromPoint($trail->coordinates['lat'],$trail->coordinates['lng']);
+            } else {
+                $coordinates = $trail->coordinates;
+            }
+        } else {
+            $coordinates = $this->generateRouteFromPoint($trail->location->latitude,$trail->location->longitude);
+        }
+
+        return response()->json([
+            'id' => $trail->id,
+            'name' => $trail->trail_name,
+            'coordinates' => $coordinates,
+            'length' => $trail->length,
+            'elevation_gain' => $trail->elevation_gain,
+            'estimated_time' => $trail->estimated_time_formatted,
+            'difficulty' => $trail->difficulty,
+            'gpx_file' => $trail->gpx_file ? \Storage::url($trail->gpx_file) : null,
+            'coordinate_generation_method' => $trail->coordinate_generation_method,
+        ]);
+    }
+
+    /**
+     * Generate a sample route from a center point
+     */
+    private function generateRouteFromPoint($centerLat, $centerLng)
+    {
+        $coordinates = [];
+        $numPoints = 15;
+
+        for ($i = 0; $i < $numPoints; $i++) {
+            $angle = ($i / $numPoints) * 2 * M_PI;
+            $radius = 0.005 + (rand(-50, 50) / 10000);
+
+            $coordinates[] = [
+                'lat' => $centerLat + (cos($angle) * $radius),
+                'lng' => $centerLng + (sin($angle) * $radius),
+            ];
+        }
+
+        return $coordinates;
     }
 
     /**

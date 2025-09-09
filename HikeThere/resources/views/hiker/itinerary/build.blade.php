@@ -1,6 +1,6 @@
 <x-app-layout>
 
-  <form action="{{ route('itinerary.generate') }}" method="POST" class="relative min-h-screen overflow-hidden">
+  <form action="{{ route('hiker.itinerary.generate') }}" method="POST" class="relative min-h-screen overflow-hidden">
     @csrf
 
     <div aria-hidden="true" class="pointer-events-none absolute inset-0">
@@ -1672,63 +1672,37 @@
           });
       }
 
-      // Enhanced Google Maps API loading with comprehensive libraries
-      async function loadGoogleMapsAPI() {
-          return new Promise((resolve, reject) => {
-              // Check if API key is available
-              const apiKey = '{{ config('services.google.maps_api_key') }}';
-              if (!apiKey || apiKey === '') {
-                  reject(new Error('Google Maps API key not configured. Please check your .env file.'));
-                  return;
-              }
-              
-              const script = document.createElement('script');
-              script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places,visualization,drawing&callback=initItineraryMap`;
-              script.onerror = () => reject(new Error('Failed to load Google Maps API'));
-              script.onload = () => resolve();
-              
-              // Set timeout for API loading
-              const timeout = setTimeout(() => {
-                  reject(new Error('Google Maps API loading timeout'));
-              }, 15000);
-              
-              // Override the callback to clear timeout and initialize
-              window.initItineraryMap = async function() {
-                  clearTimeout(timeout);
-                  
-                  try {
-                      // Wait for ItineraryMap class to be available
-                      await waitForItineraryMap();
-                      
-                      document.getElementById('map-loading-state').style.display = 'none';
-                      document.getElementById('map-fallback').style.display = 'none';
-                      resolve();
-                      
-                      // Initialize the itinerary map
-                      if (typeof ItineraryMap !== 'undefined') {
-                          try {
-                              window.itineraryMap = new ItineraryMap({
-                                  mapElementId: 'itinerary-map'
-                              });
-                              
-                              console.log('Itinerary map initialized successfully');
-                          } catch (error) {
-                              console.error('Error initializing itinerary map:', error);
-                              showMapError('Map Initialization Error', error.message);
-                          }
-                      } else {
-                          console.error('ItineraryMap class not available after waiting');
-                          showMapError('Map System Error', 'The itinerary map system failed to initialize.');
-                      }
-                  } catch (error) {
-                      console.error('Error during map initialization:', error);
-                      showMapError('Map Loading Error', 'Failed to load map components.');
-                  }
-              };
-              
-              document.head.appendChild(script);
-          });
-      }
+    // Enhanced Google Maps API loading with comprehensive libraries
+    async function loadGoogleMapsAPI() {
+      return new Promise((resolve, reject) => {
+        const apiKey = '{{ config('services.google.maps_api_key') }}';
+        if (!apiKey) { reject(new Error('Google Maps API key not configured.')); return; }
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places,visualization,drawing&callback=initItineraryMap`;
+        script.onerror = () => reject(new Error('Failed to load Google Maps API'));
+        const timeout = setTimeout(()=>reject(new Error('Google Maps API loading timeout')),15000);
+        window.initItineraryMap = async function() {
+          clearTimeout(timeout);
+          try {
+            await waitForItineraryMap();
+            document.getElementById('map-loading-state').style.display = 'none';
+            document.getElementById('map-fallback').style.display = 'none';
+            if (typeof ItineraryMap !== 'undefined') {
+              window.itineraryMap = new ItineraryMap({ mapElementId: 'itinerary-map' });
+              console.log('Itinerary map initialized successfully');
+            } else {
+              showMapError('Map System Error', 'The itinerary map system failed to initialize.');
+            }
+            resolve();
+          } catch(e) {
+            console.error('Error during map initialization:', e);
+            showMapError('Map Loading Error', 'Failed to load map components.');
+            reject(e);
+          }
+        };
+        document.head.appendChild(script);
+      });
+    }
 
       // Helper function to show map errors
       function showMapError(title, message) {

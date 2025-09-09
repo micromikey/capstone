@@ -408,59 +408,36 @@
         // Enhanced Google Maps API loading with comprehensive libraries
         async function loadGoogleMapsAPI() {
             return new Promise((resolve, reject) => {
-                // Check if API key is available
                 const apiKey = '{{ config('services.google.maps_api_key') }}';
-                if (!apiKey || apiKey === '') {
-                    reject(new Error('Google Maps API key not configured. Please check your .env file.'));
+                if (!apiKey) {
+                    reject(new Error('Google Maps API key not configured.'));
                     return;
                 }
-                
                 const script = document.createElement('script');
                 script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places,visualization,drawing&callback=initMap`;
                 script.onerror = () => reject(new Error('Failed to load Google Maps API'));
-                script.onload = () => resolve();
-                
-                // Set timeout for API loading
-                const timeout = setTimeout(() => {
-                    reject(new Error('Google Maps API loading timeout'));
-                }, 15000);
-                
-                // Override the callback to clear timeout and initialize
+                const timeout = setTimeout(() => reject(new Error('Google Maps API loading timeout')), 15000);
                 window.initMap = async function() {
                     clearTimeout(timeout);
-                    
                     try {
-                        // Wait for HikeThereMap class to be available
                         await waitForHikeThereMap();
-                        
                         document.getElementById('map-loading').style.display = 'none';
                         document.getElementById('fallback-map').style.display = 'none';
-                        resolve();
-                        
-                        // Initialize the enhanced map
                         if (typeof HikeThereMap !== 'undefined') {
-                            try {
-                                window.hikeThereMap = new HikeThereMap();
-                                
-                                // Update UI with initial data
-                                updateMapStatistics();
-                                setupEnhancedEventListeners();
-                                
-                                console.log('Map initialized successfully');
-                            } catch (error) {
-                                console.error('Error initializing map:', error);
-                                showMapError('Map Initialization Error', error.message);
-                            }
+                            window.hikeThereMap = new HikeThereMap();
+                            updateMapStatistics();
+                            setupEnhancedEventListeners();
+                            console.log('Map initialized successfully');
                         } else {
-                            console.error('HikeThereMap class not available after waiting');
                             showMapError('Map System Error', 'The hiking map system failed to initialize.');
                         }
-                    } catch (error) {
-                        console.error('Error during map initialization:', error);
+                        resolve();
+                    } catch (e) {
+                        console.error('Error during map initialization:', e);
                         showMapError('Map Loading Error', 'Failed to load map components.');
+                        reject(e);
                     }
                 };
-                
                 document.head.appendChild(script);
             });
         }

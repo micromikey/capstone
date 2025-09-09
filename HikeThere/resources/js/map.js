@@ -61,7 +61,7 @@ class HikeThereMap {
             await this.loadTrails();
             this.setupMarkerClusterer();
             this.initializeHikingLayers();
-            this.setupSearchAutocomplete();
+            await this.setupSearchAutocomplete();
             this.initializeHeatmap();
             this.setupDirections();
             this.setupPerformanceMonitoring();
@@ -1435,38 +1435,67 @@ class HikeThereMap {
         console.log('Hiking layers initialized');
     }
 
-    setupSearchAutocomplete() {
-        const searchInput = document.getElementById('map-search');
-        if (searchInput && google.maps.places) {
-            this.searchAutocomplete = new google.maps.places.Autocomplete(searchInput, {
-                types: ['establishment', 'geocode', 'natural_feature'], // Include businesses, addresses, and natural features
-                componentRestrictions: { country: 'ph' }, // Philippines
-                fields: ['formatted_address', 'name', 'place_id', 'geometry', 'types']
-            });
-
-            // Add place_changed event listener
-            this.searchAutocomplete.addListener('place_changed', () => {
-                const place = this.searchAutocomplete.getPlace();
-                if (place.geometry) {
-                    // Center map on selected location
-                    const position = new google.maps.LatLng(place.geometry.location.lat(), place.geometry.location.lng());
-                    this.map.panTo(position);
-                    this.map.setZoom(14);
-                    
-                    // Add a marker for the searched location
-                    this.addSearchResultMarker(place);
-                    
-                    // Update search input placeholder to show what was found
-                    searchInput.placeholder = `Found: ${place.name || place.formatted_address}`;
-                    
-                    // Clear search input after a delay
-                    setTimeout(() => {
-                        searchInput.value = '';
-                        searchInput.placeholder = 'Search trails by name, mountain, or location...';
-                    }, 2000);
-                }
-            });
+    async ensurePlacesLibrary() {
+        // If modular import exists but places not yet imported, import it
+        try {
+            if (typeof google !== 'undefined' && google.maps && !google.maps.places && google.maps.importLibrary) {
+                await google.maps.importLibrary('places');
+            }
+        } catch (e) {
+            console.error('Failed to import places library:', e);
         }
+    }
+
+    async setupSearchAutocomplete() {
+        const searchInput = document.getElementById('map-search');
+        await this.ensurePlacesLibrary();
+        if (searchInput && google.maps && google.maps.places && google.maps.places.Autocomplete) {
+            try {
+                console.log('[Map] Setting up search autocomplete...');
+                const AutoClass = google.maps.places.Autocomplete; // legacy path still works after importLibrary
+                this.searchAutocomplete = new AutoClass(searchInput, {
+                    types: ['establishment', 'geocode', 'natural_feature'], // Include businesses, addresses, and natural features
+                    componentRestrictions: { country: 'ph' }, // Philippines
+                    fields: ['formatted_address', 'name', 'place_id', 'geometry', 'types']
+                });
+
+                // Add place_changed event listener
+                this.searchAutocomplete.addListener('place_changed', () => {
+                    const place = this.searchAutocomplete.getPlace();
+                    if (place && place.geometry) {
+                        const position = new google.maps.LatLng(place.geometry.location.lat(), place.geometry.location.lng());
+                        this.map.panTo(position);
+                        this.map.setZoom(14);
+                        this.addSearchResultMarker(place);
+                        searchInput.placeholder = `Found: ${place.name || place.formatted_address}`;
+                        setTimeout(() => {
+                            searchInput.value = '';
+                            searchInput.placeholder = 'Search trails by name, mountain, or location...';
+                        }, 2000);
+                    }
+                });
+            } catch (e) {
+                console.error('Failed setting up search autocomplete:', e);
+            }
+        } else {
+            console.warn('[Map] Autocomplete prerequisites not ready. searchInput?', !!searchInput, 'google.maps?', !!(window.google && google.maps), 'places?', !!(window.google && google.maps && google.maps.places));
+            // Retry once after slight delay
+            setTimeout(() => {
+                if (!this.searchAutocomplete) {
+                    console.log('[Map] Retrying autocomplete setup...');
+                    this.setupSearchAutocomplete();
+                }
+            }, 1000);
+        }
+    }
+
+    // Inject high z-index style for Places dropdown (only once)
+    injectPlacesZIndexFix() {
+        if (document.getElementById('places-zindex-fix')) return;
+        const style = document.createElement('style');
+        style.id = 'places-zindex-fix';
+        style.textContent = `.pac-container{z-index:99999 !important;}`;
+        document.head.appendChild(style);
     }
 
     addSearchResultMarker(place) {

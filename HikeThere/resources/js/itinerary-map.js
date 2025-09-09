@@ -44,10 +44,9 @@ class ItineraryMap {
     }
 
     isGoogleMapsReady() {
-        return typeof google !== 'undefined' && 
-               google.maps && 
-               google.maps.Map && 
-               google.maps.places;
+    return typeof google !== 'undefined' &&
+           google.maps &&
+           google.maps.Map;
     }
 
     async waitForGoogleMaps(timeout = 5000) {
@@ -57,7 +56,7 @@ class ItineraryMap {
             const checkInterval = setInterval(() => {
                 if (this.isGoogleMapsReady()) {
                     clearInterval(checkInterval);
-                    console.log('Google Maps ready');
+                    console.log('Google Maps base ready');
                     resolve();
                 } else if (Date.now() - startTime > timeout) {
                     clearInterval(checkInterval);
@@ -65,6 +64,18 @@ class ItineraryMap {
                 }
             }, 100); // Check every 100ms instead of 500ms
         });
+    }
+
+    async ensurePlacesLibrary() {
+        if (typeof google === 'undefined' || !google.maps) return;
+        if (google.maps.places && google.maps.places.Autocomplete) return;
+        if (google.maps.importLibrary) {
+            try {
+                await google.maps.importLibrary('places');
+            } catch (e) {
+                console.error('Failed to import places library:', e);
+            }
+        }
     }
 
     async initializeMap() {
@@ -163,15 +174,17 @@ class ItineraryMap {
         }
     }
 
-    setupSearchAutocomplete() {
+    async setupSearchAutocomplete() {
         const searchInput = document.getElementById('itinerary-search-input');
+        await this.ensurePlacesLibrary();
         if (!searchInput || !this.map || !google.maps.places) {
             console.log('Search setup skipped - missing requirements');
             return;
         }
 
         try {
-            const autocomplete = new google.maps.places.Autocomplete(searchInput, {
+            const AutoClass = google.maps.places.Autocomplete;
+            const autocomplete = new AutoClass(searchInput, {
                 componentRestrictions: { country: 'ph' },
                 fields: ['name', 'formatted_address', 'geometry'],
                 types: ['establishment', 'geocode']
@@ -190,7 +203,8 @@ class ItineraryMap {
         }
     }
 
-    setupStopoverAndSideTripAutocomplete() {
+    async setupStopoverAndSideTripAutocomplete() {
+        await this.ensurePlacesLibrary();
         if (!google.maps.places) {
             console.log('Google Places not available for stopover/side trip autocomplete');
             return;
@@ -200,7 +214,8 @@ class ItineraryMap {
             // Setup stopover autocomplete
             const stopoverInput = document.getElementById('add-stopover-input');
             if (stopoverInput) {
-                this.stopoverAutocomplete = new google.maps.places.Autocomplete(stopoverInput, {
+                const AutoClass = google.maps.places.Autocomplete;
+                this.stopoverAutocomplete = new AutoClass(stopoverInput, {
                     componentRestrictions: { country: 'ph' },
                     types: ['establishment', 'geocode'],
                     fields: ['formatted_address', 'name', 'place_id', 'geometry']
@@ -218,7 +233,8 @@ class ItineraryMap {
             // Setup side trip autocomplete
             const sideTripInput = document.getElementById('add-sidetrip-input');
             if (sideTripInput) {
-                this.sideTripAutocomplete = new google.maps.places.Autocomplete(sideTripInput, {
+                const AutoClass2 = google.maps.places.Autocomplete;
+                this.sideTripAutocomplete = new AutoClass2(sideTripInput, {
                     componentRestrictions: { country: 'ph' },
                     types: ['establishment', 'geocode'],
                     fields: ['formatted_address', 'name', 'place_id', 'geometry']

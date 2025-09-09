@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Models\Trail;
 
 return new class extends Migration
 {
@@ -11,9 +12,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('itineraries', function (Blueprint $table) {
-            $table->json('route_summary')->nullable()->after('route_data');
-        });
+        // Clear hardcoded coordinates from trails
+        // This will force regeneration using Google APIs
+        Trail::whereNotNull('coordinates')->update(['coordinates' => null]);
     }
 
     /**
@@ -21,8 +22,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('itineraries', function (Blueprint $table) {
-            $table->dropColumn('route_summary');
-        });
+        // Cannot restore previous coordinates
+        // They will need to be regenerated
     }
 };

@@ -35,20 +35,12 @@ return [
         'maps_api_key' => env('GOOGLE_MAPS_API_KEY'),
     ],
 
+    'openrouteservice' => [
+        'api_key' => env('ORS_API_KEY'),
+    ],
+
     'openweather' => [
         'api_key' => env('OPENWEATHER_API_KEY'),
-    ],
-
-    'unsplash' => [
-        'access_key' => env('UNSPLASH_ACCESS_KEY'),
-    ],
-
-    'pexels' => [
-        'api_key' => env('PEXELS_API_KEY'),
-    ],
-
-    'pixabay' => [
-        'api_key' => env('PIXABAY_API_KEY'),
     ],
 
 ];

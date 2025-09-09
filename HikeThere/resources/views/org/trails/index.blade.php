@@ -132,6 +132,35 @@
                                                     <div class="text-xs text-gray-400">
                                                         Duration: {{ $trail->duration }}
                                                     </div>
+                                                        <div class="mt-1 flex flex-wrap gap-1">
+                                                            @if($trail->coordinate_generation_method)
+                                                                <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-indigo-100 text-indigo-700" title="Coordinate Source">
+                                                                    {{ str_replace('_',' ',$trail->coordinate_generation_method) }}
+                                                                </span>
+                                                            @endif
+                                                            @if($trail->metrics_confidence)
+                                                                @php
+                                                                    $confColors = [
+                                                                        'high' => 'bg-green-100 text-green-700',
+                                                                        'medium' => 'bg-yellow-100 text-yellow-700',
+                                                                        'low' => 'bg-red-100 text-red-700'
+                                                                    ];
+                                                                @endphp
+                                                                <span class="px-2 py-0.5 text-[10px] font-semibold rounded {{ $confColors[$trail->metrics_confidence] ?? 'bg-gray-100 text-gray-600' }}" title="Metrics Confidence">
+                                                                    {{ ucfirst($trail->metrics_confidence) }} confidence
+                                                                </span>
+                                                            @endif
+                                                            @if($trail->length)
+                                                                <span class="px-2 py-0.5 text-[10px] rounded bg-blue-50 text-blue-700" title="Length (km)">
+                                                                    {{ number_format($trail->length,2) }} km
+                                                                </span>
+                                                            @endif
+                                                            @if($trail->elevation_gain)
+                                                                <span class="px-2 py-0.5 text-[10px] rounded bg-purple-50 text-purple-700" title="Elevation Gain (m)">
+                                                                    +{{ $trail->elevation_gain }} m
+                                                                </span>
+                                                            @endif
+                                                        </div>
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
@@ -145,17 +174,21 @@
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
-                                                    @if($trail->difficulty === 'beginner') bg-green-100 text-green-800
-                                                    @elseif($trail->difficulty === 'intermediate') bg-yellow-100 text-yellow-800
-                                                    @else bg-red-100 text-red-800
-                                                    @endif">
+                                                @php
+                                                    $diffColors = [
+                                                        'beginner' => 'bg-green-100 text-green-800',
+                                                        'intermediate' => 'bg-yellow-100 text-yellow-800',
+                                                        'advanced' => 'bg-red-100 text-red-800'
+                                                    ];
+                                                    $diffClass = $diffColors[$trail->difficulty] ?? 'bg-gray-100 text-gray-700';
+                                                @endphp
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $diffClass }}">
                                                     {{ ucfirst($trail->difficulty) }}
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
-                                                    @if($trail->is_active) bg-green-100 text-green-800 @else bg-red-100 text-red-800 @endif">
+                                                @php $statusClass = $trail->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; @endphp
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $statusClass }}">
                                                     {{ $trail->is_active ? 'Active' : 'Inactive' }}
                                                 </span>
                                             </td>

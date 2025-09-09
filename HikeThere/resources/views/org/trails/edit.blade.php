@@ -42,15 +42,17 @@
                         </div>
 
                         <div>
-                            <x-label for="location_id" value="Location *" />
-                            <select id="location_id" name="location_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" required>
-                                <option value="">Select Location</option>
-                                @foreach($locations as $location)
-                                    <option value="{{ $location->id }}" {{ old('location_id', $trail->location_id) == $location->id ? 'selected' : '' }}>
-                                        {{ $location->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <x-label for="location_search" value="Location *" />
+                            <div class="relative mt-1">
+                                <input type="text" id="location_search" placeholder="Search for a location using Google Places..." class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" value="{{ old('location_search', $trail->location ? $trail->location->name . ', ' . $trail->location->province : '') }}">
+                                <input type="hidden" id="location_id" name="location_id" value="{{ old('location_id', $trail->location_id) }}" required>
+                                <input type="hidden" id="location_name" name="location_name" value="{{ old('location_name', $trail->location ? $trail->location->name : '') }}">
+                                <input type="hidden" id="location_lat" name="location_lat" value="{{ old('location_lat', $trail->location ? $trail->location->latitude : '') }}">
+                                <input type="hidden" id="location_lng" name="location_lng" value="{{ old('location_lng', $trail->location ? $trail->location->longitude : '') }}">
+                            </div>
+                            <div class="mt-2 text-sm text-gray-600">
+                                <p>Start typing to search for locations using Google Places Autocomplete</p>
+                            </div>
                             <x-input-error for="location_id" class="mt-2" />
                         </div>
 
@@ -238,4 +240,101 @@
             </div>
         </div>
     </div>
+
+    <!-- Google Maps JavaScript API (Legacy Places Autocomplete) -->
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_api_key') }}&libraries=places&v=weekly"></script>
+    <script>
+    let autocomplete; // legacy autocomplete
+    document.addEventListener('DOMContentLoaded', () => initializeLocationSearch());
+
+    // Initialize legacy Google Places Autocomplete
+        function initializeLocationSearch() {
+            console.log('Initializing Google Places Autocomplete for edit form...');
+            
+            const searchInput = document.getElementById('location_search');
+            const hiddenInput = document.getElementById('location_id');
+            const locationNameInput = document.getElementById('location_name');
+            const locationLatInput = document.getElementById('location_lat');
+            const locationLngInput = document.getElementById('location_lng');
+
+            if (!searchInput || !hiddenInput) {
+                console.error('Location search elements not found in edit form');
+                return;
+            }
+
+            console.log('Location search elements found, setting up legacy widget...');
+            try {
+                autocomplete = new google.maps.places.Autocomplete(searchInput, {
+                    types: ['geocode','establishment'],
+                    componentRestrictions: { country: 'PH' },
+                    fields: ['place_id','formatted_address','geometry','name']
+                });
+            } catch(e) {
+                console.error('Legacy Autocomplete init failed (edit):', e);
+            }
+            if (autocomplete) {
+                autocomplete.addListener('place_changed', () => {
+                    const place = autocomplete.getPlace();
+                    if (!place || !place.geometry) return;
+                    processSelectedPlaceEdit(place, searchInput, hiddenInput, locationNameInput, locationLatInput, locationLngInput);
+                });
+            }
+            searchInput.addEventListener('input', () => { if (hiddenInput.value) clearLocationSelection(); });
+            console.log('Legacy Places Autocomplete initialized (edit)');
+        }
+
+        function processSelectedPlaceEdit(place, searchInput, hiddenInput, locationNameInput, locationLatInput, locationLngInput) {
+            fetch('/api/locations/google-places', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json','X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
+                body: JSON.stringify({
+                    place_id: place.place_id,
+                    formatted_address: place.formatted_address,
+                    latitude: place.geometry.location.lat(),
+                    longitude: place.geometry.location.lng(),
+                    name: place.name
+                })
+            }).then(r=>r.json()).then(data=>{
+                if (data.success) {
+                    locationNameInput.value = place.formatted_address || place.name;
+                    locationLatInput.value = place.geometry.location.lat();
+                    locationLngInput.value = place.geometry.location.lng();
+                    hiddenInput.value = data.location.id;
+                    searchInput.classList.add('border-green-500','bg-green-50');
+                    searchInput.classList.remove('border-gray-300');
+                    if (!searchInput.parentNode.querySelector('.location-selected-checkmark')) {
+                        const check = document.createElement('div');
+                        check.className='location-selected-checkmark absolute right-10 top-1/2 transform -translate-y-1/2 text-green-500';
+                        check.innerHTML='<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>';
+                        searchInput.parentNode.appendChild(check);
+                    }
+                } else {
+                    alert('Failed to process location.');
+                }
+            }).catch(err=>console.error('Process place (edit) error', err));
+        }
+
+        function clearLocationSelection() {
+            const searchInput = document.getElementById('location_search');
+            const hiddenInput = document.getElementById('location_id');
+            const locationNameInput = document.getElementById('location_name');
+            const locationLatInput = document.getElementById('location_lat');
+            const locationLngInput = document.getElementById('location_lng');
+            
+            hiddenInput.value = '';
+            locationNameInput.value = '';
+            locationLatInput.value = '';
+            locationLngInput.value = '';
+            searchInput.classList.remove('border-green-500', 'bg-green-50');
+            searchInput.classList.add('border-gray-300');
+            
+            // Remove checkmark
+            const checkmark = searchInput.parentNode.querySelector('.location-selected-checkmark');
+            if (checkmark) {
+                checkmark.remove();
+            }
+        }
+
+    // DOMContentLoaded handled above
+    </script>
 </x-app-layout>

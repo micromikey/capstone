@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\TrailController;
+use App\Http\Controllers\Api\TrailSegmentController;
+use App\Http\Controllers\Api\GPXController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\MountainController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,25 +23,45 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// Mountains dataset endpoints
+Route::get('/mountains', [MountainController::class, 'index']);
+Route::get('/mountains/{slug}', [MountainController::class, 'show']);
+
 // Trail API endpoints
 Route::prefix('trails')->group(function () {
     Route::get('/', [TrailController::class, 'index']);
     Route::get('/search', [TrailController::class, 'search']);
+    Route::post('/search-osm', [TrailController::class, 'searchOSM']);
+    Route::get('/map-data', [TrailController::class, 'getMapData']);
     Route::get('/{trail}', [TrailController::class, 'show']);
+    Route::get('/{trail}/details', [TrailController::class, 'getDetails']);
     Route::get('/{trail}/elevation', [TrailController::class, 'getElevation']);
+    Route::get('/{trail}/route', [TrailController::class, 'getTrailRoute']);
     Route::get('/paths', [TrailController::class, 'getTrailPaths']);
     Route::post('/search-nearby', [TrailController::class, 'searchNearby']);
+});
+
+// AllTrails OSM Derivative Database API - Trail Segments
+Route::prefix('trail-segments')->group(function () {
+    Route::post('/generate', [TrailSegmentController::class, 'generateSegments']);
+    Route::post('/find-trail', [TrailSegmentController::class, 'findTrailSegments']);
+    Route::get('/stored', [TrailSegmentController::class, 'getStoredSegments']);
+    Route::post('/build-route', [TrailSegmentController::class, 'buildOptimizedRoute']);
+    Route::get('/intersections/nearby', [TrailSegmentController::class, 'getNearbyIntersections']);
 });
 
 // Location API endpoints
 Route::prefix('locations')->group(function () {
     Route::get('/', [LocationController::class, 'index']);
+    Route::get('/search', [LocationController::class, 'search']);
+    Route::post('/google-places', [LocationController::class, 'handleGooglePlacesLocation']);
     Route::get('/{location}', [LocationController::class, 'show']);
 });
 
 // Weather API endpoint
 Route::get('/weather', [App\Http\Controllers\Api\WeatherController::class, 'getWeather']);
 Route::get('/weather/forecast', [App\Http\Controllers\Api\WeatherController::class, 'getForecast']);
+Route::post('/weather/trail-conditions', [App\Http\Controllers\Api\WeatherController::class, 'getTrailConditions']);
 
 // Enhanced Hiking-specific API endpoints
 Route::prefix('hiking')->group(function () {
@@ -160,4 +183,10 @@ Route::prefix('hiking')->group(function () {
             ],
         ]);
     });
+});
+
+// GPX API endpoints
+Route::prefix('gpx')->group(function () {
+    Route::post('/process', [GPXController::class, 'processGPX'])->name('api.gpx.process');
+    Route::post('/generate', [GPXController::class, 'generateGPX'])->name('api.gpx.generate');
 });

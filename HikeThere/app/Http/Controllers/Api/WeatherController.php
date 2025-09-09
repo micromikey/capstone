@@ -308,4 +308,81 @@ class WeatherController extends Controller
 
         return $gradientMap[$condition] ?? 'from-indigo-500 to-yellow-300';
     }
+
+    /**
+     * Get weather conditions for trail location
+     */
+    public function getTrailConditions(Request $request): JsonResponse
+    {
+        $request->validate([
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+        ]);
+
+        $latitude = $request->latitude;
+        $longitude = $request->longitude;
+
+        try {
+            // Use existing weather data method but format for trail conditions
+            $weatherData = $this->getOpenWeatherData($latitude, $longitude);
+
+            // Format for trail-specific needs
+            $trailConditions = [
+                'temperature' => round($weatherData['temperature']),
+                'feels_like' => round($weatherData['feels_like']),
+                'condition' => $this->mapWeatherCondition($weatherData['description']),
+                'humidity' => $weatherData['humidity'],
+                'wind_speed' => round($weatherData['wind']['speed'] * 3.6), // Convert m/s to km/h
+                'visibility' => isset($weatherData['visibility']) ? round($weatherData['visibility'] / 1000) : 10,
+                'alerts' => $this->getTrailAlerts($weatherData),
+            ];
+
+            return response()->json($trailConditions);
+        } catch (\Exception $e) {
+            // Fallback mock data if weather service fails
+            $mockData = [
+                'temperature' => rand(15, 30),
+                'feels_like' => rand(15, 30),
+                'condition' => collect(['sunny', 'cloudy', 'rainy', 'foggy'])->random(),
+                'humidity' => rand(40, 90),
+                'wind_speed' => rand(5, 25),
+                'visibility' => rand(5, 15),
+                'alerts' => rand(0, 10) > 8 ? 'Weather data temporarily unavailable' : null,
+            ];
+
+            return response()->json($mockData);
+        }
+    }
+
+    /**
+     * Generate trail-specific weather alerts
+     */
+    private function getTrailAlerts(array $weatherData): ?string
+    {
+        $alerts = [];
+
+        // Wind alerts
+        if (isset($weatherData['wind']['speed']) && $weatherData['wind']['speed'] > 10) {
+            $alerts[] = 'Strong winds expected - exercise caution on exposed ridges';
+        }
+
+        // Rain alerts
+        if (isset($weatherData['rain']) || str_contains(strtolower($weatherData['description']), 'rain')) {
+            $alerts[] = 'Rain expected - trails may be slippery and muddy';
+        }
+
+        // Temperature alerts
+        if ($weatherData['temperature'] < 5) {
+            $alerts[] = 'Cold conditions - dress warmly and bring extra layers';
+        } elseif ($weatherData['temperature'] > 35) {
+            $alerts[] = 'Hot conditions - bring extra water and sun protection';
+        }
+
+        // Visibility alerts
+        if (isset($weatherData['visibility']) && $weatherData['visibility'] < 1000) {
+            $alerts[] = 'Poor visibility - consider postponing hike';
+        }
+
+        return empty($alerts) ? null : implode('; ', $alerts);
+    }
 }

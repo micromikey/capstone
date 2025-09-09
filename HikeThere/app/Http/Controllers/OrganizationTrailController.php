@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Trail;
 use App\Models\TrailImage;
 use App\Models\Location;
+use App\Services\GoogleDirectionsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use App\Jobs\EnrichTrailData;
 
 class OrganizationTrailController extends Controller
 {
@@ -25,23 +28,20 @@ class OrganizationTrailController extends Controller
     public function create()
     {
         // Debug: Log user information
-        \Log::info('Trail creation page accessed', [
+    Log::info('Trail creation page accessed', [
             'user_id' => Auth::id(),
             'user_type' => Auth::user()->user_type ?? 'unknown',
             'approval_status' => Auth::user()->approval_status ?? 'unknown',
             'is_authenticated' => Auth::check()
         ]);
 
-        // Get all locations for the dropdown
-        $locations = Location::orderBy('name')->get(['id', 'name', 'province', 'region']);
-
-        return view('org.trails.create', compact('locations'));
+        return view('org.trails.create');
     }
 
     public function store(Request $request)
     {
         // Debug: Log the incoming request data
-        \Log::info('Trail creation attempt', [
+    Log::info('Trail creation attempt', [
             'request_data' => $request->all(),
             'user_id' => Auth::id(),
             'user_type' => Auth::user()->user_type ?? 'unknown'
@@ -80,37 +80,78 @@ class OrganizationTrailController extends Controller
             'estimated_time' => 'nullable|integer|min:0',
             'summary' => 'nullable|string',
             'description' => 'nullable|string',
+            'trail_coordinates' => 'nullable|string',
+            'gpx_file' => 'nullable|file|mimes:gpx,kml,kmz|max:10240', // 10MB max
         ]);
 
         try {
-            $trail = new Trail($request->all());
+            $input = $request->all();
+
+            // Remove trail_coordinates from input as it's not a database field
+            // It will be processed separately into the coordinates field
+            unset($input['trail_coordinates']);
+
+            // Ensure nullable numeric metrics remain null if not provided (avoid misleading zeroes)
+            foreach (['length','elevation_gain','elevation_high','elevation_low','estimated_time'] as $metric) {
+                if (!isset($input[$metric]) || $input[$metric] === null || $input[$metric] === '') {
+                    unset($input[$metric]);
+                }
+            }
+
+            // Normalize features: empty array -> null
+            if (empty($input['features'])) {
+                $input['features'] = null;
+            }
+
+            $trail = new Trail($input);
             $trail->user_id = Auth::id();
-            $trail->slug = Str::slug($request->trail_name . '-' . $request->mountain_name);
-            
-            // Set default values for required fields if not provided
-            $trail->length = $request->length ?? 0;
-            $trail->elevation_gain = $request->elevation_gain ?? 0;
-            $trail->elevation_high = $request->elevation_high ?? 0;
-            $trail->elevation_low = $request->elevation_low ?? 0;
-            $trail->estimated_time = $request->estimated_time ?? 0;
-            $trail->summary = $request->summary ?? '';
-            $trail->description = $request->description ?? '';
-            $trail->features = $request->features ?? [];
-            
-            // Handle checkbox field properly
+            $trail->slug = $this->generateUniqueSlug(Str::slug($request->trail_name . '-' . $request->mountain_name));
+
+            // Explicit boolean handling
             $trail->permit_required = $request->has('permit_required');
-            
+
+            // Handle trail coordinates
+            $trailData = $this->processTrailCoordinates($request);
+            if ($trailData) {
+                $trail->coordinates = $trailData['coordinates'];
+                
+                // Auto-populate fields from GPX data if not provided
+                if (!$trail->length && isset($trailData['total_distance_km'])) {
+                    $trail->length = $trailData['total_distance_km'];
+                }
+                if (!$trail->elevation_gain && isset($trailData['elevation_gain_m'])) {
+                    $trail->elevation_gain = $trailData['elevation_gain_m'];
+                }
+                if (!$trail->elevation_high && isset($trailData['max_elevation_m'])) {
+                    $trail->elevation_high = $trailData['max_elevation_m'];
+                }
+                if (!$trail->elevation_low && isset($trailData['min_elevation_m'])) {
+                    $trail->elevation_low = $trailData['min_elevation_m'];
+                }
+                
+                // Store GPX file if uploaded
+                if ($request->hasFile('gpx_file') && isset($trailData['gpx_content'])) {
+                    $gpxPath = $this->storeGPXFile($request->file('gpx_file'), $trail);
+                    $trail->gpx_file = $gpxPath;
+                }
+            }
+
             $trail->save();
+
+            // Dispatch async enrichment if metrics/coordinates missing
+            if (!$trail->coordinates || $trail->length === null) {
+                EnrichTrailData::dispatch($trail->id)->onQueue('trails');
+            }
             
             // Handle image uploads
             $this->handleTrailImages($request, $trail);
 
-            \Log::info('Trail created successfully', ['trail_id' => $trail->id]);
+                        Log::info('Trail created successfully', ['trail_id' => $trail->id]);
 
             return redirect()->route('org.trails.index')
                 ->with('success', 'Trail created successfully!');
         } catch (\Exception $e) {
-            \Log::error('Trail creation failed', [
+            Log::error('Trail creation failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -137,8 +178,7 @@ class OrganizationTrailController extends Controller
             abort(403);
         }
 
-        $locations = Location::all();
-        return view('org.trails.edit', compact('trail', 'locations'));
+        return view('org.trails.edit', compact('trail'));
     }
 
     public function update(Request $request, Trail $trail)
@@ -183,19 +223,25 @@ class OrganizationTrailController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $trail->update($request->all());
-        $trail->slug = Str::slug($request->trail_name . '-' . $request->mountain_name);
+        $input = $request->all();
         
-        // Set default values for required fields if not provided
-        $trail->length = $request->length ?? 0;
-        $trail->elevation_gain = $request->elevation_gain ?? 0;
-        $trail->elevation_high = $request->elevation_high ?? 0;
-        $trail->elevation_low = $request->elevation_low ?? 0;
-        $trail->estimated_time = $request->estimated_time ?? 0;
-        $trail->summary = $request->summary ?? '';
-        $trail->description = $request->description ?? '';
-        $trail->features = $request->features ?? [];
+        // Remove trail_coordinates from input as it's not a database field
+        unset($input['trail_coordinates']);
         
+        foreach (['length','elevation_gain','elevation_high','elevation_low','estimated_time'] as $metric) {
+            if (array_key_exists($metric,$input) && ($input[$metric] === '' || $input[$metric] === null)) {
+                $input[$metric] = null; // preserve null
+            }
+        }
+        if (empty($input['features'])) {
+            $input['features'] = null;
+        }
+
+        $trail->fill($input);
+        $newBaseSlug = Str::slug($request->trail_name . '-' . $request->mountain_name);
+        if ($trail->isDirty('trail_name') || $trail->isDirty('mountain_name')) {
+            $trail->slug = $this->generateUniqueSlug($newBaseSlug, $trail->id);
+        }
         $trail->save();
 
         return redirect()->route('org.trails.index')
@@ -248,7 +294,7 @@ class OrganizationTrailController extends Controller
                     'is_primary' => true,
                 ]);
                 
-                \Log::info('Primary image uploaded', ['path' => $primaryPath]);
+                Log::info('Primary image uploaded', ['path' => $primaryPath]);
             }
 
             // Handle additional images
@@ -268,7 +314,7 @@ class OrganizationTrailController extends Controller
                         ]);
                         
                         $sortOrder++;
-                        \Log::info('Additional image uploaded', ['path' => $path]);
+                        Log::info('Additional image uploaded', ['path' => $path]);
                     }
                 }
             }
@@ -287,14 +333,122 @@ class OrganizationTrailController extends Controller
                     'is_primary' => false,
                 ]);
                 
-                \Log::info('Map image uploaded', ['path' => $mapPath]);
+                Log::info('Map image uploaded', ['path' => $mapPath]);
             }
             
         } catch (\Exception $e) {
-            \Log::error('Image upload error', [
+            Log::error('Image upload error', [
                 'trail_id' => $trail->id,
                 'error' => $e->getMessage()
             ]);
         }
+    }
+
+    // Removed auto coordinate generation helper.
+
+    /**
+     * Process trail coordinates from manual drawing, GPX upload, or preview
+     */
+    private function processTrailCoordinates(Request $request)
+    {
+        try {
+            // Priority: GPX file upload first
+            if ($request->hasFile('gpx_file')) {
+                $gpxService = app(\App\Services\GPXService::class);
+                $gpxData = $gpxService->processGPXUpload($request->file('gpx_file'));
+                
+                Log::info('GPX file processed', [
+                    'points' => $gpxData['total_points'],
+                    'distance' => $gpxData['total_distance_km'],
+                    'elevation_gain' => $gpxData['elevation_gain_m']
+                ]);
+                
+                return $gpxData;
+            }
+            
+            // Second priority: Manual drawing or preview coordinates
+            if ($request->filled('trail_coordinates')) {
+                $coordinates = json_decode($request->trail_coordinates, true);
+                
+                if (is_array($coordinates) && count($coordinates) > 1) {
+                    // Calculate basic statistics for manually drawn trails
+                    $totalDistance = 0;
+                    for ($i = 1; $i < count($coordinates); $i++) {
+                        $totalDistance += $this->calculateDistance(
+                            $coordinates[$i-1]['lat'], 
+                            $coordinates[$i-1]['lng'],
+                            $coordinates[$i]['lat'], 
+                            $coordinates[$i]['lng']
+                        );
+                    }
+                    
+                    Log::info('Manual coordinates processed', [
+                        'points' => count($coordinates),
+                        'distance_km' => round($totalDistance / 1000, 2)
+                    ]);
+                    
+                    return [
+                        'coordinates' => $coordinates,
+                        'total_distance_km' => round($totalDistance / 1000, 2),
+                        'total_points' => count($coordinates)
+                    ];
+                }
+            }
+            
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Error processing trail coordinates', [
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Store GPX file for download
+     */
+    private function storeGPXFile($file, $trail)
+    {
+        $filename = Str::slug($trail->trail_name . '-' . $trail->mountain_name) . '.gpx';
+        $path = $file->storeAs('trail-gpx', $filename, 'public');
+        
+        Log::info('GPX file stored', ['path' => $path]);
+        
+        return $path;
+    }
+
+    /**
+     * Calculate distance between two points using Haversine formula
+     */
+    private function calculateDistance($lat1, $lng1, $lat2, $lng2)
+    {
+        $earthRadius = 6371000; // Earth's radius in meters
+
+        $latDelta = deg2rad($lat2 - $lat1);
+        $lngDelta = deg2rad($lng2 - $lng1);
+
+        $a = sin($latDelta/2) * sin($latDelta/2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($lngDelta/2) * sin($lngDelta/2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+
+        return $earthRadius * $c;
+    }
+
+    /**
+     * Generate a unique slug by appending an incrementing suffix if needed.
+     */
+    private function generateUniqueSlug(string $baseSlug, ?int $ignoreId = null): string
+    {
+        $slug = $baseSlug;
+        $counter = 2;
+        while (Trail::where('slug', $slug)
+            ->when($ignoreId, fn($q) => $q->where('id','!=',$ignoreId))
+            ->exists()) {
+            $slug = $baseSlug.'-'.$counter;
+            $counter++;
+        }
+        return $slug;
     }
 }

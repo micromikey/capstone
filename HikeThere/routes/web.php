@@ -10,7 +10,11 @@ use App\Http\Controllers\LocationWeatherController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\OrganizationApprovalController;
 use App\Http\Controllers\OrganizationTrailController;
+use App\Http\Controllers\OrganizationLocationController;
 use App\Http\Controllers\TrailController;
+use App\Http\Controllers\TrailCoordinateController;
+use App\Http\Controllers\TrailPdfController;
+use App\Http\Controllers\TrailTcpdfController;
 use App\Http\Controllers\TrailReviewController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
@@ -55,6 +59,15 @@ Route::middleware([
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/explore', [ExploreController::class, 'index'])->name('explore');
 
+    // Advanced Trail Map
+    Route::get('/advanced-trail-map', function () {
+        return view('components.advanced-trail-map');
+    })->name('advanced-trail-map');
+
+    Route::get('/advanced-trail-map/{trail:slug}', function (App\Models\Trail $trail) {
+        return view('components.advanced-trail-map', compact('trail'));
+    })->name('advanced-trail-map.trail');
+
     // Hiker Tools
     Route::get('/hiker/hiking-tools', function () {
         return view('hiker.hiking-tools');
@@ -72,9 +85,9 @@ Route::middleware([
         return view('hiker.itinerary.itinerary-instructions');
     })->name('itinerary.instructions');
 
-    Route::get('/hiker/itinerary/build', [ItineraryController::class, 'build'])->name('itinerary.build');
+    Route::get('/hiker/itinerary/build', [ItineraryController::class, 'build'])->name('hiker.itinerary.build');
 
-    Route::post('/hiker/itinerary/generate', [ItineraryController::class, 'generate'])->name('itinerary.generate');
+    Route::post('/hiker/itinerary/generate', [ItineraryController::class, 'generate'])->name('hiker.itinerary.generate');
 
     // Assessment routes
     Route::get('/assessment/instruction', [AssessmentController::class, 'instruction'])->name('assessment.instruction');
@@ -129,6 +142,19 @@ Route::middleware(['auth:sanctum', 'check.approval'])->group(function () {
     Route::resource('org/trails', OrganizationTrailController::class, ['as' => 'org']);
     Route::patch('/org/trails/{trail}/toggle-status', [OrganizationTrailController::class, 'toggleStatus'])->name('org.trails.toggle-status');
 
+    // Organization locations (inline management)
+    Route::get('/org/locations', [OrganizationLocationController::class, 'index'])->name('org.locations.index');
+    Route::post('/org/locations', [OrganizationLocationController::class, 'store'])->name('org.locations.store');
+    Route::get('/org/locations/{location:slug}/edit', [OrganizationLocationController::class, 'edit'])->name('org.locations.edit');
+    Route::patch('/org/locations/{location:slug}', [OrganizationLocationController::class, 'update'])->name('org.locations.update');
+    Route::delete('/org/locations/{location:slug}', [OrganizationLocationController::class, 'destroy'])->name('org.locations.destroy');
+    
+    // Organization Trail Coordinate Generation routes
+    Route::post('/org/trails/generate-coordinates', [TrailCoordinateController::class, 'generateCoordinatesFromForm'])->name('org.trails.generate-coordinates');
+    Route::post('/org/trails/generate-google-coordinates', [TrailCoordinateController::class, 'generateCoordinatesFromForm'])->name('org.trails.generate-google-coordinates');
+    Route::post('/org/trails/generate-custom-coordinates', [TrailCoordinateController::class, 'generateCustomCoordinatesFromForm'])->name('org.trails.generate-custom-coordinates');
+    Route::post('/org/trails/preview-coordinates', [TrailCoordinateController::class, 'previewCoordinates'])->name('org.trails.preview-coordinates');
+
     // Protected routes that require approval
     // These routes will be accessible to approved organizations
 })->middleware('user.type:organization');
@@ -138,6 +164,11 @@ Route::get('/location-weather', [LocationWeatherController::class, 'getWeather']
 Route::get('/trails', [TrailController::class, 'index'])->name('trails.index');
 Route::get('/trails/{trail}', [TrailController::class, 'show'])->name('trails.show');
 Route::get('/trails/search', [TrailController::class, 'search'])->name('trails.search');
+
+// Trail PDF and Elevation routes
+Route::get('/trails/{trail}/download-map', [TrailPdfController::class, 'downloadMap'])->name('trails.download-map');
+Route::get('/trails/{trail}/download-map-tcpdf', [TrailTcpdfController::class, 'downloadMap'])->name('trails.download-map-tcpdf');
+Route::get('/trails/{trail}/elevation-profile', [TrailPdfController::class, 'getElevationProfile'])->name('trails.elevation-profile');
 
 // Public AJAX routes for trail reviews (anyone can view reviews)
 Route::get('/api/trails/{trail}/reviews', [TrailReviewController::class, 'getTrailReviews'])->name('api.trails.reviews.index');
@@ -198,11 +229,11 @@ Route::middleware(['guest'])->group(function () {
 // Static pages
 Route::get('/policy', function () {
     return view('policy');
-})->name('policy.show');
+})->name('custom.policy.show');
 
 Route::get('/terms', function () {
     return view('terms');
-})->name('terms.show');
+})->name('custom.terms.show');
 
 Route::get('/pending-approval', function () {
     return view('auth.pending-approval');

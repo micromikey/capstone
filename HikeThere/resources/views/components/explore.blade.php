@@ -124,12 +124,20 @@
                                 <!-- Trail Image -->
                                 <div class="relative h-64 overflow-hidden">
                                     @php
-                                        // Get dynamic image from TrailImageService
-                                        $trailImage = $imageService->getTrailImage($trail, 'primary', 'medium');
+                                        // Get dynamic image from enhanced TrailImageService
+                                        $primaryImage = $imageService->getPrimaryTrailImage($trail);
+                                        $trailImage = $primaryImage['url'];
                                     @endphp
                                     <img src="{{ $trailImage }}" 
                                          alt="{{ $trail->trail_name }}"
                                          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                                    
+                                    <!-- Image source badge for API images -->
+                                    @if($primaryImage['source'] !== 'organization')
+                                        <div class="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                                            {{ ucfirst($primaryImage['source']) }}
+                                        </div>
+                                    @endif
                                     
                                     <!-- Difficulty Badge -->
                                     <div class="absolute top-4 left-4">
