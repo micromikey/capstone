@@ -288,4 +288,47 @@ class CommunityController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Show organization profile page for hikers
+     */
+    public function showOrganization($organizationId)
+    {
+        $user = Auth::user();
+        
+        if ($user->user_type !== 'hiker') {
+            return redirect()->route('dashboard')->with('error', 'Access denied. Organization profiles are only available for hikers.');
+        }
+
+        $organization = User::where('id', $organizationId)
+            ->where('user_type', 'organization')
+            ->where('approval_status', 'approved')
+            ->with(['organizationProfile'])
+            ->withCount(['followers'])
+            ->first();
+
+        if (!$organization) {
+            abort(404, 'Organization not found.');
+        }
+
+        // Check if current user is following this organization
+        $isFollowing = $user->isFollowing($organizationId);
+
+        // Get organization's trails with pagination
+        $trails = Trail::where('user_id', $organizationId)
+            ->where('is_active', true)
+            ->with(['location', 'primaryImage'])
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
+            ->orderBy('created_at', 'desc')
+            ->paginate(12);
+
+        // Calculate average rating properly
+        foreach ($trails as $trail) {
+            $trail->average_rating = $trail->reviews_avg_rating ? round($trail->reviews_avg_rating, 1) : 0;
+            $trail->total_reviews = $trail->reviews_count;
+        }
+
+        return view('hiker.community.organization-profile', compact('organization', 'isFollowing', 'trails'));
+    }
 }

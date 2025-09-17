@@ -20,7 +20,7 @@ class Trail extends Model
         'campsite_info', 'guide_info', 'environmental_practices', 'customers_feedback',
         'testimonials_faqs', 'length', 'elevation_gain', 'elevation_high',
         'elevation_low', 'estimated_time', 'summary', 'description', 'features',
-        'gpx_file', 'coordinates', 'is_active', 'coordinate_generation_method',
+        'gpx_file', 'coordinates', 'latitude', 'longitude', 'is_active', 'coordinate_generation_method',
         'custom_start_point', 'custom_end_point', 'custom_waypoints', 'metrics_confidence'
     ];
 

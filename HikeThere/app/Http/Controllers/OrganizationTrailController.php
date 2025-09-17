@@ -115,6 +115,14 @@ class OrganizationTrailController extends Controller
             if ($trailData) {
                 $trail->coordinates = $trailData['coordinates'];
                 
+                // Extract representative latitude and longitude from coordinates
+                if (isset($trailData['coordinates']) && !empty($trailData['coordinates'])) {
+                    // Use the first coordinate as the starting point (trailhead)
+                    $startPoint = $trailData['coordinates'][0];
+                    $trail->latitude = $startPoint['lat'];
+                    $trail->longitude = $startPoint['lng'];
+                }
+                
                 // Auto-populate fields from GPX data if not provided
                 if (!$trail->length && isset($trailData['total_distance_km'])) {
                     $trail->length = $trailData['total_distance_km'];

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QuickSearch Function</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-button {
+            background: #336d66;
+            color: white;
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .test-button:hover {
+            background: #20b6d2;
+        }
+        #log {
+            background: #f5f5f5;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 20px;
+            height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>QuickSearch Function Test</h1>
+    <p>This page tests the quickSearch function that was causing the error.</p>
+    
+    <!-- Test buttons that use onclick with quickSearch -->
+    <div>
+        <button class="test-button" onclick="quickSearch('beginner')">Beginner Trails</button>
+        <button class="test-button" onclick="quickSearch('popular')">Popular Trails</button>
+        <button class="test-button" onclick="quickSearch('challenging')">Challenging Trails</button>
+        <button class="test-button" onclick="quickSearch('scenic')">Scenic Views</button>
+    </div>
+    
+    <!-- Mock elements that the function needs -->
+    <div style="margin-top: 20px;">
+        <input id="trail-search-input" type="text" placeholder="Search input (cleared by quickSearch)" style="width: 300px; padding: 8px;">
+        <select id="trail-filter" style="padding: 8px; margin-left: 10px;">
+            <option value="">All Trails</option>
+            <option value="popular">Most Popular</option>
+            <option value="newest">Newest Trails</option>
+        </select>
+    </div>
+    
+    <div id="log"></div>
+
+    <script>
+        // Mock Blade asset function for testing
+        const DEFAULT_TRAIL_IMAGE = '/img/default-trail.jpg';
+        
+        // Logging function
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        // Mock performSearch function
+        function performSearch(query, category) {
+            log(`performSearch called with query: "${query}", category: "${category}"`);
+        }
+        
+        // The actual quickSearch function from the welcome.blade.php
+        function quickSearch(category) {
+            log(`quickSearch called with category: "${category}"`);
+            
+            const searchInput = document.getElementById('trail-search-input');
+            const filterSelect = document.getElementById('trail-filter');
+            
+            if (searchInput) {
+                searchInput.value = '';
+                log('Search input cleared');
+            } else {
+                log('ERROR: trail-search-input element not found');
+            }
+            
+            if (filterSelect) {
+                filterSelect.value = '';
+                log('Filter select cleared');
+            } else {
+                log('ERROR: trail-filter element not found');
+            }
+            
+            // Perform search with category only
+            performSearch('', category);
+            log(`quickSearch completed successfully for category: "${category}"`);
+        }
+        
+        // Expose globally (this was the fix)
+        window.quickSearch = quickSearch;
+        
+        log('Page loaded. quickSearch function is now available globally.');
+        log('Test by clicking the buttons above.');
+    </script>
+</body>
+</html>

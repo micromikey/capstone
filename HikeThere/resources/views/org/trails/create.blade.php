@@ -21,6 +21,36 @@
     <!-- CSRF Token Meta Tag -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    <!-- Small layout fixes for step UI (defensive) -->
+    <style>
+        /* Ensure hidden step-content is truly hidden and visible ones have compact spacing */
+        .step-content.hidden { 
+            display: none !important; 
+            visibility: hidden !important;
+            opacity: 0 !important;
+            height: 0 !important;
+            overflow: hidden !important;
+        }
+        .step-content { 
+            padding: 1rem 0; 
+            display: block;
+            visibility: visible;
+            opacity: 1;
+            height: auto;
+        }
+
+        /* Prevent large implicit spacing below tab nav */
+        .border-b[aria-hidden] { margin-bottom: 0; }
+
+        /* Keep the map container visible and avoid collapsing heights */
+        #trail_drawing_map { min-height: 220px; }
+        
+        /* Ensure only one step is visible at a time */
+        .step-content:not(.hidden) ~ .step-content.hidden {
+            display: none !important;
+        }
+    </style>
+
     <div class="py-12">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
@@ -60,12 +90,12 @@
                     </nav>
                 </div>
 
-                <form method="POST" action="{{ route('org.trails.store') }}" class="p-6" id="trailForm" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('org.trails.store') }}" class="p-6" id="trailForm" enctype="multipart/form-data" novalidate>
                     @csrf
                     <!-- Hidden field to store accepted trail geometry (array of {lat,lng,elevation}) -->
                     <input type="hidden" id="trail_coordinates" name="trail_coordinates" />
                     <!-- Hidden field for estimated_time since it was removed from the form but still expected by backend -->
-                    <input type="hidden" name="estimated_time" value="" />
+                    <input type="hidden" id="estimated_time" name="estimated_time" value="" />
 
                     <!-- Debug: Display any validation errors at the top -->
                     @if ($errors->any())
@@ -244,10 +274,102 @@
                     <div id="step-2" class="step-content hidden">
                         <div class="mb-6">
                             <h3 class="text-lg font-medium text-gray-900 mb-4">Step 2: Trail Details</h3>
-                            <p class="text-gray-600 text-sm">Define the difficulty, duration, and terrain characteristics.</p>
+                            <p class="text-gray-600 text-sm">Configure your trail route, then define the difficulty, duration, and terrain characteristics.</p>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Trail Route Configuration -->
+                            <div class="md:col-span-2">
+                                <x-label value="Trail Route Configuration" />
+                                <div class="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                    <div class="flex flex-wrap gap-4 mb-4">
+                                        <button type="button" id="draw_trail_btn" onclick="enableTrailDrawing()"
+                                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                            </svg>
+                                            Draw Trail Manually
+                                        </button>
+
+                                        <button type="button" id="load_gpx_library_btn" onclick="openGPXLibrary()"
+                                            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                            </svg>
+                                            Load from GPX Library
+                                        </button>
+
+                                        <button type="button" id="upload_gpx_btn" onclick="document.getElementById('gpx_file').click()"
+                                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                            </svg>
+                                            Upload GPX File
+                                        </button>
+
+                                        <button type="button" id="clear_trail_btn" onclick="clearTrail()"
+                                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            Clear
+                                        </button>
+                                    </div>
+
+                                    <!-- Preview feedback: provider and message -->
+                                    <div id="preview_feedback" class="mt-2 text-sm text-gray-600">
+                                        <span id="preview_provider" class="font-medium"></span>
+                                        <span id="preview_message" class="ml-2"></span>
+                                    </div>
+
+                                    <!-- Hidden GPX file input -->
+                                    <input type="file" id="gpx_file" name="gpx_file" accept=".gpx,.kml,.kmz" style="display: none;" onchange="handleGPXUpload(this)">
+
+                                    <!-- Trail Drawing Map -->
+                                    <div id="trail_drawing_map" class="h-96 w-full rounded-lg border-2 border-dashed border-gray-300 bg-white"></div>
+
+                                    <!-- Trail Statistics -->
+                                    <div id="trail_stats" class="mt-4 p-3 bg-white rounded border hidden">
+                                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
+                                            <div>
+                                                <span class="font-medium">Distance:</span>
+                                                <span id="trail_distance">0 km</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-medium">Points:</span>
+                                                <span id="trail_points">0</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-medium">Elevation Gain:</span>
+                                                <span id="trail_elevation_gain">0 m</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-medium">Highest Point:</span>
+                                                <span id="trail_highest_point">N/A</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-medium">Lowest Point:</span>
+                                                <span id="trail_lowest_point">N/A</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-medium">Source:</span>
+                                                <span id="trail_source">Manual</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Instructions -->
+                                    <div class="mt-3 text-sm text-gray-600">
+                                        <p><strong>Drawing Instructions:</strong> Click "Draw Trail Manually" then click on the map to add points along your trail. Double-click to finish drawing.</p>
+                                        <p><strong>GPX Library:</strong> Load pre-defined accurate trails from our Philippine trail database with verified coordinates and routing.</p>
+                                        <p><strong>GPX Upload:</strong> Upload a GPX file exported from GPS devices or apps like Garmin Connect, Strava, or AllTrails.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Provider/Source info -->
+                                <div id="preview_provider" class="mt-2 text-sm text-gray-600"></div>
+                            </div>
+
                             <div>
                                 <x-label for="duration" value="Duration *" />
                                 <x-input id="duration" type="text" name="duration" class="mt-1 block w-full" placeholder="e.g., 3-4 hours" required />
@@ -309,7 +431,7 @@
                                     </button>
                                 </div>
                                 <div class="relative mt-1">
-                                    <x-input id="elevation_high" type="number" name="elevation_high" min="0" class="pr-12 block w-full" placeholder="1030" />
+                                    <x-input id="elevation_high" type="number" name="elevation_high" min="0" step="1" class="pr-12 block w-full" placeholder="1030" />
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                         <span class="text-gray-500 sm:text-sm">m</span>
                                     </div>
@@ -328,7 +450,7 @@
                                     </button>
                                 </div>
                                 <div class="relative mt-1">
-                                    <x-input id="elevation_low" type="number" name="elevation_low" min="0" class="pr-12 block w-full" placeholder="200" />
+                                    <x-input id="elevation_low" type="number" name="elevation_low" min="0" step="1" class="pr-12 block w-full" placeholder="200" />
                                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                         <span class="text-gray-500 sm:text-sm">m</span>
                                     </div>
@@ -346,92 +468,6 @@
                                 <x-label for="terrain_notes" value="Terrain Notes *" />
                                 <textarea id="terrain_notes" name="terrain_notes" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="e.g., Rocky, River Crossings, Dense Forest, Steep Slopes" required></textarea>
                                 <x-input-error for="terrain_notes" class="mt-2" />
-                            </div>
-
-                            <!-- Trail Route Configuration -->
-                            <div class="md:col-span-2">
-                                <x-label value="Trail Route Configuration" />
-                                <div class="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
-                                    <div class="flex flex-wrap gap-4 mb-4">
-                                        <button type="button" id="draw_trail_btn" onclick="enableTrailDrawing()"
-                                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                            </svg>
-                                            Draw Trail Manually
-                                        </button>
-
-                                        <button type="button" id="upload_gpx_btn" onclick="document.getElementById('gpx_file').click()"
-                                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                            </svg>
-                                            Upload GPX File
-                                        </button>
-
-                                        <button type="button" id="preview_route_btn" onclick="previewRoute()"
-                                            class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3v10" />
-                                            </svg>
-                                            Preview Auto-Route
-                                        </button>
-
-                                        <button type="button" id="clear_trail_btn" onclick="clearTrail()"
-                                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                            Clear
-                                        </button>
-                                    </div>
-
-                                    <!-- Hidden GPX file input -->
-                                    <input type="file" id="gpx_file" name="gpx_file" accept=".gpx,.kml,.kmz" style="display: none;" onchange="handleGPXUpload(this)">
-
-                                    <!-- Trail Drawing Map -->
-                                    <div id="trail_drawing_map" class="h-96 w-full rounded-lg border-2 border-dashed border-gray-300 bg-white"></div>
-
-                                    <!-- Trail Statistics -->
-                                    <div id="trail_stats" class="mt-4 p-3 bg-white rounded border hidden">
-                                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
-                                            <div>
-                                                <span class="font-medium">Distance:</span>
-                                                <span id="trail_distance">0 km</span>
-                                            </div>
-                                            <div>
-                                                <span class="font-medium">Points:</span>
-                                                <span id="trail_points">0</span>
-                                            </div>
-                                            <div>
-                                                <span class="font-medium">Elevation Gain:</span>
-                                                <span id="trail_elevation_gain">0 m</span>
-                                            </div>
-                                            <div>
-                                                <span class="font-medium">Highest Point:</span>
-                                                <span id="trail_highest_point">N/A</span>
-                                            </div>
-                                            <div>
-                                                <span class="font-medium">Lowest Point:</span>
-                                                <span id="trail_lowest_point">N/A</span>
-                                            </div>
-                                            <div>
-                                                <span class="font-medium">Source:</span>
-                                                <span id="trail_source">Manual</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Instructions -->
-                                    <div class="mt-3 text-sm text-gray-600">
-                                        <p><strong>Drawing Instructions:</strong> Click "Draw Trail Manually" then click on the map to add points along your trail. Double-click to finish drawing.</p>
-                                        <p><strong>GPX Upload:</strong> Upload a GPX file exported from GPS devices or apps like Garmin Connect, Strava, or AllTrails.</p>
-                                        <p><strong>Auto-Route:</strong> Generate an approximate route based on trail name and location (least accurate).</p>
-                                    </div>
-                                </div>
-
-                                <!-- Provider/Source info -->
-                                <div id="preview_provider" class="mt-2 text-sm text-gray-600"></div>
                             </div>
 
                             <div class="md:col-span-2">
@@ -779,46 +815,114 @@
         const totalSteps = 5;
         let locationSearchTimeout;
 
-        // Add form submission debugging
+
+        // Add form submission debugging and dynamic required attribute handling
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('trailForm');
 
             form.addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent default form submission to handle validation manually
+                
                 console.log('Form submission started');
 
-                // Log form data
-                const formData = new FormData(form);
-                console.log('Form data:');
-                for (let [key, value] of formData.entries()) {
-                    console.log(key + ': ' + value);
+                // Custom validation - only check visible fields
+                let missingFields = [];
+                const currentVisibleStep = document.querySelector('.step-content:not(.hidden)');
+                
+                // Get all originally required field names (stored as data attributes)
+                const originallyRequiredFields = ['mountain_name', 'trail_name', 'location_id', 'price', 'difficulty', 'package_inclusions', 'duration', 'best_season', 'terrain_notes', 'departure_point', 'transport_options', 'emergency_contacts', 'packing_list', 'health_fitness'];
+                
+                if (currentVisibleStep) {
+                    // Check visible required fields only
+                    currentVisibleStep.querySelectorAll('input, select, textarea').forEach(field => {
+                        // Check if this field should be required
+                        const shouldBeRequired = originallyRequiredFields.includes(field.name);
+                        
+                        if (shouldBeRequired && (!field.value || !field.value.trim())) {
+                            missingFields.push(field.name);
+                        }
+                    });
                 }
 
-                // Check if all required fields are filled
-                const requiredFields = form.querySelectorAll('[required]');
-                let missingFields = [];
-
-                requiredFields.forEach(field => {
-                    if (!field.value.trim()) {
-                        missingFields.push(field.name);
+                // Special check for location_id if we're on step 1
+                if (currentStep === 1) {
+                    const locationId = document.getElementById('location_id').value;
+                    const locationSearch = document.getElementById('location_search').value;
+                    if (!locationId && locationSearch) {
+                        missingFields.push('location_id (please select a location from the search results)');
                     }
-                });
-
-                // Special check for location_id
-                const locationId = document.getElementById('location_id').value;
-                const locationSearch = document.getElementById('location_search').value;
-
-                if (!locationId && locationSearch) {
-                    missingFields.push('location_id (please select a location from the search results)');
                 }
 
                 if (missingFields.length > 0) {
                     console.error('Missing required fields:', missingFields);
-                    e.preventDefault();
                     alert('Please fill in all required fields: ' + missingFields.join(', '));
                     return false;
                 }
 
                 console.log('Form validation passed, submitting...');
+                
+                // Clean up all elevation fields - convert to integers or remove if empty/invalid
+                const elevationGain = document.getElementById('elevation_gain');
+                const elevationHigh = document.getElementById('elevation_high');
+                const elevationLow = document.getElementById('elevation_low');
+                
+                console.log('Before cleanup - elevation_gain value:', elevationGain ? elevationGain.value : 'null');
+                console.log('Before cleanup - elevation_high value:', elevationHigh ? elevationHigh.value : 'null');
+                console.log('Before cleanup - elevation_low value:', elevationLow ? elevationLow.value : 'null');
+                
+                // Handle elevation_gain
+                if (elevationGain) {
+                    if (elevationGain.value && elevationGain.value.trim()) {
+                        const intValue = parseInt(elevationGain.value, 10);
+                        if (!isNaN(intValue) && intValue >= 0) {
+                            elevationGain.value = intValue;
+                            console.log('Set elevation_gain to:', intValue);
+                        } else {
+                            console.log('Invalid elevation_gain value, removing from submission');
+                            elevationGain.removeAttribute('name');
+                        }
+                    } else {
+                        console.log('Empty elevation_gain, removing from submission');
+                        elevationGain.removeAttribute('name');
+                    }
+                }
+                
+                // Handle elevation_high
+                if (elevationHigh) {
+                    if (elevationHigh.value && elevationHigh.value.trim()) {
+                        const intValue = parseInt(elevationHigh.value, 10);
+                        if (!isNaN(intValue) && intValue >= 0) {
+                            elevationHigh.value = intValue;
+                            console.log('Set elevation_high to:', intValue);
+                        } else {
+                            console.log('Invalid elevation_high value, removing from submission');
+                            elevationHigh.removeAttribute('name');
+                        }
+                    } else {
+                        console.log('Empty elevation_high, removing from submission');
+                        elevationHigh.removeAttribute('name');
+                    }
+                }
+                
+                // Handle elevation_low
+                if (elevationLow) {
+                    if (elevationLow.value && elevationLow.value.trim()) {
+                        const intValue = parseInt(elevationLow.value, 10);
+                        if (!isNaN(intValue) && intValue >= 0) {
+                            elevationLow.value = intValue;
+                            console.log('Set elevation_low to:', intValue);
+                        } else {
+                            console.log('Invalid elevation_low value, removing from submission');
+                            elevationLow.removeAttribute('name');
+                        }
+                    } else {
+                        console.log('Empty elevation_low, removing from submission');
+                        elevationLow.removeAttribute('name');
+                    }
+                }
+                
+                // Submit the form without browser validation
+                this.submit();
             });
 
             // Initialize location search
@@ -1035,13 +1139,22 @@
         }
 
         function showStep(step) {
-            // Hide all steps
-            document.querySelectorAll('.step-content').forEach(content => {
+            // Hide all steps with stronger enforcement
+            document.querySelectorAll('.step-content').forEach((content, index) => {
                 content.classList.add('hidden');
+                content.style.display = 'none';
+                content.style.visibility = 'hidden';
+                content.style.opacity = '0';
             });
 
-            // Show selected step
-            document.getElementById(`step-${step}`).classList.remove('hidden');
+            // Show selected step with strong visibility
+            const activeStep = document.getElementById(`step-${step}`);
+            if (activeStep) {
+                activeStep.classList.remove('hidden');
+                activeStep.style.display = 'block';
+                activeStep.style.visibility = 'visible';
+                activeStep.style.opacity = '1';
+            }
 
             // Update navigation styling
             updateNavigation(step);
@@ -1091,7 +1204,25 @@
 
         // Initialize first step
         document.addEventListener('DOMContentLoaded', function() {
+            // Ensure clean state on page load
+            currentStep = 1;
             showStep(1);
+            
+            // Additional safety: force hide all non-first steps
+            for (let i = 2; i <= 5; i++) {
+                const stepElement = document.getElementById(`step-${i}`);
+                if (stepElement) {
+                    stepElement.classList.add('hidden');
+                    stepElement.style.display = 'none';
+                }
+            }
+            
+            // Ensure step 1 is visible
+            const step1 = document.getElementById('step-1');
+            if (step1) {
+                step1.classList.remove('hidden');
+                step1.style.display = 'block';
+            }
         });
 
         // Image Upload Handling Functions
@@ -1184,6 +1315,11 @@
         // Form validation before submission
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('trailForm');
+            // Mark all originally required fields for later restoration
+            form.querySelectorAll('input[required], select[required], textarea[required]').forEach(field => {
+                field.setAttribute('data-original-required', 'true');
+                field.removeAttribute('required');
+            });
             const submitBtn = form.querySelector('button[type="submit"]');
 
             form.addEventListener('submit', function(e) {
@@ -1232,14 +1368,14 @@
             }
             window.__gmapsLoading = true;
             window.__gmapsCallbacks = [cb];
-            const key = document.querySelector('meta[name="google-maps-api-key"]')?.content;
-            if (!key) {
+            const key = document.querySelector('meta[name="google-maps-api-key"]');
+            if (!key || !key.content) {
                 console.warn('No Google Maps key');
                 cb();
                 return;
             }
             const s = document.createElement('script');
-            s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=geometry,places&v=weekly`;
+            s.src = `https://maps.googleapis.com/maps/api/js?key=${key.content}&libraries=geometry,places&v=weekly`;
             s.async = true;
             s.defer = true;
             s.onload = () => {
@@ -1424,6 +1560,477 @@
             showStatus('Trail cleared.', 'gray');
         }
 
+        // GPX Library Functions
+        function openGPXLibrary() {
+            document.getElementById('gpxLibraryModal').classList.remove('hidden');
+            loadGPXLibrary();
+        }
+
+        function closeGPXLibrary() {
+            document.getElementById('gpxLibraryModal').classList.add('hidden');
+            // Reset modal state
+            document.getElementById('gpxLibraryLoading').classList.remove('hidden');
+            document.getElementById('gpxFilesList').classList.add('hidden');
+            document.getElementById('trailSelectionSection').classList.add('hidden');
+            document.getElementById('gpxLibraryError').classList.add('hidden');
+        }
+
+        function loadGPXLibrary() {
+            // Show loading state
+            document.getElementById('gpxLibraryLoading').classList.remove('hidden');
+            document.getElementById('gpxFilesList').classList.add('hidden');
+            document.getElementById('gpxLibraryError').classList.add('hidden');
+
+            fetch('/api/gpx-library', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('gpxLibraryLoading').classList.add('hidden');
+                
+                if (data.success) {
+                    displayGPXFiles(data.files);
+                    document.getElementById('gpxFilesList').classList.remove('hidden');
+                } else {
+                    document.getElementById('gpxLibraryError').classList.remove('hidden');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading GPX library:', error);
+                document.getElementById('gpxLibraryLoading').classList.add('hidden');
+                document.getElementById('gpxLibraryError').classList.remove('hidden');
+            });
+        }
+
+        function displayGPXFiles(files) {
+            const container = document.getElementById('gpxFilesContainer');
+            const searchInput = document.getElementById('gpxSearchInput');
+            
+            function renderFiles(filteredFiles) {
+                container.innerHTML = '';
+                
+                if (filteredFiles.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-4">No GPX files found</p>';
+                    return;
+                }
+
+                filteredFiles.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors';
+                    fileItem.onclick = () => selectGPXFile(file);
+                    
+                    const fileSize = (file.size / 1024).toFixed(1) + ' KB';
+                    const modifiedDate = new Date(file.modified * 1000).toLocaleDateString();
+                    
+                    fileItem.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-medium text-gray-900">${file.name}</h4>
+                                <p class="text-sm text-gray-500">Size: ${fileSize} • Modified: ${modifiedDate}</p>
+                            </div>
+                            <div class="flex items-center text-[#336d66]">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    `;
+                    
+                    container.appendChild(fileItem);
+                });
+            }
+
+            // Initial render
+            renderFiles(files);
+
+            // Search functionality
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filteredFiles = files.filter(file => 
+                    file.name.toLowerCase().includes(searchTerm)
+                );
+                renderFiles(filteredFiles);
+            });
+        }
+
+        function selectGPXFile(file) {
+            // Show loading for trail selection
+            document.getElementById('trailSelectionSection').classList.add('hidden');
+            
+            // Parse the GPX file
+            fetch('/api/gpx-library/parse', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ filename: file.filename })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayTrailSelection(data.data, file);
+                } else {
+                    alert('Failed to parse GPX file: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error parsing GPX file:', error);
+                alert('Error parsing GPX file. Please try again.');
+            });
+        }
+
+        function displayTrailSelection(gpxData, file) {
+            const trailsList = document.getElementById('trailsList');
+            const trailSelectionSection = document.getElementById('trailSelectionSection');
+            
+            trailsList.innerHTML = '';
+            
+            if (gpxData.trails.length === 0) {
+                trailsList.innerHTML = '<p class="text-gray-500 text-center py-4">No trails found in this GPX file</p>';
+            } else {
+                gpxData.trails.forEach((trail, index) => {
+                    const trailItem = document.createElement('div');
+                    trailItem.className = 'p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors';
+                    trailItem.onclick = () => loadTrailFromGPX(trail, file);
+                    
+                    trailItem.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <h4 class="font-medium text-gray-900">${trail.name}</h4>
+                                <p class="text-sm text-gray-600 mt-1">${trail.description}</p>
+                                <div class="flex flex-wrap gap-4 mt-2 text-xs text-gray-500">
+                                    <span>Distance: ${(trail.distance / 1000).toFixed(1)} km</span>
+                                    <span>Points: ${trail.coordinates ? trail.coordinates.length : 0}</span>
+                                    <span>Elevation Gain: ${trail.elevation_gain || 0} m</span>
+                                    <span>Max Elevation: ${trail.max_elevation || 0} m</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center text-[#336d66] ml-4">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    `;
+                    
+                    trailsList.appendChild(trailItem);
+                });
+            }
+            
+            trailSelectionSection.classList.remove('hidden');
+        }
+
+        function loadTrailFromGPX(trail, file) {
+            try {
+                // Convert coordinate format from [lat, lng] to {lat: x, lng: y}
+                const formattedCoordinates = trail.coordinates.map(coord => {
+                    if (Array.isArray(coord)) {
+                        return { lat: coord[0], lng: coord[1] };
+                    }
+                    return coord; // Already in correct format
+                });
+                
+                // Load trail coordinates
+                loadTrailCoordinates(formattedCoordinates, `GPX Library: ${trail.name}`);
+                
+                // Auto-populate form fields if they're empty
+                const mountainNameInput = document.getElementById('mountain_name');
+                const trailNameInput = document.getElementById('trail_name');
+                
+                if (!mountainNameInput.value && trail.name) {
+                    // Try to extract mountain name from trail name
+                    const nameParts = trail.name.split(/[-–—]/);
+                    if (nameParts.length >= 2) {
+                        mountainNameInput.value = nameParts[0].trim();
+                        trailNameInput.value = nameParts.slice(1).join('-').trim();
+                    } else {
+                        trailNameInput.value = trail.name;
+                    }
+                }
+                
+                // Auto-populate trail stats if not already filled
+                const lengthInput = document.getElementById('length');
+                const elevationGainInput = document.getElementById('elevation_gain');
+                const elevationHighInput = document.getElementById('elevation_high');
+                const elevationLowInput = document.getElementById('elevation_low');
+                
+                if (!lengthInput.value && trail.distance) {
+                    lengthInput.value = (trail.distance / 1000).toFixed(1); // Convert meters to km
+                }
+                if (!elevationGainInput.value && trail.elevation_gain) {
+                    elevationGainInput.value = trail.elevation_gain;
+                }
+                if (!elevationHighInput.value && trail.max_elevation) {
+                    elevationHighInput.value = trail.max_elevation;
+                }
+                if (!elevationLowInput.value && trail.min_elevation) {
+                    elevationLowInput.value = trail.min_elevation;
+                }
+                
+                // Show success message
+                showStatus(`Trail "${trail.name}" loaded successfully from GPX library! ${trail.coordinates.length} points imported.`, 'green');
+                
+                // Close modal
+                closeGPXLibrary();
+                
+            } catch (error) {
+                console.error('Error loading trail from GPX:', error);
+                alert('Error loading trail. Please try again.');
+            }
+        }
+
+        // Auto-Route from Form Inputs using GPX Library
+        function autoRouteFromInputs() {
+            const mountainName = document.getElementById('mountain_name').value.trim();
+            const trailName = document.getElementById('trail_name').value.trim();
+            const locationSelect = document.getElementById('location_id');
+            const selectedLocation = locationSelect.options[locationSelect.selectedIndex];
+            
+            if (!mountainName) {
+                alert('Please enter a mountain name first.');
+                document.getElementById('mountain_name').focus();
+                return;
+            }
+
+            showStatus('Searching for trail in GPX library...', 'blue');
+
+            // Get location text safely
+            let locationText = '';
+            if (selectedLocation && selectedLocation.textContent) {
+                locationText = selectedLocation.textContent;
+            } else if (selectedLocation && selectedLocation.text) {
+                locationText = selectedLocation.text;
+            }
+            
+            console.log('Auto Route Debug:', {
+                mountainName: mountainName,
+                trailName: trailName,
+                locationText: locationText,
+                selectedLocation: selectedLocation
+            });
+
+            // Use the direct search endpoint instead of parsing all files
+            const csrfToken = document.querySelector('meta[name="csrf-token"]');
+            const csrfValue = csrfToken ? csrfToken.getAttribute('content') : '';
+            
+            fetch('/api/gpx-library/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfValue
+                },
+                body: JSON.stringify({
+                    mountain_name: mountainName,
+                    trail_name: trailName,
+                    location: locationText
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.trails && data.trails.length > 0) {
+                    handleAutoRouteResults(data.trails, mountainName, trailName);
+                } else {
+                    showStatus('No matching trails found in GPX library. Try manual coordinate entry.', 'orange');
+                }
+            })
+            .catch(error => {
+                console.error('Error searching GPX library:', error);
+                showStatus('Error searching GPX library. Please try manual selection.', 'red');
+            });
+        }
+
+        function searchTrailsInGPXFiles(gpxFiles, mountainName, trailName, locationName) {
+            let foundTrails = [];
+            let filesProcessed = 0;
+            const totalFiles = gpxFiles.length;
+
+            if (totalFiles === 0) {
+                showStatus('No GPX files available for auto-routing.', 'red');
+                return;
+            }
+
+            // Process each GPX file to find matching trails
+            gpxFiles.forEach(file => {
+                fetch('/api/gpx-library/parse', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ filename: file.filename })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    filesProcessed++;
+                    
+                    if (data.success && data.data.trails) {
+                        // Search for matching trails in this file
+                        const matches = findMatchingTrails(data.data.trails, mountainName, trailName, locationName);
+                        foundTrails = foundTrails.concat(matches.map(trail => ({
+                            ...trail,
+                            source_file: file.filename
+                        })));
+                    }
+
+                    // If all files processed, show results
+                    if (filesProcessed === totalFiles) {
+                        handleAutoRouteResults(foundTrails, mountainName, trailName);
+                    }
+                })
+                .catch(error => {
+                    console.error(`Error parsing ${file.filename}:`, error);
+                    filesProcessed++;
+                    
+                    if (filesProcessed === totalFiles) {
+                        handleAutoRouteResults(foundTrails, mountainName, trailName);
+                    }
+                });
+            });
+        }
+
+        function findMatchingTrails(trails, mountainName, trailName, locationName) {
+            const matches = [];
+            
+            trails.forEach(trail => {
+                let score = 0;
+                const trailNameLower = trail.name.toLowerCase();
+                const mountainNameLower = mountainName.toLowerCase();
+                const trailNameInputLower = trailName.toLowerCase();
+                const locationNameLower = locationName.toLowerCase();
+
+                // Exact mountain name match (highest score)
+                if (trailNameLower.includes(mountainNameLower)) {
+                    score += 100;
+                }
+
+                // Partial mountain name match
+                const mountainWords = mountainNameLower.split(/\s+/);
+                mountainWords.forEach(word => {
+                    if (word.length > 2 && trailNameLower.includes(word)) {
+                        score += 30;
+                    }
+                });
+
+                // Trail name match (if provided)
+                if (trailNameInputLower && trailNameLower.includes(trailNameInputLower)) {
+                    score += 50;
+                }
+
+                // Location match (if available)
+                if (locationNameLower && trailNameLower.includes(locationNameLower)) {
+                    score += 20;
+                }
+
+                // Special keywords for better matching
+                const keywords = ['mount', 'mt', 'peak', 'summit', 'trail', 'hike'];
+                keywords.forEach(keyword => {
+                    if (mountainNameLower.includes(keyword) && trailNameLower.includes(keyword)) {
+                        score += 10;
+                    }
+                });
+
+                // Only include trails with a reasonable match score
+                if (score >= 50) {
+                    matches.push({
+                        ...trail,
+                        match_score: score
+                    });
+                }
+            });
+
+            // Sort by match score (highest first)
+            return matches.sort((a, b) => b.match_score - a.match_score);
+        }
+
+        function handleAutoRouteResults(foundTrails, mountainName, trailName) {
+            if (foundTrails.length === 0) {
+                showStatus(`No matching trails found for "${mountainName}${trailName ? ' - ' + trailName : ''}". Try browsing the GPX Library manually.`, 'orange');
+                return;
+            }
+
+            // If exact match or high confidence match, auto-load the best one
+            const bestMatch = foundTrails[0];
+            
+            if (bestMatch.match_score >= 100 || foundTrails.length === 1) {
+                // Auto-load the best match
+                loadTrailFromGPX(bestMatch, { filename: bestMatch.source_file });
+                showStatus(`Auto-loaded trail: "${bestMatch.name}" (Score: ${bestMatch.match_score})`, 'green');
+            } else {
+                // Show selection dialog for multiple matches
+                showTrailSelectionDialog(foundTrails, mountainName, trailName);
+            }
+        }
+
+        function showTrailSelectionDialog(trails, mountainName, trailName) {
+            const dialogHtml = `
+                <div id="trailSelectionDialog" class="fixed inset-0 z-50 overflow-y-auto">
+                    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                        <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"></div>
+                        <div class="inline-block w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
+                            <div class="flex items-center justify-between pb-4 border-b">
+                                <h3 class="text-lg font-medium text-gray-900">Multiple Trails Found</h3>
+                                <button type="button" onclick="closeTrailSelectionDialog()" class="text-gray-400 hover:text-gray-600">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="mt-4">
+                                <p class="text-sm text-gray-600 mb-4">Found ${trails.length} matching trails for "${mountainName}${trailName ? ' - ' + trailName : ''}". Select the best match:</p>
+                                <div class="space-y-2 max-h-60 overflow-y-auto">
+                                    ${trails.map((trail, index) => `
+                                        <div class="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer" onclick="selectAutoRouteTrail(${index})">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex-1">
+                                                    <h4 class="font-medium text-gray-900">${trail.name}</h4>
+                                                    <p class="text-sm text-gray-600 mt-1">${trail.description}</p>
+                                                    <div class="flex flex-wrap gap-4 mt-2 text-xs text-gray-500">
+                                                        <span>Match: ${trail.match_score}%</span>
+                                                        <span>Distance: ${(trail.distance / 1000).toFixed(1)} km</span>
+                                                        <span>Elevation: ${trail.elevation_gain || 0} m</span>
+                                                        <span>Source: ${trail.source_file}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Store trails for selection
+            window.autoRouteTrails = trails;
+
+            // Add dialog to page
+            document.body.insertAdjacentHTML('beforeend', dialogHtml);
+        }
+
+        function selectAutoRouteTrail(index) {
+            const trail = window.autoRouteTrails[index];
+            loadTrailFromGPX(trail, { filename: trail.source_file });
+            closeTrailSelectionDialog();
+            showStatus(`Loaded trail: "${trail.name}"`, 'green');
+        }
+
+        function closeTrailSelectionDialog() {
+            const dialog = document.getElementById('trailSelectionDialog');
+            if (dialog) {
+                dialog.remove();
+            }
+            delete window.autoRouteTrails;
+        }
+
         function handleGPXUpload(input) {
             const file = input.files[0];
             if (!file) return;
@@ -1594,7 +2201,14 @@
                     // Debug logging
                     console.log('Auto-route response:', data);
 
+                    const previewProviderEl = document.getElementById('preview_provider');
+                    const previewMessageEl = document.getElementById('preview_message');
+
                     if (!data || (!data.coordinates && !data.data?.coordinates)) {
+                        // Clear preview feedback
+                        if (previewProviderEl) previewProviderEl.textContent = '';
+                        if (previewMessageEl) previewMessageEl.textContent = 'No preview available. Try spelling, more specific location, or manual drawing.';
+
                         showStatus('No preview available for auto-route. Try: 1) Check trail/mountain spelling, 2) Use a more specific location, 3) Try manual drawing instead.', 'yellow');
                         return;
                     }
@@ -1602,6 +2216,9 @@
                     const coords = data.coordinates || data.data?.coordinates;
                     const provider = data.provider || data.data?.provider || data.data?.generation_method || 'unknown';
                     const confidence = data.metrics_confidence || data.data?.metrics_confidence || '';
+
+                    if (previewProviderEl) previewProviderEl.textContent = `Provider: ${provider}`;
+                    if (previewMessageEl) previewMessageEl.textContent = data.message || '';
 
                     loadTrailCoordinates(coords, `Auto-Route (${provider})`);
                     showStatus(`Auto-route loaded from ${provider} ${confidence ? `— confidence: ${confidence}` : ''}`, 'blue');
@@ -2103,4 +2720,69 @@
                 });
         }
     </script>
+
+    <!-- GPX Library Modal -->
+    <div id="gpxLibraryModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onclick="closeGPXLibrary()"></div>
+
+            <!-- Modal panel -->
+            <div class="inline-block w-full max-w-4xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
+                <div class="flex items-center justify-between pb-4 border-b">
+                    <h3 class="text-lg font-medium text-gray-900">Select Trail from GPX Library</h3>
+                    <button type="button" onclick="closeGPXLibrary()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="mt-4">
+                    <!-- Loading state -->
+                    <div id="gpxLibraryLoading" class="text-center py-8">
+                        <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-[#336d66] mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="mt-2 text-gray-600">Loading GPX files...</p>
+                    </div>
+
+                    <!-- GPX Files List -->
+                    <div id="gpxFilesList" class="hidden">
+                        <div class="mb-4">
+                            <input type="text" id="gpxSearchInput" placeholder="Search trails..." 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]">
+                        </div>
+                        
+                        <div class="max-h-96 overflow-y-auto">
+                            <div id="gpxFilesContainer" class="space-y-2">
+                                <!-- GPX files will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trail Selection -->
+                    <div id="trailSelectionSection" class="hidden">
+                        <div class="border-t pt-4 mt-4">
+                            <h4 class="text-md font-medium text-gray-900 mb-3">Select Trail from File:</h4>
+                            <div id="trailsList" class="space-y-2 max-h-60 overflow-y-auto">
+                                <!-- Trails will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error state -->
+                    <div id="gpxLibraryError" class="hidden text-center py-8">
+                        <svg class="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                        <p class="text-gray-600">Failed to load GPX library. Please try again.</p>
+                        <button onclick="loadGPXLibrary()" class="mt-2 text-[#336d66] hover:text-[#2a5a54] font-medium">Retry</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </x-app-layout>

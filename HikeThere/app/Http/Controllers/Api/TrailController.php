@@ -7,6 +7,7 @@ use App\Models\Trail;
 use App\Services\TrailImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class TrailController extends Controller
 {
@@ -45,6 +46,188 @@ class TrailController extends Controller
                 'location' => $trail->location ? $trail->location->name.', '.$trail->location->province : 'Location N/A',
             ],
         ]);
+    }
+
+    public function searchTrails(Request $request)
+    {
+        $query = $request->get('query', '');
+        $category = $request->get('category', '');
+        $filter = $request->get('filter', '');
+        $page = $request->get('page', 1);
+        $limit = $request->get('limit', 9);
+        $offset = ($page - 1) * $limit;
+
+        $trailsQuery = Trail::active()
+            ->with(['location', 'user', 'primaryImage', 'reviews']);
+
+        if (!empty($query)) {
+            $searchTerm = trim($query);
+            $trailsQuery->where(function ($q) use ($searchTerm) {
+                $q->where('trail_name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('mountain_name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('difficulty', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('description', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('summary', 'LIKE', "%{$searchTerm}%")
+                  ->orWhereHas('location', function ($locationQuery) use ($searchTerm) {
+                      $locationQuery->where('name', 'LIKE', "%{$searchTerm}%")
+                                   ->orWhere('province', 'LIKE', "%{$searchTerm}%");
+                  });
+            });
+        }
+
+        // Handle category filters
+        if (!empty($category)) {
+            switch (strtolower($category)) {
+                case 'beginner':
+                case 'easy':
+                    $trailsQuery->whereIn('difficulty', ['beginner', 'easy']);
+                    break;
+                case 'challenging':
+                case 'hard':
+                    $trailsQuery->whereIn('difficulty', ['hard', 'very_hard', 'challenging', 'difficult']);
+                    break;
+                case 'popular':
+                    $trailsQuery->withCount('reviews')
+                               ->orderBy('reviews_count', 'desc');
+                    break;
+                case 'scenic':
+                    $trailsQuery->where(function ($q) {
+                        $q->where('description', 'LIKE', '%scenic%')
+                          ->orWhere('description', 'LIKE', '%view%')
+                          ->orWhere('description', 'LIKE', '%sunset%')
+                          ->orWhere('description', 'LIKE', '%sunrise%')
+                          ->orWhere('summary', 'LIKE', '%scenic%');
+                    });
+                    break;
+            }
+        }
+
+        // Handle sorting filters
+        if (!empty($filter)) {
+            switch (strtolower($filter)) {
+                case 'popular':
+                    $trailsQuery->withCount('reviews')
+                               ->orderBy('reviews_count', 'desc');
+                    break;
+                case 'newest':
+                    $trailsQuery->orderBy('created_at', 'desc');
+                    break;
+                case 'shortest':
+                    $trailsQuery->whereNotNull('length')
+                               ->orderBy('length', 'asc');
+                    break;
+                case 'longest':
+                    $trailsQuery->whereNotNull('length')
+                               ->orderBy('length', 'desc');
+                    break;
+                default:
+                    $trailsQuery->orderBy('created_at', 'desc');
+                    break;
+            }
+        } else {
+            // Default sorting if no filter is applied
+            $trailsQuery->orderBy('created_at', 'desc');
+        }
+
+        // Get total count before applying limit
+        $totalCount = $trailsQuery->count();
+        
+        // Apply pagination
+        $trails = $trailsQuery->skip($offset)->take($limit)->get();
+
+        $formattedTrails = $trails->map(function ($trail) {
+            $primaryImage = $trail->primaryImage;
+            $imageUrl = $primaryImage 
+                ? $primaryImage->url
+                : asset('img/default-trail.jpg');
+
+            return [
+                'id' => $trail->id,
+                'name' => $trail->trail_name ?: $trail->name,
+                'mountain_name' => $trail->mountain_name,
+                'location' => $trail->location 
+                    ? $trail->location->name . ', ' . $trail->location->province 
+                    : 'Location N/A',
+                'difficulty' => ucfirst($trail->difficulty),
+                'distance' => $trail->length ? round($trail->length, 1) . ' km' : 'N/A',
+                'duration' => $trail->estimated_time_formatted ?: $trail->duration ?: 'N/A',
+                'rating' => $trail->average_rating ?: 0,
+                'review_count' => $trail->total_reviews ?: 0,
+                'image' => $imageUrl,
+                'featured_image' => $imageUrl, // Add this for frontend compatibility
+                'slug' => $trail->slug,
+                'elevation_gain' => $trail->elevation_gain,
+                'summary' => $trail->summary,
+                'organization' => $trail->user ? $trail->user->display_name : 'Unknown',
+                'created_at' => $trail->created_at->format('Y-m-d'),
+                'tags' => $this->generateTrailTags($trail)
+            ];
+        });
+
+        $hasMore = $totalCount > ($offset + $limit);
+
+        return response()->json([
+            'success' => true,
+            'trails' => $formattedTrails,
+            'total' => $totalCount,
+            'current_page' => $page,
+            'per_page' => $limit,
+            'has_more' => $hasMore,
+            'showing' => $trails->count(),
+            'query' => $query,
+            'category' => $category,
+            'filter' => $filter
+        ]);
+    }
+
+    private function generateTrailTags($trail)
+    {
+        $tags = [];
+        
+        // Add difficulty tags
+        switch (strtolower($trail->difficulty)) {
+            case 'easy':
+                $tags[] = 'beginner';
+                $tags[] = 'easy';
+                break;
+            case 'moderate':
+                $tags[] = 'moderate';
+                break;
+            case 'hard':
+                $tags[] = 'challenging';
+                $tags[] = 'hard';
+                break;
+            case 'very_hard':
+                $tags[] = 'challenging';
+                $tags[] = 'advanced';
+                break;
+        }
+
+        // Add popularity tags
+        if ($trail->total_reviews > 10) {
+            $tags[] = 'popular';
+        }
+
+        // Add scenic tags based on description
+        $description = strtolower($trail->description . ' ' . $trail->summary);
+        if (str_contains($description, 'scenic') || 
+            str_contains($description, 'view') ||
+            str_contains($description, 'sunset') ||
+            str_contains($description, 'sunrise')) {
+            $tags[] = 'scenic';
+        }
+
+        // Add other descriptive tags
+        if (str_contains($description, 'loop')) {
+            $tags[] = 'loop';
+        }
+        
+        if (str_contains($description, 'family')) {
+            $tags[] = 'family';
+        }
+
+        return $tags;
     }
 
     public function searchOSM(Request $request)
@@ -645,5 +828,223 @@ class TrailController extends Controller
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
         return $earthRadius * $c;
+    }
+
+    public function getNearbyTrails(Request $request)
+    {
+        $request->validate([
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'radius' => 'integer|min:1|max:50',
+            'page' => 'integer|min:1',
+            'per_page' => 'integer|min:1|max:50'
+        ]);
+
+        $latitude = $request->get('latitude');
+        $longitude = $request->get('longitude');
+        $radius = $request->get('radius', 5); // Default 5km
+        $page = $request->get('page', 1);
+        $perPage = $request->get('per_page', 3);
+
+        try {
+            // First, let's check if there are ANY trails in the database
+            $totalTrails = Trail::active()->count();
+            Log::info("Total active trails in database: " . $totalTrails);
+            
+            if ($totalTrails === 0) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                    'pagination' => [
+                        'current_page' => $page,
+                        'per_page' => $perPage,
+                        'total' => 0,
+                        'total_pages' => 0,
+                        'has_more_pages' => false
+                    ],
+                    'has_more_pages' => false,
+                    'message' => 'No trails found in database',
+                    'search_params' => [
+                        'latitude' => $latitude,
+                        'longitude' => $longitude,
+                        'radius' => $radius . 'km'
+                    ]
+                ]);
+            }
+
+            // Calculate bounding box for more efficient querying
+            $earthRadius = 6371; // km
+            $latRadian = deg2rad($latitude);
+            $lngRadian = deg2rad($longitude);
+            
+            $latDelta = $radius / $earthRadius;
+            $lngDelta = $radius / ($earthRadius * cos($latRadian));
+            
+            $minLat = $latitude - rad2deg($latDelta);
+            $maxLat = $latitude + rad2deg($latDelta);
+            $minLng = $longitude - rad2deg($lngDelta);
+            $maxLng = $longitude + rad2deg($lngDelta);
+
+            // Query trails within bounding box first for performance
+            $trails = Trail::active()
+                ->with(['location', 'user', 'images'])
+                ->where('is_active', true)
+                ->whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                ->whereBetween('latitude', [$minLat, $maxLat])
+                ->whereBetween('longitude', [$minLng, $maxLng])
+                ->get();
+
+            Log::info("Trails in bounding box: " . $trails->count());
+
+            // If no trails in bounding box, let's try to get ANY trails with coordinates
+            if ($trails->isEmpty()) {
+                $anyTrailsWithCoords = Trail::active()
+                    ->whereNotNull('latitude')
+                    ->whereNotNull('longitude')
+                    ->count();
+                    
+                Log::info("Total trails with coordinates: " . $anyTrailsWithCoords);
+                
+                if ($anyTrailsWithCoords === 0) {
+                    return response()->json([
+                        'success' => true,
+                        'data' => [],
+                        'pagination' => [
+                            'current_page' => $page,
+                            'per_page' => $perPage,
+                            'total' => 0,
+                            'total_pages' => 0,
+                            'has_more_pages' => false
+                        ],
+                        'has_more_pages' => false,
+                        'message' => 'No trails with coordinates found in database',
+                        'search_params' => [
+                            'latitude' => $latitude,
+                            'longitude' => $longitude,
+                            'radius' => $radius . 'km'
+                        ]
+                    ]);
+                }
+            }
+
+            // Filter by exact distance and calculate distance for each trail
+            $nearbyTrails = $trails->map(function ($trail) use ($latitude, $longitude) {
+                $distance = $this->calculateDistance(
+                    $latitude, 
+                    $longitude, 
+                    $trail->latitude, 
+                    $trail->longitude
+                );
+                
+                $trail->distance = $distance;
+                return $trail;
+            })->filter(function ($trail) use ($radius) {
+                return $trail->distance <= $radius;
+            })->sortBy('distance');
+
+            Log::info("Trails within radius: " . $nearbyTrails->count());
+
+            // Paginate the results
+            $total = $nearbyTrails->count();
+            $offset = ($page - 1) * $perPage;
+            $paginatedTrails = $nearbyTrails->slice($offset, $perPage);
+
+            // Format trail data with images
+            $formattedTrails = $paginatedTrails->map(function ($trail) {
+                $images = $this->imageService->getTrailImages($trail);
+                
+                return [
+                    'id' => $trail->id,
+                    'name' => $trail->trail_name,
+                    'location' => $trail->location ? 
+                        $trail->location->name . ', ' . $trail->location->province : 
+                        'Location not specified',
+                    'difficulty_level' => ucfirst($trail->difficulty ?? 'unknown'),
+                    'estimated_duration' => $trail->duration ? $trail->duration . ' hours' : null,
+                    'distance' => round($trail->distance, 1),
+                    'latitude' => $trail->latitude,
+                    'longitude' => $trail->longitude,
+                    'average_rating' => $trail->average_rating ? round($trail->average_rating, 1) : null,
+                    'total_reviews' => $trail->total_reviews ?? 0,
+                    'images' => $images,
+                    'created_by' => $trail->user ? $trail->user->name : 'Unknown'
+                ];
+            })->values();
+
+            return response()->json([
+                'success' => true,
+                'data' => $formattedTrails,
+                'pagination' => [
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'total_pages' => ceil($total / $perPage),
+                    'has_more_pages' => $page < ceil($total / $perPage)
+                ],
+                'has_more_pages' => $page < ceil($total / $perPage),
+                'debug_info' => [
+                    'total_trails_in_db' => $totalTrails,
+                    'trails_in_bounding_box' => $trails->count(),
+                    'trails_within_radius' => $total
+                ],
+                'search_params' => [
+                    'latitude' => $latitude,
+                    'longitude' => $longitude,
+                    'radius' => $radius . 'km'
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in getNearbyTrails: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch nearby trails',
+                'error' => $e->getMessage(),
+                'debug_info' => [
+                    'request_params' => $request->all()
+                ]
+            ], 500);
+        }
+    }
+
+    public function debugTrails()
+    {
+        try {
+            // Check total trails
+            $totalTrails = Trail::count();
+            
+            // Check trails with coordinates (basic version)
+            $trailsWithCoords = Trail::whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                ->count();
+                
+            // Get a few sample trails
+            $sampleTrails = Trail::whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                ->select('id', 'trail_name', 'latitude', 'longitude')
+                ->limit(5)
+                ->get()
+                ->toArray();
+
+            return response()->json([
+                'success' => true,
+                'database_stats' => [
+                    'total_trails' => $totalTrails,
+                    'trails_with_coordinates' => $trailsWithCoords
+                ],
+                'sample_trails' => $sampleTrails,
+                'timestamp' => now()->toISOString()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ], 500);
+        }
     }
 }

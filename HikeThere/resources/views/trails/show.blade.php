@@ -337,27 +337,6 @@
                         </div>
                     @endif
 
-                    <!-- Trail Location Map -->
-                    @if($trail->location && $trail->location->latitude && $trail->location->longitude)
-                        <div class="mb-8">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Trail Location</h3>
-                            <div class="bg-gray-50 rounded-lg p-4">
-                                <p class="text-gray-700 mb-4">This trail is located at <strong>{{ $trail->location->name }}, {{ $trail->location->province }}</strong>. Use the map below to see the exact location and get directions.</p>
-                                
-                                <x-trail-map 
-                                    height="400px"
-                                    :showControls="true"
-                                    :showSearch="false"
-                                    :showFilters="false"
-                                    :showActions="true"
-                                    :centerLat="$trail->location->latitude"
-                                    :centerLng="$trail->location->longitude"
-                                    :zoom="12"
-                                    id="trail-location-map" />
-                            </div>
-                        </div>
-                    @endif
-
                     <!-- Reviews Section -->
                     <div class="mb-8">
                         <div class="flex items-center justify-between mb-6">

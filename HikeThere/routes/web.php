@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExploreController;
+use App\Http\Controllers\GPXLibraryController;
 use App\Http\Controllers\ItineraryController;
 use App\Http\Controllers\LocationWeatherController;
 use App\Http\Controllers\MapController;
@@ -25,6 +26,10 @@ require __DIR__.'/jetstream.php';
 
 Route::get('/', function () {
     return view('welcome');
+});
+
+Route::get('/test-gpx', function () {
+    return view('test-gpx');
 });
 
 // Email verification routes
@@ -117,6 +122,7 @@ Route::middleware([
 
     // Community routes
     Route::get('/community', [CommunityController::class, 'index'])->name('community.index');
+    Route::get('/community/organization/{organization}', [CommunityController::class, 'showOrganization'])->name('community.organization.show');
 
     // AJAX Community routes
     Route::post('/api/community/follow', [CommunityController::class, 'follow'])->name('api.community.follow');
@@ -154,6 +160,11 @@ Route::middleware(['auth:sanctum', 'check.approval'])->group(function () {
     Route::post('/org/trails/generate-google-coordinates', [TrailCoordinateController::class, 'generateCoordinatesFromForm'])->name('org.trails.generate-google-coordinates');
     Route::post('/org/trails/generate-custom-coordinates', [TrailCoordinateController::class, 'generateCustomCoordinatesFromForm'])->name('org.trails.generate-custom-coordinates');
     Route::post('/org/trails/preview-coordinates', [TrailCoordinateController::class, 'previewCoordinates'])->name('org.trails.preview-coordinates');
+    
+    // GPX Library routes for trail creation
+    Route::get('/api/gpx-library', [\App\Http\Controllers\GPXLibraryController::class, 'index'])->name('api.gpx-library');
+    Route::post('/api/gpx-library/parse', [\App\Http\Controllers\GPXLibraryController::class, 'parseGPX'])->name('api.gpx-library.parse');
+    Route::post('/api/gpx-library/search', [\App\Http\Controllers\GPXLibraryController::class, 'searchTrails'])->name('api.gpx-library.search');
 
     // Protected routes that require approval
     // These routes will be accessible to approved organizations

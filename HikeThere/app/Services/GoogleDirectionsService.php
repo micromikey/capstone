@@ -325,17 +325,19 @@ class GoogleDirectionsService
         try {
             // First try to get specific trail coordinates
             $coordinates = $this->getTrailCoordinates($startQuery, $endQuery);
-            
+
             if ($coordinates && count($coordinates) > 2) {
                 return $coordinates;
             }
-            
-            // Fallback: Create a simple path around the general location
-            return $this->generateFallbackCoordinates($fallbackQuery);
-            
+
+            // Do NOT return a generated circular fallback here — return null so callers
+            // will continue to try other providers (ORS, OSM snapping) instead of
+            // accepting a fake circular path as valid geometry.
+            return null;
+
         } catch (\Exception $e) {
             Log::error('Error getting trail coordinates: ' . $e->getMessage());
-            return $this->generateFallbackCoordinates($fallbackQuery);
+            return null;
         }
     }
 

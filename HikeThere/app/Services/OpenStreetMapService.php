@@ -159,36 +159,50 @@ class OpenStreetMapService
     private function buildOverpassQuery($boundingBox, $trailName, $mountainName = null)
     {
         $bbox = "{$boundingBox['south']},{$boundingBox['west']},{$boundingBox['north']},{$boundingBox['east']}";
-        
-        // Build query to find hiking trails, paths, tracks + hiking relations
+        // Build a more comprehensive query to find hiking trails, paths, tracks,
+        // trail relations, and relevant POIs (peaks, viewpoints, mountain places).
         $query = "[out:json][timeout:60];";
         $query .= "(";
-        // Primary highway/footway candidates
-        $query .= "way[\"highway\"~\"^(path|track|footway)$\"]({$bbox});";
+
+        // Primary highway/footway candidates (ways)
+        $query .= "way[\"highway\"~\"^(path|track|footway|pedestrian|cycleway|bridleway)$\"]({$bbox});";
         $query .= "way[\"highway\"=\"steps\"]({$bbox});";
         $query .= "way[\"sac_scale\"]({$bbox});";
         $query .= "way[\"trail_visibility\"]({$bbox});";
         $query .= "way[\"foot\"=\"yes\"]({$bbox});";
         $query .= "way[\"hiking\"=\"yes\"]({$bbox});";
 
+        // Include ways with names or refs matching the trail name
         if ($trailName) {
             $escapedTrailName = addslashes($trailName);
             $query .= "way[\"name\"~\"{$escapedTrailName}\",i]({$bbox});";
             $query .= "way[\"ref\"~\"{$escapedTrailName}\",i]({$bbox});";
+            // Also check for relations named similarly
             $query .= "relation[\"route\"~\"^(hiking|foot)$\"][\"name\"~\"{$escapedTrailName}\",i]({$bbox});";
         }
 
+        // If mountain name provided, include ways/relations and nodes for mountain/peak matching
         if ($mountainName) {
             $escapedMountainName = addslashes($mountainName);
             $query .= "way[\"name\"~\"{$escapedMountainName}\",i]({$bbox});";
             $query .= "relation[\"route\"=\"hiking\"][\"name\"~\"{$escapedMountainName}\",i]({$bbox});";
+            // Also look for named peaks / mountain places (nodes)
+            $query .= "node[\"name\"~\"{$escapedMountainName}\",i][\"natural\"=\"peak\"]({$bbox});";
+            $query .= "node[\"name\"~\"{$escapedMountainName}\",i][\"place\"~\"^(mountain|peak|locality)$\"]({$bbox});";
         }
 
-        // Generic hiking route relations in bbox
+        // POIs that can help identify trailheads or summit points
+        $query .= "node[\"natural\"~\"^(peak|ridge)$\"]({$bbox});";
+        $query .= "node[\"tourism\"~\"^(viewpoint|attraction)$\"]({$bbox});";
+        $query .= "node[\"place\"~\"^(mountain|peak)$\"]({$bbox});";
+
+        // Fallback: relations that represent hiking routes inside bbox
         $query .= "relation[\"route\"=\"hiking\"]({$bbox});";
+
         $query .= ");";
-        // Fetch member ways (._;>;); then output geometry
+        // Fetch member ways/nodes and their geometry, then output geometry
         $query .= "(._;>;);out geom;";
+
         return $query;
     }
 

@@ -31,6 +31,9 @@ Route::get('/mountains/{slug}', [MountainController::class, 'show']);
 Route::prefix('trails')->group(function () {
     Route::get('/', [TrailController::class, 'index']);
     Route::get('/search', [TrailController::class, 'search']);
+    Route::get('/search-trails', [TrailController::class, 'searchTrails']); // New frontend search endpoint
+    Route::get('/nearby', [TrailController::class, 'getNearbyTrails']); // New nearby trails endpoint
+    Route::get('/debug', [TrailController::class, 'debugTrails']); // Debug endpoint
     Route::post('/search-osm', [TrailController::class, 'searchOSM']);
     Route::get('/map-data', [TrailController::class, 'getMapData']);
     Route::get('/{trail}', [TrailController::class, 'show']);

@@ -3,14 +3,13 @@
         // Initialize the TrailImageService for dynamic images
         $imageService = app('App\Services\TrailImageService');
     @endphp
-
-    <div class="py-6">
+    <div>
         <!-- Header Section -->
         <div class="bg-white shadow-lg border-b border-gray-200">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-4xl font-bold text-gray-900 mb-2">Community</h1>
+                        <h2 class="text-4xl font-bold text-gray-900 mb-2">Community</h2>
                         <p class="text-lg text-gray-600">Discover hiking organizations and connect with fellow adventurers</p>
                     </div>
                     <div class="hidden md:flex items-center space-x-4 bg-emerald-50 px-6 py-4 rounded-xl">
@@ -73,43 +72,49 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         @foreach($organizations as $organization)
                             <div class="organization-card bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                                <div class="relative">
-                                    <img src="{{ $organization->profile_picture_url }}" alt="{{ $organization->display_name }}" 
-                                         class="w-full h-48 object-cover rounded-t-xl">
-                                    <div class="absolute top-4 right-4">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            Verified
-                                        </span>
+                                <a href="{{ route('community.organization.show', $organization->id) }}" class="block">
+                                    <div class="relative">
+                                        <img src="{{ $organization->profile_picture_url }}" alt="{{ $organization->display_name }}" 
+                                             class="w-full h-48 object-cover rounded-t-xl">
+                                        <div class="absolute top-4 right-4">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                Verified
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
+                                    
+                                    <div class="p-6">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <h3 class="text-xl font-semibold text-gray-900 truncate">{{ $organization->display_name }}</h3>
+                                        </div>
+                                        
+                                        @if($organization->bio)
+                                            <p class="text-gray-600 text-sm mb-4 line-clamp-3">{{ Str::limit($organization->bio, 100) }}</p>
+                                        @endif
+                                        
+                                        <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                                            <span class="flex items-center">
+                                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                {{ $organization->location ?? 'Location not set' }}
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="flex items-center justify-between text-sm text-gray-500 mb-6">
+                                            <span>{{ $organization->followers_count ?? 0 }} follower{{ ($organization->followers_count ?? 0) !== 1 ? 's' : '' }}</span>
+                                            <span>{{ $organization->organizationTrails ? $organization->organizationTrails->where('is_active', true)->count() : 0 }} trails</span>
+                                        </div>
+                                    </div>
+                                </a>
                                 
-                                <div class="p-6">
-                                    <div class="flex items-center justify-between mb-3">
-                                        <h3 class="text-xl font-semibold text-gray-900 truncate">{{ $organization->display_name }}</h3>
-                                    </div>
-                                    
-                                    @if($organization->bio)
-                                        <p class="text-gray-600 text-sm mb-4 line-clamp-3">{{ Str::limit($organization->bio, 100) }}</p>
-                                    @endif
-                                    
-                                    <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
-                                        <span class="flex items-center">
-                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                                            </svg>
-                                            {{ $organization->location ?? 'Location not set' }}
-                                        </span>
-                                    </div>
-                                    
-                                    <div class="flex items-center justify-between text-sm text-gray-500 mb-6">
-                                        <span>{{ $organization->followers_count ?? 0 }} follower{{ ($organization->followers_count ?? 0) !== 1 ? 's' : '' }}</span>
-                                        <span>{{ $organization->organizationTrails ? $organization->organizationTrails->where('is_active', true)->count() : 0 }} trails</span>
-                                    </div>
-                                    
+                                <!-- Follow button outside the link to prevent nested clicking -->
+                                <div class="px-6 pb-6">
                                     <button class="follow-btn w-full py-2 px-4 rounded-lg font-medium transition-all duration-200 
                                         {{ in_array($organization->id, $followingIds) ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' : 'bg-emerald-600 text-white hover:bg-emerald-700' }}"
                                         data-organization-id="{{ $organization->id }}"
-                                        data-organization-name="{{ $organization->display_name }}">
+                                        data-organization-name="{{ $organization->display_name }}"
+                                        onclick="event.stopPropagation();">
                                         @if(in_array($organization->id, $followingIds))
                                             <span class="flex items-center justify-center">
                                                 <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -395,17 +400,43 @@
         }
         
         function loadFollowingOrganizations() {
-            // This would load the organizations the user is following
-            // For now, we'll filter from existing organizations
+            // Clear loading state
             const followingContainer = document.getElementById('following-organizations');
-            const followingCards = document.querySelectorAll('.organization-card').forEach(card => {
+            followingContainer.innerHTML = '';
+            
+            // Get organizations that are being followed
+            const followingCards = Array.from(document.querySelectorAll('.organization-card')).filter(card => {
                 const followBtn = card.querySelector('.follow-btn');
-                if (followBtn && followBtn.textContent.includes('Following')) {
-                    // Clone and add to following container
-                    const clonedCard = card.cloneNode(true);
-                    followingContainer.appendChild(clonedCard);
-                }
+                return followBtn && followBtn.textContent.includes('Following');
             });
+            
+            if (followingCards.length > 0) {
+                const gridContainer = document.createElement('div');
+                gridContainer.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+                
+                followingCards.forEach(card => {
+                    // Clone the card and ensure the follow button works
+                    const clonedCard = card.cloneNode(true);
+                    const clonedFollowBtn = clonedCard.querySelector('.follow-btn');
+                    if (clonedFollowBtn) {
+                        clonedFollowBtn.addEventListener('click', handleFollowClick);
+                    }
+                    gridContainer.appendChild(clonedCard);
+                });
+                
+                followingContainer.appendChild(gridContainer);
+            } else {
+                // Show empty state
+                followingContainer.innerHTML = `
+                    <div class="text-center py-12">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M34 40h10v-4a6 6 0 00-10.712-3.714M34 40H14m20 0v-4a9.971 9.971 0 00-.712-3.714M14 40H4v-4a6 6 0 0110.712-3.714M14 40v-4a9.971 9.971 0 01.712-3.714m0 0A9.971 9.971 0 0118 32a9.971 9.971 0 013.288 4.286M30 20a6 6 0 11-12 0 6 6 0 0112 0zm12 0a6 6 0 11-12 0 6 6 0 0112 0zm-12 0a6 6 0 11-12 0 6 6 0 0112 0z"></path>
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">Not following any organizations yet</h3>
+                        <p class="mt-1 text-sm text-gray-500">Follow some organizations to see them here.</p>
+                    </div>
+                `;
+            }
         }
         
         function showToast(type, message) {
