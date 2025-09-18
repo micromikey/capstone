@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Animation Test</title>
+    <style>
+        body {
+            background: #643a7a;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .weather-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .frame {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            border-radius: 2px;
+            box-shadow: 0.5rem 0.5rem 1rem rgba(0, 0, 0, 0.6);
+            background-image: linear-gradient(to top, #40334f, #2f273c, #272232, #201c29);
+            color: #4b384c;
+            font-family: "overlock", Helvetica, sans-serif;
+            font-weight: 300;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        .weather-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            color: #333;
+            z-index: 100;
+            font-size: 14px;
+        }
+
+        .weather-anim {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* DAY/NIGHT BACKGROUNDS */
+        .weather-anim.day-time {
+            background: linear-gradient(to top, #87CEEB, #98D8E8, #B8E6F0, #E0F7FF);
+        }
+        .weather-anim.night-time {
+            background: linear-gradient(to top, #40334f, #2f273c, #272232, #201c29);
+        }
+
+        /* CELESTIAL BODIES - Day Sun (for non-sunny weather) */
+        .weather-anim.day-time .day-sun {
+            position: absolute;
+            width: 4rem;
+            height: 4rem;
+            top: 60px;
+            right: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 60% 40%, #fffbe6 70%, #ffe066 100%);
+            box-shadow: 0 0 1.5rem 0.3rem #ffe06644;
+            z-index: 3;
+            opacity: 0.7;
+            animation: day-sun-rise 1.2s ease-out;
+        }
+
+        /* Night Moon (for non-rainy weather) */
+        .weather-anim.night-time .night-moon {
+            position: absolute;
+            width: 4rem;
+            height: 4rem;
+            top: 60px;
+            right: 80px;
+            border-radius: 50%;
+            background: linear-gradient(to left top, #b1b1c5, #928fa3, #746f82, #575162, #3c3444);
+            box-shadow: 0 0 2rem rgba(177, 177, 197, 0.15);
+            z-index: 3;
+            opacity: 0.8;
+            animation: night-moon-rise 1.2s ease-out;
+        }
+
+        @keyframes day-sun-rise {
+            from { transform: translateY(30px) scale(0.8); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 0.7; }
+        }
+
+        @keyframes night-moon-rise {
+            from { transform: translateY(30px) scale(0.8); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 0.8; }
+        }
+
+        /* RAIN ANIMATION */
+        .moon {
+            position: absolute;
+            width: 6rem;
+            height: 6rem;
+            top: 45px;
+            left: 55px;
+            border-radius: 50px;
+            background-image: linear-gradient(to left top, #b1b1c5, #928fa3, #746f82, #575162, #3c3444);
+            box-shadow: 0 0 3rem rgba(177, 177, 197, 0.2);
+            -webkit-animation: rise 1s ease-out;
+            animation: rise 1s ease-out;
+        }
+
+        .moon-crater1 {
+            position: absolute;
+            width: 1.7rem;
+            height: 1.7rem;
+            border-radius: 50%;
+            border: 4px solid rgba(60, 52, 68, 0.1);
+            top: 1rem;
+            left: 0.8rem;
+        }
+
+        .moon-crater2 {
+            position: absolute;
+            width: 1.4rem;
+            height: 1.4rem;
+            border-radius: 50%;
+            background: rgba(60, 52, 68, 0.15);
+            top: 3.4rem;
+            left: 2.8rem;
+        }
+
+        .hill-bg-1, .hill-bg-2, .hill-fg-1, .hill-fg-2, .hill-fg-3 {
+            position: absolute;
+            z-index: 2;
+            width: 337px;
+            height: 281px;
+            top: 201px;
+            left: -57px;
+            background: #503760;
+            border-radius: 50%;
+            box-shadow: -0.5rem 0 0.8rem rgba(0, 0, 0, 0.3);
+        }
+
+        .hill-bg-2 {
+            top: 177px;
+            left: 177px;
+        }
+
+        .hill-fg-1, .hill-fg-2, .hill-fg-3 {
+            background: #695b93;
+            top: 228px;
+            left: -137px;
+        }
+
+        .hill-fg-2 {
+            top: 251px;
+            left: 63px;
+        }
+
+        .hill-fg-3 {
+            top: 218px;
+            left: 292px;
+        }
+
+        /* Rain drops */
+        .drop-big-1, .drop-medium-1, .drop-small-1, .drop-medium-2, .drop-small-2, .drop-medium-3, .drop-small-3, .drop-medium-4, .drop-small-4, .drop-medium-5, .drop-small-5 {
+            position: absolute;
+            z-index: 20;
+            left: 18px;
+            bottom: 90px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #7FC1F9;
+            -webkit-animation: drop 0.9s linear 1.04s infinite;
+            animation: drop 0.9s linear 1.04s infinite;
+            -webkit-animation-fill-mode: both;
+            animation-fill-mode: both;
+            transform-origin: 50% 100%;
+        }
+
+        .drop-big-1:before, .drop-medium-1:before, .drop-small-1:before, .drop-medium-2:before, .drop-small-2:before, .drop-medium-3:before, .drop-small-3:before, .drop-medium-4:before, .drop-small-4:before, .drop-medium-5:before, .drop-small-5:before {
+            position: absolute;
+            content: "";
+            display: block;
+            top: -2px;
+            left: 1px;
+            width: 6px;
+            height: 6px;
+            background: #7FC1F9;
+            border-radius: 3px;
+        }
+
+        .drop-big-1:after, .drop-medium-1:after, .drop-small-1:after, .drop-medium-2:after, .drop-small-2:after, .drop-medium-3:after, .drop-small-3:after, .drop-medium-4:after, .drop-small-4:after, .drop-medium-5:after, .drop-small-5:after {
+            position: absolute;
+            content: "";
+            display: block;
+            top: -5px;
+            left: 2px;
+            width: 4px;
+            height: 10px;
+            background: #7FC1F9;
+            border-radius: 50%;
+        }
+
+        .drop-medium-1 {
+            left: 56px;
+            opacity: 0.6;
+            width: 6px;
+            height: 6px;
+            -webkit-animation: drop 1.5s linear 0.96s infinite;
+            animation: drop 1.5s linear 0.96s infinite;
+        }
+
+        .drop-medium-1:before {
+            top: -2px;
+            left: 1px;
+            width: 4px;
+            height: 4px;
+        }
+
+        .drop-medium-1:after {
+            top: -4px;
+            left: 2px;
+            width: 2px;
+            height: 6px;
+        }
+
+        .drop-small-1 {
+            left: 94px;
+            opacity: 0.3;
+            width: 4px;
+            height: 4px;
+            -webkit-animation: drop 2s linear 0.6s infinite;
+            animation: drop 2s linear 0.6s infinite;
+        }
+
+        .drop-small-1:before {
+            top: -2px;
+            left: 1px;
+            width: 2px;
+            height: 2px;
+        }
+
+        .drop-small-1:after {
+            top: -3px;
+            left: 1px;
+            width: 2px;
+            height: 4px;
+        }
+
+        .drop-medium-2 {
+            left: 132px;
+            opacity: 0.6;
+            width: 6px;
+            height: 6px;
+            -webkit-animation: drop 1.4s linear 0.12s infinite;
+            animation: drop 1.4s linear 0.12s infinite;
+        }
+
+        .drop-medium-2:before {
+            top: -2px;
+            left: 1px;
+            width: 4px;
+            height: 4px;
+        }
+
+        .drop-medium-2:after {
+            top: -4px;
+            left: 2px;
+            width: 2px;
+            height: 6px;
+        }
+
+        .drop-small-2 {
+            left: 170px;
+            opacity: 0.3;
+            width: 4px;
+            height: 4px;
+            -webkit-animation: drop 2.1s linear 0.32s infinite;
+            animation: drop 2.1s linear 0.32s infinite;
+        }
+
+        .drop-small-2:before {
+            top: -2px;
+            left: 1px;
+            width: 2px;
+            height: 2px;
+        }
+
+        .drop-small-2:after {
+            top: -3px;
+            left: 1px;
+            width: 2px;
+            height: 4px;
+        }
+
+        .drop-medium-3 {
+            left: 208px;
+            opacity: 0.6;
+            width: 6px;
+            height: 6px;
+            -webkit-animation: drop 1.4s linear 1.68s infinite;
+            animation: drop 1.4s linear 1.68s infinite;
+        }
+
+        .drop-medium-3:before {
+            top: -2px;
+            left: 1px;
+            width: 4px;
+            height: 4px;
+        }
+
+        .drop-medium-3:after {
+            top: -4px;
+            left: 2px;
+            width: 2px;
+            height: 6px;
+        }
+
+        .drop-small-3 {
+            left: 246px;
+            opacity: 0.3;
+            width: 4px;
+            height: 4px;
+            -webkit-animation: drop 2.1s linear 1.44s infinite;
+            animation: drop 2.1s linear 1.44s infinite;
+        }
+
+        .drop-small-3:before {
+            top: -2px;
+            left: 1px;
+            width: 2px;
+            height: 2px;
+        }
+
+        .drop-small-3:after {
+            top: -3px;
+            left: 1px;
+            width: 2px;
+            height: 4px;
+        }
+
+        .drop-medium-4 {
+            left: 284px;
+            opacity: 0.6;
+            width: 6px;
+            height: 6px;
+            -webkit-animation: drop 1.5s linear 1.36s infinite;
+            animation: drop 1.5s linear 1.36s infinite;
+        }
+
+        .drop-medium-4:before {
+            top: -2px;
+            left: 1px;
+            width: 4px;
+            height: 4px;
+        }
+
+        .drop-medium-4:after {
+            top: -4px;
+            left: 2px;
+            width: 2px;
+            height: 6px;
+        }
+
+        .drop-small-4 {
+            left: 322px;
+            opacity: 0.3;
+            width: 4px;
+            height: 4px;
+            -webkit-animation: drop 2s linear 0.6s infinite;
+            animation: drop 2s linear 0.6s infinite;
+        }
+
+        .drop-small-4:before {
+            top: -2px;
+            left: 1px;
+            width: 2px;
+            height: 2px;
+        }
+
+        .drop-small-4:after {
+            top: -3px;
+            left: 1px;
+            width: 2px;
+            height: 4px;
+        }
+
+        .drop-medium-5 {
+            left: 360px;
+            opacity: 0.6;
+            width: 6px;
+            height: 6px;
+            -webkit-animation: drop 1.5s linear 1.12s infinite;
+            animation: drop 1.5s linear 1.12s infinite;
+        }
+
+        .drop-medium-5:before {
+            top: -2px;
+            left: 1px;
+            width: 4px;
+            height: 4px;
+        }
+
+        .drop-medium-5:after {
+            top: -4px;
+            left: 2px;
+            width: 2px;
+            height: 6px;
+        }
+
+        .drop-small-5 {
+            left: 18px;
+            opacity: 0.3;
+            width: 4px;
+            height: 4px;
+            -webkit-animation: drop 2s linear 0.44s infinite;
+            animation: drop 2s linear 0.44s infinite;
+        }
+
+        .drop-small-5:before {
+            top: -2px;
+            left: 1px;
+            width: 2px;
+            height: 2px;
+        }
+
+        .drop-small-5:after {
+            top: -3px;
+            left: 1px;
+            width: 2px;
+            height: 4px;
+        }
+
+        @keyframes drop {
+            0% {
+                transform: translate3d(40px, -320px, 0) scaleX(1) scaleY(1) rotate(17deg);
+            }
+            85% {
+                transform: translate3d(0, 0, 0) scaleX(1) scaleY(1) rotate(17deg);
+            }
+            100% {
+                transform: translate3d(0, 0, 0) scaleX(3) scaleY(0) rotate(0deg);
+            }
+        }
+
+        @keyframes rise {
+            from {
+                transform: translate(-40px, 20px);
+            }
+            to {
+                transform: translate(0, 0px);
+            }
+        }
+
+        /* SUNNY */
+        .weather-sunny {
+            background: linear-gradient(to top, #87CEEB, #98D8E8, #B8E6F0, #E0F7FF) !important;
+        }
+        .weather-sunny .sun {
+            position: absolute;
+            width: 6rem;
+            height: 6rem;
+            top: 45px;
+            left: 55px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 60% 40%, #ffe066 70%, #ffd700 100%);
+            box-shadow: 0 0 3rem 1rem #ffe06699, 0 0 8rem 2rem #ffd70044;
+            z-index: 5;
+            animation: sunny-rise 1.2s ease-out;
+        }
+        .weather-sunny .sun:after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10rem;
+            height: 10rem;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: radial-gradient(circle, #ffe06633 60%, transparent 100%);
+            z-index: 4;
+        }
+        @keyframes sunny-rise {
+            from { transform: translateY(40px) scale(0.8); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        /* CLOUDY */
+        .weather-cloudy .cloud {
+            position: absolute;
+            background: #e0e4ea;
+            border-radius: 50%;
+            opacity: 0.85;
+            box-shadow: 0 0 2rem #bfc4d1;
+            animation: cloud-move 8s linear infinite;
+        }
+        .weather-cloudy .cloud-1 {
+            width: 5rem; height: 3rem; top: 60px; left: 60px;
+            animation-delay: 0s;
+        }
+        .weather-cloudy .cloud-2 {
+            width: 7rem; height: 4rem; top: 80px; left: 120px;
+            animation-delay: 2s;
+        }
+        .weather-cloudy .cloud-3 {
+            width: 4rem; height: 2.5rem; top: 100px; left: 200px;
+            animation-delay: 4s;
+        }
+        @keyframes cloud-move {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(30px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* ABOUT TO RAIN (Overcast) */
+        .weather-overcast .cloud {
+            position: absolute;
+            background: linear-gradient(180deg, #b0b4c1 60%, #6a6d7a 100%);
+            border-radius: 50%;
+            opacity: 0.95;
+            box-shadow: 0 0 2rem #6a6d7a99;
+            animation: overcast-move 10s ease-in-out infinite;
+        }
+        .weather-overcast .cloud-1 {
+            width: 7rem; height: 4rem; top: 60px; left: 60px;
+            animation-delay: 0s;
+        }
+        .weather-overcast .cloud-2 {
+            width: 9rem; height: 5rem; top: 80px; left: 120px;
+            animation-delay: 2s;
+        }
+        .weather-overcast .cloud-3 {
+            width: 6rem; height: 3.5rem; top: 100px; left: 200px;
+            animation-delay: 4s;
+        }
+        @keyframes overcast-move {
+            0% { transform: translateX(0) scale(1); }
+            40% { transform: translateX(10px) scale(1.05); }
+            60% { transform: translateX(-10px) scale(0.98); }
+            100% { transform: translateX(0) scale(1); }
+        }
+
+        /* CLEAR (subtle sun, no rays) */
+        .weather-clear {
+            background: linear-gradient(to top, #87CEEB, #98D8E8, #B8E6F0, #E0F7FF) !important;
+        }
+        .weather-clear .sun {
+            position: absolute;
+            width: 5rem;
+            height: 5rem;
+            top: 55px;
+            left: 65px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 60% 40%, #fffbe6 70%, #ffe066 100%);
+            box-shadow: 0 0 2rem 0.5rem #ffe06655;
+            z-index: 5;
+            opacity: 0.85;
+            animation: clear-rise 1.2s ease-out;
+        }
+        @keyframes clear-rise {
+            from { transform: translateY(40px) scale(0.8); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 0.85; }
+        }
+
+        /* THUNDERSTORM */
+        .weather-thunderstorm .cloud {
+            position: absolute;
+            background: linear-gradient(180deg, #3a3b47 60%, #1f2026 100%);
+            border-radius: 50%;
+            opacity: 0.95;
+            box-shadow: 0 0 3rem #1f202699;
+            animation: storm-move 6s ease-in-out infinite;
+        }
+        .weather-thunderstorm .cloud-1 {
+            width: 8rem; height: 5rem; top: 50px; left: 50px;
+            animation-delay: 0s;
+        }
+        .weather-thunderstorm .cloud-2 {
+            width: 10rem; height: 6rem; top: 70px; left: 110px;
+            animation-delay: 1s;
+        }
+        .weather-thunderstorm .cloud-3 {
+            width: 7rem; height: 4rem; top: 90px; left: 190px;
+            animation-delay: 2s;
+        }
+        .weather-thunderstorm .lightning-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 15;
+        }
+        .weather-thunderstorm .lightning-bolt {
+            position: absolute;
+            opacity: 0;
+            filter: drop-shadow(0 0 8px #ffffff) drop-shadow(0 0 16px #e6e6fa);
+        }
+        .weather-thunderstorm .lightning-bolt-1 {
+            top: 120px;
+            left: 140px;
+            animation: lightning-flash-1 4s infinite;
+        }
+        .weather-thunderstorm .lightning-bolt-2 {
+            top: 110px;
+            left: 200px;
+            animation: lightning-flash-2 5s infinite;
+            animation-delay: 1.5s;
+        }
+        .weather-thunderstorm .lightning-bolt svg {
+            width: 20px;
+            height: 120px;
+        }
+        .weather-thunderstorm .lightning-bolt path {
+            fill: #ffffff;
+            stroke: #e6e6fa;
+            stroke-width: 1;
+        }
+        @keyframes storm-move {
+            0% { transform: translateX(0) scale(1); }
+            30% { transform: translateX(-15px) scale(1.02); }
+            70% { transform: translateX(15px) scale(0.98); }
+            100% { transform: translateX(0) scale(1); }
+        }
+        @keyframes lightning-flash-1 {
+            0%, 85%, 100% { opacity: 0; }
+            1%, 3%, 5% { opacity: 1; }
+            2%, 4% { opacity: 0.7; }
+            6%, 8% { opacity: 0.4; }
+        }
+        @keyframes lightning-flash-2 {
+            0%, 80%, 100% { opacity: 0; }
+            2%, 4% { opacity: 1; }
+            3% { opacity: 0.8; }
+            5%, 7% { opacity: 0.5; }
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2rem;
+        }
+
+        .weather-title {
+            text-align: center;
+            color: white;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>Weather Animation Test</h1>
+    
+    <div class="weather-container">
+        <!-- RAINY -->
+        <div>
+            <div class="weather-title">Rainy</div>
+            <div class="frame">
+                <div class="weather-label">Rain</div>
+                <div class="weather-anim weather-rain">
+                    <div class="moon">
+                        <div class="moon-crater1"></div>
+                        <div class="moon-crater2"></div>
+                    </div>
+                    <div class="hill-bg-1"></div>
+                    <div class="hill-bg-2"></div>
+                    <div class="hill-fg-1"></div>
+                    <div class="hill-fg-2"></div>
+                    <div class="hill-fg-3"></div>
+                    <div class="drop-big-1"></div>
+                    <div class="drop-medium-1"></div>
+                    <div class="drop-small-1"></div>
+                    <div class="drop-medium-2"></div>
+                    <div class="drop-small-2"></div>
+                    <div class="drop-medium-3"></div>
+                    <div class="drop-small-3"></div>
+                    <div class="drop-medium-4"></div>
+                    <div class="drop-small-4"></div>
+                    <div class="drop-medium-5"></div>
+                    <div class="drop-small-5"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUNNY -->
+        <div>
+            <div class="weather-title">Sunny</div>
+            <div class="frame">
+                <div class="weather-label">Sunny</div>
+                <div class="weather-anim weather-sunny">
+                    <div class="sun"></div>
+                    <div class="hill-bg-1"></div>
+                    <div class="hill-bg-2"></div>
+                    <div class="hill-fg-1"></div>
+                    <div class="hill-fg-2"></div>
+                    <div class="hill-fg-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CLOUDY -->
+        <div>
+            <div class="weather-title">Cloudy</div>
+            <div class="frame">
+                <div class="weather-label">Cloudy</div>
+                <div class="weather-anim weather-cloudy">
+                    <div class="cloud cloud-1"></div>
+                    <div class="cloud cloud-2"></div>
+                    <div class="cloud cloud-3"></div>
+                    <div class="hill-bg-1"></div>
+                    <div class="hill-bg-2"></div>
+                    <div class="hill-fg-1"></div>
+                    <div class="hill-fg-2"></div>
+                    <div class="hill-fg-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABOUT TO RAIN (OVERCAST) -->
+        <div>
+            <div class="weather-title">About to Rain</div>
+            <div class="frame">
+                <div class="weather-label">Overcast</div>
+                <div class="weather-anim weather-overcast">
+                    <div class="cloud cloud-1"></div>
+                    <div class="cloud cloud-2"></div>
+                    <div class="cloud cloud-3"></div>
+                    <div class="hill-bg-1"></div>
+                    <div class="hill-bg-2"></div>
+                    <div class="hill-fg-1"></div>
+                    <div class="hill-fg-2"></div>
+                    <div class="hill-fg-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CLEAR -->
+        <div>
+            <div class="weather-title">Clear</div>
+            <div class="frame">
+                <div class="weather-label">Clear</div>
+                <div class="weather-anim weather-clear">
+                    <div class="sun"></div>
+                    <div class="hill-bg-1"></div>
+                    <div class="hill-bg-2"></div>
+                    <div class="hill-fg-1"></div>
+                    <div class="hill-fg-2"></div>
+                    <div class="hill-fg-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- THUNDERSTORM -->
+        <div>
+            <div class="weather-title">Thunderstorm</div>
+            <div class="frame">
+                <div class="weather-label">Thunderstorm</div>
+                <div class="weather-anim weather-thunderstorm">
+                    <div class="cloud cloud-1"></div>
+                    <div class="cloud cloud-2"></div>
+                    <div class="cloud cloud-3"></div>
+                    <div class="lightning-container">
+                        <div class="lightning-bolt lightning-bolt-1">
+                            <svg viewBox="0 0 20 120" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 0 L12 0 L7 35 L13 35 L6 65 L11 65 L3 120 L7 120 L15 75 L10 75 L16 45 L11 45 L18 15 L13 15 L8 0 Z"/>
+                            </svg>
+                        </div>
+                        <div class="lightning-bolt lightning-bolt-2">
+                            <svg viewBox="0 0 20 120" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 0 L16 0 L10 40 L15 40 L8 70 L13 70 L5 120 L9 120 L17 80 L12 80 L19 50 L14 50 L20 20 L15 20 L12 0 Z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="hill-bg-1"></div>
+                    <div class="hill-bg-2"></div>
+                    <div class="hill-fg-1"></div>
+                    <div class="hill-fg-2"></div>
+                    <div class="hill-fg-3"></div>
+                    <div class="drop-big-1"></div>
+                    <div class="drop-medium-1"></div>
+                    <div class="drop-small-1"></div>
+                    <div class="drop-medium-2"></div>
+                    <div class="drop-small-2"></div>
+                    <div class="drop-medium-3"></div>
+                    <div class="drop-small-3"></div>
+                    <div class="drop-medium-4"></div>
+                    <div class="drop-small-4"></div>
+                    <div class="drop-medium-5"></div>
+                    <div class="drop-small-5"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

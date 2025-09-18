@@ -6,16 +6,16 @@
             backdrop-filter: blur(20px);
             transition: all 0.3s ease;
         }
-        
+
         .nav-container.scrolled {
             background: rgba(255, 255, 255, 0.98);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
-        
+
         .nav-blur {
             backdrop-filter: blur(20px);
         }
-        
+
         .nav-link {
             position: relative;
             transition: color 0.3s ease;
@@ -23,13 +23,13 @@
             border-bottom: none !important;
             outline: none !important;
         }
-        
+
         .nav-link:hover {
             text-decoration: none !important;
             border-bottom: none !important;
             outline: none !important;
         }
-        
+
         /* Override any ::after pseudo-elements */
         .nav-link::after,
         .nav-link::before {
@@ -38,7 +38,7 @@
             background: none !important;
             border: none !important;
         }
-        
+
         .nav-link:hover::after,
         .nav-link:hover::before {
             display: none !important;
@@ -46,7 +46,7 @@
             background: none !important;
             border: none !important;
         }
-        
+
         /* Override any other underline styles */
         .nav-link {
             text-decoration: none !important;
@@ -54,14 +54,14 @@
             outline: none !important;
             box-shadow: none !important;
         }
-        
+
         .nav-link:hover {
             text-decoration: none !important;
             border-bottom: none !important;
             outline: none !important;
             box-shadow: none !important;
         }
-        
+
         .nav-underline {
             position: absolute !important;
             bottom: -8px !important;
@@ -73,11 +73,11 @@
             z-index: 999 !important;
             pointer-events: none !important;
         }
-        
+
         .nav-link:hover .nav-underline {
             width: 100% !important;
         }
-        
+
         /* Button Styles */
         .btn-mountain {
             background: linear-gradient(135deg, #336d66, #20b6d2);
@@ -88,12 +88,12 @@
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(51, 109, 102, 0.3);
         }
-        
+
         .btn-mountain:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(51, 109, 102, 0.4);
         }
-        
+
         .btn-mountain-outline {
             border: 2px solid #336d66;
             color: #336d66;
@@ -102,13 +102,13 @@
             font-weight: 600;
             transition: all 0.3s ease;
         }
-        
+
         .btn-mountain-outline:hover {
             background: #336d66;
             color: white;
             transform: translateY(-2px);
         }
-        
+
         .btn-mountain-large {
             background: linear-gradient(135deg, #336d66, #20b6d2);
             color: white;
@@ -121,12 +121,12 @@
             display: inline-flex;
             align-items: center;
         }
-        
+
         .btn-mountain-large:hover {
             transform: translateY(-3px);
             box-shadow: 0 12px 35px rgba(51, 109, 102, 0.5);
         }
-        
+
         .btn-video {
             background: rgba(255, 255, 255, 0.2);
             color: white;
@@ -140,70 +140,77 @@
             display: inline-flex;
             align-items: center;
         }
-        
+
         .btn-video:hover {
             background: rgba(255, 255, 255, 0.3);
             transform: translateY(-3px);
         }
-        
+
         /* Hero Section */
         .hero-container {
             background: linear-gradient(135deg, #336d66 0%, #20b6d2 50%, #aec896 100%);
             position: relative;
         }
-        
+
         .mountain-gradient {
             background: linear-gradient(135deg, #336d66 0%, #20b6d2 50%, #aec896 100%);
         }
-        
+
         .mountain-logo {
             transition: all 0.3s ease;
         }
-        
+
         .mountain-logo:hover {
             transform: scale(1.05);
         }
-        
+
         /* Animation Classes */
         .animate-fade-in {
             animation: fadeIn 1s ease-out;
         }
-        
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        
+
         /* Stats Section */
         .stats-item {
             transition: all 0.3s ease;
         }
-        
+
         .stats-item:hover {
             transform: translateY(-5px);
         }
-        
+
         /* Plan Trip Section */
         .plan-trip-container {
             background: linear-gradient(135deg, rgba(174, 200, 150, 0.05) 0%, white 100%);
         }
-        
+
         .planner-showcase {
             background: white;
             border-radius: 24px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
             border: 1px solid rgba(174, 200, 150, 0.2);
         }
-        
+
         .mountain-search {
             background: white;
             transition: all 0.3s ease;
         }
-        
+
         .mountain-search:focus {
             box-shadow: 0 0 0 4px rgba(32, 182, 210, 0.2);
         }
-        
+
         .quick-search-card {
             background: white;
             padding: 24px;
@@ -212,7 +219,7 @@
             transition: all 0.3s ease;
             text-align: center;
         }
-        
+
         .quick-search-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
@@ -263,12 +270,12 @@
             color: white;
             box-shadow: 0 4px 15px rgba(51, 109, 102, 0.3);
         }
-        
+
         /* Features Section */
         .features-container {
             background: white;
         }
-        
+
         .feature-showcase {
             background: white;
             padding: 32px;
@@ -278,7 +285,7 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .feature-showcase::before {
             content: '';
             position: absolute;
@@ -290,17 +297,17 @@
             transform: scaleX(0);
             transition: transform 0.3s ease;
         }
-        
+
         .feature-showcase:hover::before {
             transform: scaleX(1);
         }
-        
+
         .feature-showcase:hover {
             transform: translateY(-8px);
             box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12);
             border-color: rgba(51, 109, 102, 0.3);
         }
-        
+
         .feature-icon {
             width: 64px;
             height: 64px;
@@ -311,16 +318,16 @@
             margin: 0 auto 20px auto;
             transition: all 0.3s ease;
         }
-        
+
         .feature-showcase:hover .feature-icon {
             transform: scale(1.1);
         }
-        
+
         /* Footer */
         .footer-container {
             background: white;
         }
-        
+
         .social-link {
             width: 40px;
             height: 40px;
@@ -332,13 +339,13 @@
             color: #336d66;
             transition: all 0.3s ease;
         }
-        
+
         .social-link:hover {
             background: #336d66;
             color: white;
             transform: translateY(-2px);
         }
-        
+
         /* Trail Showcase Animation Styles */
         .trails-showcase-container {
             position: absolute;
@@ -349,11 +356,63 @@
             overflow: hidden;
             pointer-events: none;
         }
+        
+            /* Parallax hero (scoped) */
+            .parallax-hero {
+                position: absolute;
+                inset: 0;
+                overflow: hidden;
+                pointer-events: none;
+                z-index: 0; /* sit above section background but behind hero content */
+            }
+        
+            .parallax-hero .parallax-layer {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 200%; /* wider to allow horizontal parallax movement */
+                height: 100%;
+                background-repeat: repeat-x;
+                background-position: 0 100%;
+                will-change: background-position;
+                opacity: 1;
+            }
+        
+            .parallax-hero .layer-1 { background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/1.png) 0 100% repeat-x; background-size: auto 136px; animation: parallax_fg_1 linear 20s infinite both; }
+            .parallax-hero .layer-2 { background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/2.png) 0 100% repeat-x; background-size: auto 145px; animation: parallax_fg_2 linear 30s infinite both; }
+            .parallax-hero .layer-3 { background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/3.png) 0 100% repeat-x; background-size: auto 158px; animation: parallax_fg_3 linear 55s infinite both; }
+            .parallax-hero .layer-4 { background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/4.png) 0 100% repeat-x; background-size: auto 468px; animation: parallax_fg_4 linear 75s infinite both; }
+            .parallax-hero .layer-5 { background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/5.png) 0 100% repeat-x; background-size: auto 311px; animation: parallax_fg_5 linear 95s infinite both; }
+            .parallax-hero .layer-6 { background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/6.png) 0 100% repeat-x; background-size: auto 222px; animation: parallax_fg_6 linear 120s infinite both; }
+        
+            /* simple bike/walker decorative layers (reduced complexity) */
+            .parallax-hero .bike-1 { background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/bike.png) 0 100% no-repeat; background-size: auto 75px; bottom: 120px; animation: parallax_bike 18s linear infinite; opacity: .6; }
+            .parallax-hero .bike-2 { background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/bike.png) 0 100% no-repeat; background-size: auto 75px; bottom: 150px; animation: parallax_bike 25s linear infinite; opacity: .5; }
+            .parallax-hero .walker-1, .parallax-hero .walker-2 { width: 110px; height: 110px; }
+            .parallax-hero .walker-1::before, .parallax-hero .walker-2::before { content: ''; position: absolute; inset: 0; background-image: url("/resources/parallax-hero-sample/img/hiker.svg"); background-size: 100% 100%; background-repeat: no-repeat; opacity: .6; }
+        
+            /* keyframes (scoped names to avoid collisions) */
+            @keyframes parallax_fg_1 { 0% { background-position: 2765px 100%; } 100% { background-position: 550px 100%; } }
+            @keyframes parallax_fg_2 { 0% { background-position: 2765px 100%; } 100% { background-position: 550px 100%; } }
+            @keyframes parallax_fg_3 { 0% { background-position: 2765px 100%; } 100% { background-position: 550px 100%; } }
+            @keyframes parallax_fg_4 { 0% { background-position: 2765px 100%; } 100% { background-position: 550px 100%; } }
+            @keyframes parallax_fg_5 { 0% { background-position: 2765px 100%; } 100% { background-position: 550px 100%; } }
+            @keyframes parallax_fg_6 { 0% { background-position: 2765px 100%; } 100% { background-position: 550px 100%; } }
+        
+            @keyframes parallax_bike { 0% { background-position: -300px 100%; } 100% { background-position: 2000px 100%; } }
+
+            /* Ensure hero content stays on top of the parallax layers */
+            .hero-container .max-w-6xl,
+            .hero-container .hero-content {
+                position: relative;
+                z-index: 10;
+            }
 
         /* Per-pixel text blending - fix overlay positioning */
         .text-with-mask {
             position: relative;
-            display: block; /* Changed from inline-block to block for proper stacking */
+            display: block;
+            /* Changed from inline-block to block for proper stacking */
         }
 
         .text-mask-overlay {
@@ -365,12 +424,14 @@
             background: transparent;
             mix-blend-mode: multiply;
             pointer-events: none;
-            z-index: 1; /* Ensure it's above the text but below other content */
+            z-index: 1;
+            /* Ensure it's above the text but below other content */
         }
 
         /* Ensure text is behind the overlay for proper blending */
         .text-with-mask {
-            isolation: isolate; /* Create new stacking context */
+            isolation: isolate;
+            /* Create new stacking context */
         }
 
         .hero-trail-card {
@@ -429,19 +490,22 @@
 
         /* Trail Movement Animations */
         @keyframes heroTrailMove {
-            0% { 
-                transform: translateX(calc(100vw + 280px)); 
-                opacity: 0; 
+            0% {
+                transform: translateX(calc(100vw + 280px));
+                opacity: 0;
             }
-            3% { 
-                opacity: 1; 
+
+            3% {
+                opacity: 1;
             }
-            97% { 
-                opacity: 1; 
+
+            97% {
+                opacity: 1;
             }
-            100% { 
-                transform: translateX(-280px); 
-                opacity: 0; 
+
+            100% {
+                transform: translateX(-280px);
+                opacity: 0;
             }
         }
 
@@ -451,48 +515,56 @@
         }
 
         /* Individual Trail Positions and Timings */
-        .hero-trail-1 { 
-            top: 15%; 
+        .hero-trail-1 {
+            top: 15%;
             animation: heroTrailMove 30s linear infinite;
             animation-delay: 0s;
         }
-        .hero-trail-2 { 
-            top: 25%; 
+
+        .hero-trail-2 {
+            top: 25%;
             animation: heroTrailMove 35s linear infinite;
             animation-delay: 4s;
         }
-        .hero-trail-3 { 
-            top: 35%; 
+
+        .hero-trail-3 {
+            top: 35%;
             animation: heroTrailMove 28s linear infinite;
             animation-delay: 8s;
         }
-        .hero-trail-4 { 
-            top: 45%; 
+
+        .hero-trail-4 {
+            top: 45%;
             animation: heroTrailMove 32s linear infinite;
             animation-delay: 12s;
         }
-        .hero-trail-5 { 
-            top: 55%; 
+
+        .hero-trail-5 {
+            top: 55%;
             animation: heroTrailMove 29s linear infinite;
             animation-delay: 16s;
         }
-        .hero-trail-6 { 
-            top: 65%; 
+
+        .hero-trail-6 {
+            top: 65%;
             animation: heroTrailMove 33s linear infinite;
             animation-delay: 20s;
         }
-        .hero-trail-7 { 
-            top: 75%; 
+
+        .hero-trail-7 {
+            top: 75%;
             animation: heroTrailMove 31s linear infinite;
             animation-delay: 24s;
         }
-        .hero-trail-8 { 
-            top: 20%; 
+
+        .hero-trail-8 {
+            top: 20%;
             animation: heroTrailMove 34s linear infinite;
             animation-delay: 28s;
         }
-        .hero-trail-9 { 
-            top: 60%; 
+
+        .hero-trail-9 {
+            top: 60%;
             animation: heroTrailMove 27s linear infinite;
             animation-delay: 32s;
         }
@@ -503,15 +575,15 @@
                 padding-top: 24px;
                 padding-bottom: 16px;
             }
-            
+
             h1 {
                 font-size: 3rem;
             }
-            
+
             .planner-showcase {
                 padding: 24px;
             }
-            
+
             .feature-showcase {
                 padding: 24px;
             }
@@ -571,19 +643,22 @@
             }
 
             @keyframes heroTrailMove {
-                0% { 
-                    transform: translateX(calc(100vw + 220px)); 
-                    opacity: 0; 
+                0% {
+                    transform: translateX(calc(100vw + 220px));
+                    opacity: 0;
                 }
-                3% { 
-                    opacity: 1; 
+
+                3% {
+                    opacity: 1;
                 }
-                97% { 
-                    opacity: 1; 
+
+                97% {
+                    opacity: 1;
                 }
-                100% { 
-                    transform: translateX(-220px); 
-                    opacity: 0; 
+
+                100% {
+                    transform: translateX(-220px);
+                    opacity: 0;
                 }
             }
         }
@@ -808,18 +883,41 @@
         }
 
         @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
         }
 
         @keyframes slideInRight {
-            from { transform: translateX(100px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from {
+                transform: translateX(100px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         @keyframes fadeInUp {
-            from { transform: translateY(30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         .tutorial-benefits {
@@ -894,18 +992,18 @@
                 margin: 10px;
                 max-height: 95vh;
             }
-            
+
             .feature-tutorial-header,
             .feature-tutorial-body {
                 padding: 20px;
             }
-            
+
             .tutorial-step {
                 padding: 16px;
             }
         }
     </style>
-    
+
     <!-- Navigation -->
     <nav class="nav-container nav-blur fixed w-full top-0 left-0 z-50 shadow-lg">
         <div class="max-w-7xl mx-auto px-6 flex justify-between items-center h-20">
@@ -966,6 +1064,20 @@
         <!-- Animated Trail Cards Background -->
         <div class="trails-showcase-container">
             <!-- Trail cards will be dynamically populated here -->
+        </div>
+
+        <!-- Parallax hero background (inserted from sample) -->
+        <div class="parallax-hero" aria-hidden="true">
+            <div class="parallax-layer layer-6"></div>
+            <div class="parallax-layer layer-5"></div>
+            <div class="parallax-layer layer-4"></div>
+            <div class="parallax-layer bike-1"></div>
+            <div class="parallax-layer bike-2"></div>
+            <div class="parallax-layer walker-1"></div>
+            <div class="parallax-layer walker-2"></div>
+            <div class="parallax-layer layer-3"></div>
+            <div class="parallax-layer layer-2"></div>
+            <div class="parallax-layer layer-1"></div>
         </div>
 
         <div class="absolute inset-0">
@@ -1037,7 +1149,7 @@
                     <h3 class="font-bold text-lg mb-2">Easy Discovery</h3>
                     <p class="text-gray-600 text-sm">Find trails perfect for your skill level</p>
                 </div>
-                
+
                 <div class="text-center p-6 rounded-lg bg-gradient-to-br from-[#20b6d2]/5 to-white">
                     <div class="w-12 h-12 bg-[#20b6d2]/10 rounded-xl flex items-center justify-center mb-4 mx-auto">
                         <span class="iconify text-[#20b6d2]" data-icon="mdi:shield-check" style="font-size:1.5rem;"></span>
@@ -1045,7 +1157,7 @@
                     <h3 class="font-bold text-lg mb-2">Stay Safe</h3>
                     <p class="text-gray-600 text-sm">Real-time conditions and emergency tools</p>
                 </div>
-                
+
                 <div class="text-center p-6 rounded-lg bg-gradient-to-br from-[#e3a746]/5 to-white">
                     <div class="w-12 h-12 bg-[#e3a746]/10 rounded-xl flex items-center justify-center mb-4 mx-auto">
                         <span class="iconify text-[#e3a746]" data-icon="mdi:account-group" style="font-size:1.5rem;"></span>
@@ -1053,7 +1165,7 @@
                     <h3 class="font-bold text-lg mb-2">Join Community</h3>
                     <p class="text-gray-600 text-sm">Connect with fellow hiking enthusiasts</p>
                 </div>
-                
+
                 <div class="text-center p-6 rounded-lg bg-gradient-to-br from-[#dfa648]/5 to-white">
                     <div class="w-12 h-12 bg-[#dfa648]/10 rounded-xl flex items-center justify-center mb-4 mx-auto">
                         <span class="iconify text-[#dfa648]" data-icon="mdi:cellphone" style="font-size:1.5rem;"></span>
@@ -1079,7 +1191,7 @@
                     </svg>
                 </button>
             </div>
-            
+
             <div class="modal-body p-6 pb-12 relative">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
                     <!-- Main Trail Info -->
@@ -1090,36 +1202,36 @@
                                 <!-- Left Column: Main Image -->
                                 <div class="relative">
                                     <img id="modal-trail-image" src="" alt="Trail Image" class="w-full h-80 object-cover rounded-xl">
-                                    
+
                                     <!-- Previous Button -->
-                                    <button id="prev-image-btn" onclick="previousModalImage()" 
-                                            class="absolute inset-y-0 left-0 flex items-center ml-4 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm transition-all opacity-0 invisible">
+                                    <button id="prev-image-btn" onclick="previousModalImage()"
+                                        class="absolute inset-y-0 left-0 flex items-center ml-4 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm transition-all opacity-0 invisible">
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                                         </svg>
                                     </button>
-                                    
+
                                     <!-- Next Button -->
-                                    <button id="next-image-btn" onclick="nextModalImage()" 
-                                            class="absolute inset-y-0 right-0 flex items-center mr-4 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm transition-all opacity-0 invisible">
+                                    <button id="next-image-btn" onclick="nextModalImage()"
+                                        class="absolute inset-y-0 right-0 flex items-center mr-4 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm transition-all opacity-0 invisible">
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                         </svg>
                                     </button>
-                                    
+
                                     <!-- Image Counter -->
-                                    <div id="image-counter" 
-                                         class="absolute top-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm opacity-0 invisible">
+                                    <div id="image-counter"
+                                        class="absolute top-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm opacity-0 invisible">
                                         <span id="current-image-num">1</span> / <span id="total-images">1</span>
                                     </div>
-                                    
+
                                     <!-- Difficulty Badge -->
                                     <div class="absolute top-4 left-4">
                                         <span id="modal-difficulty-badge" class="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
                                             Easy
                                         </span>
                                     </div>
-                                    
+
                                     <!-- Rating Badge -->
                                     <div class="absolute bottom-4 left-4 bg-white bg-opacity-90 rounded-full px-3 py-1">
                                         <div class="flex items-center space-x-1">
@@ -1327,7 +1439,7 @@
                                 Search
                             </button>
                         </div>
-                        
+
                         <!-- Filter Dropdown -->
                         <div class="relative">
                             <select id="trail-filter" class="appearance-none bg-white border-2 border-gray-200 rounded-2xl px-6 py-4 pr-12 text-lg font-medium text-gray-700 focus:ring-4 focus:ring-[#20b6d2]/20 focus:border-[#20b6d2] transition-all duration-300 shadow-lg cursor-pointer min-w-[200px]">
@@ -1351,8 +1463,8 @@
                     <div class="text-center mb-8">
                         <h3 id="results-title" class="text-2xl font-bold text-[#336d66] mb-2">Search Results</h3>
                         <p id="results-subtitle" class="text-gray-600">Found trails matching your search</p>
-                        <button id="back-to-browse" onclick="clearSearch()" 
-                                class="mt-4 text-[#336d66] hover:text-[#20b6d2] font-medium transition-colors duration-300">
+                        <button id="back-to-browse" onclick="clearSearch()"
+                            class="mt-4 text-[#336d66] hover:text-[#20b6d2] font-medium transition-colors duration-300">
                             ← Back to Browse Categories
                         </button>
                     </div>
@@ -1361,8 +1473,8 @@
                     </div>
                     <!-- Show More Button -->
                     <div id="show-more-container" class="text-center mt-8 hidden">
-                        <button id="show-more-btn" 
-                                class="bg-[#336d66] text-white px-8 py-3 rounded-xl hover:bg-[#20b6d2] transition-colors duration-300 font-medium">
+                        <button id="show-more-btn"
+                            class="bg-[#336d66] text-white px-8 py-3 rounded-xl hover:bg-[#20b6d2] transition-colors duration-300 font-medium">
                             Show More Trails
                         </button>
                         <p id="trails-count-info" class="text-gray-500 text-sm mt-2">Showing 9 of X trails</p>
@@ -1373,8 +1485,8 @@
                         </div>
                         <h3 class="text-xl font-semibold text-gray-700 mb-2">No trails found</h3>
                         <p class="text-gray-500">Try adjusting your search terms or browse our categories below</p>
-                        <button onclick="clearSearch()" 
-                                class="mt-4 bg-[#336d66] text-white px-6 py-2 rounded-lg hover:bg-[#20b6d2] transition-colors duration-300">
+                        <button onclick="clearSearch()"
+                            class="mt-4 bg-[#336d66] text-white px-6 py-2 rounded-lg hover:bg-[#20b6d2] transition-colors duration-300">
                             Browse Categories
                         </button>
                     </div>
@@ -1461,10 +1573,10 @@
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-4">Enter Your Location</h3>
                     <div class="space-y-4">
-                        <input id="manual-lat" type="number" step="any" placeholder="Latitude (e.g., 14.5995)" 
-                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#20b6d2] focus:border-transparent">
-                        <input id="manual-lng" type="number" step="any" placeholder="Longitude (e.g., 120.9842)" 
-                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#20b6d2] focus:border-transparent">
+                        <input id="manual-lat" type="number" step="any" placeholder="Latitude (e.g., 14.5995)"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#20b6d2] focus:border-transparent">
+                        <input id="manual-lng" type="number" step="any" placeholder="Longitude (e.g., 120.9842)"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#20b6d2] focus:border-transparent">
                         <div class="flex space-x-3">
                             <button id="use-manual-location-btn" class="flex-1 bg-[#336d66] text-white px-4 py-3 rounded-xl hover:bg-[#20b6d2] transition-colors duration-300 font-medium">
                                 Find Trails
@@ -1517,8 +1629,8 @@
 
                 <!-- Show More Button -->
                 <div id="nearby-show-more-container" class="text-center hidden">
-                    <button id="nearby-show-more-btn" 
-                            class="bg-[#336d66] text-white px-8 py-3 rounded-xl hover:bg-[#20b6d2] transition-colors duration-300 font-medium">
+                    <button id="nearby-show-more-btn"
+                        class="bg-[#336d66] text-white px-8 py-3 rounded-xl hover:bg-[#20b6d2] transition-colors duration-300 font-medium">
                         Show More Nearby Trails
                     </button>
                     <p id="nearby-trails-count" class="text-gray-500 text-sm mt-2">Showing 3 of X trails</p>
@@ -1594,9 +1706,9 @@
 
                 <div class="feature-showcase group cursor-pointer" onclick="openFeatureTutorial('safety-framework')">
                     <div class="feature-icon bg-[#20b6d2]/10">
-                      <span class="iconify text-red-600" data-icon="fa6-solid:phone" style="font-size:1.5rem;"></span>
+                        <span class="iconify text-red-600" data-icon="fa6-solid:phone" style="font-size:1.5rem;"></span>
                     </div>
-                    <h3 class="font-bold text-xl mb-3 text-gray-800">Safety Framework</h3> 
+                    <h3 class="font-bold text-xl mb-3 text-gray-800">Safety Framework</h3>
                     <p class="text-gray-600 leading-relaxed mb-4">HikeThere’s safety framework is a structured set of guidelines and tools that help ensure every trip is planned and enjoyed with minimal risk to hikers and the environment.</p>
                     <div class="text-[#20b6d2] font-medium text-sm">Learn More →</div>
                 </div>
@@ -2195,7 +2307,7 @@
 
                 <div class="community-feature text-center">
                     <div class="w-16 h-16 bg-[#e3a746]/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                       <span class="iconify text-amber-500" data-icon="mdi:account-tie" style="font-size:1.5rem;"></span>
+                        <span class="iconify text-amber-500" data-icon="mdi:account-tie" style="font-size:1.5rem;"></span>
                     </div>
                     <h3 class="text-xl font-bold mb-3 text-gray-800">Expert Guidance</h3>
                     <p class="text-gray-600">Get advice from experienced hikers and certified outdoor professionals.</p>
@@ -2215,85 +2327,108 @@
     </section>
 
     <!-- Footer -->
-    <footer class="footer-container bg-white py-12 border-t border-gray-200">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-                <div class="col-span-1 md:col-span-2">
-                    <a href="/" class="flex items-center space-x-3 mb-6">
-                        <svg class="w-8 h-8 text-[#336d66]" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2L2 22h20L12 2z" />
-                        </svg>
-                        <span class="font-bold text-xl text-[#336d66]">HikeThere</span>
+    <footer class="bg-white dark:bg-gray-900">
+        <div class="mx-auto w-full max-w-screen-xl p-4 py-6 lg:py-8">
+            <div class="md:flex md:justify-between">
+                <div class="mb-6 md:mb-0">
+                    <a href="/" class="flex items-center space-x-3 mountain-logo group">
+                        <div class="relative">
+                            <img src="{{ asset('img/icon1.png') }}" alt="{{ config('app.name', 'HikeThere') }} logo" class="h-9 w-auto">
+                        </div>
+                        <span class="font-bold text-xl text-[#336d66]">{{ config('app.name', 'HikeThere') }}</span>
                     </a>
-                    <p class="text-gray-600 mb-6 max-w-md">
-                        Your trusted companion for safe, enjoyable, and well-prepared hiking adventures. Explore with confidence.
-                    </p>
-                    <div class="flex space-x-4">
-                        <a href="#" class="social-link">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
-                            </svg>
-                        </a>
-                        <a href="#" class="social-link">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.35 0-.69-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z" />
-                            </svg>
-                        </a>
-                        <a href="#" class="social-link">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.174-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.75.097.118.11.22.082.341-.09.369-.293 1.199-.334 1.363-.053.225-.172.271-.402.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.357-.629-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24.009 12.017 24c6.624 0 11.99-5.367 11.99-11.988C24.007 5.367 18.641.001.012.001z" />
-                            </svg>
-                        </a>
-                        <a href="#" class="social-link">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                            </svg>
-                        </a>
+                </div>
+
+                <div class="grid grid-cols-2 gap-8 sm:gap-6 sm:grid-cols-3">
+                    <div>
+                        <h2 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Resources</h2>
+                        <ul class="text-gray-500 dark:text-gray-400 font-medium">
+                            <li class="mb-4">
+                                <a href="/trails" class="hover:underline">Trails</a>
+                            </li>
+                            <li>
+                                <a href="https://tailwindcss.com/" class="hover:underline">Tailwind CSS</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h2 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Follow us</h2>
+                        <ul class="text-gray-500 dark:text-gray-400 font-medium">
+                            <li class="mb-4">
+                                <a href="https://github.com/themesberg/flowbite" class="hover:underline ">Github</a>
+                            </li>
+                            <li>
+                                <a href="https://discord.gg/4eeurUVvTy" class="hover:underline">Discord</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h2 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Legal</h2>
+                        <ul class="text-gray-500 dark:text-gray-400 font-medium">
+                            <li class="mb-4">
+                                <a href="/privacy" class="hover:underline">Privacy Policy</a>
+                            </li>
+                            <li>
+                                <a href="/terms" class="hover:underline">Terms &amp; Conditions</a>
+                            </li>
+                        </ul>
                     </div>
                 </div>
-
-                <div>
-                    <h4 class="font-bold text-gray-800 mb-4">Product</h4>
-                    <ul class="space-y-3 text-gray-600">
-                        <li><a href="#" class="hover:text-[#20b6d2] transition-colors">Features</a></li>
-                        <li><a href="#" class="hover:text-[#20b6d2] transition-colors">Pricing</a></li>
-                        <li><a href="#" class="hover:text-[#20b6d2] transition-colors">Mobile App</a></li>
-                        <li><a href="#" class="hover:text-[#20b6d2] transition-colors">API</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 class="font-bold text-gray-800 mb-4">Support</h4>
-                    <ul class="space-y-3 text-gray-600">
-                        <li><a href="#" class="hover:text-[#20b6d2] transition-colors">Help Center</a></li>
-                        <li><a href="#" class="hover:text-[#20b6d2] transition-colors">Safety Guidelines</a></li>
-                        <li><a href="#" class="hover:text-[#20b6d2] transition-colors">Contact Us</a></li>
-                        <li><a href="#" class="hover:text-[#20b6d2] transition-colors">Community Forum</a></li>
-                    </ul>
-                </div>
             </div>
-
-            <div class="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-gray-600 text-sm mb-4 md:mb-0">
-                    &copy; {{ date('Y') }} HikeThere. All rights reserved.
-                </p>
-                <div class="flex space-x-6 text-sm text-gray-600">
-                    <a href="#" class="hover:text-[#20b6d2] transition-colors">Privacy Policy</a>
-                    <a href="#" class="hover:text-[#20b6d2] transition-colors">Terms of Service</a>
-                    <a href="#" class="hover:text-[#20b6d2] transition-colors">Cookie Policy</a>
+            <hr class="my-6 border-gray-200 sm:mx-auto dark:border-gray-700 lg:my-8" />
+            <div class="sm:flex sm:items-center sm:justify-between">
+                <span class="text-sm text-gray-500 sm:text-center dark:text-gray-400">© {{ date('Y') }} <a href="/" class="hover:underline">{{ config('app.name', 'HikeThere') }}</a>. All Rights Reserved.
+                </span>
+                <div class="flex mt-4 sm:justify-center sm:mt-0">
+                    <a href="#" class="text-gray-500 hover:text-gray-900 dark:hover:text-white">
+                        <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 8 19">
+                            <path fill-rule="evenodd" d="M6.135 3H8V0H6.135a4.147 4.147 0 0 0-4.142 4.142V6H0v3h2v9.938h3V9h2.021l.592-3H5V3.591A.6.6 0 0 1 5.592 3h.543Z" clip-rule="evenodd" />
+                        </svg>
+                        <span class="sr-only">Facebook page</span>
+                    </a>
+                    <a href="#" class="text-gray-500 hover:text-gray-900 dark:hover:text-white ms-5">
+                        <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 21 16">
+                            <path d="M16.942 1.556a16.3 16.3 0 0 0-4.126-1.3 12.04 12.04 0 0 0-.529 1.1 15.175 15.175 0 0 0-4.573 0 11.585 11.585 0 0 0-.535-1.1 16.274 16.274 0 0 0-4.129 1.3A17.392 17.392 0 0 0 .182 13.218a15.785 15.785 0 0 0 4.963 2.521c.41-.564.773-1.16 1.084-1.785a10.63 10.63 0 0 1-1.706-.83c.143-.106.283-.217.418-.33a11.664 11.664 0 0 0 10.118 0c.137.113.277.224.418.33-.544.328-1.116.606-1.71.832a12.52 12.52 0 0 0 1.084 1.785 16.46 16.46 0 0 0 5.064-2.595 17.286 17.286 0 0 0-2.973-11.59ZM6.678 10.813a1.941 1.941 0 0 1-1.8-2.045 1.93 1.93 0 0 1 1.8-2.047 1.919 1.919 0 0 1 1.8 2.047 1.93 1.93 0 0 1-1.8 2.045Zm6.644 0a1.94 1.94 0 0 1-1.8-2.045 1.93 1.93 0 0 1 1.8-2.047 1.918 1.918 0 0 1 1.8 2.047 1.93 1.93 0 0 1-1.8 2.045Z" />
+                        </svg>
+                        <span class="sr-only">Discord community</span>
+                    </a>
+                    <a href="#" class="text-gray-500 hover:text-gray-900 dark:hover:text-white ms-5">
+                        <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 17">
+                            <path fill-rule="evenodd" d="M20 1.892a8.178 8.178 0 0 1-2.355.635 4.074 4.074 0 0 0 1.8-2.235 8.344 8.344 0 0 1-2.605.98A4.13 4.13 0 0 0 13.85 0a4.068 4.068 0 0 0-4.1 4.038 4 4 0 0 0 .105.919A11.705 11.705 0 0 1 1.4.734a4.006 4.006 0 0 0 1.268 5.392 4.165 4.165 0 0 1-1.859-.5v.05A4.057 4.057 0 0 0 4.1 9.635a4.19 4.19 0 0 1-1.856.07 4.108 4.108 0 0 0 3.831 2.807A8.36 8.36 0 0 1 0 14.184 11.732 11.732 0 0 0 6.291 16 11.502 11.502 0 0 0 17.964 4.5c0-.177 0-.35-.012-.523A8.143 8.143 0 0 0 20 1.892Z" clip-rule="evenodd" />
+                        </svg>
+                        <span class="sr-only">Twitter page</span>
+                    </a>
+                    <a href="#" class="text-gray-500 hover:text-gray-900 dark:hover:text-white ms-5">
+                        <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 .333A9.911 9.911 0 0 0 6.866 19.65c.5.092.678-.215.678-.477 0-.237-.01-1.017-.014-1.845-2.757.6-3.338-1.169-3.338-1.169a2.627 2.627 0 0 0-1.1-1.451c-.9-.615.07-.6.07-.6a2.084 2.084 0 0 1 1.518 1.021 2.11 2.11 0 0 0 2.884.823c.044-.503.268-.973.63-1.325-2.2-.25-4.516-1.1-4.516-4.9A3.832 3.832 0 0 1 4.7 7.068a3.56 3.56 0 0 1 .095-2.623s.832-.266 2.726 1.016a9.409 9.409 0 0 1 4.962 0c1.89-1.282 2.717-1.016 2.717-1.016.366.83.402 1.768.1 2.623a3.827 3.827 0 0 1 1.02 2.659c0 3.807-2.319 4.644-4.525 4.889a2.366 2.366 0 0 1 .673 1.834c0 1.326-.012 2.394-.012 2.72 0 .263.18.572.681.475A9.911 9.911 0 0 0 10 .333Z" clip-rule="evenodd" />
+                    </a>
                 </div>
             </div>
         </div>
     </footer>
 
     <!-- Mobile Menu Toggle Script -->
+    <script type="application/json" id="app-config">{!! json_encode([
+        'authenticated' => auth()->check(),
+        'defaultTrailImage' => asset('img/default-trail.jpg'),
+        'appName' => config('app.name'),
+    ]) !!}</script>
+
     <script>
-        // Blade asset URLs for JavaScript
-        const DEFAULT_TRAIL_IMAGE = '{{ asset('img/default-trail.jpg') }}';
-        
-        // Authentication status
-        const IS_AUTHENTICATED = @json(auth()->check());
-        
+        // Read pre-rendered app config to avoid Blade tokens inside JS
+        const APP_CONFIG = (() => {
+            try {
+                const el = document.getElementById('app-config');
+                return el ? JSON.parse(el.textContent || '{}') : {};
+            } catch (e) {
+                console.error('Failed to parse APP_CONFIG', e);
+                return {};
+            }
+        })();
+
+        const DEFAULT_TRAIL_IMAGE = APP_CONFIG.defaultTrailImage || '';
+        const IS_AUTHENTICATED = !!APP_CONFIG.authenticated;
+
         // Expose quickSearch globally for inline onclick (must be at top)
         function quickSearch(category) {
             const searchInput = document.getElementById('trail-search-input');
@@ -2308,7 +2443,7 @@
 
         // API configuration
         const API_BASE_URL = '/api';
-        
+
         let trailsData = [];
         let currentPage = 1;
         let hasMoreTrails = false;
@@ -2328,7 +2463,7 @@
             try {
                 const response = await fetch(`${API_BASE_URL}/trails/search-trails?limit=9`);
                 const data = await response.json();
-                
+
                 if (data.success && data.trails.length > 0) {
                     heroTrailsData = data.trails;
                     displayHeroTrails();
@@ -2345,7 +2480,7 @@
             const locationPermission = document.getElementById('location-permission');
             const locationError = document.getElementById('location-error');
             const nearbyLoading = document.getElementById('nearby-trails-loading');
-            
+
             locationPermission.classList.add('hidden');
             locationError.classList.add('hidden');
             nearbyLoading.classList.remove('hidden');
@@ -2382,8 +2517,8 @@
                     console.error('Geolocation error:', error);
                     let errorMessage = 'Unable to retrieve your location.';
                     let debugInfo = '';
-                    
-                    switch(error.code) {
+
+                    switch (error.code) {
                         case error.PERMISSION_DENIED:
                             errorMessage = 'Location access was denied. Please check your browser settings and try again.';
                             debugInfo = 'Error code: PERMISSION_DENIED';
@@ -2401,14 +2536,13 @@
                             debugInfo = `Error code: ${error.code}`;
                             break;
                     }
-                    
+
                     console.log('Debug info:', debugInfo);
                     console.log('Error message:', error.message);
-                    
+
                     // Show both user-friendly message and debug info
                     showLocationError(errorMessage + (debugInfo ? ` (${debugInfo})` : ''));
-                },
-                {
+                }, {
                     enableHighAccuracy: false, // Changed to false for better compatibility
                     timeout: 15000, // Increased timeout
                     maximumAge: 300000 // 5 minutes
@@ -2419,7 +2553,7 @@
         function showLocationError(message) {
             const nearbyLoading = document.getElementById('nearby-trails-loading');
             const locationError = document.getElementById('location-error');
-            
+
             nearbyLoading.classList.add('hidden');
             locationError.classList.remove('hidden');
             locationError.querySelector('p').textContent = message;
@@ -2428,21 +2562,24 @@
         // Test function for debugging - can be called from browser console
         function testNearbyWithCoords(lat, lng) {
             console.log('Testing with coordinates:', lat, lng);
-            userLocation = { latitude: lat, longitude: lng };
+            userLocation = {
+                latitude: lat,
+                longitude: lng
+            };
             document.getElementById('location-permission').classList.add('hidden');
             document.getElementById('location-error').classList.add('hidden');
             document.getElementById('manual-location-input').classList.add('hidden');
             document.getElementById('nearby-trails-content').classList.remove('hidden');
             fetchNearbyTrails();
         }
-        
+
         // Test function to check if there are ANY trails in the database
         async function testAllTrails() {
             console.log('=== Testing All Trails Endpoint ===');
             try {
                 const response = await fetch(`${API_BASE_URL}/trails?limit=10`);
                 console.log('All trails response status:', response.status);
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     console.log('Total trails in database:', data);
@@ -2460,7 +2597,7 @@
             try {
                 const response = await fetch(`${API_BASE_URL}/trails/debug`);
                 console.log('Debug response status:', response.status);
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     console.log('Debug database info:', data);
@@ -2481,7 +2618,7 @@ Sample Trails: ${data.sample_trails.length}`);
                 alert('Error testing debug endpoint: ' + error.message);
             }
         }
-        
+
         // Make test functions globally available
         window.testNearbyWithCoords = testNearbyWithCoords;
         window.testAllTrails = testAllTrails;
@@ -2493,7 +2630,7 @@ Sample Trails: ${data.sample_trails.length}`);
             console.log('User location:', userLocation);
             console.log('Page:', page);
             console.log('Current distance:', currentDistance);
-            
+
             if (!userLocation) {
                 console.error('No user location available');
                 showLocationError('Location not available. Please enable location access.');
@@ -2519,10 +2656,10 @@ Sample Trails: ${data.sample_trails.length}`);
                     page: page,
                     per_page: page === 1 ? 3 : 6 // First load: 3 trails, subsequent: 6 trails
                 });
-                
+
                 const apiUrl = `${API_BASE_URL}/trails/nearby?${params}`;
                 console.log('API URL:', apiUrl);
-                
+
                 const response = await fetch(apiUrl);
                 console.log('Response status:', response.status);
                 console.log('Response headers:', Object.fromEntries(response.headers.entries()));
@@ -2535,7 +2672,7 @@ Sample Trails: ${data.sample_trails.length}`);
 
                 const data = await response.json();
                 console.log('API Response data:', data);
-                
+
                 if (page === 1) {
                     nearbyTrailsData = data.data || [];
                     nearbyCurrentPage = 1;
@@ -2546,7 +2683,7 @@ Sample Trails: ${data.sample_trails.length}`);
                 nearbyHasMore = data.has_more_pages || false;
                 console.log('Trails found:', nearbyTrailsData.length);
                 console.log('Has more pages:', nearbyHasMore);
-                
+
                 nearbyLoading.classList.add('hidden');
                 nearbyContent.classList.remove('hidden');
 
@@ -2555,7 +2692,7 @@ Sample Trails: ${data.sample_trails.length}`);
                     nearbyGrid.innerHTML = '';
                     showMoreContainer.classList.add('hidden');
                     noNearbyTrails.classList.remove('hidden');
-                    
+
                     // Update the no results message with more helpful info
                     const noResultsMessage = document.querySelector('#no-nearby-trails p');
                     noResultsMessage.textContent = `No trails found within ${currentDistance}km of your location. Try expanding your search radius or check back later as we add more trails.`;
@@ -2571,7 +2708,7 @@ Sample Trails: ${data.sample_trails.length}`);
                 console.error('Error message:', error.message);
                 console.error('Full error:', error);
                 nearbyLoading.classList.add('hidden');
-                
+
                 // Show more specific error message
                 let errorMessage = 'Failed to load nearby trails. ';
                 if (error.message.includes('404')) {
@@ -2583,7 +2720,7 @@ Sample Trails: ${data.sample_trails.length}`);
                 } else {
                     errorMessage += `Error: ${error.message}`;
                 }
-                
+
                 showLocationError(errorMessage);
             }
         }
@@ -2591,14 +2728,14 @@ Sample Trails: ${data.sample_trails.length}`);
         // Render nearby trails in the grid
         function renderNearbyTrails() {
             const nearbyGrid = document.getElementById('nearby-trails-grid');
-            
+
             nearbyGrid.innerHTML = nearbyTrailsData.map(trail => {
-                const imageUrl = trail.images && trail.images.length > 0 
-                    ? trail.images[0].url 
-                    : DEFAULT_TRAIL_IMAGE;
-                
+                const imageUrl = trail.images && trail.images.length > 0 ?
+                    trail.images[0].url :
+                    DEFAULT_TRAIL_IMAGE;
+
                 const distance = trail.distance ? parseFloat(trail.distance).toFixed(1) : 'N/A';
-                
+
                 return `
                     <div class="trail-card bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-200 cursor-pointer" 
                          onclick="openTrailModal(${trail.id})">
@@ -2655,13 +2792,13 @@ Sample Trails: ${data.sample_trails.length}`);
         function handleDistanceFilter(distance) {
             currentDistance = distance;
             nearbyCurrentPage = 1;
-            
+
             // Update active filter button
             document.querySelectorAll('.distance-filter-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             document.querySelector(`[data-distance="${distance}"]`).classList.add('active');
-            
+
             // Fetch trails with new distance
             fetchNearbyTrails(1);
         }
@@ -2670,56 +2807,59 @@ Sample Trails: ${data.sample_trails.length}`);
         function initNearbyTrails() {
             // Show location permission request initially
             document.getElementById('location-permission').classList.remove('hidden');
-            
+
             // Auto-trigger location request after a short delay
             setTimeout(() => {
                 console.log('Auto-triggering location request...');
                 requestLocation();
             }, 1000);
-            
+
             // Event listeners
             document.getElementById('enable-location-btn').addEventListener('click', requestLocation);
             document.getElementById('retry-location-btn').addEventListener('click', requestLocation);
-            
+
             // Manual location functionality
             document.getElementById('manual-location-btn').addEventListener('click', () => {
                 document.getElementById('location-permission').classList.add('hidden');
                 document.getElementById('location-error').classList.add('hidden');
                 document.getElementById('manual-location-input').classList.remove('hidden');
             });
-            
+
             document.getElementById('back-to-auto-btn').addEventListener('click', () => {
                 document.getElementById('manual-location-input').classList.add('hidden');
                 document.getElementById('location-permission').classList.remove('hidden');
             });
-            
+
             document.getElementById('use-manual-location-btn').addEventListener('click', () => {
                 const lat = parseFloat(document.getElementById('manual-lat').value);
                 const lng = parseFloat(document.getElementById('manual-lng').value);
-                
+
                 if (isNaN(lat) || isNaN(lng)) {
                     alert('Please enter valid latitude and longitude values.');
                     return;
                 }
-                
+
                 if (lat < -90 || lat > 90) {
                     alert('Latitude must be between -90 and 90.');
                     return;
                 }
-                
+
                 if (lng < -180 || lng > 180) {
                     alert('Longitude must be between -180 and 180.');
                     return;
                 }
-                
+
                 console.log('Using manual location:', lat, lng);
-                userLocation = { latitude: lat, longitude: lng };
-                
+                userLocation = {
+                    latitude: lat,
+                    longitude: lng
+                };
+
                 document.getElementById('manual-location-input').classList.add('hidden');
                 document.getElementById('nearby-trails-content').classList.remove('hidden');
                 fetchNearbyTrails();
             });
-            
+
             // Distance filter buttons
             document.querySelectorAll('.distance-filter-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -2727,7 +2867,7 @@ Sample Trails: ${data.sample_trails.length}`);
                     handleDistanceFilter(distance);
                 });
             });
-            
+
             // Show more nearby trails button
             document.getElementById('nearby-show-more-btn').addEventListener('click', () => {
                 nearbyCurrentPage++;
@@ -2739,10 +2879,10 @@ Sample Trails: ${data.sample_trails.length}`);
         function initTextBlending() {
             const textElements = [
                 document.getElementById('text-line-1'),
-                document.getElementById('text-line-2'), 
+                document.getElementById('text-line-2'),
                 document.getElementById('text-line-3')
             ];
-            
+
             // Initialize all text elements to white on page load
             textElements.forEach(textElement => {
                 if (textElement) {
@@ -2752,46 +2892,46 @@ Sample Trails: ${data.sample_trails.length}`);
                     textElement.style.color = 'white';
                 }
             });
-            
+
             // Store previous states to prevent rapid switching
             let previousStates = new Map();
-            
+
             // Track trail card positions and update text blending
             function updateTextBlending() {
                 const trailCards = document.querySelectorAll('.hero-trail-card');
-                
+
                 textElements.forEach((textElement, index) => {
                     if (!textElement) return;
-                    
+
                     const textRect = textElement.getBoundingClientRect();
                     const maskOverlay = textElement.querySelector('.text-mask-overlay');
-                    
+
                     if (!maskOverlay) return;
-                    
+
                     let cardPositions = [];
-                    
+
                     trailCards.forEach(card => {
                         const cardRect = card.getBoundingClientRect();
-                        
+
                         // Check if card overlaps with text horizontally
                         const horizontalOverlap = !(cardRect.right < textRect.left || cardRect.left > textRect.right);
-                        
+
                         // Check if card is vertically near the text
                         const verticalDistance = Math.min(
                             Math.abs(cardRect.top - textRect.bottom),
                             Math.abs(cardRect.bottom - textRect.top),
                             cardRect.top < textRect.bottom && cardRect.bottom > textRect.top ? 0 : Infinity
                         );
-                        
+
                         if (horizontalOverlap && verticalDistance < 120) {
                             // Calculate the horizontal overlap area
                             const overlapStart = Math.max(cardRect.left, textRect.left);
                             const overlapEnd = Math.min(cardRect.right, textRect.right);
-                            
+
                             // Convert to percentage of text width
                             const startPercent = ((overlapStart - textRect.left) / textRect.width) * 100;
                             const endPercent = ((overlapEnd - textRect.left) / textRect.width) * 100;
-                            
+
                             cardPositions.push({
                                 start: Math.max(0, startPercent),
                                 end: Math.min(100, endPercent),
@@ -2799,17 +2939,17 @@ Sample Trails: ${data.sample_trails.length}`);
                             });
                         }
                     });
-                    
+
                     if (cardPositions.length > 0) {
                         // Merge overlapping card positions for smooth blending
                         const mergedRanges = [];
-                        
+
                         // Sort card positions by start position
                         cardPositions.sort((a, b) => a.start - b.start);
-                        
+
                         for (let card of cardPositions) {
                             let merged = false;
-                            
+
                             // Try to merge with existing ranges
                             for (let range of mergedRanges) {
                                 // Check if this card overlaps with existing range
@@ -2822,7 +2962,7 @@ Sample Trails: ${data.sample_trails.length}`);
                                     break;
                                 }
                             }
-                            
+
                             // If not merged, add as new range
                             if (!merged) {
                                 mergedRanges.push({
@@ -2832,16 +2972,16 @@ Sample Trails: ${data.sample_trails.length}`);
                                 });
                             }
                         }
-                        
+
                         // Create gradient with all merged ranges
                         const gradientStops = [];
                         const featherSize = 8; // Slightly larger feather for smoother transitions
-                        
+
                         let currentPos = 0;
-                        
+
                         for (let i = 0; i < mergedRanges.length; i++) {
                             const range = mergedRanges[i];
-                            
+
                             // Add white area before this range
                             if (range.start > currentPos) {
                                 if (currentPos === 0) {
@@ -2849,25 +2989,25 @@ Sample Trails: ${data.sample_trails.length}`);
                                 }
                                 gradientStops.push(`white ${Math.max(0, range.start - featherSize)}%`);
                             }
-                            
+
                             // Add the colored range with soft edges using the new color
                             gradientStops.push(`rgba(248, 179, 72, ${range.intensity * 0.8}) ${range.start}%`);
                             gradientStops.push(`rgba(248, 179, 72, ${range.intensity}) ${Math.min(100, range.start + featherSize)}%`);
                             gradientStops.push(`rgba(248, 179, 72, ${range.intensity}) ${Math.max(0, range.end - featherSize)}%`);
                             gradientStops.push(`rgba(248, 179, 72, ${range.intensity * 0.8}) ${range.end}%`);
-                            
+
                             currentPos = range.end;
                         }
-                        
+
                         // Add white area after last range
                         if (currentPos < 100) {
                             gradientStops.push(`white ${Math.min(100, currentPos + featherSize)}%`);
                             gradientStops.push(`white 100%`);
                         }
-                        
+
                         // Apply gradient using background-clip for true text color change
                         const gradientBackground = `linear-gradient(90deg, ${gradientStops.join(', ')})`;
-                        
+
                         // Create a composite background: white base + teal overlay
                         textElement.style.background = `
                             ${gradientBackground},
@@ -2877,7 +3017,7 @@ Sample Trails: ${data.sample_trails.length}`);
                         textElement.style.webkitBackgroundClip = 'text';
                         textElement.style.color = 'transparent';
                         textElement.style.transition = 'all 0.1s ease-out';
-                        
+
                         // Hide the overlay since we're using background-clip
                         maskOverlay.style.opacity = '0';
                     } else {
@@ -2891,13 +3031,13 @@ Sample Trails: ${data.sample_trails.length}`);
                     }
                 });
             }
-            
+
             // Update blending on animation frame for smooth effect
             function animateBlending() {
                 updateTextBlending();
                 requestAnimationFrame(animateBlending);
             }
-            
+
             // Start animation loop
             animateBlending();
         }
@@ -2910,7 +3050,7 @@ Sample Trails: ${data.sample_trails.length}`);
             for (let i = 1; i <= 9; i++) {
                 const trailIndex = (i - 1) % heroTrailsData.length;
                 const trail = heroTrailsData[trailIndex];
-                
+
                 if (trail) {
                     const trailCard = createHeroTrailCard(trail, i);
                     container.appendChild(trailCard);
@@ -2958,19 +3098,29 @@ Sample Trails: ${data.sample_trails.length}`);
                 if (filter) params.append('filter', filter);
                 params.append('page', page);
                 params.append('limit', 9);
-                
+
                 const response = await fetch(`${API_BASE_URL}/trails/search-trails?${params.toString()}`);
                 const data = await response.json();
-                
+
                 if (data.success) {
                     return data;
                 } else {
                     console.error('Search failed:', data);
-                    return { success: false, trails: [], total: 0, has_more: false };
+                    return {
+                        success: false,
+                        trails: [],
+                        total: 0,
+                        has_more: false
+                    };
                 }
             } catch (error) {
                 console.error('Search error:', error);
-                return { success: false, trails: [], total: 0, has_more: false };
+                return {
+                    success: false,
+                    trails: [],
+                    total: 0,
+                    has_more: false
+                };
             }
         }
 
@@ -3064,20 +3214,20 @@ Sample Trails: ${data.sample_trails.length}`);
                 // Show loading state in modal
                 showModalLoading(true);
                 console.log('Fetching trail details for slug:', slug);
-                
+
                 // Fetch trail details from API
                 const response = await fetch(`${API_BASE_URL}/trails/${slug}/details`);
                 const data = await response.json();
                 console.log('API response:', data);
-                
+
                 // Check if API returned valid data
                 if (!data || !data.id) {
                     throw new Error('Trail details not available');
                 }
-                
+
                 // Open modal with trail data
                 openTrailModal(data, data.images || [], [], null);
-                
+
             } catch (error) {
                 console.error('Error fetching trail details:', error);
                 // Show modal with minimal trail info and error message
@@ -3122,14 +3272,14 @@ Sample Trails: ${data.sample_trails.length}`);
 
             // Update modal content with real data
             document.getElementById('modal-trail-name').textContent = trail.trail_name || trail.name || 'Trail Details';
-            
+
             // Update location header
             const mountainName = trail.mountain_name || trail.mountain || '';
             const location = trail.location ? (trail.location.full_name || trail.location.name) : '';
-            const locationText = mountainName && location ? `${mountainName} • ${location}` : 
-                                mountainName || location || 'Location not specified';
+            const locationText = mountainName && location ? `${mountainName} • ${location}` :
+                mountainName || location || 'Location not specified';
             document.getElementById('modal-trail-location-header').textContent = locationText;
-            
+
             let mainImage = '';
             if (images && images.length > 0 && images[0].url) {
                 mainImage = images[0].url;
@@ -3209,7 +3359,7 @@ Sample Trails: ${data.sample_trails.length}`);
             const humidity = Math.floor(Math.random() * 40) + 30; // 30-70%
             const wind = Math.floor(Math.random() * 20) + 5; // 5-25 km/h
             const condition = conditions[Math.floor(Math.random() * conditions.length)];
-            
+
             return {
                 current: {
                     temperature: temp,
@@ -3323,57 +3473,66 @@ Sample Trails: ${data.sample_trails.length}`);
         function updateTrailMap(coordinates) {
             const mapContainer = document.getElementById('trail-route-map');
             const placeholder = document.getElementById('trail-map-placeholder');
-            
+
             if (!mapContainer) return;
 
             if (coordinates && coordinates.length > 0) {
                 // Hide placeholder and show map
                 if (placeholder) placeholder.style.display = 'none';
-                
+
                 // Check if Google Maps is loaded
                 if (typeof google === 'undefined' || !google.maps) {
                     console.log('Google Maps not loaded yet, showing placeholder');
                     showMapPlaceholder(mapContainer, coordinates);
                     return;
                 }
-                
+
                 try {
                     // Parse coordinates if they're in string format
                     let trailCoords = coordinates;
                     if (typeof coordinates === 'string') {
                         trailCoords = JSON.parse(coordinates);
                     }
-                    
+
                     // Ensure coordinates are in the correct format
                     if (!Array.isArray(trailCoords) || trailCoords.length === 0) {
                         console.log('Invalid coordinates format');
                         showMapPlaceholder(mapContainer, coordinates);
                         return;
                     }
-                    
+
                     // Convert coordinates to Google Maps LatLng format
                     const path = trailCoords.map(coord => {
                         if (coord.lat && coord.lng) {
-                            return { lat: parseFloat(coord.lat), lng: parseFloat(coord.lng) };
+                            return {
+                                lat: parseFloat(coord.lat),
+                                lng: parseFloat(coord.lng)
+                            };
                         } else if (coord.latitude && coord.longitude) {
-                            return { lat: parseFloat(coord.latitude), lng: parseFloat(coord.longitude) };
+                            return {
+                                lat: parseFloat(coord.latitude),
+                                lng: parseFloat(coord.longitude)
+                            };
                         } else if (Array.isArray(coord) && coord.length >= 2) {
-                            return { lat: parseFloat(coord[0]), lng: parseFloat(coord[1]) };
+                            return {
+                                lat: parseFloat(coord[0]),
+                                lng: parseFloat(coord[1])
+                            };
                         }
                         return null;
                     }).filter(coord => coord !== null);
-                    
+
                     if (path.length === 0) {
                         console.log('No valid coordinates found');
                         showMapPlaceholder(mapContainer, coordinates);
                         return;
                     }
-                    
+
                     // Calculate center point
                     const bounds = new google.maps.LatLngBounds();
                     path.forEach(coord => bounds.extend(coord));
                     const center = bounds.getCenter();
-                    
+
                     // Create map
                     const map = new google.maps.Map(mapContainer, {
                         center: center,
@@ -3381,15 +3540,15 @@ Sample Trails: ${data.sample_trails.length}`);
                         mapTypeId: google.maps.MapTypeId.HYBRID,
                         disableDefaultUI: true,
                         zoomControl: true,
-                        styles: [
-                            {
-                                featureType: "poi",
-                                elementType: "labels",
-                                stylers: [{ visibility: "off" }]
-                            }
-                        ]
+                        styles: [{
+                            featureType: "poi",
+                            elementType: "labels",
+                            stylers: [{
+                                visibility: "off"
+                            }]
+                        }]
                     });
-                    
+
                     // Create trail polyline
                     const trailPath = new google.maps.Polyline({
                         path: path,
@@ -3398,9 +3557,9 @@ Sample Trails: ${data.sample_trails.length}`);
                         strokeOpacity: 1.0,
                         strokeWeight: 3
                     });
-                    
+
                     trailPath.setMap(map);
-                    
+
                     // Add start marker
                     if (path.length > 0) {
                         new google.maps.Marker({
@@ -3417,7 +3576,7 @@ Sample Trails: ${data.sample_trails.length}`);
                             }
                         });
                     }
-                    
+
                     // Add end marker
                     if (path.length > 1) {
                         new google.maps.Marker({
@@ -3434,18 +3593,18 @@ Sample Trails: ${data.sample_trails.length}`);
                             }
                         });
                     }
-                    
+
                     // Fit map to trail bounds
                     map.fitBounds(bounds);
-                    
+
                     // Store map instance for potential cleanup
                     window.trailMaps['modal'] = map;
-                    
+
                 } catch (error) {
                     console.error('Error creating trail map:', error);
                     showMapPlaceholder(mapContainer, coordinates);
                 }
-                
+
             } else {
                 // Show placeholder for no coordinates
                 if (placeholder) {
@@ -3460,11 +3619,11 @@ Sample Trails: ${data.sample_trails.length}`);
                 mapContainer.innerHTML = '';
             }
         }
-        
+
         function showMapPlaceholder(container, coordinates) {
-            const coordCount = Array.isArray(coordinates) ? coordinates.length : 
-                              (typeof coordinates === 'string' ? JSON.parse(coordinates).length : 0);
-            
+            const coordCount = Array.isArray(coordinates) ? coordinates.length :
+                (typeof coordinates === 'string' ? JSON.parse(coordinates).length : 0);
+
             container.innerHTML = `
                 <div class="h-full bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center rounded-lg">
                     <div class="text-center">
@@ -3501,12 +3660,12 @@ Sample Trails: ${data.sample_trails.length}`);
             const overlay = document.createElement('div');
             overlay.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4';
             overlay.onclick = () => overlay.remove();
-            
+
             const img = document.createElement('img');
             img.src = imageUrl;
             img.className = 'max-w-full max-h-full object-contain';
             img.alt = caption;
-            
+
             overlay.appendChild(img);
             document.body.appendChild(overlay);
         }
@@ -3526,7 +3685,7 @@ Sample Trails: ${data.sample_trails.length}`);
         function updateModalImageNavigation(images, trail) {
             currentModalImages = [];
             currentModalImageIndex = 0;
-            
+
             // Prepare images array
             if (images && images.length > 0) {
                 currentModalImages = images.map(img => img.url || img);
@@ -3539,12 +3698,12 @@ Sample Trails: ${data.sample_trails.length}`);
             } else {
                 currentModalImages = [DEFAULT_TRAIL_IMAGE];
             }
-            
+
             // Update navigation visibility
             const prevBtn = document.getElementById('prev-image-btn');
             const nextBtn = document.getElementById('next-image-btn');
             const counter = document.getElementById('image-counter');
-            
+
             if (currentModalImages.length > 1) {
                 if (prevBtn) {
                     prevBtn.classList.remove('opacity-0', 'invisible');
@@ -3573,7 +3732,7 @@ Sample Trails: ${data.sample_trails.length}`);
                     counter.classList.remove('opacity-100', 'visible');
                 }
             }
-            
+
             // Set initial image
             if (currentModalImages.length > 0) {
                 document.getElementById('modal-trail-image').src = currentModalImages[0];
@@ -3647,13 +3806,13 @@ Sample Trails: ${data.sample_trails.length}`);
                     </div>
                 </div>
             `;
-            
+
             overlay.addEventListener('click', function(e) {
                 if (e.target === overlay) {
                     overlay.remove();
                 }
             });
-            
+
             document.body.appendChild(overlay);
         }
 
@@ -3697,10 +3856,10 @@ Sample Trails: ${data.sample_trails.length}`);
                 resultsContainer.classList.remove('hidden');
                 noResults.classList.add('hidden');
                 resultsHeader.classList.remove('hidden'); // Show the title/subtitle area
-                
+
                 // Update title and subtitle
                 resultsTitle.textContent = `Found ${total} trail${total !== 1 ? 's' : ''}`;
-                
+
                 let subtitle = '';
                 if (query && category) {
                     const categoryDisplayNames = {
@@ -3740,10 +3899,10 @@ Sample Trails: ${data.sample_trails.length}`);
                     subtitle = 'All available trails';
                 }
                 resultsSubtitle.textContent = subtitle;
-                
+
                 // Display trail cards
                 resultsContainer.innerHTML = trails.map(trail => createTrailCard(trail)).join('');
-                
+
                 // Show/hide "Show More" button
                 if (hasMore) {
                     showMoreContainer.classList.remove('hidden');
@@ -3763,7 +3922,7 @@ Sample Trails: ${data.sample_trails.length}`);
         function hideResults() {
             const searchResults = document.getElementById('search-results');
             const defaultCards = document.getElementById('default-cards');
-            
+
             searchResults.classList.add('hidden');
             defaultCards.classList.remove('hidden');
         }
@@ -3784,7 +3943,7 @@ Sample Trails: ${data.sample_trails.length}`);
             const loadingState = document.getElementById('loading-state');
             const defaultCards = document.getElementById('default-cards');
             const searchResults = document.getElementById('search-results');
-            
+
             if (loadingState) {
                 defaultCards.classList.add('hidden');
                 searchResults.classList.add('hidden');
@@ -3802,7 +3961,7 @@ Sample Trails: ${data.sample_trails.length}`);
         async function performSearch(query = '', category = '', filter = '', page = 1) {
             // Clean up the query
             query = query.trim();
-            
+
             if (!query && !category && !filter && page === 1) {
                 hideResults();
                 return;
@@ -3819,7 +3978,7 @@ Sample Trails: ${data.sample_trails.length}`);
                 currentPage = page;
 
                 const result = await searchTrails(query, category, filter, page);
-                
+
                 if (page === 1) {
                     hideLoading();
                     trailsData = result.trails;
@@ -3874,7 +4033,7 @@ Sample Trails: ${data.sample_trails.length}`);
         document.getElementById('trail-search-input').addEventListener('input', function() {
             const query = this.value.trim();
             const filter = document.getElementById('trail-filter').value;
-            
+
             // If both search and filter are empty, show default cards
             if (query === '' && !filter) {
                 hideResults();
@@ -3931,10 +4090,10 @@ Sample Trails: ${data.sample_trails.length}`);
             if (modal) {
                 modal.classList.add('active');
                 document.body.style.overflow = 'hidden'; // Prevent background scrolling
-                
+
                 // Reset any previous animations
                 resetTutorialAnimations(modal);
-                
+
                 // Start tutorial animations
                 setTimeout(() => {
                     startTutorialAnimations(modal);
@@ -3947,7 +4106,7 @@ Sample Trails: ${data.sample_trails.length}`);
             if (activeModal) {
                 activeModal.classList.remove('active');
                 document.body.style.overflow = ''; // Restore scrolling
-                
+
                 // Stop any running animations
                 stopTutorialAnimations(activeModal);
             }
@@ -3974,7 +4133,7 @@ Sample Trails: ${data.sample_trails.length}`);
             steps.forEach((step, index) => {
                 step.style.opacity = '0';
                 step.style.transform = 'translateY(20px)';
-                
+
                 setTimeout(() => {
                     step.style.transition = 'all 0.6s ease';
                     step.style.opacity = '1';
@@ -3986,16 +4145,16 @@ Sample Trails: ${data.sample_trails.length}`);
             let currentStep = 0;
             const totalSteps = modal.querySelectorAll('.tutorial-step').length;
             const progressDots = modal.querySelectorAll('.progress-dot');
-            
+
             if (progressDots.length > 0) {
                 const progressInterval = setInterval(() => {
                     currentStep = (currentStep + 1) % totalSteps;
-                    
+
                     progressDots.forEach((dot, index) => {
                         dot.classList.toggle('active', index === currentStep);
                     });
                 }, 3000);
-                
+
                 // Store interval for cleanup
                 modal.setAttribute('data-progress-interval', progressInterval);
             }
@@ -4014,15 +4173,15 @@ Sample Trails: ${data.sample_trails.length}`);
         function animateRecommendationDemo() {
             const button = event.target;
             const originalText = button.textContent;
-            
+
             button.textContent = 'Analyzing...';
             button.disabled = true;
-            
+
             // Simulate AI processing
             setTimeout(() => {
                 button.textContent = 'Match Found!';
                 button.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                
+
                 setTimeout(() => {
                     button.textContent = originalText;
                     button.style.background = '';
@@ -4034,14 +4193,14 @@ Sample Trails: ${data.sample_trails.length}`);
         function demonstrateEmergencyFeature() {
             const button = event.target;
             const originalContent = button.innerHTML;
-            
+
             button.innerHTML = '<span class="iconify mr-2 animate-pulse" data-icon="heroicons:exclamation-triangle"></span>Emergency Activated!';
             button.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
-            
+
             setTimeout(() => {
                 button.innerHTML = '<span class="iconify mr-2" data-icon="heroicons:check-circle"></span>Help Dispatched';
                 button.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                
+
                 setTimeout(() => {
                     button.innerHTML = originalContent;
                     button.style.background = '';
@@ -4053,10 +4212,10 @@ Sample Trails: ${data.sample_trails.length}`);
             const button = event.target;
             const container = button.closest('.interactive-demo');
             const originalContent = button.textContent;
-            
+
             button.textContent = 'Simulating...';
             button.disabled = true;
-            
+
             // Create demo overlay
             const demoOverlay = document.createElement('div');
             demoOverlay.className = 'absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center rounded-lg';
@@ -4067,10 +4226,10 @@ Sample Trails: ${data.sample_trails.length}`);
                     <p class="text-sm opacity-75">GPS: Active | Maps: Downloaded</p>
                 </div>
             `;
-            
+
             container.style.position = 'relative';
             container.appendChild(demoOverlay);
-            
+
             setTimeout(() => {
                 demoOverlay.innerHTML = `
                     <div class="text-center text-white">
@@ -4081,7 +4240,7 @@ Sample Trails: ${data.sample_trails.length}`);
                         <p class="text-sm opacity-75">Navigation working without internet</p>
                     </div>
                 `;
-                
+
                 setTimeout(() => {
                     container.removeChild(demoOverlay);
                     button.textContent = originalContent;
@@ -4094,28 +4253,43 @@ Sample Trails: ${data.sample_trails.length}`);
             const button = event.target;
             const statusContainer = button.previousElementSibling;
             const originalContent = button.textContent;
-            
+
             button.textContent = 'Monitoring...';
             button.disabled = true;
-            
+
             // Simulate real-time updates
-            const updates = [
-                { time: '4 min ago', status: 'Active', contacts: '3 notified' },
-                { time: '3 min ago', status: 'Active', contacts: '4 notified' },
-                { time: '2 min ago', status: 'Active', contacts: '5 notified' },
-                { time: 'Just now', status: 'Active', contacts: '6 notified' }
+            const updates = [{
+                    time: '4 min ago',
+                    status: 'Active',
+                    contacts: '3 notified'
+                },
+                {
+                    time: '3 min ago',
+                    status: 'Active',
+                    contacts: '4 notified'
+                },
+                {
+                    time: '2 min ago',
+                    status: 'Active',
+                    contacts: '5 notified'
+                },
+                {
+                    time: 'Just now',
+                    status: 'Active',
+                    contacts: '6 notified'
+                }
             ];
-            
+
             let updateIndex = 0;
             const updateInterval = setInterval(() => {
                 if (updateIndex < updates.length) {
                     const update = updates[updateIndex];
                     const timeElement = statusContainer.querySelector('div:nth-child(2) span:last-child');
                     const contactsElement = statusContainer.querySelector('div:nth-child(4) span:last-child');
-                    
+
                     timeElement.textContent = update.time;
                     contactsElement.textContent = update.contacts;
-                    
+
                     updateIndex++;
                 } else {
                     clearInterval(updateInterval);
@@ -4153,7 +4327,7 @@ Sample Trails: ${data.sample_trails.length}`);
     <script>
         // Global variable to store map instances
         window.trailMaps = {};
-        
+
         // Initialize Google Maps (callback function)
         function initMap() {
             // Google Maps is now loaded and ready

@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class WeatherController extends Controller
 {
@@ -384,5 +385,99 @@ class WeatherController extends Controller
         }
 
         return empty($alerts) ? null : implode('; ', $alerts);
+    }
+
+    /**
+     * Get current weather data for AJAX updates
+     */
+    public function getCurrentWeather(Request $request): JsonResponse
+    {
+        try {
+            // Get user's location or default to Manila, Philippines
+            $lat = $request->get('lat', 14.5995);  // Manila latitude
+            $lon = $request->get('lon', 120.9842); // Manila longitude
+            
+            // Get current weather from OpenWeather API
+            $weather = $this->getOpenWeatherData($lat, $lon);
+            
+            if (!$weather) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unable to fetch weather data'
+                ], 500);
+            }
+
+            // Format weather data for frontend
+            $formattedWeather = [
+                'temp' => round($weather['current']['temp']),
+                'feels_like' => round($weather['current']['feels_like']),
+                'humidity' => $weather['current']['humidity'],
+                'description' => $weather['current']['weather'][0]['description'],
+                'icon' => $weather['current']['weather'][0]['icon'],
+                'city' => $weather['location']['name'] ?? 'Unknown',
+                'uv_index' => round($weather['current']['uvi'] ?? 0),
+                'condition' => $weather['current']['weather'][0]['main'],
+                'is_day' => $this->isDayTime($weather['current']),
+                'gradient' => $this->getWeatherGradient($weather['current']['weather'][0]['main'])
+            ];
+
+            // Format forecast data
+            $formattedForecast = $this->formatForecastForAjax($weather['daily'] ?? []);
+
+            return response()->json([
+                'success' => true,
+                'weather' => $formattedWeather,
+                'forecast' => $formattedForecast,
+                'updated_at' => now()->setTimezone('Asia/Manila')->toISOString()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Weather API Error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Weather data temporarily unavailable'
+            ], 500);
+        }
+    }
+
+    /**
+     * Format forecast data for AJAX frontend consumption
+     */
+    private function formatForecastForAjax($dailyData): array
+    {
+        if (empty($dailyData)) {
+            return [];
+        }
+
+        $formattedForecast = [];
+        $count = 0;
+
+        foreach ($dailyData as $day) {
+            if ($count >= 5) break; // Only return 5 days
+            
+            $formattedForecast[] = [
+                'date' => Carbon::createFromTimestamp($day['dt'])->format('l, M j'),
+                'temp' => round($day['temp']['day']),
+                'condition' => $day['weather'][0]['description'],
+                'icon' => $day['weather'][0]['icon']
+            ];
+            
+            $count++;
+        }
+
+        return $formattedForecast;
+    }
+
+    /**
+     * Check if it's daytime based on weather data
+     */
+    private function isDayTime($weatherData): bool
+    {
+        $currentTime = time();
+        $sunrise = $weatherData['sunrise'] ?? 0;
+        $sunset = $weatherData['sunset'] ?? 0;
+        
+        return $currentTime >= $sunrise && $currentTime <= $sunset;
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -11,7 +12,7 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         // Check if user is an organization and redirect them to org dashboard
-        if (auth()->check() && auth()->user()->user_type === 'organization') {
+        if (Auth::check() && Auth::user()->user_type === 'organization') {
             return redirect()->route('org.dashboard');
         }
 
@@ -54,6 +55,8 @@ class DashboardController extends Controller
             'icon' => $currentData['weather'][0]['icon'] ?? null,
             'city' => $currentData['name'] ?? 'Unknown',
             'gradient' => $gradient,
+            'condition' => $currentData['weather'][0]['main'] ?? 'Clear',
+            'is_day' => $this->isDayTime($currentData['weather'][0]['icon'] ?? '01d'),
         ];
 
 
@@ -81,9 +84,9 @@ class DashboardController extends Controller
         $latestItinerary = null;
         $followedTrails = collect();
         $followingCount = 0;
-        
-        if (auth()->check() && auth()->user()->user_type === 'hiker') {
-            $user = auth()->user();
+
+        if (Auth::check() && Auth::user()->user_type === 'hiker') {
+            $user = Auth::user();
             $latestAssessment = $user->latestAssessmentResult;
             $latestItinerary = $user->latestItinerary;
             
@@ -106,5 +109,14 @@ class DashboardController extends Controller
             'followedTrails' => $followedTrails,
             'followingCount' => $followingCount,
         ]);
+    }
+
+    /**
+     * Determine if it's day time based on weather icon
+     * OpenWeatherMap icons ending with 'd' are day, 'n' are night
+     */
+    private function isDayTime(string $icon): bool
+    {
+        return str_ends_with($icon, 'd');
     }
 }

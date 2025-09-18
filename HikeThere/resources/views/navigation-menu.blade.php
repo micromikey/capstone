@@ -1,4 +1,4 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
+<nav x-data="{ open: false }" class="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -6,19 +6,19 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     @auth
-                        @if(Auth::user()->user_type === 'organization')
-                            <a href="{{ route('org.dashboard') }}">
-                                <img src="{{ asset('img/icon1.png') }}" alt="Icon" class="h-9 w-auto">
-                            </a>
-                        @else
-                            <a href="{{ route('dashboard') }}">
-                                <img src="{{ asset('img/icon1.png') }}" alt="Icon" class="h-9 w-auto">
-                            </a>
-                        @endif
+                    @if(Auth::user()->user_type === 'organization')
+                    <a href="{{ route('org.dashboard') }}">
+                        <img src="{{ asset('img/icon1.png') }}" alt="Icon" class="h-9 w-auto">
+                    </a>
                     @else
-                        <a href="{{ route('dashboard') }}">
-                            <img src="{{ asset('img/icon1.png') }}" alt="Icon" class="h-9 w-auto">
-                        </a>
+                    <a href="{{ route('dashboard') }}">
+                        <img src="{{ asset('img/icon1.png') }}" alt="Icon" class="h-9 w-auto">
+                    </a>
+                    @endif
+                    @else
+                    <a href="{{ route('dashboard') }}">
+                        <img src="{{ asset('img/icon1.png') }}" alt="Icon" class="h-9 w-auto">
+                    </a>
                     @endauth
                 </div>
 
@@ -26,28 +26,30 @@
                 @auth
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     @if(Auth::user()->user_type === 'organization')
-                        <x-nav-link href="{{ route('org.dashboard') }}" :active="request()->routeIs('org.dashboard')">
-                            {{ __('Organization Dashboard') }}
-                        </x-nav-link>
-                        <x-nav-link href="{{ route('org.trails.index') }}" :active="request()->routeIs('org.trails.*')">
-                            {{ __('Trails') }}
-                        </x-nav-link>
+                    <x-nav-link href="{{ route('org.dashboard') }}" :active="request()->routeIs('org.dashboard')">
+                        {{ __('Organization Dashboard') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('org.trails.index') }}" :active="request()->routeIs('org.trails.*')">
+                        {{ __('Trails') }}
+                    </x-nav-link>
                     @else
-                        <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
-                            {{ __('Dashboard') }}
-                        </x-nav-link>
-                        <x-nav-link href="{{ route('explore') }}" :active="request()->routeIs('explore')">
-                            {{ __('Explore') }}
-                        </x-nav-link>
-                        <x-nav-link href="{{ route('hiking-tools') }}" :active="request()->routeIs('hiking-tools')">
-                            {{ __('Tools') }}
-                        </x-nav-link>
-                        <x-nav-link href="{{ route('community.index') }}" :active="request()->routeIs('community.*')">
-                            {{ __('Community') }}
-                        </x-nav-link>
-                        <x-nav-link href="{{ route('map.index') }}" :active="request()->routeIs('map.*')">
-                            {{ __('Map') }}
-                        </x-nav-link>
+                    <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
+                        {{ __('Dashboard') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('explore') }}" :active="request()->routeIs('explore')">
+                        {{ __('Explore') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('community.index') }}" :active="request()->routeIs('community.*')">
+                        {{ __('Community') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('map.index') }}" :active="request()->routeIs('map.*')">
+                        {{ __('Map') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('hiking-tools') }}" :active="request()->routeIs('hiking-tools')">
+                        <span class="animate-charcter special-nav-highlight">
+                            {{ __('Hiking Tools') }}
+                        </span>
+                    </x-nav-link>
                     @endif
                 </div>
                 @endauth
@@ -60,7 +62,7 @@
                 <div class="ms-3 relative">
                     <x-dropdown align="right" width="48">
                         <x-slot name="trigger">
-                            <button class="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 transition">
+                            <button class="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 transition sticky-header">
                                 <img class="size-8 rounded-full object-cover" src="{{ Auth::user()->profile_picture_url }}" alt="{{ Auth::user()->name }}" />
                             </button>
                         </x-slot>
@@ -71,9 +73,9 @@
                                 {{ __('Manage Account') }}
                             </div>
 
-                                                    <x-dropdown-link href="{{ route('custom.profile.show') }}">
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
+                            <x-dropdown-link href="{{ route('custom.profile.show') }}">
+                                {{ __('Profile') }}
+                            </x-dropdown-link>
                             <x-dropdown-link href="{{ route('profile.edit') }}">
                                 {{ __('Edit Profile') }}
                             </x-dropdown-link>
@@ -122,22 +124,28 @@
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             @if(Auth::user()->user_type === 'organization')
-                <x-responsive-nav-link href="{{ route('org.dashboard') }}" :active="request()->routeIs('org.dashboard')">
-                    {{ __('Organization Dashboard') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link href="{{ route('org.trails.index') }}" :active="request()->routeIs('org.trails.*')">
-                    {{ __('Trails') }}
-                </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('org.dashboard') }}" :active="request()->routeIs('org.dashboard')">
+                {{ __('Organization Dashboard') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('org.trails.index') }}" :active="request()->routeIs('org.trails.*')">
+                {{ __('Trails') }}
+            </x-responsive-nav-link>
             @else
-                <x-responsive-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
-                    {{ __('Dashboard') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link href="{{ route('explore') }}" :active="request()->routeIs('explore')">
-                    {{ __('Explore') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link href="{{ route('hiking-tools') }}" :active="request()->routeIs('hiking-tools')">
-                    {{ __('Tools') }}
-                </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
+                {{ __('Dashboard') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('explore') }}" :active="request()->routeIs('explore')">
+                {{ __('Explore') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('community.index') }}" :active="request()->routeIs('community.*')">
+                {{ __('Community') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('map.index') }}" :active="request()->routeIs('map.*')">
+                {{ __('Map') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('hiking-tools') }}" :active="request()->routeIs('hiking-tools')">
+                {{ __('Hiking Tools') }}
+            </x-responsive-nav-link>
             @endif
         </div>
 
@@ -157,9 +165,9 @@
 
             <div class="mt-3 space-y-1">
                 <!-- Account Management -->
-                                    <x-responsive-nav-link href="{{ route('custom.profile.show') }}" :active="request()->routeIs('custom.profile.show')">
-                        {{ __('Profile') }}
-                    </x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('custom.profile.show') }}" :active="request()->routeIs('custom.profile.show')">
+                    {{ __('Profile') }}
+                </x-responsive-nav-link>
                 <x-responsive-nav-link href="{{ route('profile.edit') }}" :active="request()->routeIs('profile.edit')">
                     {{ __('Edit Profile') }}
                 </x-responsive-nav-link>

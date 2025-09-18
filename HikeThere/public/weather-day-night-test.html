@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Day/Night Animation Test</title>
+    <style>
+        body {
+            background: #643a7a;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .weather-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .frame {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            border-radius: 2px;
+            box-shadow: 0.5rem 0.5rem 1rem rgba(0, 0, 0, 0.6);
+            color: #4b384c;
+            font-family: "overlock", Helvetica, sans-serif;
+            font-weight: 300;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        .weather-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            color: #333;
+            z-index: 100;
+            font-size: 14px;
+        }
+
+        .weather-anim {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* DAY/NIGHT BACKGROUNDS */
+        .weather-anim.day-time {
+            background: linear-gradient(to top, #87CEEB, #98D8E8, #B8E6F0, #E0F7FF);
+        }
+        .weather-anim.night-time {
+            background: linear-gradient(to top, #40334f, #2f273c, #272232, #201c29);
+        }
+
+        /* CELESTIAL BODIES - Day Sun (for non-sunny weather) */
+        .weather-anim.day-time .day-sun {
+            position: absolute;
+            width: 4rem;
+            height: 4rem;
+            top: 60px;
+            right: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 60% 40%, #fffbe6 70%, #ffe066 100%);
+            box-shadow: 0 0 1.5rem 0.3rem #ffe06644;
+            z-index: 3;
+            opacity: 0.7;
+            animation: day-sun-rise 1.2s ease-out;
+        }
+
+        /* Night Moon (for non-rainy weather) */
+        .weather-anim.night-time .night-moon {
+            position: absolute;
+            width: 4rem;
+            height: 4rem;
+            top: 60px;
+            right: 80px;
+            border-radius: 50%;
+            background: linear-gradient(to left top, #b1b1c5, #928fa3, #746f82, #575162, #3c3444);
+            box-shadow: 0 0 2rem rgba(177, 177, 197, 0.15);
+            z-index: 3;
+            opacity: 0.8;
+            animation: night-moon-rise 1.2s ease-out;
+        }
+        .weather-anim.night-time .night-moon .moon-crater1 {
+            position: absolute;
+            width: 1.2rem;
+            height: 1.2rem;
+            border-radius: 50%;
+            border: 3px solid rgba(60, 52, 68, 0.1);
+            top: 0.7rem;
+            left: 0.6rem;
+        }
+        .weather-anim.night-time .night-moon .moon-crater2 {
+            position: absolute;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background: rgba(60, 52, 68, 0.15);
+            top: 2.4rem;
+            left: 2rem;
+        }
+
+        @keyframes day-sun-rise {
+            from { transform: translateY(30px) scale(0.8); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 0.7; }
+        }
+
+        @keyframes night-moon-rise {
+            from { transform: translateY(30px) scale(0.8); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 0.8; }
+        }
+
+        /* Hills */
+        .hill-bg-1, .hill-bg-2, .hill-fg-1, .hill-fg-2, .hill-fg-3 {
+            position: absolute;
+            z-index: 2;
+            width: 337px;
+            height: 281px;
+            top: 201px;
+            left: -57px;
+            background: #503760;
+            border-radius: 50%;
+            box-shadow: -0.5rem 0 0.8rem rgba(0, 0, 0, 0.3);
+        }
+
+        .hill-bg-2 {
+            top: 177px;
+            left: 177px;
+        }
+
+        .hill-fg-1, .hill-fg-2, .hill-fg-3 {
+            background: #695b93;
+            top: 228px;
+            left: -137px;
+        }
+
+        .hill-fg-2 {
+            top: 251px;
+            left: 63px;
+        }
+
+        .hill-fg-3 {
+            top: 218px;
+            left: 292px;
+        }
+
+        /* Day time hills - Green */
+        .weather-anim.day-time .hill-bg-1, .weather-anim.day-time .hill-bg-2 {
+            background: #4a7c59 !important; /* Dark green for background hills */
+        }
+        .weather-anim.day-time .hill-fg-1, .weather-anim.day-time .hill-fg-2, .weather-anim.day-time .hill-fg-3 {
+            background: #68a075 !important; /* Lighter green for foreground hills */
+        }
+
+        /* Night time hills - Purple (default) */
+        .weather-anim.night-time .hill-bg-1, .weather-anim.night-time .hill-bg-2 {
+            background: #503760 !important; /* Original purple for background hills */
+        }
+        .weather-anim.night-time .hill-fg-1, .weather-anim.night-time .hill-fg-2, .weather-anim.night-time .hill-fg-3 {
+            background: #695b93 !important; /* Original purple for foreground hills */
+        }
+
+        /* Sunny and Clear always use green hills */
+        .weather-sunny .hill-bg-1, .weather-sunny .hill-bg-2 {
+            background: #4a7c59 !important; /* Dark green for background hills */
+        }
+        .weather-sunny .hill-fg-1, .weather-sunny .hill-fg-2, .weather-sunny .hill-fg-3 {
+            background: #68a075 !important; /* Lighter green for foreground hills */
+        }
+
+        /* Rain drops */
+        .drop-big-1, .drop-medium-1, .drop-small-1 {
+            position: absolute;
+            z-index: 20;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #7FC1F9;
+            animation: drop 0.9s linear infinite;
+            animation-fill-mode: both;
+            transform-origin: 50% 100%;
+        }
+
+        .drop-big-1 { left: 50px; bottom: 90px; animation-delay: 0s; }
+        .drop-medium-1 { left: 100px; bottom: 90px; width: 6px; height: 6px; opacity: 0.7; animation-delay: 0.3s; }
+        .drop-small-1 { left: 150px; bottom: 90px; width: 4px; height: 4px; opacity: 0.5; animation-delay: 0.6s; }
+
+        .drop-big-1:before, .drop-medium-1:before, .drop-small-1:before {
+            position: absolute;
+            content: "";
+            display: block;
+            top: -2px;
+            left: 1px;
+            width: 6px;
+            height: 6px;
+            background: #7FC1F9;
+            border-radius: 3px;
+        }
+
+        .drop-medium-1:before { width: 4px; height: 4px; }
+        .drop-small-1:before { width: 2px; height: 2px; }
+
+        @keyframes drop {
+            0% { transform: translate3d(40px, -320px, 0) scaleX(1) scaleY(1) rotate(17deg); }
+            85% { transform: translate3d(0, 0, 0) scaleX(1) scaleY(1) rotate(17deg); }
+            100% { transform: translate3d(0, 0, 0) scaleX(3) scaleY(0) rotate(0deg); }
+        }
+
+        /* SUNNY - Always Day */
+        .weather-sunny {
+            background: linear-gradient(to top, #87CEEB, #98D8E8, #B8E6F0, #E0F7FF) !important;
+        }
+        .weather-sunny .sun {
+            position: absolute;
+            width: 6rem;
+            height: 6rem;
+            top: 45px;
+            left: 55px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 60% 40%, #ffe066 70%, #ffd700 100%);
+            box-shadow: 0 0 3rem 1rem #ffe06699, 0 0 8rem 2rem #ffd70044;
+            z-index: 5;
+            animation: sunny-rise 1.2s ease-out;
+        }
+
+        @keyframes sunny-rise {
+            from { transform: translateY(40px) scale(0.8); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        /* CLOUDY */
+        .weather-cloudy .cloud {
+            position: absolute;
+            background: #e0e4ea;
+            border-radius: 50%;
+            opacity: 0.85;
+            box-shadow: 0 0 2rem #bfc4d1;
+            animation: cloud-move 8s linear infinite;
+        }
+        .weather-cloudy .cloud-1 {
+            width: 5rem; height: 3rem; top: 60px; left: 60px;
+            animation-delay: 0s;
+        }
+        .weather-cloudy .cloud-2 {
+            width: 7rem; height: 4rem; top: 80px; left: 120px;
+            animation-delay: 2s;
+        }
+        .weather-cloudy .cloud-3 {
+            width: 4rem; height: 2.5rem; top: 100px; left: 200px;
+            animation-delay: 4s;
+        }
+        @keyframes cloud-move {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(30px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* OVERCAST */
+        .weather-overcast .cloud {
+            position: absolute;
+            background: linear-gradient(180deg, #b0b4c1 60%, #6a6d7a 100%);
+            border-radius: 50%;
+            opacity: 0.95;
+            box-shadow: 0 0 2rem #6a6d7a99;
+            animation: overcast-move 10s ease-in-out infinite;
+        }
+        .weather-overcast .cloud-1 {
+            width: 7rem; height: 4rem; top: 60px; left: 60px;
+            animation-delay: 0s;
+        }
+        .weather-overcast .cloud-2 {
+            width: 9rem; height: 5rem; top: 80px; left: 120px;
+            animation-delay: 2s;
+        }
+        .weather-overcast .cloud-3 {
+            width: 6rem; height: 3.5rem; top: 100px; left: 200px;
+            animation-delay: 4s;
+        }
+        @keyframes overcast-move {
+            0% { transform: translateX(0) scale(1); }
+            40% { transform: translateX(10px) scale(1.05); }
+            60% { transform: translateX(-10px) scale(0.98); }
+            100% { transform: translateX(0) scale(1); }
+        }
+
+        /* THUNDERSTORM */
+        .weather-thunderstorm .cloud {
+            position: absolute;
+            background: linear-gradient(180deg, #3a3b47 60%, #1f2026 100%);
+            border-radius: 50%;
+            opacity: 0.95;
+            box-shadow: 0 0 3rem #1f202699;
+            animation: storm-move 6s ease-in-out infinite;
+        }
+        .weather-thunderstorm .cloud-1 {
+            width: 8rem; height: 5rem; top: 50px; left: 50px;
+            animation-delay: 0s;
+        }
+        .weather-thunderstorm .cloud-2 {
+            width: 10rem; height: 6rem; top: 70px; left: 110px;
+            animation-delay: 1s;
+        }
+        .weather-thunderstorm .cloud-3 {
+            width: 7rem; height: 4rem; top: 90px; left: 190px;
+            animation-delay: 2s;
+        }
+        .weather-thunderstorm .lightning-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 15;
+        }
+        .weather-thunderstorm .lightning-bolt {
+            position: absolute;
+            opacity: 0;
+            filter: drop-shadow(0 0 8px #ffffff) drop-shadow(0 0 16px #e6e6fa);
+        }
+        .weather-thunderstorm .lightning-bolt-1 {
+            top: 120px;
+            left: 140px;
+            animation: lightning-flash-1 4s infinite;
+        }
+        .weather-thunderstorm .lightning-bolt svg {
+            width: 20px;
+            height: 120px;
+        }
+        .weather-thunderstorm .lightning-bolt path {
+            fill: #ffffff;
+            stroke: #e6e6fa;
+            stroke-width: 1;
+        }
+        @keyframes storm-move {
+            0% { transform: translateX(0) scale(1); }
+            30% { transform: translateX(-15px) scale(1.02); }
+            70% { transform: translateX(15px) scale(0.98); }
+            100% { transform: translateX(0) scale(1); }
+        }
+        @keyframes lightning-flash-1 {
+            0%, 85%, 100% { opacity: 0; }
+            1%, 3%, 5% { opacity: 1; }
+            2%, 4% { opacity: 0.7; }
+            6%, 8% { opacity: 0.4; }
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2rem;
+        }
+
+        .weather-title {
+            text-align: center;
+            color: white;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .time-indicator {
+            text-align: center;
+            color: #ffeb3b;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Weather Day/Night Animation Test</h1>
+    
+    <div class="weather-container">
+        <!-- SUNNY (Always Day) -->
+        <div>
+            <div class="time-indicator">☀️ Day Only</div>
+            <div class="weather-title">Sunny</div>
+            <div class="frame">
+                <div class="weather-label">Sunny</div>
+                <div class="weather-anim weather-sunny">
+                    <div class="sun"></div>
+                    <div class="hill-bg-1"></div>
+                    <div class="hill-bg-2"></div>
+                    <div class="hill-fg-1"></div>
+                    <div class="hill-fg-2"></div>
+                    <div class="hill-fg-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RAINY - Day -->
+        <div>
+            <div class="time-indicator">☀️ Day</div>
+            <div class="weather-title">Rainy (Day)</div>
+            <div class="frame">
+                <div class="weather-label">Rain - Day</div>
+                <div class="weather-anim weather-rain day-time">
+                    <div class="day-sun"></div>
+                    <div class="hill-bg-1"></div>
+                    <div class="hill-bg-2"></div>
+                    <div class="hill-fg-1"></div>
+                    <div class="hill-fg-2"></div>
+                    <div class="hill-fg-3"></div>
+                    <div class="drop-big-1"></div>
+                    <div class="drop-medium-1"></div>
+                    <div class="drop-small-1"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RAINY - Night -->
+        <div>
+            <div class="time-indicator">🌙 Night</div>
+            <div class="weather-title">Rainy (Night)</div>
+            <div class="frame">
+                <div class="weather-label">Rain - Night</div>
+                <div class="weather-anim weather-rain night-time">
+                    <div class="night-moon">
+                        <div class="moon-crater1"></div>
+                        <div class="moon-crater2"></div>
+                    </div>
+                    <div class="hill-bg-1"></div>
+                    <div class="hill-bg-2"></div>
+                    <div class="hill-fg-1"></div>
+                    <div class="hill-fg-2"></div>
+                    <div class="hill-fg-3"></div>
+                    <div class="drop-big-1"></div>
+                    <div class="drop-medium-1"></div>
+                    <div class="drop-small-1"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CLOUDY - Day -->
+        <div>
+            <div class="time-indicator">☀️ Day</div>
+            <div class="weather-title">Cloudy (Day)</div>
+            <div class="frame">
+                <div class="weather-label">Cloudy - Day</div>
+                <div class="weather-anim weather-cloudy day-time">
+                    <div class="day-sun"></div>
+                    <div class="cloud cloud-1"></div>
+                    <div class="cloud cloud-2"></div>
+                    <div class="cloud cloud-3"></div>
+                    <div class="hill-bg-1"></div>
+                    <div class="hill-bg-2"></div>
+                    <div class="hill-fg-1"></div>
+                    <div class="hill-fg-2"></div>
+                    <div class="hill-fg-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CLOUDY - Night -->
+        <div>
+            <div class="time-indicator">🌙 Night</div>
+            <div class="weather-title">Cloudy (Night)</div>
+            <div class="frame">
+                <div class="weather-label">Cloudy - Night</div>
+                <div class="weather-anim weather-cloudy night-time">
+                    <div class="night-moon">
+                        <div class="moon-crater1"></div>
+                        <div class="moon-crater2"></div>
+                    </div>
+                    <div class="cloud cloud-1"></div>
+                    <div class="cloud cloud-2"></div>
+                    <div class="cloud cloud-3"></div>
+                    <div class="hill-bg-1"></div>
+                    <div class="hill-bg-2"></div>
+                    <div class="hill-fg-1"></div>
+                    <div class="hill-fg-2"></div>
+                    <div class="hill-fg-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OVERCAST - Day -->
+        <div>
+            <div class="time-indicator">☀️ Day</div>
+            <div class="weather-title">Overcast (Day)</div>
+            <div class="frame">
+                <div class="weather-label">Overcast - Day</div>
+                <div class="weather-anim weather-overcast day-time">
+                    <div class="cloud cloud-1"></div>
+                    <div class="cloud cloud-2"></div>
+                    <div class="cloud cloud-3"></div>
+                    <div class="hill-bg-1"></div>
+                    <div class="hill-bg-2"></div>
+                    <div class="hill-fg-1"></div>
+                    <div class="hill-fg-2"></div>
+                    <div class="hill-fg-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OVERCAST - Night -->
+        <div>
+            <div class="time-indicator">🌙 Night</div>
+            <div class="weather-title">Overcast (Night)</div>
+            <div class="frame">
+                <div class="weather-label">Overcast - Night</div>
+                <div class="weather-anim weather-overcast night-time">
+                    <div class="cloud cloud-1"></div>
+                    <div class="cloud cloud-2"></div>
+                    <div class="cloud cloud-3"></div>
+                    <div class="hill-bg-1"></div>
+                    <div class="hill-bg-2"></div>
+                    <div class="hill-fg-1"></div>
+                    <div class="hill-fg-2"></div>
+                    <div class="hill-fg-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- THUNDERSTORM - Day -->
+        <div>
+            <div class="time-indicator">☀️ Day</div>
+            <div class="weather-title">Thunderstorm (Day)</div>
+            <div class="frame">
+                <div class="weather-label">Storm - Day</div>
+                <div class="weather-anim weather-thunderstorm day-time">
+                    <div class="cloud cloud-1"></div>
+                    <div class="cloud cloud-2"></div>
+                    <div class="cloud cloud-3"></div>
+                    <div class="lightning-container">
+                        <div class="lightning-bolt lightning-bolt-1">
+                            <svg viewBox="0 0 20 120" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 0 L12 0 L7 35 L13 35 L6 65 L11 65 L3 120 L7 120 L15 75 L10 75 L16 45 L11 45 L18 15 L13 15 L8 0 Z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="hill-bg-1"></div>
+                    <div class="hill-bg-2"></div>
+                    <div class="hill-fg-1"></div>
+                    <div class="hill-fg-2"></div>
+                    <div class="hill-fg-3"></div>
+                    <div class="drop-big-1"></div>
+                    <div class="drop-medium-1"></div>
+                    <div class="drop-small-1"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- THUNDERSTORM - Night -->
+        <div>
+            <div class="time-indicator">🌙 Night</div>
+            <div class="weather-title">Thunderstorm (Night)</div>
+            <div class="frame">
+                <div class="weather-label">Storm - Night</div>
+                <div class="weather-anim weather-thunderstorm night-time">
+                    <div class="cloud cloud-1"></div>
+                    <div class="cloud cloud-2"></div>
+                    <div class="cloud cloud-3"></div>
+                    <div class="lightning-container">
+                        <div class="lightning-bolt lightning-bolt-1">
+                            <svg viewBox="0 0 20 120" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 0 L12 0 L7 35 L13 35 L6 65 L11 65 L3 120 L7 120 L15 75 L10 75 L16 45 L11 45 L18 15 L13 15 L8 0 Z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="hill-bg-1"></div>
+                    <div class="hill-bg-2"></div>
+                    <div class="hill-fg-1"></div>
+                    <div class="hill-fg-2"></div>
+                    <div class="hill-fg-3"></div>
+                    <div class="drop-big-1"></div>
+                    <div class="drop-medium-1"></div>
+                    <div class="drop-small-1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

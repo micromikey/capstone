@@ -1,23 +1,34 @@
 <x-app-layout>
     @php
-        // Initialize the TrailImageService for dynamic images
-        $imageService = app('App\Services\TrailImageService');
+    // Initialize the TrailImageService for dynamic images
+    $imageService = app('App\Services\TrailImageService');
     @endphp
     <div>
-        <!-- Header Section -->
-        <div class="bg-white shadow-lg border-b border-gray-200">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                <!-- Back Button -->
-                <div>
-                    <a href="{{ route('community.index') }}" class="inline-flex items-center text-emerald-600 hover:text-emerald-700 transition-colors duration-200">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                        </svg>
-                        Back to Community
-                    </a>
-                </div>
+        <x-slot name="header">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                    {{ __('Organization Profile') }}
+                </h2>
+
+                {{-- Search Bar --}}
+                <form class="flex items-center max-w-lg" action="{{ route('trails.search') }}" method="GET">
+                    <label for="trail-search" class="sr-only">Search Trails</label>
+                    <div class="relative w-full">
+                        <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 21 21">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.15 5.6h.01m3.337 1.913h.01m-6.979 0h.01M5.541 11h.01M15 15h2.706a1.957 1.957 0 0 0 1.883-1.325A9 9 0 1 0 2.043 11.89 9.1 9.1 0 0 0 7.2 19.1a8.62 8.62 0 0 0 3.769.9A2.013 2.013 0 0 0 13 18v-.857A2.034 2.034 0 0 1 15 15Z" />
+                            </svg>
+                        </div>
+                        <input type="text" id="trail-search" name="q" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-green-500 focus:border-green-500 block w-full ps-10 p-2.5" placeholder="Search trails, locations..." value="{{ request('q') }}" />
+                    </div>
+                    <button type="submit" class="inline-flex items-center py-2.5 px-3 ms-2 text-sm font-medium text-white bg-green-700 rounded-lg border border-green-700 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300">
+                        <svg class="w-4 h-4 me-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                        </svg>Search
+                    </button>
+                </form>
             </div>
-        </div>
+        </x-slot>
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Organization Profile Section -->
@@ -26,9 +37,9 @@
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
                     <div class="flex items-center space-x-6">
                         <div class="flex-shrink-0">
-                            <img src="{{ $organization->profile_picture_url }}" 
-                                 alt="{{ $organization->display_name }}" 
-                                 class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg">
+                            <img src="{{ $organization->profile_picture_url }}"
+                                alt="{{ $organization->display_name }}"
+                                class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg">
                         </div>
                         <div>
                             <div class="flex items-center space-x-3 mb-2">
@@ -41,19 +52,19 @@
                                 </span>
                             </div>
                             @if($organization->bio)
-                                <p class="text-lg text-gray-600 mb-3">{{ $organization->bio }}</p>
+                            <p class="text-lg text-gray-600 mb-3">{{ $organization->bio }}</p>
                             @endif
                             @if($organization->location)
-                                <div class="flex items-center text-gray-500">
-                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                                    </svg>
-                                    {{ $organization->location }}
-                                </div>
+                            <div class="flex items-center text-gray-500">
+                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                                </svg>
+                                {{ $organization->location }}
+                            </div>
                             @endif
                         </div>
                     </div>
-                    
+
                     <!-- Action Buttons and Stats -->
                     <div class="mt-6 md:mt-0 flex flex-col items-start md:items-end space-y-4">
                         <!-- Follow Button -->
@@ -62,19 +73,19 @@
                             data-organization-id="{{ $organization->id }}"
                             data-organization-name="{{ $organization->display_name }}">
                             @if($isFollowing)
-                                <span class="flex items-center">
-                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                    </svg>
-                                    Following
-                                </span>
+                            <span class="flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Following
+                            </span>
                             @else
-                                <span class="flex items-center">
-                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path>
-                                    </svg>
-                                    Follow
-                                </span>
+                            <span class="flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path>
+                                </svg>
+                                Follow
+                            </span>
                             @endif
                         </button>
 
@@ -95,45 +106,45 @@
 
                 <!-- Organization Details Section -->
                 @if($organization->organizationProfile)
-                    <div class="border-t pt-6">
-                        <h2 class="text-2xl font-semibold text-gray-900 mb-4">About {{ $organization->display_name }}</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            @if($organization->organizationProfile->description)
-                                <div>
-                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Description</h3>
-                                    <p class="text-gray-600">{{ $organization->organizationProfile->description }}</p>
-                                </div>
-                            @endif
-                            @if($organization->organizationProfile->website)
-                                <div>
-                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Website</h3>
-                                    <a href="{{ $organization->organizationProfile->website }}" 
-                                       target="_blank" 
-                                       class="text-emerald-600 hover:text-emerald-700 flex items-center">
-                                        {{ $organization->organizationProfile->website }}
-                                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                        </svg>
-                                    </a>
-                                </div>
-                            @endif
-                            @if($organization->organizationProfile->contact_person)
-                                <div>
-                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Contact Person</h3>
-                                    <p class="text-gray-600">{{ $organization->organizationProfile->contact_person }}</p>
-                                </div>
-                            @endif
-                            @if($organization->organizationProfile->phone_number)
-                                <div>
-                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Phone Number</h3>
-                                    <a href="tel:{{ $organization->organizationProfile->phone_number }}" 
-                                       class="text-emerald-600 hover:text-emerald-700">
-                                        {{ $organization->organizationProfile->phone_number }}
-                                    </a>
-                                </div>
-                            @endif
+                <div class="border-t pt-6">
+                    <h2 class="text-2xl font-semibold text-gray-900 mb-4">About {{ $organization->display_name }}</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        @if($organization->organizationProfile->description)
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Description</h3>
+                            <p class="text-gray-600">{{ $organization->organizationProfile->description }}</p>
                         </div>
+                        @endif
+                        @if($organization->organizationProfile->website)
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Website</h3>
+                            <a href="{{ $organization->organizationProfile->website }}"
+                                target="_blank"
+                                class="text-emerald-600 hover:text-emerald-700 flex items-center">
+                                {{ $organization->organizationProfile->website }}
+                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                            </a>
+                        </div>
+                        @endif
+                        @if($organization->organizationProfile->contact_person)
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Contact Person</h3>
+                            <p class="text-gray-600">{{ $organization->organizationProfile->contact_person }}</p>
+                        </div>
+                        @endif
+                        @if($organization->organizationProfile->phone_number)
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Phone Number</h3>
+                            <a href="tel:{{ $organization->organizationProfile->phone_number }}"
+                                class="text-emerald-600 hover:text-emerald-700">
+                                {{ $organization->organizationProfile->phone_number }}
+                            </a>
+                        </div>
+                        @endif
                     </div>
+                </div>
                 @endif
             </div>
 
@@ -143,67 +154,67 @@
             </div>
 
             @if($trails->count() > 0)
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                    @foreach($trails as $trail)
-                        <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                            <div class="relative">
-                                @php
-                                    // Get dynamic image from TrailImageService
-                                    $trailImage = $imageService->getTrailImage($trail, 'primary', 'medium');
-                                @endphp
-                                <img src="{{ $trailImage }}" 
-                                     alt="{{ $trail->trail_name }}" 
-                                     class="w-full h-48 object-cover rounded-t-xl">
-                                <div class="absolute top-4 right-4">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $trail->difficulty === 'easy' ? 'bg-green-100 text-green-800' : ($trail->difficulty === 'moderate' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
-                                        {{ ucfirst($trail->difficulty) }}
-                                    </span>
-                                </div>
-                            </div>
-                            
-                            <div class="p-6">
-                                <h3 class="text-lg font-semibold text-gray-900 mb-2 truncate">{{ $trail->trail_name }}</h3>
-                                
-                                <div class="flex items-center text-sm text-gray-500 mb-4">
-                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                                    </svg>
-                                    {{ $trail->location->name ?? 'Location not set' }}
-                                </div>
-                                
-                                <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
-                                    <div class="flex items-center">
-                                        <svg class="w-4 h-4 mr-1 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                                        </svg>
-                                        {{ number_format($trail->average_rating, 1) }} ({{ $trail->total_reviews }})
-                                    </div>
-                                    <span class="font-medium">₱{{ number_format($trail->price, 0) }}</span>
-                                </div>
-                                
-                                <div class="mt-4">
-                                    <a href="{{ route('trails.show', $trail->slug) }}" 
-                                       class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 transition-colors duration-200">
-                                        View Trail
-                                    </a>
-                                </div>
-                            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                @foreach($trails as $trail)
+                <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="relative">
+                        @php
+                        // Get dynamic image from TrailImageService
+                        $trailImage = $imageService->getTrailImage($trail, 'primary', 'medium');
+                        @endphp
+                        <img src="{{ $trailImage }}"
+                            alt="{{ $trail->trail_name }}"
+                            class="w-full h-48 object-cover rounded-t-xl">
+                        <div class="absolute top-4 right-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $trail->difficulty === 'easy' ? 'bg-green-100 text-green-800' : ($trail->difficulty === 'moderate' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                {{ ucfirst($trail->difficulty) }}
+                            </span>
                         </div>
-                    @endforeach
-                </div>
+                    </div>
 
-                <!-- Pagination -->
-                <div class="flex justify-center">
-                    {{ $trails->links() }}
+                    <div class="p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2 truncate">{{ $trail->trail_name }}</h3>
+
+                        <div class="flex items-center text-sm text-gray-500 mb-4">
+                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                            </svg>
+                            {{ $trail->location->name ?? 'Location not set' }}
+                        </div>
+
+                        <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                            <div class="flex items-center">
+                                <svg class="w-4 h-4 mr-1 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                {{ number_format($trail->average_rating, 1) }} ({{ $trail->total_reviews }})
+                            </div>
+                            <span class="font-medium">₱{{ number_format($trail->price, 0) }}</span>
+                        </div>
+
+                        <div class="mt-4">
+                            <a href="{{ route('trails.show', $trail->slug) }}"
+                                class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 transition-colors duration-200">
+                                View Trail
+                            </a>
+                        </div>
+                    </div>
                 </div>
+                @endforeach
+            </div>
+
+            <!-- Pagination -->
+            <div class="flex justify-center">
+                {{ $trails->links() }}
+            </div>
             @else
-                <div class="text-center py-12">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5l7-7 7 7M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                    </svg>
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">No trails available</h3>
-                    <p class="mt-1 text-sm text-gray-500">This organization hasn't published any trails yet.</p>
-                </div>
+            <div class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5l7-7 7 7M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No trails available</h3>
+                <p class="mt-1 text-sm text-gray-500">This organization hasn't published any trails yet.</p>
+            </div>
             @endif
         </div>
     </div>
@@ -230,67 +241,67 @@
 
     @push('scripts')
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Follow/Unfollow functionality
-        const followButton = document.querySelector('.follow-btn');
-        if (followButton) {
-            followButton.addEventListener('click', handleFollowClick);
-        }
-        
-        function handleFollowClick(e) {
-            const button = e.currentTarget;
-            const organizationId = button.dataset.organizationId;
-            const organizationName = button.dataset.organizationName;
-            const isFollowing = button.textContent.trim().includes('Following');
-            
-            // Disable button during request
-            button.disabled = true;
-            
-            const url = isFollowing ? '{{ route("api.community.unfollow") }}' : '{{ route("api.community.follow") }}';
-            
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({
-                    organization_id: organizationId
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update button appearance
-                    updateFollowButton(button, data.is_following);
-                    
-                    // Show success message
-                    showToast('success', data.message);
-                    
-                    // Update follower count
-                    const followerCount = document.getElementById('followers-count');
-                    if (followerCount && data.follower_count !== undefined) {
-                        followerCount.textContent = data.follower_count;
-                    }
-                    
-                } else {
-                    showToast('error', data.message || 'An error occurred');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('error', 'An error occurred. Please try again.');
-            })
-            .finally(() => {
-                button.disabled = false;
-            });
-        }
-        
-        function updateFollowButton(button, isFollowing) {
-            if (isFollowing) {
-                button.className = 'follow-btn px-8 py-3 rounded-lg font-medium transition-all duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300';
-                button.innerHTML = `
+        document.addEventListener('DOMContentLoaded', function() {
+            // Follow/Unfollow functionality
+            const followButton = document.querySelector('.follow-btn');
+            if (followButton) {
+                followButton.addEventListener('click', handleFollowClick);
+            }
+
+            function handleFollowClick(e) {
+                const button = e.currentTarget;
+                const organizationId = button.dataset.organizationId;
+                const organizationName = button.dataset.organizationName;
+                const isFollowing = button.textContent.trim().includes('Following');
+
+                // Disable button during request
+                button.disabled = true;
+
+                const url = isFollowing ? '{{ route("api.community.unfollow") }}' : '{{ route("api.community.follow") }}';
+
+                fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            organization_id: organizationId
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update button appearance
+                            updateFollowButton(button, data.is_following);
+
+                            // Show success message
+                            showToast('success', data.message);
+
+                            // Update follower count
+                            const followerCount = document.getElementById('followers-count');
+                            if (followerCount && data.follower_count !== undefined) {
+                                followerCount.textContent = data.follower_count;
+                            }
+
+                        } else {
+                            showToast('error', data.message || 'An error occurred');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showToast('error', 'An error occurred. Please try again.');
+                    })
+                    .finally(() => {
+                        button.disabled = false;
+                    });
+            }
+
+            function updateFollowButton(button, isFollowing) {
+                if (isFollowing) {
+                    button.className = 'follow-btn px-8 py-3 rounded-lg font-medium transition-all duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300';
+                    button.innerHTML = `
                     <span class="flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
@@ -298,9 +309,9 @@
                         Following
                     </span>
                 `;
-            } else {
-                button.className = 'follow-btn px-8 py-3 rounded-lg font-medium transition-all duration-200 bg-emerald-600 text-white hover:bg-emerald-700';
-                button.innerHTML = `
+                } else {
+                    button.className = 'follow-btn px-8 py-3 rounded-lg font-medium transition-all duration-200 bg-emerald-600 text-white hover:bg-emerald-700';
+                    button.innerHTML = `
                     <span class="flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path>
@@ -308,21 +319,21 @@
                         Follow
                     </span>
                 `;
+                }
             }
-        }
-        
-        function showToast(type, message) {
-            const toast = document.getElementById(type + '-toast');
-            const messageSpan = document.getElementById(type + '-message');
-            
-            messageSpan.textContent = message;
-            toast.classList.remove('translate-x-full');
-            
-            setTimeout(() => {
-                toast.classList.add('translate-x-full');
-            }, 3000);
-        }
-    });
+
+            function showToast(type, message) {
+                const toast = document.getElementById(type + '-toast');
+                const messageSpan = document.getElementById(type + '-message');
+
+                messageSpan.textContent = message;
+                toast.classList.remove('translate-x-full');
+
+                setTimeout(() => {
+                    toast.classList.add('translate-x-full');
+                }, 3000);
+            }
+        });
     </script>
     @endpush
 </x-app-layout>

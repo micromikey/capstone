@@ -62,6 +62,12 @@ Route::middleware([
     'verified',
 ])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Weather animation test page
+    Route::get('/weather-animation-test', function () {
+        return view('weather-animation-test');
+    })->name('weather-animation-test');
+    
     Route::get('/explore', [ExploreController::class, 'index'])->name('explore');
 
     // Advanced Trail Map

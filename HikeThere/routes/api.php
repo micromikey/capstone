@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\TrailController;
 use App\Http\Controllers\Api\TrailSegmentController;
 use App\Http\Controllers\Api\GPXController;
+use App\Http\Controllers\Api\WeatherController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\MountainController;
@@ -26,6 +27,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // Mountains dataset endpoints
 Route::get('/mountains', [MountainController::class, 'index']);
 Route::get('/mountains/{slug}', [MountainController::class, 'show']);
+
+// Weather API endpoints
+Route::get('/weather/current', [WeatherController::class, 'getCurrentWeather']);
 
 // Trail API endpoints
 Route::prefix('trails')->group(function () {
