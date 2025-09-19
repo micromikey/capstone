@@ -41,6 +41,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'birth_date',
         'gender',
         'hiking_preferences',
+    'preferences_onboarded_at',
         'emergency_contact_name',
         'emergency_contact_phone',
         'emergency_contact_relationship',
@@ -80,6 +81,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'approved_at' => 'datetime',
             'birth_date' => 'date',
             'hiking_preferences' => 'array',
+            'preferences_onboarded_at' => 'datetime',
         ];
     }
 

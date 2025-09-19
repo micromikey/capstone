@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  recommender:
+    build: .
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./artifacts:/app/artifacts
+    environment:
+      - ML_ARTIFACT_DIR=/app/artifacts
+    restart: unless-stopped

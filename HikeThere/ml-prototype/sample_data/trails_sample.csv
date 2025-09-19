@@ -1,0 +1,6 @@
+id,name,trail_name,description,features,difficulty,length,elevation_gain,latitude,longitude
+1,Ambangeg Trail,Ambangeg Trail,"A scenic coastal trail with waterfalls.","waterfall;coastal;family-friendly",beginner,3.2,120,16.419,120.596
+2,Mount Ugo Trail,Mount Ugo Trail,"Challenging ridge with long ascents.","ridge;summit;challenging",advanced,18.4,1200,16.5,120.7
+3,Sunset Loop,Sunset Loop,"Short loop with great sunset views.","sunset;loop;beginner",beginner,4.1,200,16.38,120.59
+4,River Gorge,River Gorge,"River-side path with swimming holes.","river;swimming;moderate",intermediate,7.5,350,16.45,120.61
+5,Pine Ridge,Pine Ridge,"Forest ridge, good for birdwatching.","forest;ridge;intermediate",intermediate,10.2,600,16.48,120.66

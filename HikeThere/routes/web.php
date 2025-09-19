@@ -45,7 +45,14 @@ Route::get('/email/verify/notice', function () {
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
     $request->fulfill();
 
-    // After verification, redirect to login with success message
+    // After verification, redirect hikers to the onboarding preferences flow so they can set hiking preferences.
+    $user = $request->user();
+    if ($user && $user->user_type === 'hiker') {
+        return redirect()->route('onboard.preferences')
+            ->with('status', 'Email verified successfully! Please set your hiking preferences to get personalized recommendations.');
+    }
+
+    // For other users, redirect to login as before
     return redirect()->route('login')
         ->with('status', 'Email verified successfully! You can now sign in to your account.');
 })->middleware(['auth:sanctum', 'signed'])->name('verification.verify');
@@ -141,7 +148,13 @@ Route::middleware([
     Route::post('/api/trails/reviews', [TrailReviewController::class, 'store'])->name('api.trails.reviews.store');
     Route::put('/api/trails/reviews/{review}', [TrailReviewController::class, 'update'])->name('api.trails.reviews.update');
     Route::delete('/api/trails/reviews/{review}', [TrailReviewController::class, 'destroy'])->name('api.trails.reviews.destroy');
-})->middleware('user.type:hiker');
+})->middleware(['user.type:hiker', 'ensure.hiking.preferences']);
+
+// Onboarding routes for hikers to set preferences (shown after email verification)
+Route::middleware(['auth:sanctum', 'verified', 'user.type:hiker'])->group(function () {
+    Route::get('/onboard/preferences', [App\Http\Controllers\OnboardingController::class, 'showPreferences'])->name('onboard.preferences');
+    Route::post('/onboard/preferences', [App\Http\Controllers\OnboardingController::class, 'savePreferences'])->name('onboard.preferences.save');
+});
 
 // Routes that require authentication and approval (for organizations only)
 Route::middleware(['auth:sanctum', 'check.approval'])->group(function () {
@@ -209,7 +222,7 @@ Route::get('/map/weather', [MapController::class, 'getWeatherData'])->name('map.
 Route::post('/map/search-nearby', [MapController::class, 'searchNearby'])->name('map.search.nearby');
 
 // Profile routes (require authentication)
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'ensure.hiking.preferences'])->group(function () {
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('custom.profile.show');
     Route::get('/profile/edit', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');

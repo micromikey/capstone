@@ -617,6 +617,35 @@
                                 <x-input-error for="summary" class="mt-2" />
                             </div>
 
+                            <!-- Activities / Supported Uses -->
+                            <div class="md:col-span-2">
+                                <x-label value="Supported Activities (select all that apply)" />
+                                <div class="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                    @php
+                                        $activityOptions = [
+                                            'hiking' => 'Hiking',
+                                            'day_hike' => 'Day Hike',
+                                            'trail_running' => 'Trail Running',
+                                            'camping' => 'Camping',
+                                            'overnight_camping' => 'Overnight Camping',
+                                            'mountaineering' => 'Mountaineering',
+                                            'birding' => 'Birding',
+                                            'photography' => 'Photography',
+                                            'water_activities' => 'Water Activities (river/shore)'
+                                        ];
+                                        $selected = old('activities', []);
+                                    @endphp
+
+                                    @foreach($activityOptions as $value => $label)
+                                        <label class="inline-flex items-center space-x-2 text-sm">
+                                            <input type="checkbox" name="activities[]" value="{{ $value }}" class="h-4 w-4 text-[#336d66] focus:ring-[#336d66] border-gray-300 rounded" {{ in_array($value, $selected) ? 'checked' : '' }}>
+                                            <span class="text-gray-700">{{ $label }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                                <p class="mt-2 text-xs text-gray-500">These tags help hikers find trails that support specific activities and improve recommendation matching.</p>
+                            </div>
+
                             <div class="md:col-span-2">
                                 <x-label for="description" value="Detailed Description" />
                                 <textarea id="description" name="description" rows="4" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="Comprehensive description of the trail, highlights, and experience"></textarea>

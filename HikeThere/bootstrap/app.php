@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.approval' => \App\Http\Middleware\CheckApprovalStatus::class,
             'user.type' => \App\Http\Middleware\CheckUserType::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'ensure.hiking.preferences' => \App\Http\Middleware\EnsureHikingPreferencesSet::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

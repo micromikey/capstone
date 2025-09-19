@@ -9,6 +9,12 @@
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
+                        @if(empty($user->hiking_preferences) || count($user->hiking_preferences ?? []) === 0)
+                            <div class="mb-4 p-4 rounded-md bg-yellow-50 border-l-4 border-yellow-300">
+                                <p class="text-yellow-800 font-medium">We noticed you haven't set your hiking preferences yet.</p>
+                                <p class="text-sm text-yellow-700">Setting these helps us surface better trail recommendations. Please select the activities you enjoy below and save your profile.</p>
+                            </div>
+                        @endif
                     <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
                         @csrf
                         @method('PUT')

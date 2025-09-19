@@ -204,7 +204,7 @@
                                     <!-- Difficulty Badge -->
                                     <div class="absolute top-4 left-4">
                                         <span class="px-3 py-1 text-xs font-bold rounded-full text-white shadow-lg {{ $trail->difficulty === 'beginner' ? 'bg-green-600' : ($trail->difficulty === 'intermediate' ? 'bg-yellow-600' : 'bg-red-600') }}">
-                                            {{ ucfirst($trail->difficulty) }}
+                                            {{ $trail->difficulty_label }}
                                         </span>
                                     </div>
 

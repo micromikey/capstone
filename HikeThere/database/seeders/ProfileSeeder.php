@@ -30,7 +30,11 @@ class ProfileSeeder extends Seeder
             'location' => ['New York, NY', 'Los Angeles, CA', 'Chicago, IL', 'Houston, TX', 'Phoenix, AZ'][array_rand(['New York, NY', 'Los Angeles, CA', 'Chicago, IL', 'Houston, TX', 'Phoenix, AZ'])],
             'birth_date' => now()->subYears(rand(20, 60)),
             'gender' => ['male', 'female', 'other'][array_rand(['male', 'female', 'other'])],
-            'hiking_preferences' => ['Day Hiking', 'Backpacking', 'Photography'],
+            'hiking_preferences' => [
+                'Day Hiking', 'Backpacking', 'Trail Running', 'Mountain Biking',
+                'Rock Climbing', 'Camping', 'Photography', 'Wildlife Watching',
+                'Solo Hiking', 'Group Hiking', 'Family Hiking', 'Adventure Racing'
+            ],
             'emergency_contact_name' => 'Emergency Contact',
             'emergency_contact_phone' => '+1 (555) ' . rand(100, 999) . '-' . rand(1000, 9999),
             'emergency_contact_relationship' => 'Family Member',

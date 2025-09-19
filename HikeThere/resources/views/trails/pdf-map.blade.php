@@ -154,7 +154,7 @@
             <div class="info-label">Difficulty:</div>
             <div class="info-value">
                 <span class="difficulty-badge difficulty-{{ strtolower($trail->difficulty) }}">
-                    {{ ucfirst($trail->difficulty) }}
+                    {{ $trail->difficulty_label }}
                 </span>
             </div>
         </div>

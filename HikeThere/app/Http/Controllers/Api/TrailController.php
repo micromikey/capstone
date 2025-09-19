@@ -44,6 +44,7 @@ class TrailController extends Controller
                 'difficulty' => $trail->difficulty,
                 'coordinates' => $trail->coordinates,
                 'location' => $trail->location ? $trail->location->name.', '.$trail->location->province : 'Location N/A',
+                'activities' => $trail->activities ?? [],
             ],
         ]);
     }
@@ -149,7 +150,7 @@ class TrailController extends Controller
                 'location' => $trail->location 
                     ? $trail->location->name . ', ' . $trail->location->province 
                     : 'Location N/A',
-                'difficulty' => ucfirst($trail->difficulty),
+                'difficulty' => $trail->difficulty_label,
                 'distance' => $trail->length ? round($trail->length, 1) . ' km' : 'N/A',
                 'duration' => $trail->estimated_time_formatted ?: $trail->duration ?: 'N/A',
                 'rating' => $trail->average_rating ?: 0,
@@ -161,7 +162,8 @@ class TrailController extends Controller
                 'summary' => $trail->summary,
                 'organization' => $trail->user ? $trail->user->display_name : 'Unknown',
                 'created_at' => $trail->created_at->format('Y-m-d'),
-                'tags' => $this->generateTrailTags($trail)
+                    'tags' => $this->generateTrailTags($trail),
+                    'activities' => $trail->activities ?? []
             ];
         });
 
@@ -429,6 +431,7 @@ class TrailController extends Controller
                         'longitude' => $trail->location->longitude,
                     ] : null,
                     'primary_image' => $trail->primaryImage?->url ?? $this->imageService->getTrailImage($trail, 'primary', 'medium'),
+                        'activities' => $trail->activities ?? [],
                 ];
             });
 
@@ -561,6 +564,7 @@ class TrailController extends Controller
                 'location_id' => $trail->location->id,
                 'location_slug' => $trail->location->slug,
                 'primary_image' => $trail->primaryImage?->url ?? $this->imageService->getTrailImage($trail, 'primary', 'medium'),
+                    'activities' => $trail->activities ?? [],
                 'map_image' => $trail->mapImage?->url ?? $this->imageService->getTrailImage($trail, 'map', 'medium'),
                 'features' => $trail->features,
                 'organization' => $trail->user->display_name,

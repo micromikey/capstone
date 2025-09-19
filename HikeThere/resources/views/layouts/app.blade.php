@@ -51,6 +51,21 @@
         </main>
     </div>
 
+    @push('modals')
+        @if(session('info'))
+            <div x-data="{ show: true }" x-show="show" x-cloak class="fixed inset-0 z-50 flex items-start justify-center">
+                <div class="fixed inset-0 bg-black opacity-50" x-on:click="show = false"></div>
+                <div class="bg-white rounded-lg shadow-lg max-w-xl w-full mx-4 mt-24 p-6 z-50" role="dialog" aria-modal="true">
+                    <h3 class="text-lg font-semibold mb-2">Action required</h3>
+                    <p class="text-sm text-gray-700 mb-4">{{ session('info') }}</p>
+                    <div class="flex justify-end">
+                        <a href="{{ route('onboard.preferences') }}" class="px-4 py-2 bg-[#336d66] text-white rounded mr-2">Set Preferences</a>
+                        <button @click="show = false" class="px-4 py-2 bg-gray-200 rounded">Close</button>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endpush
     @stack('modals')
     @stack('scripts')
 

@@ -1,34 +1,35 @@
 @props(['weather', 'forecast', 'user', 'latestAssessment', 'latestItinerary', 'followedTrails' => collect(), 'followingCount' => 0])
 
 @push('floating-navigation')
-    @php
-    $sections = [
-        ['id' => 'welcome-section', 'title' => 'Welcome', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>'],
-        ['id' => 'trail-recommendations', 'title' => 'Trail Recommendations', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>']
-    ];
-    
-    if(isset($weather) && $weather) {
-        $sections[] = ['id' => 'weather-section', 'title' => 'Weather', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>'];
-    }
-    
-    if(isset($user) && $user && $user->user_type === 'hiker') {
-        $sections[] = ['id' => 'hiking-tools', 'title' => 'Hiking Tools', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>'];
-        
-        if((isset($followedTrails) && $followedTrails->count() > 0)) {
-            $sections[] = ['id' => 'community-section', 'title' => 'Community', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>'];
-        } else {
-            $sections[] = ['id' => 'community-invitation', 'title' => 'Join Community', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>'];
-        }
-    }
-    @endphp
-    
-    <x-floating-navigation :sections="$sections" />
+@php
+$sections = [
+['id' => 'welcome-section', 'title' => 'Welcome', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>'],
+['id' => 'trail-recommendations', 'title' => 'Trail Recommendations', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>']
+];
+
+if(isset($weather) && $weather) {
+$sections[] = ['id' => 'weather-section', 'title' => 'Weather', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>'];
+}
+
+if(isset($user) && $user && $user->user_type === 'hiker') {
+$sections[] = ['id' => 'hiking-tools', 'title' => 'Hiking Tools', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>'];
+
+if((isset($followedTrails) && $followedTrails->count() > 0)) {
+$sections[] = ['id' => 'community-section', 'title' => 'Community', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>'];
+} else {
+$sections[] = ['id' => 'community-invitation', 'title' => 'Join Community', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>'];
+}
+}
+@endphp
+
+<x-floating-navigation :sections="$sections" />
 @endpush
 
 @push('floating-weather')
-    @if(isset($weather) && $weather)
-        <x-floating-weather :weather="$weather" />
-    @endif
+@if(isset($weather) && $weather)
+<x-floating-weather :weather="$weather" />
+@endif
 @endpush
 
 @php
@@ -124,6 +125,296 @@ $imageService = app('App\Services\TrailImageService');
     </div>
 </div>
 
+@push('scripts')
+<script>
+    (function() {
+        // Only run if recommendations container exists
+        const grid = document.getElementById('recommendations-grid');
+        const container = document.getElementById('recommendations-container');
+        if (!grid || !container) return;
+
+        // Add controls: loader and refresh button (idempotent)
+        let controlsBar = document.getElementById('recommendations-controls');
+        if (!controlsBar) {
+            controlsBar = document.createElement('div');
+            controlsBar.id = 'recommendations-controls';
+            controlsBar.className = 'flex items-center justify-between mb-4';
+            controlsBar.innerHTML = `
+                <div class="text-sm text-gray-600">Personalized for you</div>
+                <div class="flex items-center space-x-2">
+                    <button id="recommend-refresh" class="inline-flex items-center px-3 py-1 bg-white border border-gray-200 rounded-md text-sm hover:bg-gray-50" aria-label="Refresh recommendations">Refresh</button>
+                    <div id="recommend-loader" role="status" aria-live="polite" class="hidden">
+                        <svg class="animate-spin h-5 w-5 text-gray-500" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 01-8 8z"></path></svg>
+                    </div>
+                </div>
+            `;
+            container.insertBefore(controlsBar, container.firstChild);
+        }
+
+        const loader = document.getElementById('recommend-loader');
+        const refreshBtn = document.getElementById('recommend-refresh');
+
+        // Use logged-in user id if available
+        const userId = @json(optional($user)->id ?? null);
+        if (!userId) {
+            grid.innerHTML = '<div class="col-span-1">Please sign in to see personalized recommendations.</div>';
+            return;
+        }
+
+        // Concurrency control for fetches
+        let currentAbort = null;
+
+        async function showLoader(on) {
+            if (on) loader.classList.remove('hidden');
+            else loader.classList.add('hidden');
+            refreshBtn.disabled = on;
+        }
+
+        // Auto-refresh configuration
+        const AUTO_REFRESH_INTERVAL = 1000 * 60 * 5; // 5 minutes
+        const AUTO_REFRESH_JITTER = 1000 * 30; // up to 30s jitter
+        let autoRefreshTimer = null;
+
+        // Visibility-aware auto-refresh: pause when tab is hidden
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                if (autoRefreshTimer) {
+                    clearTimeout(autoRefreshTimer);
+                    autoRefreshTimer = null;
+                }
+            } else {
+                scheduleAutoRefresh();
+            }
+        });
+
+        function scheduleAutoRefresh() {
+            if (autoRefreshTimer) clearTimeout(autoRefreshTimer);
+            const jitter = Math.floor(Math.random() * AUTO_REFRESH_JITTER);
+            autoRefreshTimer = setTimeout(() => {
+                fetchRecommendations(6);
+            }, AUTO_REFRESH_INTERVAL + jitter);
+        }
+
+        // Skeleton generator while loading
+        function renderSkeletons(count = 6) {
+            const skeleton = `<div class="animate-pulse bg-white rounded-2xl p-6 h-56"></div>`;
+            grid.innerHTML = Array.from({
+                length: count
+            }).map(() => skeleton).join('');
+        }
+
+        async function fetchRecommendations(k = 6) {
+            // Abort previous request if any
+            if (currentAbort) {
+                try {
+                    currentAbort.abort();
+                } catch (e) {}
+                currentAbort = null;
+            }
+
+            currentAbort = new AbortController();
+            const signal = currentAbort.signal;
+
+            // Use skeletons for richer UX + loader indicator
+            renderSkeletons(6);
+            await showLoader(true);
+
+            try {
+                const resp = await fetch(`/api/recommender/user/${userId}?k=${k}`, {
+                    signal
+                });
+                if (!resp.ok) throw new Error(`Recommender responded with ${resp.status}`);
+                const data = await resp.json();
+                console.debug('Recommender raw response:', data);
+                // Debug left in console only
+
+                // Support two shapes from the API:
+                // 1) ML-style: { results: [{ trail_id, score, explanation }, ...] }
+                // 2) DB-fallback: { recommendations: [{ id, name, slug, ... }, ...] }
+
+                // If backend returned DB fallback with full trail objects, render directly
+                if ((!data.results || !data.results.length) && Array.isArray(data.recommendations) && data.recommendations.length) {
+                    const fallback = data.recommendations;
+                    grid.innerHTML = fallback.map((t) => {
+                        // Render with any available score (may be undefined)
+                        const score = typeof t.score !== 'undefined' ? t.score : 0;
+                        return renderTrailCard(t, score, t.id);
+                    }).join('');
+                    scheduleAutoRefresh();
+                    return;
+                }
+
+                if (!data.results || !data.results.length) {
+                    grid.innerHTML = '<div class="col-span-1">No recommendations right now.</div>';
+                    scheduleAutoRefresh();
+                    return;
+                }
+
+                // Fetch trail metadata concurrently but with basic caching and logging
+                const trailCache = {};
+                const trailFetchErrors = {};
+                const fetchTrail = async (id) => {
+                    if (trailCache[id]) return trailCache[id];
+                    try {
+                        const r = await fetch(`/api/trails/${id}`, {
+                            signal
+                        });
+                        if (!r.ok) {
+                            const text = await r.text().catch(() => '');
+                            console.warn('Failed to fetch trail metadata', id, r.status, text);
+                            trailFetchErrors[id] = `HTTP ${r.status}`;
+                            return null;
+                        }
+                        const j = await r.json();
+                        trailCache[id] = j;
+                        return j;
+                    } catch (e) {
+                        console.warn('Failed to fetch trail', id, e && e.message ? e.message : e);
+                        trailFetchErrors[id] = e && e.message ? e.message : String(e);
+                        return null;
+                    }
+                };
+
+                const recommended = data.results;
+                const trailPromises = recommended.map(r => fetchTrail(r.trail_id));
+                const trailDetails = await Promise.all(trailPromises);
+
+                // Render cards with explainability toggles
+                grid.innerHTML = trailDetails.map((t, i) => {
+                    const trail = t;
+                    const metaScore = recommended[i]?.score ?? 0;
+                    const explain = recommended[i]?.explanation ?? null; // optional field from recommender
+                    const cardHtml = renderTrailCard(trail, metaScore, recommended[i]?.trail_id);
+                    // If explanation is present, attach a small explain UI under the card via data attribute
+                    return cardHtml.replace('</div>\n            ', `\n                <div class="p-4 border-t border-gray-100 bg-gray-50 text-sm text-gray-600 explain-container" data-explain='${escapeHtml(JSON.stringify(explain || null))}'>\n                    <button class="explain-toggle text-blue-600 underline">Why this trail?</button>\n                    <div class="explain-text mt-2 hidden"></div>\n                </div>\n            `);
+                }).join('');
+
+                // If any trail fetch failed, show a small diagnostic message to help debugging
+                const failedIds = Object.keys(trailFetchErrors || {});
+                if (failedIds.length) {
+                    const diag = document.createElement('div');
+                    diag.className = 'col-span-1 text-sm text-red-600 mt-4';
+                    diag.innerHTML = `Failed to load details for trails: ${failedIds.join(', ')}. See console for details.`;
+                    container.appendChild(diag);
+                    console.warn('Trail metadata fetch errors:', trailFetchErrors);
+                }
+
+                // Wire explain toggles (after DOM insert)
+                Array.from(grid.querySelectorAll('.explain-toggle')).forEach(btn => {
+                    btn.addEventListener('click', async function(e) {
+                        const c = btn.closest('.explain-container');
+                        const textEl = c.querySelector('.explain-text');
+                        if (!textEl) return;
+                        if (!textEl.classList.contains('hidden')) {
+                            textEl.classList.add('hidden');
+                            return;
+                        }
+                        // Reveal explanation: prefer structured explanation from recommender
+                        let payload = null;
+                        try {
+                            payload = JSON.parse(c.getAttribute('data-explain'));
+                        } catch (e) {
+                            payload = null;
+                        }
+                        if (payload) {
+                            textEl.textContent = payload.explanation || JSON.stringify(payload);
+                        } else {
+                            textEl.textContent = 'Recommended based on your recent activity and preferences (difficulty, distance, features, and location).';
+                        }
+                        textEl.classList.remove('hidden');
+                    });
+                });
+                scheduleAutoRefresh();
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    // aborted - silently ignore
+                    console.debug('Recommendation fetch aborted');
+                    return;
+                }
+                console.error('Failed to load recommendations', err);
+                // Try to show a friendly message and a retry button
+                grid.innerHTML = `<div class="col-span-1 text-center text-sm text-gray-600">Failed to load recommendations. <button id="recommend-retry" class="ml-2 underline">Try again</button></div>`;
+                const retryBtn = document.getElementById('recommend-retry');
+                if (retryBtn) retryBtn.addEventListener('click', () => fetchRecommendations(k));
+            } finally {
+                await showLoader(false);
+            }
+        }
+
+        function renderTrailCard(t, score, fallbackId) {
+            if (!t) {
+                // Minimal failed card with id so user/developer can see which failed
+                return `\n                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 text-sm text-gray-600">\n                        <div class=\"font-semibold text-gray-800\">Trail ${escapeHtml(String(fallbackId))}</div>\n                        <div class=\"text-xs text-red-600 mt-2\">Failed to load details</div>\n                    </div>\n                `;
+            }
+            // Normalize fields from different API shapes
+            const image = t.primary_image ?? (t.images && t.images.length ? (t.images[0].url || t.images[0].full_url) : '/img/default-trail.jpg');
+            const name = t.name ?? t.trail_name ?? 'Trail';
+            const slug = t.slug ?? t.id;
+            const location = t.location?.full_name ?? (t.location || '');
+            const rating = Number(t.average_rating ?? t.averageRating ?? 0) || 0;
+
+            // Minimal card: image, trail name + rating, and a second line with mountain name and location
+            const mountain = t.mountain_name ?? '';
+            const locationLabel = t.location_label ?? '';
+
+            const compact = `
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 group">
+                    <div class="relative h-40">
+                        <img src="${escapeHtml(image)}" alt="${escapeHtml(name)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                    </div>
+                    <div class="p-4">
+                        <div class="flex items-start justify-between">
+                            <div class="mr-4 w-full">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="font-semibold text-gray-900 text-sm">${escapeHtml(name)}</h4>
+                                    <div class="text-sm font-bold text-gray-900">⭐ ${escapeHtml(Number(rating).toFixed(1))}</div>
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">${escapeHtml(mountain)} ${mountain && locationLabel ? '📍' : ''} ${escapeHtml(locationLabel)}</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <a href="/trails/${encodeURIComponent(slug)}" class="inline-block w-full text-center bg-green-600 text-white rounded-xl py-2 text-sm">View</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            return compact;
+        }
+
+        // Helper: sanitize small strings for insertion
+        function escapeHtml(s) {
+            if (!s && s !== 0) return '';
+            return String(s).replace(/[&<>\"'`]/g, function(ch) {
+                return ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;',
+                    '`': '&#96;'
+                })[ch];
+            });
+        }
+
+        function renderStars(rating) {
+            const full = Math.round(Math.min(5, Math.max(0, Number(rating) || 0)));
+            let out = '';
+            for (let i = 0; i < full; i++) out += '<svg class="w-4 h-4 fill-current" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>';
+            for (let i = full; i < 5; i++) out += '<svg class="w-4 h-4 text-gray-200" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>';
+            return out;
+        }
+
+        // Wire refresh button
+        refreshBtn.addEventListener('click', () => fetchRecommendations(6));
+
+        // Initial load
+        fetchRecommendations(6);
+    })();
+</script>
+@endpush
+
 {{-- Trail Recommendations --}}
 <div id="trail-recommendations" class="px-6 lg:px-8 py-10 bg-gradient-to-br from-gray-50 to-gray-100">
     <div class="text-center mb-8">
@@ -131,143 +422,11 @@ $imageService = app('App\Services\TrailImageService');
         <p class="text-gray-600 max-w-2xl mx-auto">Discover amazing hiking trails tailored to your preferences and current conditions</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-        {{-- Trail Card 1 --}}
-        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 overflow-hidden group">
-            <div class="relative h-48">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Mount_Pulag_Summit_2014.jpg/640px-Mount_Pulag_Summit_2014.jpg"
-                    alt="Ambangeg Trail"
-                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                <div class="absolute bottom-4 left-4 right-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-medium text-white bg-green-600 px-2 py-1 rounded-full">Beginner-Friendly</span>
-                        <span class="text-white text-sm">19° 🌤️</span>
-                    </div>
-                </div>
-            </div>
-            <div class="p-6">
-                <h3 class="text-xl font-bold text-gray-800 mb-2 group-hover:text-green-600 transition-colors duration-300">Ambangeg Trail</h3>
-                <p class="text-sm text-gray-500 mb-3">Kabayan, Benguet, Philippines</p>
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center">
-                        <div class="flex text-yellow-400">
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                            </svg>
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                            </svg>
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                            </svg>
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                            </svg>
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                            </svg>
-                        </div>
-                        <span class="text-sm text-gray-600 ml-2">4.7 (80)</span>
-                    </div>
-                </div>
-                <a href="#" class="block w-full bg-green-600 text-white text-center py-3 px-4 rounded-xl font-semibold hover:bg-green-700 transition-all duration-300">
-                    View Details
-                </a>
-            </div>
+    <div id="recommendations-container" class="max-w-7xl mx-auto">
+        <div id="recommendations-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 custom-scrollbar overflow-x-auto">
+            {{-- Filled dynamically via JS --}}
+            <div class="col-span-1 text-center text-sm text-gray-600">Loading recommendations...</div>
         </div>
-
-        {{-- Trail Card 2 --}}
-        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 overflow-hidden group">
-            <div class="relative h-48">
-                <img src="https://www.choosephilippines.com/uploads/2020/02/18/Tinipak-River.jpg"
-                    alt="Tinipak Trail"
-                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                <div class="absolute bottom-4 left-4 right-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-medium text-white bg-yellow-600 px-2 py-1 rounded-full">Moderate</span>
-                        <span class="text-white text-sm">21° ☀️</span>
-                    </div>
-                </div>
-            </div>
-            <div class="p-6">
-                <h3 class="text-xl font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors duration-300">Tinipak Trail</h3>
-                <p class="text-sm text-gray-500 mb-3">Tanay, Rizal, Philippines</p>
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center">
-                        <div class="flex text-yellow-400">
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                            </svg>
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                            </svg>
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                            </svg>
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                            </svg>
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                            </svg>
-                        </div>
-                        <span class="text-sm text-gray-600 ml-2">4.6 (180)</span>
-                    </div>
-                </div>
-                <a href="#" class="block w-full bg-blue-600 text-white text-center py-3 px-4 rounded-xl font-semibold hover:bg-blue-700 transition-all duration-300">
-                    View Details
-                </a>
-            </div>
-        </div>
-
-        {{-- Trail Card 3 --}}
-        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 overflow-hidden group">
-            <div class="relative h-48">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/Kidapawan_Lake_Agco.jpg"
-                    alt="Kidapawan Trail"
-                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                <div class="absolute bottom-4 left-4 right-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-medium text-white bg-red-600 px-2 py-1 rounded-full">Advanced</span>
-                        <span class="text-white text-sm">25° ☀️</span>
-                    </div>
-                </div>
-            </div>
-            <div class="p-6">
-                <h3 class="text-xl font-bold text-gray-800 mb-2 group-hover:text-red-600 transition-colors duration-300">Kidapawan Trail</h3>
-                <p class="text-sm text-gray-500 mb-3">North Cotabato, Philippines</p>
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center">
-                        <div class="flex text-yellow-400">
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                            </svg>
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                            </svg>
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                            </svg>
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                            </svg>
-                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                            </svg>
-                        </div>
-                        <span class="text-sm text-gray-600 ml-2">4.3 (310)</span>
-                    </div>
-                </div>
-                <a href="#" class="block w-full bg-red-600 text-white text-center py-3 px-4 rounded-xl font-semibold hover:bg-red-700 transition-all duration-300">
-                    View Details
-                </a>
-            </div>
-        </div>
-
     </div>
 
     <!-- View All Trails Button -->
@@ -285,9 +444,9 @@ $imageService = app('App\Services\TrailImageService');
 @if(isset($weather) && $weather)
 <div id="weather-section" class="px-6 lg:px-8 py-8">
     <div class="text-center mb-8">
-    <h3 class="text-3xl font-bold text-gray-800 mb-3">Weather</h3>
-    <p class="text-gray-600 max-w-2xl mx-auto">Stay updated with the latest weather information for your hiking adventures.</p>
-</div>
+        <h3 class="text-3xl font-bold text-gray-800 mb-3">Weather</h3>
+        <p class="text-gray-600 max-w-2xl mx-auto">Stay updated with the latest weather information for your hiking adventures.</p>
+    </div>
     <div class="bg-gradient-to-br {{ $weather['gradient'] ?? 'from-indigo-500 to-yellow-300' }} rounded-3xl p-8 text-white shadow-xl relative overflow-hidden min-h-[400px] weather-container">
 
         {{-- Animated Weather Background --}}
@@ -1172,7 +1331,7 @@ $imageService = app('App\Services\TrailImageService');
                     <div class="absolute bottom-4 left-4 right-4">
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-medium text-white px-2 py-1 rounded-full {{ $trail->difficulty === 'easy' ? 'bg-green-600' : ($trail->difficulty === 'moderate' ? 'bg-yellow-600' : 'bg-red-600') }}">
-                                {{ ucfirst($trail->difficulty) }}
+                                {{ $trail->difficulty_label }}
                             </span>
                             <div class="flex items-center text-white text-xs">
                                 <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">

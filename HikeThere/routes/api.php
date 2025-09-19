@@ -48,6 +48,9 @@ Route::prefix('trails')->group(function () {
     Route::post('/search-nearby', [TrailController::class, 'searchNearby']);
 });
 
+// Recommender proxy endpoint (calls local ML service)
+Route::get('/recommender/user/{id}', [App\Http\Controllers\Api\RecommenderController::class, 'forUser']);
+
 // AllTrails OSM Derivative Database API - Trail Segments
 Route::prefix('trail-segments')->group(function () {
     Route::post('/generate', [TrailSegmentController::class, 'generateSegments']);

@@ -226,6 +226,35 @@
                             <textarea id="testimonials_faqs" name="testimonials_faqs" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="Most frequently asked questions from hikers, especially beginners">{{ old('testimonials_faqs', $trail->testimonials_faqs) }}</textarea>
                             <x-input-error for="testimonials_faqs" class="mt-2" />
                         </div>
+
+                        <!-- Activities / Supported Uses -->
+                        <div class="md:col-span-2">
+                            <x-label value="Supported Activities (select all that apply)" />
+                            <div class="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                @php
+                                    $activityOptions = [
+                                        'hiking' => 'Hiking',
+                                        'day_hike' => 'Day Hike',
+                                        'trail_running' => 'Trail Running',
+                                        'camping' => 'Camping',
+                                        'overnight_camping' => 'Overnight Camping',
+                                        'mountaineering' => 'Mountaineering',
+                                        'birding' => 'Birding',
+                                        'photography' => 'Photography',
+                                        'water_activities' => 'Water Activities (river/shore)'
+                                    ];
+                                    $selected = old('activities', $trail->activities ?? []);
+                                @endphp
+
+                                @foreach($activityOptions as $value => $label)
+                                    <label class="inline-flex items-center space-x-2 text-sm">
+                                        <input type="checkbox" name="activities[]" value="{{ $value }}" class="h-4 w-4 text-[#336d66] focus:ring-[#336d66] border-gray-300 rounded" {{ in_array($value, (array) $selected) ? 'checked' : '' }}>
+                                        <span class="text-gray-700">{{ $label }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                            <p class="mt-2 text-xs text-gray-500">These tags help hikers find trails that support specific activities and improve recommendation matching.</p>
+                        </div>
                     </div>
 
                     <div class="mt-8 flex justify-end space-x-3">

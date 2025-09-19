@@ -356,57 +356,271 @@
             overflow: hidden;
             pointer-events: none;
         }
-        
-            /* Parallax hero (scoped) */
-            .parallax-hero {
-                position: absolute;
-                inset: 0;
-                overflow: hidden;
-                pointer-events: none;
-                z-index: 0; /* sit above section background but behind hero content */
-            }
-        
-            .parallax-hero .parallax-layer {
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                width: 200%; /* wider to allow horizontal parallax movement */
-                height: 100%;
-                background-repeat: repeat-x;
-                background-position: 0 100%;
-                will-change: background-position;
-                opacity: 1;
-            }
-        
-            .parallax-hero .layer-1 { background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/1.png) 0 100% repeat-x; background-size: auto 136px; animation: parallax_fg_1 linear 20s infinite both; }
-            .parallax-hero .layer-2 { background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/2.png) 0 100% repeat-x; background-size: auto 145px; animation: parallax_fg_2 linear 30s infinite both; }
-            .parallax-hero .layer-3 { background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/3.png) 0 100% repeat-x; background-size: auto 158px; animation: parallax_fg_3 linear 55s infinite both; }
-            .parallax-hero .layer-4 { background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/4.png) 0 100% repeat-x; background-size: auto 468px; animation: parallax_fg_4 linear 75s infinite both; }
-            .parallax-hero .layer-5 { background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/5.png) 0 100% repeat-x; background-size: auto 311px; animation: parallax_fg_5 linear 95s infinite both; }
-            .parallax-hero .layer-6 { background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/6.png) 0 100% repeat-x; background-size: auto 222px; animation: parallax_fg_6 linear 120s infinite both; }
-        
-            /* simple bike/walker decorative layers (reduced complexity) */
-            .parallax-hero .bike-1 { background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/bike.png) 0 100% no-repeat; background-size: auto 75px; bottom: 120px; animation: parallax_bike 18s linear infinite; opacity: .6; }
-            .parallax-hero .bike-2 { background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/bike.png) 0 100% no-repeat; background-size: auto 75px; bottom: 150px; animation: parallax_bike 25s linear infinite; opacity: .5; }
-            .parallax-hero .walker-1, .parallax-hero .walker-2 { width: 110px; height: 110px; }
-            .parallax-hero .walker-1::before, .parallax-hero .walker-2::before { content: ''; position: absolute; inset: 0; background-image: url("/resources/parallax-hero-sample/img/hiker.svg"); background-size: 100% 100%; background-repeat: no-repeat; opacity: .6; }
-        
-            /* keyframes (scoped names to avoid collisions) */
-            @keyframes parallax_fg_1 { 0% { background-position: 2765px 100%; } 100% { background-position: 550px 100%; } }
-            @keyframes parallax_fg_2 { 0% { background-position: 2765px 100%; } 100% { background-position: 550px 100%; } }
-            @keyframes parallax_fg_3 { 0% { background-position: 2765px 100%; } 100% { background-position: 550px 100%; } }
-            @keyframes parallax_fg_4 { 0% { background-position: 2765px 100%; } 100% { background-position: 550px 100%; } }
-            @keyframes parallax_fg_5 { 0% { background-position: 2765px 100%; } 100% { background-position: 550px 100%; } }
-            @keyframes parallax_fg_6 { 0% { background-position: 2765px 100%; } 100% { background-position: 550px 100%; } }
-        
-            @keyframes parallax_bike { 0% { background-position: -300px 100%; } 100% { background-position: 2000px 100%; } }
 
-            /* Ensure hero content stays on top of the parallax layers */
-            .hero-container .max-w-6xl,
-            .hero-container .hero-content {
-                position: relative;
-                z-index: 10;
+        /* Parallax hero (scoped) */
+        .parallax-hero {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+            /* sit above section background but behind hero content */
+        }
+
+        .parallax-hero .parallax-layer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            /* wider to allow horizontal parallax movement */
+            height: 100%;
+            background-repeat: repeat-x;
+            background-position: 0 100%;
+            will-change: background-position;
+            opacity: 1;
+            z-index: 1;
+            /* base layer index */
+        }
+
+        .parallax-hero .layer-1 {
+            background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/1.png) 0 100% repeat-x;
+            background-size: auto 136px;
+            animation: parallax_fg_1 linear 20s infinite both;
+        }
+
+        .parallax-hero .layer-2 {
+            background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/2.png) 0 100% repeat-x;
+            background-size: auto 145px;
+            animation: parallax_fg_2 linear 30s infinite both;
+        }
+
+        .parallax-hero .layer-3 {
+            background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/3.png) 0 100% repeat-x;
+            background-size: auto 158px;
+            animation: parallax_fg_3 linear 55s infinite both;
+        }
+
+        .parallax-hero .layer-4 {
+            background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/4.png) 0 100% repeat-x;
+            background-size: auto 468px;
+            animation: parallax_fg_4 linear 75s infinite both;
+        }
+
+        .parallax-hero .layer-5 {
+            background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/5.png) 0 100% repeat-x;
+            background-size: auto 311px;
+            animation: parallax_fg_5 linear 95s infinite both;
+        }
+
+        .parallax-hero .layer-6 {
+            background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/6.png) 0 100% repeat-x;
+            background-size: auto 222px;
+            animation: parallax_fg_6 linear 120s infinite both;
+        }
+
+        /* simple bike/walker decorative layers (reduced complexity) */
+        .parallax-hero .bike-1 {
+            background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/bike.png) 0 100% no-repeat;
+            background-size: auto 75px;
+            bottom: 120px;
+            animation: parallax_bike 18s linear infinite;
+            opacity: .6;
+            z-index: 3;
+        }
+
+        .parallax-hero .bike-2 {
+            background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/24650/bike.png) 0 100% no-repeat;
+            background-size: auto 75px;
+            bottom: 110px;
+            animation: parallax_bike 25s linear infinite;
+            opacity: .5;
+            z-index: 3;
+        }
+
+        /* walker positioning and animation (updated) */
+        /* ensure walker elements override .parallax-layer defaults */
+        .parallax-hero .walker-1,
+        .parallax-hero .walker-2 {
+            position: absolute !important;
+            bottom: 100px !important;
+            width: 100px !important;
+            height: 100px !important;
+            pointer-events: none;
+            z-index: 5;
+            /* above base layers and bikes, below hero content */
+        }
+
+        /* walker-1 starts on the right and walks left across the visible area */
+        .parallax-hero .walker-1 {
+            right: 12% !important;
+            left: auto !important;
+            transform: translateX(0);
+            animation: walk-left 9s linear infinite, bob 0.9s ease-in-out infinite;
+        }
+
+        /* walker-2 starts on the left and walks right */
+        .parallax-hero .walker-2 {
+            left: 10% !important;
+            right: auto !important;
+            transform: translateX(0);
+            animation: walk-left 9s linear infinite, bob 0.9s ease-in-out infinite;
+        }
+
+        /* hiker image in ::before, shadow in ::after (so only image is semi-transparent) */
+        .parallax-hero .walker-1::before,
+        .parallax-hero .walker-2::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            display: block;
+            background-image: url("/img/hiker.svg");
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: left bottom;
+            opacity: 0.6;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .parallax-hero .walker-1::after,
+        .parallax-hero .walker-2::after {
+            content: '';
+            position: absolute;
+            left: 20px;
+            right: 20px;
+            bottom: 12px;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.15);
+            filter: blur(4px);
+            transform: translateZ(0);
+            border-radius: 50%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+       
+
+        /* walking motion: move across +/- X distance then loop */
+        @keyframes walk-left {
+            0% {
+                transform: translateX(0);
             }
+
+            50% {
+                transform: translateX(-60vw);
+            }
+
+            100% {
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes walk-right {
+            0% {
+                transform: translateX(0);
+            }
+
+            50% {
+                transform: translateX(60vw);
+            }
+
+            100% {
+                transform: translateX(0);
+            }
+        }
+
+        /* subtle vertical bob to simulate walking */
+        @keyframes bob {
+            0% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-6px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        /* keyframes (scoped names to avoid collisions) */
+        @keyframes parallax_fg_1 {
+            0% {
+                background-position: 2765px 100%;
+            }
+
+            100% {
+                background-position: 550px 100%;
+            }
+        }
+
+        @keyframes parallax_fg_2 {
+            0% {
+                background-position: 2765px 100%;
+            }
+
+            100% {
+                background-position: 550px 100%;
+            }
+        }
+
+        @keyframes parallax_fg_3 {
+            0% {
+                background-position: 2765px 100%;
+            }
+
+            100% {
+                background-position: 550px 100%;
+            }
+        }
+
+        @keyframes parallax_fg_4 {
+            0% {
+                background-position: 2765px 100%;
+            }
+
+            100% {
+                background-position: 550px 100%;
+            }
+        }
+
+        @keyframes parallax_fg_5 {
+            0% {
+                background-position: 2765px 100%;
+            }
+
+            100% {
+                background-position: 550px 100%;
+            }
+        }
+
+        @keyframes parallax_fg_6 {
+            0% {
+                background-position: 2765px 100%;
+            }
+
+            100% {
+                background-position: 550px 100%;
+            }
+        }
+
+        @keyframes parallax_bike {
+            0% {
+                background-position: -300px 100%;
+            }
+
+            100% {
+                background-position: 2000px 100%;
+            }
+        }
+
+        /* Ensure hero content stays on top of the parallax layers */
+        .hero-container .max-w-6xl,
+        .hero-container .hero-content {
+            position: relative;
+            z-index: 10;
+        }
 
         /* Per-pixel text blending - fix overlay positioning */
         .text-with-mask {
@@ -2408,11 +2622,15 @@
     </footer>
 
     <!-- Mobile Menu Toggle Script -->
-    <script type="application/json" id="app-config">{!! json_encode([
-        'authenticated' => auth()->check(),
-        'defaultTrailImage' => asset('img/default-trail.jpg'),
-        'appName' => config('app.name'),
-    ]) !!}</script>
+    <script type="application/json" id="app-config">
+        {
+            !!json_encode([
+                'authenticated' => auth() - > check(),
+                'defaultTrailImage' => asset('img/default-trail.jpg'),
+                'appName' => config('app.name'),
+            ]) !!
+        }
+    </script>
 
     <script>
         // Read pre-rendered app config to avoid Blade tokens inside JS

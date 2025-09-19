@@ -45,7 +45,7 @@
                             <p class="text-xl text-white/90">{{ $trail->mountain_name }}</p>
                             <div class="flex items-center space-x-4 mt-2">
                                 <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-white/20">
-                                    {{ ucfirst($trail->difficulty) }}
+                                    {{ $trail->difficulty_label }}
                                 </span>
                                 <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-white/20">
                                     {{ $trail->duration }}

@@ -167,7 +167,7 @@
                             class="w-full h-48 object-cover rounded-t-xl">
                         <div class="absolute top-4 right-4">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $trail->difficulty === 'easy' ? 'bg-green-100 text-green-800' : ($trail->difficulty === 'moderate' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
-                                {{ ucfirst($trail->difficulty) }}
+                                {{ $trail->difficulty_label }}
                             </span>
                         </div>
                     </div>

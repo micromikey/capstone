@@ -117,7 +117,7 @@
                                     <span class="font-medium">Difficulty:</span>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white 
                                         {{ $trail->difficulty === 'beginner' ? 'bg-green-500' : ($trail->difficulty === 'intermediate' ? 'bg-yellow-500' : 'bg-red-500') }}">
-                                        {{ ucfirst($trail->difficulty) }}
+                                        {{ $trail->difficulty_label }}
                                     </span>
                                 </div>
                                 <div class="flex justify-between">

@@ -82,6 +82,8 @@ class OrganizationTrailController extends Controller
             'description' => 'nullable|string',
             'trail_coordinates' => 'nullable|string',
             'gpx_file' => 'nullable|file|mimes:gpx,kml,kmz|max:10240', // 10MB max
+            'activities' => 'nullable|array',
+            'activities.*' => 'string',
         ]);
 
         try {
@@ -145,6 +147,12 @@ class OrganizationTrailController extends Controller
             }
 
             $trail->save();
+
+            // Save activities explicitly (ensure array or null)
+            if ($request->has('activities')) {
+                $trail->activities = array_values(array_filter((array) $request->input('activities')));
+                $trail->save();
+            }
 
             // Dispatch async enrichment if metrics/coordinates missing
             if (!$trail->coordinates || $trail->length === null) {
@@ -229,6 +237,8 @@ class OrganizationTrailController extends Controller
             'estimated_time' => 'nullable|integer|min:0',
             'summary' => 'nullable|string',
             'description' => 'nullable|string',
+            'activities' => 'nullable|array',
+            'activities.*' => 'string',
         ]);
 
         $input = $request->all();
@@ -246,6 +256,10 @@ class OrganizationTrailController extends Controller
         }
 
         $trail->fill($input);
+        // Ensure activities array is preserved/updated
+        if ($request->has('activities')) {
+            $trail->activities = array_values(array_filter((array) $request->input('activities')));
+        }
         $newBaseSlug = Str::slug($request->trail_name . '-' . $request->mountain_name);
         if ($trail->isDirty('trail_name') || $trail->isDirty('mountain_name')) {
             $trail->slug = $this->generateUniqueSlug($newBaseSlug, $trail->id);

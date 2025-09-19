@@ -183,7 +183,7 @@
                                                     $diffClass = $diffColors[$trail->difficulty] ?? 'bg-gray-100 text-gray-700';
                                                 @endphp
                                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $diffClass }}">
-                                                    {{ ucfirst($trail->difficulty) }}
+                                                    {{ $trail->difficulty_label }}
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">

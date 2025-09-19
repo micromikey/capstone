@@ -1,0 +1,16 @@
+name: hike-ml
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - numpy
+  - pandas
+  - scikit-learn
+  - joblib
+  - fastapi
+  - uvicorn
+  - python-dotenv
+  - scipy
+  - pip:
+    - typing-extensions

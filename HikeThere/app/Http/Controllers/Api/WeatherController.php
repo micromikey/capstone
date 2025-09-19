@@ -95,9 +95,11 @@ class WeatherController extends Controller
 
         return [
             'condition' => $this->mapWeatherCondition($data['weather'][0]['main'] ?? 'Unknown'),
+            'condition_code' => $data['weather'][0]['main'] ?? null,
             'temperature' => round($data['main']['temp'] ?? 0),
+            'feels_like' => isset($data['main']['feels_like']) ? round($data['main']['feels_like']) : null,
             'humidity' => $data['main']['humidity'] ?? 0,
-            'windSpeed' => round(($data['wind']['speed'] ?? 0) * 3.6), // Convert m/s to km/h
+            'wind_speed' => round(($data['wind']['speed'] ?? 0) * 3.6), // Convert m/s to km/h
             'uvIndex' => $this->getUVIndex($lat, $lng),
             'timestamp' => $philippineTime->toISOString(),
             'location' => [
@@ -105,6 +107,7 @@ class WeatherController extends Controller
                 'lng' => $lng,
             ],
             'description' => $data['weather'][0]['description'] ?? '',
+            'icon' => $data['weather'][0]['icon'] ?? null,
             'pressure' => $data['main']['pressure'] ?? 0,
             'visibility' => $data['visibility'] ?? 0,
         ];
@@ -325,15 +328,16 @@ class WeatherController extends Controller
 
         try {
             // Use existing weather data method but format for trail conditions
+
             $weatherData = $this->getOpenWeatherData($latitude, $longitude);
 
-            // Format for trail-specific needs
+            // Format for trail-specific needs (use keys returned by getOpenWeatherData)
             $trailConditions = [
-                'temperature' => round($weatherData['temperature']),
-                'feels_like' => round($weatherData['feels_like']),
-                'condition' => $this->mapWeatherCondition($weatherData['description']),
-                'humidity' => $weatherData['humidity'],
-                'wind_speed' => round($weatherData['wind']['speed'] * 3.6), // Convert m/s to km/h
+                'temperature' => isset($weatherData['temperature']) ? round($weatherData['temperature']) : null,
+                'feels_like' => $weatherData['feels_like'] ?? null,
+                'condition' => $weatherData['condition'] ?? ($weatherData['description'] ?? null),
+                'humidity' => $weatherData['humidity'] ?? null,
+                'wind_speed' => $weatherData['wind_speed'] ?? null,
                 'visibility' => isset($weatherData['visibility']) ? round($weatherData['visibility'] / 1000) : 10,
                 'alerts' => $this->getTrailAlerts($weatherData),
             ];
@@ -399,30 +403,35 @@ class WeatherController extends Controller
             
             // Get current weather from OpenWeather API
             $weather = $this->getOpenWeatherData($lat, $lon);
-            
-            if (!$weather) {
+
+            if (! $weather) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unable to fetch weather data'
                 ], 500);
             }
 
-            // Format weather data for frontend
+            // Build frontend-friendly current weather object from our normalized data
             $formattedWeather = [
-                'temp' => round($weather['current']['temp']),
-                'feels_like' => round($weather['current']['feels_like']),
-                'humidity' => $weather['current']['humidity'],
-                'description' => $weather['current']['weather'][0]['description'],
-                'icon' => $weather['current']['weather'][0]['icon'],
-                'city' => $weather['location']['name'] ?? 'Unknown',
-                'uv_index' => round($weather['current']['uvi'] ?? 0),
-                'condition' => $weather['current']['weather'][0]['main'],
-                'is_day' => $this->isDayTime($weather['current']),
-                'gradient' => $this->getWeatherGradient($weather['current']['weather'][0]['main'])
+                'temp' => isset($weather['temperature']) ? round($weather['temperature']) : null,
+                'feels_like' => $weather['feels_like'] ?? null,
+                'humidity' => $weather['humidity'] ?? null,
+                'description' => $weather['description'] ?? ($weather['condition'] ?? null),
+                'icon' => $weather['icon'] ?? null,
+                'city' => $weather['location']['name'] ?? ($weather['location']['city'] ?? 'Unknown'),
+                'uv_index' => $weather['uvIndex'] ?? 0,
+                'condition' => $weather['condition_code'] ?? ($weather['condition'] ?? null),
+                'is_day' => $this->isDayTime($weather),
+                'gradient' => $this->getWeatherGradient($weather['condition'] ?? ''),
             ];
 
-            // Format forecast data
-            $formattedForecast = $this->formatForecastForAjax($weather['daily'] ?? []);
+            // Get a simple 5-day forecast using the forecast endpoint (keep separate to avoid OneCall dependency)
+            try {
+                $forecast = $this->getOpenWeatherForecast($lat, $lon);
+                $formattedForecast = $this->formatForecastForAjax($forecast['forecast'] ?? $forecast['daily'] ?? []);
+            } catch (\Exception $e) {
+                $formattedForecast = [];
+            }
 
             return response()->json([
                 'success' => true,
@@ -455,14 +464,44 @@ class WeatherController extends Controller
 
         foreach ($dailyData as $day) {
             if ($count >= 5) break; // Only return 5 days
-            
-            $formattedForecast[] = [
-                'date' => Carbon::createFromTimestamp($day['dt'])->format('l, M j'),
-                'temp' => round($day['temp']['day']),
-                'condition' => $day['weather'][0]['description'],
-                'icon' => $day['weather'][0]['icon']
-            ];
-            
+
+            // Support multiple shapes: our forecast summary, OpenWeather 'daily' from OneCall, or 3-hour list grouped
+            if (isset($day['date']) && isset($day['temp'])) {
+                // Already in our simplified format
+                $formattedForecast[] = [
+                    'date' => $day['date'],
+                    'temp' => round($day['temp']),
+                    'condition' => $day['condition'] ?? ($day['weather'][0]['description'] ?? null),
+                    'icon' => $day['icon'] ?? ($day['weather'][0]['icon'] ?? null),
+                ];
+            } elseif (isset($day['dt']) && isset($day['temp'])) {
+                // OpenWeather OneCall daily entry
+                $date = Carbon::createFromTimestamp($day['dt'])->format('l, M j');
+                $tempDay = is_array($day['temp']) ? ($day['temp']['day'] ?? $day['temp']) : $day['temp'];
+
+                $formattedForecast[] = [
+                    'date' => $date,
+                    'temp' => round($tempDay),
+                    'condition' => $day['weather'][0]['description'] ?? null,
+                    'icon' => $day['weather'][0]['icon'] ?? null,
+                ];
+            } else {
+                // Fallback: try to extract from possible list entries
+                $date = isset($day['dt_txt']) ? Carbon::parse($day['dt_txt'])->format('l, M j') : (isset($day['date']) ? $day['date'] : null);
+                $temp = $day['main']['temp'] ?? ($day['temp'] ?? null);
+                $condition = $day['weather'][0]['description'] ?? null;
+                $icon = $day['weather'][0]['icon'] ?? null;
+
+                if ($date === null) continue;
+
+                $formattedForecast[] = [
+                    'date' => $date,
+                    'temp' => isset($temp) ? round($temp) : null,
+                    'condition' => $condition,
+                    'icon' => $icon,
+                ];
+            }
+
             $count++;
         }
 
@@ -474,10 +513,17 @@ class WeatherController extends Controller
      */
     private function isDayTime($weatherData): bool
     {
-        $currentTime = time();
-        $sunrise = $weatherData['sunrise'] ?? 0;
-        $sunset = $weatherData['sunset'] ?? 0;
-        
-        return $currentTime >= $sunrise && $currentTime <= $sunset;
+        // If weatherData contains sunrise/sunset timestamps (OpenWeather), use them
+        if (is_array($weatherData) && (isset($weatherData['sunrise']) || isset($weatherData['sunset']))) {
+            $currentTime = time();
+            $sunrise = $weatherData['sunrise'] ?? 0;
+            $sunset = $weatherData['sunset'] ?? PHP_INT_MAX;
+
+            return $currentTime >= $sunrise && $currentTime <= $sunset;
+        }
+
+        // Otherwise, approximate daytime based on hour in Manila
+        $hour = now()->setTimezone('Asia/Manila')->hour;
+        return $hour >= 6 && $hour <= 18;
     }
 }

@@ -146,7 +146,7 @@ class TrailTcpdfController extends Controller
 
     private function generatePdfHtml($trail, $staticMapUrl, $elevationData, $coordinates)
     {
-        $html = '
+            $html = '
         <style>
             body { font-family: Arial, sans-serif; font-size: 12px; }
             .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
@@ -177,7 +177,7 @@ class TrailTcpdfController extends Controller
         <table class="info-table">
             <tr>
                 <td class="label">Difficulty:</td>
-                <td><span class="difficulty-badge difficulty-' . strtolower($trail->difficulty) . '">' . ucfirst($trail->difficulty) . '</span></td>
+                <td><span class="difficulty-badge difficulty-' . strtolower($trail->difficulty) . '">' . $trail->difficulty_label . '</span></td>
             </tr>
             <tr>
                 <td class="label">Length:</td>

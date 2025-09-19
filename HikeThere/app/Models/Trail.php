@@ -21,12 +21,15 @@ class Trail extends Model
         'testimonials_faqs', 'length', 'elevation_gain', 'elevation_high',
         'elevation_low', 'estimated_time', 'summary', 'description', 'features',
         'gpx_file', 'coordinates', 'latitude', 'longitude', 'is_active', 'coordinate_generation_method',
-        'custom_start_point', 'custom_end_point', 'custom_waypoints', 'metrics_confidence'
+        'custom_start_point', 'custom_end_point', 'custom_waypoints', 'metrics_confidence',
+        'activities'
     ];
+
 
     protected $casts = [
         'geometry' => 'array',
         'features' => 'array',
+        'activities' => 'array',
         'coordinates' => 'array',
         'custom_start_point' => 'array',
         'custom_end_point' => 'array',
@@ -69,7 +72,19 @@ class Trail extends Model
     // Accessors
     public function getDifficultyLabelAttribute()
     {
-        return ucwords($this->difficulty);
+        // Map internal difficulty values to user-facing labels
+        $map = [
+            'beginner' => 'Easy',
+            'intermediate' => 'Moderate',
+            'advanced' => 'Challenging',
+            // legacy/alternate values
+            'hard' => 'Challenging',
+            'difficult' => 'Challenging',
+            'very_hard' => 'Challenging',
+        ];
+
+        $key = strtolower($this->difficulty ?? '');
+        return $map[$key] ?? ucwords($this->difficulty);
     }
 
     public function getEstimatedTimeFormattedAttribute()
