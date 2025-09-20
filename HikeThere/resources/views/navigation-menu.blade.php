@@ -7,7 +7,6 @@
                 <div class="shrink-0 flex items-center">
                     @auth
                     @if(Auth::user()->user_type === 'organization')
-                    <a href="{{ route('org.dashboard') }}">
                         <img src="{{ asset('img/icon1.png') }}" alt="Icon" class="h-9 w-auto">
                     </a>
                     @else

@@ -4,14 +4,29 @@
     <meta charset="utf-8">
     <title>{{ $trail->trail_name }} - Trail Map</title>
     <style>
+        /* Modern, print-friendly styles (keep TCPDF compatibility in mind) */
         body {
-            font-family: 'DejaVu Sans', sans-serif;
+            font-family: 'DejaVu Sans', 'Helvetica', Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 18px;
             font-size: 12px;
-            line-height: 1.4;
+            color: #222;
+            background: #fff;
+            -webkit-font-smoothing: antialiased;
         }
+        .container { width: 100%; max-width: 820px; margin: 0 auto; }
+        .card { background: #fff; border-radius: 6px; padding: 12px; box-shadow: 0 1px 0 rgba(0,0,0,0.05); margin-bottom: 12px; border: 1px solid #eee; }
         .header {
+            display: table; width: 100%; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e6e6e6;
+        }
+        .header-left { display: table-cell; vertical-align: middle; }
+        .header-right { display: table-cell; vertical-align: middle; text-align: right; width: 260px; }
+        .logo { height: 48px; display: inline-block; vertical-align: middle; }
+        .title { margin: 0; font-size: 20px; color: #1f6f2e; }
+        .subtitle { margin: 2px 0 0 0; font-size: 12px; color: #6b6b6b; }
+        .meta { font-size: 11px; color: #666; }
+        /* Primary header styles (kept simple for TCPDF compatibility) */
+        .header-center {
             text-align: center;
             margin-bottom: 20px;
             border-bottom: 2px solid #333;
@@ -28,44 +43,14 @@
             color: #666;
             font-weight: normal;
         }
-        .trail-info {
-            display: table;
-            width: 100%;
-            margin-bottom: 15px;
-        }
-        .info-row {
-            display: table-row;
-        }
-        .info-label {
-            display: table-cell;
-            width: 30%;
-            font-weight: bold;
-            padding: 3px 0;
-        }
-        .info-value {
-            display: table-cell;
-            padding: 3px 0;
-        }
-        .map-container {
-            text-align: center;
-            margin: 20px 0;
-            page-break-inside: avoid;
-        }
-        .map-container img {
-            max-width: 100%;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
-        .elevation-section {
-            margin-top: 20px;
-            page-break-inside: avoid;
-        }
-        .elevation-stats {
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
+        .trail-info { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+        .info-col { flex: 1 1 200px; }
+        .info-label { font-weight: 700; color: #333; display:block; font-size:11px; }
+        .info-value { display:block; color: #333; margin-top: 2px; }
+        .map-container { text-align:center; page-break-inside: avoid; }
+        .map-image { width: 100%; max-width: 520px; border-radius:6px; border:1px solid #e2e2e2; }
+        .elevation-section { margin-top: 12px; page-break-inside: avoid; }
+        .elevation-stats { background:#fbfbfb; padding:8px; border-radius:6px; border:1px solid #f0f0f0; }
         .stat-item {
             display: inline-block;
             margin-right: 20px;
@@ -82,12 +67,7 @@
         .difficulty-easy { background: #d4edda; color: #155724; }
         .difficulty-moderate { background: #fff3cd; color: #856404; }
         .difficulty-difficult { background: #f8d7da; color: #721c24; }
-        .legend {
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 15px;
-        }
+        .legend { background: #f7f7f8; padding: 8px; border-radius:6px; margin-top:10px; border:1px solid #f0f0f0; }
         .legend h4 {
             margin: 0 0 8px 0;
             font-size: 14px;
@@ -95,13 +75,7 @@
         .legend-item {
             margin-bottom: 5px;
         }
-        .trail-notes {
-            margin-top: 15px;
-            background: #fff3cd;
-            padding: 10px;
-            border-radius: 5px;
-            border-left: 4px solid #ffc107;
-        }
+        .trail-notes { margin-top: 10px; background: #fff8e5; padding: 10px; border-radius: 6px; border-left: 4px solid #ffcf67; }
         .emergency-info {
             margin-top: 15px;
             background: #f8d7da;
@@ -125,62 +99,65 @@
             background: #f8f9fa;
             font-weight: bold;
         }
-        .footer {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            text-align: center;
-            font-size: 10px;
-            color: #666;
-            border-top: 1px solid #ddd;
-            padding-top: 10px;
-        }
+        .footer { margin-top: 14px; border-top: 1px solid #eaeaea; padding-top: 8px; font-size:10px; color:#666; text-align:center; }
+        .footer .left { float:left; font-size:10px; color:#666; }
+        .footer .right { float:right; font-size:10px; color:#666; }
+        .clear { clear: both; }
         .page-break {
             page-break-before: always;
         }
     </style>
 </head>
 <body>
+    <div class="container">
     <!-- Header -->
-    <div class="header">
-        <h1>{{ $trail->trail_name }}</h1>
-        <h2>{{ $trail->mountain_name }} - {{ $trail->location->name ?? 'Location' }}</h2>
+    <div class="header card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center;">
+                @php
+                    // Check if the logo file exists in the public path; fall back to text if not.
+                    $logoPath = public_path('img/icon1.png');
+                    $logoExists = file_exists($logoPath);
+                @endphp
+
+                @if($logoExists)
+                    <img class="logo" src="{{ asset('img/hikethere-logo.png') }}" alt="HikeThere logo">
+                @else
+                    <div style="font-weight:700; font-size:18px; color:#1f6f2e;">HikeThere</div>
+                @endif
+
+                <div style="display:inline-block; vertical-align: middle; margin-left:8px;">
+                    <h1 class="title">{{ $trail->trail_name }}</h1>
+                    <div class="subtitle">{{ $trail->mountain_name }} • {{ $trail->location->name ?? 'Location' }}</div>
+                </div>
+            </div>
+
+            <div style="text-align:right; width:260px;">
+                <div class="meta">Generated: {{ date('Y-m-d') }}</div>
+                <div style="height:8px"></div>
+                @if(!empty($staticMapDataUri) || !empty($staticMapUrl))
+                    <img class="map-image" src="{{ $staticMapDataUri ?? $staticMapUrl }}" style="max-width:240px;" alt="Map preview">
+                @endif
+            </div>
+        </div>
     </div>
 
     <!-- Trail Information -->
-    <div class="trail-info">
-        <div class="info-row">
-            <div class="info-label">Difficulty:</div>
-            <div class="info-value">
-                <span class="difficulty-badge difficulty-{{ strtolower($trail->difficulty) }}">
-                    {{ $trail->difficulty_label }}
-                </span>
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <div class="info-col"><span class="info-label">Difficulty</span><span class="info-value"><span class="difficulty-badge difficulty-{{ strtolower($trail->difficulty) }}">{{ $trail->difficulty_label }}</span></span></div>
+            </div>
+            <div style="text-align:right;">
+                <div class="info-col"><span class="info-label">Length</span><span class="info-value">{{ $trail->length ?? 'N/A' }} km</span></div>
+                <div class="info-col"><span class="info-label">Estimated Time</span><span class="info-value">{{ $trail->estimated_time_formatted ?? 'N/A' }}</span></div>
             </div>
         </div>
-        <div class="info-row">
-            <div class="info-label">Length:</div>
-            <div class="info-value">{{ $trail->length ?? 'N/A' }} km</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">Estimated Time:</div>
-            <div class="info-value">{{ $trail->estimated_time_formatted ?? 'N/A' }}</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">Elevation Gain:</div>
-            <div class="info-value">{{ $trail->elevation_gain ?? 'N/A' }} m</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">Highest Point:</div>
-            <div class="info-value">{{ $trail->elevation_high ?? 'N/A' }} m</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">Lowest Point:</div>
-            <div class="info-value">{{ $trail->elevation_low ?? 'N/A' }} m</div>
-        </div>
-        <div class="info-row">
-            <div class="info-label">Best Season:</div>
-            <div class="info-value">{{ $trail->best_season ?? 'N/A' }}</div>
+        <div style="display:flex; gap:12px; margin-top:8px;">
+            <div class="info-col"><span class="info-label">Elevation Gain</span><span class="info-value">{{ $trail->elevation_gain ?? 'N/A' }} m</span></div>
+            <div class="info-col"><span class="info-label">Highest Point</span><span class="info-value">{{ $trail->elevation_high ?? 'N/A' }} m</span></div>
+            <div class="info-col"><span class="info-label">Lowest Point</span><span class="info-value">{{ $trail->elevation_low ?? 'N/A' }} m</span></div>
+            <div class="info-col"><span class="info-label">Best Season</span><span class="info-value">{{ $trail->best_season ?? 'N/A' }}</span></div>
         </div>
     </div>
 
@@ -195,7 +172,15 @@
     <!-- Trail Map -->
     <div class="map-container">
         <h3>Trail Route Map</h3>
-        <img src="{{ $staticMapUrl }}" alt="Trail Map for {{ $trail->trail_name }}">
+        @php
+            // Prefer the embedded base64 image when available (passed as staticMapDataUri by controller)
+            $mapSrc = $staticMapDataUri ?? $staticMapUrl ?? '';
+        @endphp
+        @if($mapSrc)
+            <img src="{{ $mapSrc }}" alt="Trail Map for {{ $trail->trail_name }}">
+        @else
+            <div style="font-size:12px; color:#666;">Map image not available.</div>
+        @endif
     </div>
 
     <!-- Elevation Profile -->
@@ -271,50 +256,7 @@
     </div>
     @endif
 
-    <!-- GPS Coordinates (Page 2) -->
-    <div class="page-break">
-        <h3>GPS Coordinates for Trail Route</h3>
-        <p><strong>Use these coordinates for GPS navigation and tracking your progress:</strong></p>
-        
-        <table class="coordinate-table">
-            <thead>
-                <tr>
-                    <th>Point #</th>
-                    <th>Latitude</th>
-                    <th>Longitude</th>
-                    <th>Notes</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($coordinates as $index => $coord)
-                <tr>
-                    <td>{{ $index + 1 }}</td>
-                    <td>{{ number_format($coord['lat'], 6) }}</td>
-                    <td>{{ number_format($coord['lng'], 6) }}</td>
-                    <td>
-                        @if($index === 0)
-                            Trail Start
-                        @elseif($index === count($coordinates) - 1)
-                            Trail End
-                        @else
-                            Waypoint
-                        @endif
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-
-        <div style="margin-top: 15px;">
-            <h4>Using GPS Coordinates:</h4>
-            <ol>
-                <li>Load these coordinates into your GPS device or smartphone app</li>
-                <li>Follow the waypoints in sequence from Start to End</li>
-                <li>Use the coordinates to track your current position on the trail</li>
-                <li>If you get lost, find the nearest waypoint to get back on track</li>
-            </ol>
-        </div>
-    </div>
+    <!-- GPS Coordinates removed for a cleaner PDF; coordinates remain available in the app -->
 
     <!-- Footer -->
     <div class="footer">

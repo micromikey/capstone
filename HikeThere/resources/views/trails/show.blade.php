@@ -205,22 +205,12 @@
                             <div class="flex items-center justify-between mb-3">
                                 <h3 class="text-lg font-semibold text-gray-900">Trail Route & Map</h3>
                                 <div class="flex gap-2">
-                                    <button id="start-tracking" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        </svg>
-                                        Start Tracking
-                                    </button>
                                     <div class="flex flex-col gap-1">
                                         <a href="{{ route('trails.download-map-tcpdf', $trail) }}" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                             </svg>
                                             Download PDF Map
-                                        </a>
-                                        <a href="{{ route('trails.download-map', $trail) }}" class="inline-flex items-center px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs font-medium rounded transition-colors">
-                                            Alternative PDF (requires GD extension)
                                         </a>
                                     </div>
                                 </div>
@@ -257,10 +247,6 @@
                                         <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
                                         End Point
                                     </div>
-                                    <div class="flex items-center">
-                                        <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                                        Your Location
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -295,34 +281,6 @@
                                 @else
                                     <p class="text-sm text-yellow-600">GPS coordinates will be available once the trail organization adds them.</p>
                                 @endauth
-                            </div>
-                        </div>
-                    @endif
-
-                    <!-- Elevation Profile -->
-                    @if($trail->coordinates && count($trail->coordinates) > 0)
-                        <div class="mb-8">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Elevation Profile</h3>
-                            <div class="bg-gray-50 rounded-lg p-4">
-                                <div id="elevation-chart" style="height: 300px; width: 100%;"></div>
-                                <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                    <div class="text-center">
-                                        <div class="font-semibold text-gray-900">{{ $trail->elevation_high ?? 'N/A' }}m</div>
-                                        <div class="text-gray-600">Highest Point</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="font-semibold text-gray-900">{{ $trail->elevation_low ?? 'N/A' }}m</div>
-                                        <div class="text-gray-600">Lowest Point</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="font-semibold text-gray-900">{{ $trail->elevation_gain ?? 'N/A' }}m</div>
-                                        <div class="text-gray-600">Total Gain</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="font-semibold text-gray-900">{{ $trail->length ?? 'N/A' }}km</div>
-                                        <div class="text-gray-600">Distance</div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     @endif
