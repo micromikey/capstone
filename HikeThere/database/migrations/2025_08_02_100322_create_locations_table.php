@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->string('province');
-            $table->string('region');
+            $table->foreignId('region_id')->constrained()->onDelete('cascade');
             $table->string('country')->default('Philippines');
             $table->decimal('latitude', 10, 8);
             $table->decimal('longitude', 11, 8);

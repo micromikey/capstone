@@ -17,13 +17,15 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->enum('difficulty', ['beginner-friendly', 'moderate', 'challenging', 'strenuous']);
+            $table->text('description')->nullable();
+            $table->foreignId('region_id')->constrained()->onDelete('cascade');
+            $table->decimal('distance', 8, 2)->nullable(); // in kilometers
             $table->decimal('length', 8, 2); // in kilometers
             $table->integer('elevation_gain'); // in meters
             $table->integer('elevation_high'); // highest point in meters
             $table->integer('elevation_low'); // lowest point in meters
             $table->integer('estimated_time'); // in minutes
             $table->text('summary');
-            $table->text('description')->nullable();
             $table->json('features')->nullable(); // ["scenic views", "waterfalls", "camping"]
             $table->decimal('average_rating', 3, 2)->default(0);
             $table->integer('total_reviews')->default(0);
@@ -31,6 +33,10 @@ return new class extends Migration
             $table->string('gpx_file')->nullable(); // GPS track file
             $table->json('coordinates')->nullable(); // trail coordinates
             $table->timestamps();
+          
+           
+          
+
         });
     }
 

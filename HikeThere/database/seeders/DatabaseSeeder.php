@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\Region;
 use App\Models\Trail;
 use App\Models\Location;
 use Illuminate\Support\Str;
@@ -16,17 +16,24 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // ✅ Ensure the region exists (avoid hardcoding id=1)
+        $car = Region::firstOrCreate(
+            ['name' => 'Cordillera Administrative Region'],
+            ['description' => 'Mountainous region in Northern Luzon']
+        );
+
+        // ✅ Create Mt. Pulag under this region
         $mtPulag = Location::create([
             'name' => 'Mt. Pulag',
             'slug' => 'mt-pulag',
             'province' => 'Benguet',
-            'region' => 'Cordillera Administrative Region',
+            'region_id' => $car->id,
             'latitude' => 16.5969,
             'longitude' => 120.8958,
             'description' => 'The highest peak in Luzon and third highest mountain in the Philippines.',
         ]);
 
-        // Create trails for Mt. Pulag
+        // ✅ Trails for Mt. Pulag
         $trails = [
             [
                 'name' => 'Ambangeg Trail',
@@ -54,6 +61,7 @@ class DatabaseSeeder extends Seeder
 
         foreach ($trails as $trailData) {
             $trailData['location_id'] = $mtPulag->id;
+            $trailData['region_id'] = $car->id; // ✅ make sure every trail belongs to the region
             $trailData['slug'] = Str::slug($trailData['name']);
             $trailData['average_rating'] = fake()->randomFloat(1, 4.0, 5.0);
             $trailData['total_reviews'] = fake()->numberBetween(20, 100);

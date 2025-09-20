@@ -13,8 +13,38 @@ class Trail extends Model
         'location_id', 'name', 'slug', 'difficulty', 'length',
         'elevation_gain', 'elevation_high', 'elevation_low',
         'estimated_time', 'summary', 'description', 'features',
-        'gpx_file', 'coordinates', 'is_active'
+        'gpx_file', 'coordinates', 'is_active',
+        'name', 'description', 
+        'region_id', 'distance', 'elevation_gain'
     ];
+
+
+    public function region()
+    {
+        return $this->belongsTo(Region::class);
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    public function feedback()
+    {
+        return $this->hasMany(Feedback::class);
+    }
+
+    public function safetyIncidents()
+    {
+        return $this->hasMany(SafetyIncident::class);
+    }
+
+    public function emergencyReadiness()
+    {
+        return $this->hasOne(EmergencyReadiness::class);
+    }
+
+    
 
     protected $casts = [
         'features' => 'array',
@@ -22,6 +52,8 @@ class Trail extends Model
         'is_active' => 'boolean',
     ];
 
+
+    
     public function location()
     {
         return $this->belongsTo(Location::class);
