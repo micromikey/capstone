@@ -206,12 +206,20 @@
                                 <h3 class="text-lg font-semibold text-gray-900">Trail Route & Map</h3>
                                 <div class="flex gap-2">
                                     <div class="flex flex-col gap-1">
-                                        <a href="{{ route('trails.download-map-tcpdf', $trail) }}" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                            <a href="{{ route('trails.download-map-tcpdf', $trail) }}" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                </svg>
+                                                Download PDF Map
+                                            </a>
+                                    </div>
+                                    <div class="flex flex-col gap-1">
+                                        <button type="button" data-trail-id="{{ $trail->id }}" data-print-url="{{ route('trails.print-map', $trail) }}" onclick="printTrailMapFromButton(this)" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V3h12v6M6 21h12V9H6v12z" />
                                             </svg>
-                                            Download PDF Map
-                                        </a>
+                                            Print Map
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -1359,3 +1367,80 @@
     <!-- Load Chart.js for elevation profile -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </x-app-layout>
+
+<script>
+    // Print helper: fetch the print map HTML and print it inside a hidden iframe
+    function printTrailMapFromButton(btn){
+        const id = btn.getAttribute('data-trail-id');
+        if(!id) return;
+        printTrailMap(id);
+    }
+
+    async function printTrailMap(trailId){
+        try{
+            // Prefer server-generated URL from button's data-print-url attribute
+            let url = null;
+            const btn = document.querySelector(`[data-trail-id="${trailId}"]`);
+            if(btn && btn.dataset && btn.dataset.printUrl){
+                url = btn.dataset.printUrl;
+            }
+
+            // Fallback to constructed URL if no data attribute provided
+            if(!url){
+                url = `{{ url('/') }}/${"trails"}/` + trailId + '/print-map';
+            }
+
+            // Fetch the rendered print view (server should render same as route('trails.print-map', $trail))
+            const res = await fetch(url, { credentials: 'same-origin' });
+            if(!res.ok) throw new Error('Failed to load print view');
+            const html = await res.text();
+
+            // Create or reuse iframe
+            let iframe = document.getElementById('print-iframe');
+            if(!iframe){
+                iframe = document.createElement('iframe');
+                iframe.id = 'print-iframe';
+                iframe.style.position = 'fixed';
+                iframe.style.right = '0';
+                iframe.style.bottom = '0';
+                iframe.style.width = '0';
+                iframe.style.height = '0';
+                iframe.style.border = '0';
+                iframe.style.visibility = 'hidden';
+                document.body.appendChild(iframe);
+            }
+
+            const iframeDoc = iframe.contentWindow || iframe.contentDocument;
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            doc.open();
+            doc.write(html);
+            doc.close();
+
+            // Wait a tick for styles and images to load, but only print once.
+            let printed = false;
+            const doPrint = () => {
+                if(printed) return;
+                printed = true;
+                try{
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                }catch(e){
+                    console.error('Print failed', e);
+                }
+            };
+
+            iframe.onload = function(){
+                doPrint();
+            };
+
+            // Fallback: try print after short delay if onload didn't fire. Guarded by printed flag.
+            setTimeout(()=>{
+                doPrint();
+            }, 700);
+
+        }catch(err){
+            console.error(err);
+            alert('Unable to load print view.');
+        }
+    }
+</script>

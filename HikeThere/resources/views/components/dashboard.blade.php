@@ -462,7 +462,7 @@ $imageService = app('App\Services\TrailImageService');
                 <div class="flex flex-col justify-center">
                     {{-- Location and Date --}}
                     <div class="mb-6">
-                        <h2 class="text-xl font-semibold text-white/90 mb-1">{{ $weather['city'] ?? 'Unknown' }}</h2>
+                        <h2 class="text-xl font-semibold text-white/90 mb-1 weather-city">{{ $weather['city'] ?? 'Unknown' }}</h2>
                         <p class="text-sm text-white/80">{{ now()->setTimezone('Asia/Manila')->format('l, F j, Y') }}</p>
                     </div>
 
@@ -476,6 +476,9 @@ $imageService = app('App\Services\TrailImageService');
                             <p class="text-sm capitalize font-medium text-center mt-2 weather-description">{{ $weather['description'] ?? 'Clear sky' }}</p>
                         </div>
                     </div>
+
+                    {{-- Use my location button placeholder (inserted here under the basic weather column) --}}
+                    <div id="weather-use-location-placeholder" class="mt-4"></div>
                 </div>
 
                 {{-- Column 2: Three Containers --}}
@@ -813,27 +816,142 @@ $imageService = app('App\Services\TrailImageService');
 {{-- Real-time Weather Update Script --}}
 <script>
     let weatherUpdateInterval;
+    let lastRequestedCoords = null;
+    let lastWeatherFetchAt = 0;
+    let weatherStarted = false; // Ensure startUpdates runs only once (or explicitly switches)
+    const WEATHER_FETCH_COOLDOWN_MS = 5000; // 5s cooldown to avoid duplicate calls
 
-    function updateWeatherData() {
-        fetch('/api/weather/current', {
+    function updateWeatherData(coords) {
+        // coords optional: { lat, lon }
+        // Cooldown: avoid making multiple near-simultaneous requests
+        try {
+            const now = Date.now();
+            if (lastWeatherFetchAt && (now - lastWeatherFetchAt) < WEATHER_FETCH_COOLDOWN_MS) {
+                console.debug('Skipping weather fetch due to cooldown');
+                return;
+            }
+            lastWeatherFetchAt = now;
+        } catch (e) {}
+        let url = '/api/weather/current';
+        if (coords && coords.lat && coords.lon) {
+            url += `?lat=${encodeURIComponent(coords.lat)}&lon=${encodeURIComponent(coords.lon)}`;
+            lastRequestedCoords = coords;
+            console.info('Requesting weather for coords:', coords);
+            // Update small UI indicator if present
+            try {
+                const el = document.getElementById('weather-requested-loc');
+                if (el) el.textContent = `Requested location: ${coords.lat.toFixed(4)}, ${coords.lon.toFixed(4)}`;
+            } catch (e) {}
+        }
+
+        console.debug('Fetching weather URL:', url);
+        // Update debug fetch URL UI
+        try {
+            const f = document.getElementById('weather-fetch-url');
+            if (f) f.textContent = `Fetch URL: ${url}`;
+        } catch (e) {}
+
+        // Use fetch when available, else fallback to XHR ajaxGet
+        const useFetch = typeof fetch === 'function';
+        const handleSuccess = function(data) {
+            console.info('Weather API response:', data, 'requestedCoords:', lastRequestedCoords);
+            if (data.success && data.weather) {
+                // Pass hourly data if present so hourly forecast uses current location
+                updateWeatherDisplay(data.weather, data.forecast, data.hourly || []);
+                // Update server debug info
+                try {
+                    const s = document.getElementById('weather-server-info');
+                    if (s) {
+                        const name = data.location?.name || data.weather.city || 'Unknown';
+                        const temp = (data.weather && typeof data.weather.temp !== 'undefined') ? data.weather.temp : (data.temp || 'N/A');
+                        const lat = data.location && (data.location.lat || data.location.lat === 0) ? data.location.lat : null;
+                        const lng = data.location && (data.location.lng || data.location.lng === 0) ? data.location.lng : null;
+                        s.textContent = lat && lng ? `Server: ${name} (${lat.toFixed(6)}, ${lng.toFixed(6)}) — ${temp}°` : `Server: ${name} — ${temp}°`;
+                    }
+                } catch (e) {}
+                // After successful fetch, optionally show which coords were requested (if none, show Manila default)
+                try {
+                    const el = document.getElementById('weather-requested-loc');
+                    if (el) {
+                        if (lastRequestedCoords) {
+                            el.textContent = `Showing weather for: ${lastRequestedCoords.lat.toFixed(4)}, ${lastRequestedCoords.lon.toFixed(4)}`;
+                        } else {
+                            el.textContent = `Showing weather for: Manila (default)`;
+                        }
+                    }
+                } catch (e) {}
+            }
+        };
+
+        const handleError = function(error) {
+            console.error('Error updating weather:', error);
+            // On error, set city to Unknown and show alert prompting user action
+            try {
+                const cityElement = document.querySelector('.weather-city');
+                if (cityElement) cityElement.textContent = 'Unknown';
+                const alertEl = document.getElementById('weather-location-alert');
+                if (alertEl) {
+                    alertEl.className = 'mt-3 p-2 rounded text-sm font-medium bg-yellow-100 text-yellow-800';
+                    alertEl.textContent = 'Unable to fetch weather data. Try "Use my location" or enter coordinates manually.';
+                    alertEl.classList.remove('hidden');
+                }
+            } catch (e) {}
+        };
+
+        if (useFetch) {
+            fetch(url, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
                 }
             })
             .then(response => response.json())
-            .then(data => {
-                if (data.success && data.weather) {
-                    updateWeatherDisplay(data.weather, data.forecast);
-                }
-            })
-            .catch(error => {
-                console.error('Error updating weather:', error);
-            });
+            .then(handleSuccess)
+            .catch(handleError);
+        } else {
+            ajaxGet(url, handleSuccess, handleError);
+        }
+
+        // XHR helper (used as fallback)
+        function ajaxGet(url, onSuccess, onError) {
+            try {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                if (token) xhr.setRequestHeader('X-CSRF-TOKEN', token);
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            try {
+                                const data = JSON.parse(xhr.responseText || '{}');
+                                onSuccess(data);
+                            } catch (e) {
+                                onError(e);
+                            }
+                        } else {
+                            onError(new Error('HTTP ' + xhr.status));
+                        }
+                    }
+                };
+                xhr.send();
+            } catch (e) {
+                onError(e);
+            }
+        }
     }
 
     function updateWeatherDisplay(weather, forecast) {
+        // Update city label if available from AJAX response, otherwise show coords if known
+        const cityElement = document.querySelector('.weather-city');
+        if (cityElement) {
+            if (weather.city) {
+                cityElement.textContent = weather.city;
+            } else if (lastRequestedCoords) {
+                cityElement.textContent = `${lastRequestedCoords.lat.toFixed(4)}, ${lastRequestedCoords.lon.toFixed(4)}`;
+            }
+        }
         // Update current temperature
         const tempElement = document.querySelector('.weather-temp');
         if (tempElement) {
@@ -917,19 +1035,36 @@ $imageService = app('App\Services\TrailImageService');
     }
 
     function updateHourlyForecast(weather) {
-        // Regenerate hourly temperatures for the dynamic line
+        // Regenerate hourly temperatures using provided hourly array (next ~24 hours)
         const hourlyCards = document.querySelectorAll('.hourly-forecast-card');
         const temps = [];
+        const hourlyData = Array.isArray(weather.hourly_data) ? weather.hourly_data : (window.__lastHourlyData || []);
+
+        // If hourlyData is empty and a separate hourly param was passed, use that
+        if ((!hourlyData || !hourlyData.length) && window.__lastHourlyFromServer) {
+            window.__lastHourlyData = window.__lastHourlyFromServer;
+        }
 
         hourlyCards.forEach((card, index) => {
-            const temp = Math.floor(Math.random() * 11) + 20; // 20-30°C range
+            const hourObj = (window.__lastHourlyData && window.__lastHourlyData[index]) ? window.__lastHourlyData[index] : null;
+            const temp = hourObj ? Math.round(hourObj.temp) : Math.floor(Math.random() * 11) + 20;
             temps.push(temp);
 
             const iconElement = card.querySelector('.hourly-icon');
             if (iconElement) {
-                iconElement.src = `https://openweathermap.org/img/wn/${weather.icon}.png`;
+                const iconCode = hourObj && hourObj.icon ? hourObj.icon : (weather.icon || '01d');
+                iconElement.src = `https://openweathermap.org/img/wn/${iconCode}.png`;
+            }
+
+            // Update the time label if provided
+            const timeEl = card.querySelector('.text-xs');
+            if (timeEl && hourObj && hourObj.time) {
+                timeEl.childNodes[0].nodeValue = hourObj.time;
             }
         });
+
+        // Store last hourly for reuse
+        window.__lastHourlyData = window.__lastHourlyData || window.__lastHourlyFromServer || [];
 
         // Update the temperature line (this would require regenerating the SVG)
         updateTemperatureLine(temps);
@@ -987,23 +1122,202 @@ $imageService = app('App\Services\TrailImageService');
 
     // Initialize real-time updates when the page loads
     document.addEventListener('DOMContentLoaded', function() {
-        // Start updating every 5 minutes (300000ms)
-        weatherUpdateInterval = setInterval(updateWeatherData, 300000);
+        // Attempt to get browser geolocation. If it fails or is denied, fallback to Manila coordinates.
+        const defaultCoords = { lat: 14.5995, lon: 120.9842 }; // Manila
 
-        // Add manual refresh button
-        const refreshButton = document.createElement('button');
-        refreshButton.innerHTML = `
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-        </svg>
-    `;
-        refreshButton.className = 'weather-refresh-btn absolute top-4 right-20 text-white/60 hover:text-white/90 transition-colors p-1 rounded';
-        refreshButton.title = 'Refresh Weather Data';
-        refreshButton.onclick = updateWeatherData;
+        function startUpdates(coords) {
+            // Prevent double-starts
+            if (weatherStarted) return;
+            weatherStarted = true;
 
-        const weatherContainer = document.querySelector('.weather-container');
-        if (weatherContainer) {
-            weatherContainer.appendChild(refreshButton);
+            // Initial immediate fetch
+            updateWeatherData(coords);
+            // Clear any existing interval to avoid duplicates (e.g. stored coords + geolocation both starting)
+            if (weatherUpdateInterval) {
+                try { clearInterval(weatherUpdateInterval); } catch (e) {}
+                weatherUpdateInterval = null;
+            }
+            // Start periodic updates every 5 minutes
+            weatherUpdateInterval = setInterval(() => updateWeatherData(coords), 300000);
+
+            // Add manual refresh button
+            const refreshButton = document.createElement('button');
+            refreshButton.innerHTML = `
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+        `;
+            refreshButton.className = 'weather-refresh-btn absolute top-4 right-20 text-white/60 hover:text-white/90 transition-colors p-1 rounded';
+            refreshButton.title = 'Refresh Weather Data';
+            refreshButton.onclick = () => updateWeatherData(coords);
+
+            const weatherContainer = document.querySelector('.weather-container');
+            if (weatherContainer && !document.querySelector('.weather-refresh-btn')) {
+                weatherContainer.appendChild(refreshButton);
+            }
+            // Add 'Use my location' button for manual geolocation re-request
+            if (!document.querySelector('.weather-use-location-btn')) {
+                const useLocBtn = document.createElement('button');
+                useLocBtn.className = 'weather-use-location-btn text-white/80 bg-white/10 hover:bg-white/20 px-3 py-1 rounded transition text-sm';
+                useLocBtn.title = 'Use my location';
+                useLocBtn.textContent = 'Use my location';
+                useLocBtn.onclick = function() {
+                    // Re-request geolocation and store coordinates
+                    if (!navigator.geolocation) {
+                        alert('Geolocation is not supported by your browser.');
+                        return;
+                    }
+
+                    const t = setTimeout(() => {
+                        console.warn('Geolocation request timed out');
+                        alert('Unable to get location in time. Please try again.');
+                    }, 10000);
+
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        clearTimeout(t);
+                        const coords = { lat: position.coords.latitude, lon: position.coords.longitude };
+                        try { localStorage.setItem('lastCoords', JSON.stringify(coords)); } catch (e) {}
+                        updateWeatherData(coords);
+                    }, function(err) {
+                        clearTimeout(t);
+                        console.warn('Geolocation denied or failed', err);
+                        alert('Unable to retrieve your location. Please check browser permissions.');
+                    }, { timeout: 10000 });
+                };
+
+                // Prefer to place the button inside the placeholder under Column 1
+                const placeholder = document.getElementById('weather-use-location-placeholder');
+                if (placeholder) {
+                    placeholder.appendChild(useLocBtn);
+                } else if (weatherContainer) {
+                    // Fallback: append to top-right area
+                    useLocBtn.className += ' absolute top-4 right-4';
+                    weatherContainer.appendChild(useLocBtn);
+                }
+            }
+
+            // Wire manual coords testing button
+            const manualBtn = document.getElementById('weather-manual-btn');
+            if (manualBtn) {
+                manualBtn.addEventListener('click', function() {
+                    const lat = parseFloat(document.getElementById('weather-manual-lat').value);
+                    const lon = parseFloat(document.getElementById('weather-manual-lon').value);
+                    if (!isFinite(lat) || !isFinite(lon)) {
+                        alert('Please enter valid numeric latitude and longitude');
+                        return;
+                    }
+                    const coords = { lat, lon };
+                    try { localStorage.setItem('lastCoords', JSON.stringify(coords)); } catch (e) {}
+                    updateWeatherData(coords);
+                });
+            }
+        }
+
+        // Try LocalStorage first for faster startup but prefer geolocation-first (wait up to N ms)
+        let stored = null;
+        try {
+            stored = JSON.parse(localStorage.getItem('lastCoords')) || null;
+        } catch (e) {
+            stored = null;
+        }
+
+        const GEO_WAIT_MS = 7000; // Wait this long for geolocation before falling back
+        const alertEl = document.getElementById('weather-location-alert');
+        const cityElement = document.querySelector('.weather-city');
+
+        // Show 'Updating...' in the city label and a subtle updating indicator while we wait for geolocation
+        if (cityElement) {
+            cityElement.textContent = 'Updating...';
+        }
+        if (alertEl) {
+            alertEl.className = 'mt-3 p-2 rounded text-sm font-medium bg-white/10 text-white';
+            alertEl.textContent = 'Updating location...';
+            alertEl.classList.remove('hidden');
+        }
+
+        // Wait up to GEO_WAIT_MS for geolocation. If it doesn't arrive, use stored/default coords.
+        const geoWait = setTimeout(() => {
+            if (weatherStarted) return;
+            console.warn('Geolocation wait timed out');
+            if (stored && stored.lat && stored.lon) {
+                // Use saved location if available
+                startUpdates(stored);
+                if (alertEl) {
+                    alertEl.className = 'mt-3 p-2 rounded text-sm font-medium bg-white/10 text-white/60';
+                    alertEl.textContent = 'Using saved location (updating if geolocation becomes available)...';
+                }
+            } else {
+                // No saved location and geolocation didn't arrive: show Unknown and prompt user
+                if (cityElement) {
+                    cityElement.textContent = 'Unknown';
+                }
+                if (alertEl) {
+                    alertEl.className = 'mt-3 p-2 rounded text-sm font-medium bg-yellow-100 text-yellow-800';
+                    alertEl.textContent = 'Unable to determine your location. Click "Use my location" or enter coordinates manually.';
+                    alertEl.classList.remove('hidden');
+                }
+                console.warn('No stored coords and geolocation timed out — showing Unknown');
+            }
+        }, GEO_WAIT_MS);
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                clearTimeout(geoWait);
+                const coords = { lat: position.coords.latitude, lon: position.coords.longitude };
+                try { localStorage.setItem('lastCoords', JSON.stringify(coords)); } catch (e) {}
+                if (alertEl) {
+                    alertEl.className = 'mt-3 p-2 rounded text-sm font-medium bg-white/10 text-green-200';
+                    alertEl.textContent = 'Using your current location.';
+                    alertEl.classList.remove('hidden');
+                }
+                // If we haven't started weather updates yet, start with geolocation.
+                if (!weatherStarted) {
+                    startUpdates(coords);
+                } else {
+                    // If updates already started (we used stored/default), refresh to new coords
+                    updateWeatherData(coords);
+                }
+            }, function(err) {
+                clearTimeout(geoWait);
+                console.warn('Geolocation failed or denied:', err && err.message);
+                if (!weatherStarted) {
+                    if (stored && stored.lat && stored.lon) {
+                        startUpdates(stored);
+                    } else {
+                        // No stored coords: set Unknown and show helpful alert
+                        if (cityElement) {
+                            cityElement.textContent = 'Unknown';
+                        }
+                        if (alertEl) {
+                            alertEl.className = 'mt-3 p-2 rounded text-sm font-medium bg-yellow-100 text-yellow-800';
+                            if (err && err.code === 1) {
+                                alertEl.textContent = 'Location permission denied. Unable to determine location.';
+                            } else if (err && err.code === 3) {
+                                alertEl.textContent = 'Location request timed out. Unable to determine location.';
+                            } else {
+                                alertEl.textContent = 'Unable to retrieve your location.';
+                            }
+                            alertEl.classList.remove('hidden');
+                        }
+                    }
+                }
+            }, { enableHighAccuracy: false, timeout: GEO_WAIT_MS, maximumAge: 600000 });
+        } else {
+            // Geolocation not supported - if stored coords available use them, otherwise show Unknown
+            console.warn('Browser does not support geolocation');
+            clearTimeout(geoWait);
+            if (!weatherStarted) {
+                if (stored && stored.lat && stored.lon) {
+                    startUpdates(stored);
+                } else {
+                    if (cityElement) cityElement.textContent = 'Unknown';
+                    if (alertEl) {
+                        alertEl.className = 'mt-3 p-2 rounded text-sm font-medium bg-yellow-100 text-yellow-800';
+                        alertEl.textContent = 'Geolocation is not supported by your browser. Enter coordinates or use "Use my location".';
+                        alertEl.classList.remove('hidden');
+                    }
+                }
+            }
         }
     });
 
@@ -1096,7 +1410,7 @@ $imageService = app('App\Services\TrailImageService');
                             <div class="flex-1">
                                 <div class="text-sm font-semibold text-green-800 mb-1">{{ $latestAssessment->readiness_level }}</div>
                                 <div class="w-full bg-green-200 rounded-full h-2">
-                                    <div class="bg-green-600 h-2 rounded-full" style="width: {{ $latestAssessment->overall_score }}%"></div>
+                                    <div class="bg-green-600 h-2 rounded-full" style="width: {{ $latestAssessment->overall_score }}%;"></div>
                                 </div>
                             </div>
                         </div>

@@ -95,11 +95,11 @@
             <div class="grid grid-cols-2 gap-2 items-center">
                 <!-- Column 1: Basic Weather Data -->
                 <div class="flex flex-col items-center">
-                    <img src="https://openweathermap.org/img/wn/{{ $weather['icon'] ?? '01d' }}@2x.png" 
-                         alt="{{ $weather['description'] ?? 'Clear' }}" 
-                         class="w-10 h-10 mb-1">
-                    <div class="text-xl font-bold weather-text-main">{{ $weather['temp'] ?? 25 }}°</div>
-                    <div class="text-xs weather-text-secondary capitalize leading-tight">{{ $weather['description'] ?? 'Clear sky' }}</div>
+                <img id="floating-weather-icon" src="https://openweathermap.org/img/wn/{{ $weather['icon'] ?? '01d' }}@2x.png" 
+                    alt="{{ $weather['description'] ?? 'Clear' }}" 
+                    class="w-10 h-10 mb-1">
+                <div id="floating-weather-temp" class="text-xl font-bold weather-text-main">{{ $weather['temp'] ?? 25 }}°</div>
+                <div id="floating-weather-desc" class="text-xs weather-text-secondary capitalize leading-tight">{{ $weather['description'] ?? 'Clear sky' }}</div>
                 </div>
                 <!-- Column 2: Weather Details, 4 rows -->
                 <div class="flex flex-col gap-1">
@@ -107,25 +107,25 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 12a6 6 0 0011.41 2.822l1.74 1.74a1 1 0 001.415-1.414l-1.74-1.74A6 6 0 006 12z"></path>
                         </svg>
-                        <span class="text-xs font-semibold">Feels {{ $weather['feels_like'] ?? 27 }}°</span>
+                        <span id="floating-weather-feels" class="text-xs font-semibold">Feels {{ $weather['feels_like'] ?? 27 }}°</span>
                     </div>
                     <div class="flex items-center gap-1 weather-text-secondary">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
                         </svg>
-                        <span class="text-xs font-semibold">Humid {{ $weather['humidity'] ?? 65 }}%</span>
+                        <span id="floating-weather-humid" class="text-xs font-semibold">Humid {{ $weather['humidity'] ?? 65 }}%</span>
                     </div>
                     <div class="flex items-center gap-1 weather-text-secondary">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
                         </svg>
-                        <span class="text-xs font-semibold">UV {{ $weather['uv_index'] ?? 'N/A' }}</span>
+                        <span id="floating-weather-uv" class="text-xs font-semibold">UV {{ $weather['uv_index'] ?? 'N/A' }}</span>
                     </div>
                     <div class="flex items-center gap-1 weather-text-secondary">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 3v12a2 2 0 002 2h6a2 2 0 002-2V7H7z"></path>
                         </svg>
-                        <span class="text-xs font-semibold">Wind {{ $weather['wind_speed'] ?? 5 }}</span>
+                        <span id="floating-weather-wind" class="text-xs font-semibold">Wind {{ $weather['wind_speed'] ?? 5 }}</span>
                     </div>
                 </div>
             </div>
@@ -289,23 +289,140 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto-refresh weather data every 10 minutes
     let weatherUpdateInterval;
     
-    function updateWeatherData() {
-        fetch('/api/weather/current', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+    function updateWeatherData(coords) {
+        // coords: { lat, lon } optional
+        let url = '/api/weather/current';
+        if (coords && coords.lat && coords.lon) {
+            url += `?lat=${encodeURIComponent(coords.lat)}&lon=${encodeURIComponent(coords.lon)}`;
+        }
+
+        // Try fetch, fallback to XHR ajaxGet
+        const useFetch = typeof fetch === 'function';
+        const handleSuccess = function(data) {
+            console.info('Floating weather API response:', data);
+            // Accept responses that either include a weather object or at least temp/location info.
+            if (data && (data.weather || data.temp || data.city || data.location)) {
+                // Ensure we have a weather object for the display function
+                const weatherObj = data.weather || {
+                    temp: (typeof data.temp !== 'undefined') ? data.temp : (data.main && data.main.temp ? data.main.temp : null),
+                    feels_like: data.feels_like || (data.main && data.main.feels_like) || null,
+                    humidity: data.humidity || (data.main && data.main.humidity) || null,
+                    wind_speed: data.wind_speed || (data.wind && data.wind.speed) || null,
+                    uv_index: data.uv_index || null,
+                    icon: (data.weather && data.weather.icon) || (data.icon) || '01d',
+                    description: (data.weather && data.weather.description) || (data.description) || '',
+                    main: (data.weather && data.weather.main) || (data.main && data.main.weather && data.main.weather[0] && data.main.weather[0].main) || (data.description && data.description.split(' ')[0]) || 'Unknown'
+                };
+                updateWeatherDisplay(weatherObj, data.forecast);
+                try {
+                    const s = document.getElementById('floating-weather-server-info');
+                    if (s) {
+                        const name = data.location?.name || data.city || (data.weather && data.weather.city) || 'Unknown';
+                        const temp = (weatherObj && typeof weatherObj.temp !== 'undefined' && weatherObj.temp !== null) ? weatherObj.temp : (data.temp || 'N/A');
+                        const lat = data.location && (data.location.lat || data.location.lat === 0) ? data.location.lat : null;
+                        const lng = data.location && (data.location.lng || data.location.lng === 0) ? data.location.lng : null;
+                        s.textContent = lat && lng ? `Server: ${name} (${lat.toFixed(6)}, ${lng.toFixed(6)}) — ${temp}°` : `Server: ${name} — ${temp}°`;
+                        // Defensive: also update the visible temperature element immediately
+                        try {
+                            const tempNode = document.getElementById('floating-weather-temp');
+                            if (tempNode && temp !== 'N/A') tempNode.textContent = `${Math.round(temp * 100) / 100}°`;
+                        } catch (e) {}
+                    }
+                } catch (e) {}
+            } else {
+                // No usable data returned — set Unknown and surface a helpful alert
+                try {
+                    const tempEl = document.querySelector('#floating-weather .weather-text-main');
+                    if (tempEl) tempEl.textContent = 'Unknown';
+                    let alertEl = document.querySelector('#floating-weather .floating-weather-alert');
+                    if (!alertEl) {
+                        alertEl = document.createElement('div');
+                        alertEl.className = 'floating-weather-alert mt-2 text-xs rounded p-2 bg-yellow-100 text-yellow-800';
+                        const inner = document.querySelector('#floating-weather div');
+                        if (inner) inner.appendChild(alertEl);
+                    }
+                    alertEl.textContent = 'No weather data returned for this location.';
+                    // Also populate server-info if available
+                    const s = document.getElementById('floating-weather-server-info');
+                    if (s) {
+                        const name = data && data.location && (data.location.name || data.location.city) ? (data.location.name || data.location.city) : 'Unknown';
+                        const lat = data && data.location && (data.location.lat || data.location.lat === 0) ? data.location.lat : null;
+                        const lng = data && data.location && (data.location.lng || data.location.lng === 0) ? data.location.lng : null;
+                        s.textContent = lat && lng ? `Server: ${name} (${lat.toFixed(6)}, ${lng.toFixed(6)})` : `Server: ${name}`;
+                        try {
+                            const tempNode = document.getElementById('floating-weather-temp');
+                            if (tempNode && data.temp) tempNode.textContent = `${Math.round(data.temp * 100) / 100}°`;
+                        } catch (e) {}
+                    }
+                } catch (e) {}
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updateWeatherDisplay(data.weather, data.forecast);
-            }
-        })
-        .catch(error => {
+        };
+
+        const handleError = function(error) {
             console.error('Error updating weather:', error);
-        });
+            // On error, set visible state to Unknown and show a small alert in the floating card
+            try {
+                const tempEl = document.querySelector('#floating-weather .weather-text-main');
+                if (tempEl) tempEl.textContent = 'Unknown';
+                // Add or update alert
+                let alertEl = document.querySelector('#floating-weather .floating-weather-alert');
+                if (!alertEl) {
+                    alertEl = document.createElement('div');
+                    alertEl.className = 'floating-weather-alert mt-2 text-xs rounded p-2 bg-yellow-100 text-yellow-800';
+                    const inner = document.querySelector('#floating-weather div');
+                    if (inner) inner.appendChild(alertEl);
+                }
+                alertEl.textContent = 'Unable to fetch weather. Use "Use my location" or enter coordinates.';
+            } catch (e) {}
+        };
+
+        if (useFetch) {
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                return response.json();
+            })
+            .then(handleSuccess)
+            .catch(handleError);
+            return;
+        }
+
+        // XHR fallback
+        ajaxGet(url, handleSuccess, handleError);
+    }
+
+    // Simple XHR GET helper (fallback for environments without fetch)
+    function ajaxGet(url, onSuccess, onError) {
+        try {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (token) xhr.setRequestHeader('X-CSRF-TOKEN', token);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const data = JSON.parse(xhr.responseText || '{}');
+                            onSuccess(data);
+                        } catch (e) {
+                            onError(e);
+                        }
+                    } else {
+                        onError(new Error('HTTP ' + xhr.status));
+                    }
+                }
+            };
+            xhr.send();
+        } catch (e) {
+            onError(e);
+        }
     }
 
     function updateWeatherDisplay(weather, forecast) {
@@ -417,10 +534,135 @@ document.addEventListener('DOMContentLoaded', function() {
         if (lastUpdatedElement) {
             lastUpdatedElement.textContent = timeString;
         }
+
+        // Update visible weather fields (temp, description, icon, and details)
+        try {
+            const tempNode = document.getElementById('floating-weather-temp');
+            const descNode = document.getElementById('floating-weather-desc');
+            const iconNode = document.getElementById('floating-weather-icon');
+            const feelsNode = document.getElementById('floating-weather-feels');
+            const humidNode = document.getElementById('floating-weather-humid');
+            const uvNode = document.getElementById('floating-weather-uv');
+            const windNode = document.getElementById('floating-weather-wind');
+
+            if (tempNode && typeof weather.temp !== 'undefined' && weather.temp !== null) tempNode.textContent = `${Math.round(weather.temp * 100) / 100}°`;
+            if (descNode && weather.description) descNode.textContent = weather.description;
+            if (iconNode && weather.icon) iconNode.src = `https://openweathermap.org/img/wn/${weather.icon}@2x.png`;
+            if (feelsNode && typeof weather.feels_like !== 'undefined') feelsNode.textContent = `Feels ${weather.feels_like}°`;
+            if (humidNode && typeof weather.humidity !== 'undefined') humidNode.textContent = `Humid ${weather.humidity}%`;
+            if (uvNode) uvNode.textContent = `UV ${weather.uv_index ?? 'N/A'}`;
+            if (windNode && typeof weather.wind_speed !== 'undefined') windNode.textContent = `Wind ${weather.wind_speed}`;
+        } catch (e) {}
     }
 
-    // Start auto-refresh
-    weatherUpdateInterval = setInterval(updateWeatherData, 600000); // 10 minutes
+    // Start auto-refresh (geolocation-first). Do not fall back to Manila by default; show Updating... then Unknown.
+    let floatingWeatherStarted = false;
+    const GEO_WAIT_MS = 7000;
+
+    function startFloatingUpdates(coords) {
+        if (floatingWeatherStarted) return;
+        floatingWeatherStarted = true;
+        // Immediate fetch
+        updateWeatherData(coords);
+        // Periodic updates every 10 minutes
+        weatherUpdateInterval = setInterval(() => updateWeatherData(coords), 600000);
+    }
+
+    // Show Updating... in the floating card temperature area while waiting
+    try {
+        const tempEl = document.getElementById('floating-weather-temp');
+        if (tempEl) tempEl.textContent = 'Updating...';
+    } catch (e) {}
+
+    // Check for saved coords
+    let storedCoords = null;
+    try { storedCoords = JSON.parse(localStorage.getItem('lastCoords')) || null; } catch (e) { storedCoords = null; }
+
+    const geoWait = setTimeout(() => {
+        if (floatingWeatherStarted) return;
+        console.warn('Floating weather geolocation wait timed out');
+        if (storedCoords && storedCoords.lat && storedCoords.lon) {
+            startFloatingUpdates(storedCoords);
+            // show a subtle note
+            try {
+                let alertEl = document.querySelector('#floating-weather .floating-weather-alert');
+                if (!alertEl) {
+                    alertEl = document.createElement('div');
+                    alertEl.className = 'floating-weather-alert mt-2 text-xs rounded p-2 bg-white/10 text-white';
+                    const inner = document.querySelector('#floating-weather div');
+                    if (inner) inner.appendChild(alertEl);
+                }
+                alertEl.textContent = 'Using saved location (will update if geolocation becomes available)';
+            } catch (e) {}
+        } else {
+            // No saved coords: show Unknown and an instruction
+                    try {
+                    const tempEl = document.getElementById('floating-weather-temp');
+                    if (tempEl) tempEl.textContent = 'Unknown';
+                let alertEl = document.querySelector('#floating-weather .floating-weather-alert');
+                if (!alertEl) {
+                    alertEl = document.createElement('div');
+                    alertEl.className = 'floating-weather-alert mt-2 text-xs rounded p-2 bg-yellow-100 text-yellow-800';
+                    const inner = document.querySelector('#floating-weather div');
+                    if (inner) inner.appendChild(alertEl);
+                }
+                alertEl.textContent = 'Unable to determine your location. Click "Use my location".';
+            } catch (e) {}
+        }
+    }, GEO_WAIT_MS);
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            clearTimeout(geoWait);
+            const coords = { lat: position.coords.latitude, lon: position.coords.longitude };
+            try { localStorage.setItem('lastCoords', JSON.stringify(coords)); } catch (e) {}
+            if (!floatingWeatherStarted) startFloatingUpdates(coords);
+            else updateWeatherData(coords);
+            // remove alert if present
+            try { const a = document.querySelector('#floating-weather .floating-weather-alert'); if (a) a.remove(); } catch (e) {}
+        }, function(err) {
+            clearTimeout(geoWait);
+            console.warn('Floating weather geolocation failed or denied:', err && err.message);
+            if (!floatingWeatherStarted) {
+                if (storedCoords && storedCoords.lat && storedCoords.lon) startFloatingUpdates(storedCoords);
+                else {
+                    try {
+                    const tempEl = document.getElementById('floating-weather-temp');
+                    if (tempEl) tempEl.textContent = 'Unknown';
+                        let alertEl = document.querySelector('#floating-weather .floating-weather-alert');
+                        if (!alertEl) {
+                            alertEl = document.createElement('div');
+                            alertEl.className = 'floating-weather-alert mt-2 text-xs rounded p-2 bg-yellow-100 text-yellow-800';
+                            const inner = document.querySelector('#floating-weather div');
+                            if (inner) inner.appendChild(alertEl);
+                        }
+                        if (err && err.code === 1) alertEl.textContent = 'Location permission denied. Unable to determine location.';
+                        else if (err && err.code === 3) alertEl.textContent = 'Location request timed out. Unable to determine location.';
+                        else alertEl.textContent = 'Unable to retrieve your location.';
+                    } catch (e) {}
+                }
+            }
+        }, { enableHighAccuracy: false, timeout: GEO_WAIT_MS, maximumAge: 600000 });
+    } else {
+        clearTimeout(geoWait);
+        if (!floatingWeatherStarted) {
+            if (storedCoords && storedCoords.lat && storedCoords.lon) startFloatingUpdates(storedCoords);
+            else {
+                    try {
+                        const tempEl = document.getElementById('floating-weather-temp');
+                        if (tempEl) tempEl.textContent = 'Unknown';
+                    let alertEl = document.querySelector('#floating-weather .floating-weather-alert');
+                    if (!alertEl) {
+                        alertEl = document.createElement('div');
+                        alertEl.className = 'floating-weather-alert mt-2 text-xs rounded p-2 bg-yellow-100 text-yellow-800';
+                        const inner = document.querySelector('#floating-weather div');
+                        if (inner) inner.appendChild(alertEl);
+                    }
+                    alertEl.textContent = 'Geolocation not supported. Enter coordinates or click "Use my location".';
+                } catch (e) {}
+            }
+        }
+    }
 
     // Clean up interval when page is unloaded
     window.addEventListener('beforeunload', function() {
@@ -444,6 +686,40 @@ document.addEventListener('DOMContentLoaded', function() {
         
         lastScrollTop = scrollTop;
     }, { passive: true });
+
+    // Add 'Use my location' small action button on the floating card
+    const floatingCardRoot = document.getElementById('floating-weather');
+    if (floatingCardRoot && !document.querySelector('.floating-use-location')) {
+        const useBtn = document.createElement('button');
+        useBtn.className = 'floating-use-location absolute bottom-4 left-6 bg-white/10 hover:bg-white/20 text-white/80 px-2 py-1 rounded text-xs';
+        useBtn.textContent = 'Use my location';
+        useBtn.title = 'Use my location';
+        useBtn.onclick = function() {
+            if (!navigator.geolocation) {
+                alert('Geolocation not supported by your browser.');
+                return;
+            }
+
+            const t = setTimeout(() => {
+                alert('Unable to get location. Please try again.');
+            }, 10000);
+
+            navigator.geolocation.getCurrentPosition(function(position) {
+                clearTimeout(t);
+                const coords = { lat: position.coords.latitude, lon: position.coords.longitude };
+                try { localStorage.setItem('lastCoords', JSON.stringify(coords)); } catch (e) {}
+                updateWeatherData(coords);
+            }, function(err) {
+                clearTimeout(t);
+                console.warn('Floating weather geolocation denied/failed', err);
+                alert('Unable to retrieve your location. Please check browser permissions.');
+            }, { timeout: 10000 });
+        };
+
+        // Append into the inner card div to position correctly
+        const innerDiv = floatingCardRoot.querySelector('div');
+        if (innerDiv) innerDiv.appendChild(useBtn);
+    }
 });
 </script>
 @endif

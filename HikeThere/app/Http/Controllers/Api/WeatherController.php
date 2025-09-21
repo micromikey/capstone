@@ -105,6 +105,9 @@ class WeatherController extends Controller
             'location' => [
                 'lat' => $lat,
                 'lng' => $lng,
+                'name' => $data['name'] ?? null,
+                'city' => $data['name'] ?? null,
+                'country' => $data['sys']['country'] ?? null,
             ],
             'description' => $data['weather'][0]['description'] ?? '',
             'icon' => $data['weather'][0]['icon'] ?? null,
@@ -216,6 +219,16 @@ class WeatherController extends Controller
                 'country' => $data['city']['country'] ?? 'Unknown',
             ],
             'forecast' => $dailyForecasts->toArray(),
+            // Build a next-24-hours hourly array from the 3-hour list (take up to 8 entries = 24 hours)
+            'hourly' => collect($data['list'] ?? [])->take(8)->map(function ($hour) use ($philippineTime) {
+                return [
+                    'time' => Carbon::parse($hour['dt_txt'])->setTimezone('Asia/Manila')->format('H:i'),
+                    'temp' => round($hour['main']['temp'] ?? 0),
+                    'condition' => $this->mapWeatherCondition($hour['weather'][0]['main'] ?? 'Unknown'),
+                    'icon' => $hour['weather'][0]['icon'] ?? null,
+                    'precipitation' => isset($hour['pop']) ? round($hour['pop'] * 100, 1) : 0,
+                ];
+            })->values()->toArray(),
             'generated_at' => $philippineTime->toISOString(),
         ];
     }
@@ -400,6 +413,13 @@ class WeatherController extends Controller
             // Get user's location or default to Manila, Philippines
             $lat = $request->get('lat', 14.5995);  // Manila latitude
             $lon = $request->get('lon', 120.9842); // Manila longitude
+
+            // Log incoming request coordinates for debugging
+            Log::info('getCurrentWeather called', [
+                'lat' => $lat,
+                'lon' => $lon,
+                'ip' => $request->ip(),
+            ]);
             
             // Get current weather from OpenWeather API
             $weather = $this->getOpenWeatherData($lat, $lon);
@@ -433,10 +453,19 @@ class WeatherController extends Controller
                 $formattedForecast = [];
             }
 
+            // Log what we are returning to the frontend for debugging
+            Log::info('getCurrentWeather response', [
+                'location' => $weather['location'] ?? null,
+                'city' => $formattedWeather['city'] ?? null,
+                'temp' => $formattedWeather['temp'] ?? null,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'weather' => $formattedWeather,
                 'forecast' => $formattedForecast,
+                // Pass along hourly (next ~24 hours) prepared in getOpenWeatherForecast
+                'hourly' => $forecast['hourly'] ?? [],
                 'updated_at' => now()->setTimezone('Asia/Manila')->toISOString()
             ]);
 

@@ -197,6 +197,7 @@ Route::get('/trails/search', [TrailController::class, 'search'])->name('trails.s
 
 // Trail PDF and Elevation routes
 Route::get('/trails/{trail}/download-map', [TrailPdfController::class, 'downloadMap'])->name('trails.download-map');
+Route::get('/trails/{trail}/print-map', [TrailPdfController::class, 'printMap'])->name('trails.print-map');
 Route::get('/trails/{trail}/download-map-tcpdf', [TrailTcpdfController::class, 'downloadMap'])->name('trails.download-map-tcpdf');
 Route::get('/trails/{trail}/elevation-profile', [TrailPdfController::class, 'getElevationProfile'])->name('trails.elevation-profile');
 
