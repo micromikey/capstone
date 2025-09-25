@@ -12,9 +12,31 @@
         <p class="text-sm text-gray-600">End: {{ $dateInfo['end_date']->toFormattedDateString() }}</p>
         
         @php
-            $headerDurationLabel = $trail['duration'] ?? $routeData['duration'] ?? null;
-            if (empty($headerDurationLabel)) {
-                $headerDurationLabel = $dateInfo['duration_days'] . ' day(s) • ' . $dateInfo['nights'] . ' night(s)';
+            $durationParser = app(\App\Services\DurationParserService::class);
+            
+            // Try to get duration from trail package first, then trail data
+            $headerDurationLabel = null;
+            
+            // Check trail package duration
+            if (isset($trail['package']['duration'])) {
+                $headerDurationLabel = $durationParser->formatDuration($trail['package']['duration'], 'days_nights');
+            } elseif (is_object($trail) && $trail->package && $trail->package->duration) {
+                $headerDurationLabel = $durationParser->formatDuration($trail->package->duration, 'days_nights');
+            }
+            // Check trail duration field
+            elseif (isset($trail['duration'])) {
+                $headerDurationLabel = $durationParser->formatDuration($trail['duration'], 'days_nights');
+            } elseif (is_object($trail) && $trail->duration) {
+                $headerDurationLabel = $durationParser->formatDuration($trail->duration, 'days_nights');
+            }
+            // Check route data
+            elseif (isset($routeData['duration'])) {
+                $headerDurationLabel = $durationParser->formatDuration($routeData['duration'], 'days_nights');
+            }
+            // Fall back to calculated days/nights
+            else {
+                $headerDurationLabel = $dateInfo['duration_days'] . ' day' . ($dateInfo['duration_days'] != 1 ? 's' : '') . 
+                                     ' • ' . $dateInfo['nights'] . ' night' . ($dateInfo['nights'] != 1 ? 's' : '');
             }
         @endphp
         <p class="text-sm text-gray-600">Duration: {{ $headerDurationLabel }}</p>

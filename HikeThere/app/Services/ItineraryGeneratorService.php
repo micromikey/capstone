@@ -3,12 +3,14 @@
 namespace App\Services;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use App\Models\Trail;
 use App\Models\Build;
 use App\Services\TrailCalculatorService;
 use App\Services\WeatherHelperService;
 use App\Services\DataNormalizerService;
 use App\Services\IntelligentItineraryService;
+use App\Services\DurationParserService;
 
 class ItineraryGeneratorService
 {
@@ -16,17 +18,20 @@ class ItineraryGeneratorService
     protected $weatherHelper;
     protected $dataNormalizer;
     protected $intelligentItinerary;
+    protected $durationParser;
 
     public function __construct(
         TrailCalculatorService $trailCalculator,
         WeatherHelperService $weatherHelper,
         DataNormalizerService $dataNormalizer,
-        IntelligentItineraryService $intelligentItinerary
+        IntelligentItineraryService $intelligentItinerary,
+        DurationParserService $durationParser
     ) {
         $this->trailCalculator = $trailCalculator;
         $this->weatherHelper = $weatherHelper;
         $this->dataNormalizer = $dataNormalizer;
         $this->intelligentItinerary = $intelligentItinerary;
+        $this->durationParser = $durationParser;
     }
 
     /**
@@ -69,13 +74,44 @@ class ItineraryGeneratorService
     protected function calculateDateInfo($itinerary, $trail, $routeData)
     {
         $durationDays = isset($itinerary['duration_days']) ? intval($itinerary['duration_days']) : null;
+        $nights = isset($itinerary['nights']) ? intval($itinerary['nights']) : null;
         
-        // Try to derive duration from trail data if not provided
+        // Try to parse duration from trail package data if available
+        if (empty($durationDays) && !empty($trail)) {
+            $trailDuration = null;
+            
+            // Handle different trail data formats
+            if (is_object($trail) && isset($trail->duration)) {
+                $trailDuration = $trail->duration;
+            } elseif (is_array($trail) && isset($trail['duration'])) {
+                $trailDuration = $trail['duration'];
+            }
+            
+            // Use DurationParserService to parse trail duration
+            if (!empty($trailDuration)) {
+                try {
+                    $parsedDuration = $this->durationParser->normalizeDuration($trailDuration);
+                    if ($parsedDuration) {
+                        $durationDays = $parsedDuration['days'];
+                        $nights = $parsedDuration['nights'];
+                    }
+                } catch (\Exception $e) {
+                    // Log error and fallback to original calculation
+                    Log::warning("Failed to parse trail duration: " . $trailDuration, ['error' => $e->getMessage()]);
+                }
+            }
+        }
+        
+        // Fallback to trail calculator if still no duration
         if (empty($durationDays)) {
             $durationDays = $this->trailCalculator->deriveDurationFromTrail($trail, $routeData);
         }
 
-        $nights = intval($itinerary['nights'] ?? max(0, $durationDays - 1));
+        // Ensure nights is set properly
+        if (is_null($nights)) {
+            $nights = max(0, $durationDays - 1);
+        }
+        
         $startTime = $itinerary['start_time'] ?? '06:00';
         $startDate = isset($itinerary['start_date']) ? Carbon::parse($itinerary['start_date']) : Carbon::today();
         $endDate = $startDate->copy()->addDays(max(0, $durationDays - 1));

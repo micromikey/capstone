@@ -8,6 +8,7 @@ use App\Services\TrailCalculatorService;
 use App\Services\WeatherHelperService;
 use App\Services\DataNormalizerService;
 use App\Services\IntelligentItineraryService;
+use App\Services\DurationParserService;
 
 class ItineraryServiceProvider extends ServiceProvider
 {
@@ -28,6 +29,10 @@ class ItineraryServiceProvider extends ServiceProvider
             return new DataNormalizerService();
         });
 
+        $this->app->singleton(DurationParserService::class, function ($app) {
+            return new DurationParserService();
+        });
+
         $this->app->singleton(IntelligentItineraryService::class, function ($app) {
             return new IntelligentItineraryService(
                 $app->make(TrailCalculatorService::class),
@@ -40,7 +45,8 @@ class ItineraryServiceProvider extends ServiceProvider
                 $app->make(TrailCalculatorService::class),
                 $app->make(WeatherHelperService::class),
                 $app->make(DataNormalizerService::class),
-                $app->make(IntelligentItineraryService::class)
+                $app->make(IntelligentItineraryService::class),
+                $app->make(DurationParserService::class)
             );
         });
     }
