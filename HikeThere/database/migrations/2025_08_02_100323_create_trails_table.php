@@ -18,19 +18,13 @@ return new class extends Migration
             $table->string('mountain_name');
             $table->string('trail_name');
             $table->string('slug')->unique();
-            $table->decimal('price', 10, 2); // Total cost per head or package rate
-            $table->text('package_inclusions'); // What's included in the package
+            // price, package_inclusions moved to trail_packages table
             $table->enum('difficulty', ['beginner', 'intermediate', 'advanced']);
             $table->text('difficulty_description')->nullable(); // Description of difficulty level
-            $table->string('duration'); // Estimated total hiking time
             $table->string('best_season'); // Best months or season to hike
             $table->text('terrain_notes'); // Trail characteristics
             $table->text('other_trail_notes')->nullable(); // Additional notes, rules, guidelines
-            $table->boolean('permit_required')->default(false);
-            $table->text('permit_process')->nullable(); // Process if permit is needed
-            $table->string('departure_point'); // Common terminal or access point
-            $table->text('transport_options'); // Available transport options with estimates
-            $table->text('side_trips')->nullable(); // Nearby attractions or N/A
+            // duration, permit_required, permit_process, departure_point, side_trips moved to trail_packages
             $table->text('packing_list'); // Suggested items hikers should bring
             $table->text('health_fitness'); // Fitness requirements
             $table->text('requirements')->nullable(); // Other requirements

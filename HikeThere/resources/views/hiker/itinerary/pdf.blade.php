@@ -347,12 +347,7 @@
                 <strong>Destination:</strong> {{ $itinerary->route_summary['destination'] }}
             </div>
         </div>
-        <div class="route-item">
-            <div class="route-dot transport"></div>
-            <div>
-                <strong>Transportation:</strong> {{ $itinerary->route_summary['transportation'] }}
-            </div>
-        </div>
+        {{-- Transportation removed --}}
         <div class="route-item">
             <div class="route-dot distance"></div>
             <div>
@@ -440,25 +435,7 @@
                 @endif
             </div>
             
-            <div class="info-card">
-                <h3>Transportation</h3>
-                <div class="info-item">
-                    <span class="info-label">Mode:</span>
-                    <span class="info-value">{{ $itinerary->transportation }}</span>
-                </div>
-                @if(isset($itinerary->schedule['total_duration']))
-                <div class="info-item">
-                    <span class="info-label">Total Duration:</span>
-                    <span class="info-value">{{ $itinerary->schedule['total_duration'] }}</span>
-                </div>
-                @endif
-                @if(isset($itinerary->schedule['total_distance']))
-                <div class="info-item">
-                    <span class="info-label">Total Distance:</span>
-                    <span class="info-value">{{ $itinerary->schedule['total_distance'] }}</span>
-                </div>
-                @endif
-            </div>
+            {{-- Transportation section removed from PDF. Use transport_details only when available. --}}
         </div>
     </div>
     @endif
@@ -518,18 +495,18 @@
     @endif
 
     <!-- Transport Details for Commute Mode -->
-    @if($itinerary->transportation === 'Commute' && $itinerary->transport_details && count($itinerary->transport_details) > 0)
+    @if(isset($itinerary->transport_details) && count($itinerary->transport_details) > 0)
     <div class="section">
         <h2>🚌 Public Transportation Details</h2>
         @foreach($itinerary->transport_details as $transport)
         <div style="background: #f8fafc; border-radius: 8px; padding: 15px; margin-bottom: 15px; border-left: 4px solid #3B82F6;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <span style="font-weight: 600; color: #1f2937;">Step {{ $transport['step'] }}</span>
-                <span style="background: {{ $transport['mode'] === 'Public Transport' ? '#dbeafe' : '#dcfce7' }}; 
-                           color: {{ $transport['mode'] === 'Public Transport' ? '#1e40af' : '#166534' }}; 
-                           padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">
-                    {{ $transport['mode'] }}
-                </span>
+                @php
+                    $bg = $transport['mode'] === 'Public Transport' ? '#dbeafe' : '#dcfce7';
+                    $color = $transport['mode'] === 'Public Transport' ? '#1e40af' : '#166534';
+                @endphp
+                <span style="background: {{ $bg }}; color: {{ $color }}; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">{{ $transport['mode'] }}</span>
             </div>
             
             @if($transport['mode'] === 'Public Transport')

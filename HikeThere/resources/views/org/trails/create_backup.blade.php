@@ -855,8 +855,9 @@
 
             console.log('Location search elements found, setting up legacy widget...');
             try {
+                // Use geocode-only types to avoid mixing 'establishment' with other types
                 autocomplete = new google.maps.places.Autocomplete(searchInput, {
-                    types: ['geocode','establishment'],
+                    types: ['geocode'],
                     componentRestrictions: { country: 'PH' },
                     fields: ['place_id','formatted_address','geometry','name']
                 });

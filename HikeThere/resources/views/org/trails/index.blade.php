@@ -130,7 +130,7 @@
                                                         {{ $trail->mountain_name }}
                                                     </div>
                                                     <div class="text-xs text-gray-400">
-                                                        Duration: {{ $trail->duration }}
+                                                        Duration: {{ optional($trail->package)->duration ?? $trail->duration }}
                                                     </div>
                                                         <div class="mt-1 flex flex-wrap gap-1">
                                                             @if($trail->coordinate_generation_method)
@@ -170,7 +170,7 @@
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="text-sm font-medium text-gray-900">
-                                                    ₱{{ number_format($trail->price, 2) }}
+                                                    ₱{{ number_format(optional($trail->package)->price ?? $trail->price ?? 0, 2) }}
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">

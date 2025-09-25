@@ -50,24 +50,7 @@
 
                     <!-- Organized Controls in Sections -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <!-- Quick Actions -->
-                        <div class="space-y-2">
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Quick Actions</h4>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button id="use-location-btn" class="inline-flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 0 1111.314 0z"></path>
-                                    </svg>
-                                    My Location
-                                </button>
-                                <button id="reset-map-btn" class="inline-flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                    </svg>
-                                    Reset
-                                </button>
-                            </div>
-                        </div>
+                        <!-- Quick Actions moved into the map UI as compact circular buttons -->
 
                         <!-- Filters -->
                         <div class="space-y-2">
@@ -93,26 +76,6 @@
                             </div>
                         </div>
 
-                        <!-- Map Settings & Info -->
-                        <div class="space-y-2">
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Map & Info</h4>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button id="show-safety-info-btn" class="inline-flex items-center justify-center px-3 py-2 border border-orange-300 rounded-md text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                                    </svg>
-                                    Safety
-                                </button>
-                                <button id="show-trail-conditions-btn" class="inline-flex items-center justify-center px-3 py-2 border border-blue-300 rounded-md text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    Conditions
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Compact Statistics -->
                     <div class="mt-4 p-3 bg-gray-50 rounded-lg">
                         <div class="flex items-center justify-between text-sm">
@@ -131,88 +94,6 @@
                             </div>
                             <div class="text-right">
                                 <span class="text-xs text-gray-500" id="last-updated">Just now</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Clean Hiking Information Panel -->
-            <div id="hiking-info-panel" class="hidden mb-6">
-                <div class="bg-white rounded-xl shadow-lg border border-gray-200">
-                    <div class="flex items-center justify-between p-4 border-b border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                            <span class="mr-2">🏔️</span>
-                            Hiking Safety Information
-                        </h3>
-                        <button id="close-hiking-info" class="text-gray-400 hover:text-gray-600 focus:outline-none">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="p-4">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
-                                    <span class="mr-2">🚨</span>
-                                    Emergency Contacts
-                                </h4>
-                                <div class="space-y-2 text-sm">
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Local Police:</span>
-                                        <span id="local-police" class="font-medium">Loading...</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Mountain Rescue:</span>
-                                        <span id="mountain-rescue" class="font-medium">Loading...</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Forest Service:</span>
-                                        <span id="forest-service" class="font-medium">Loading...</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Emergency:</span>
-                                        <span id="emergency" class="font-medium">Loading...</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
-                                    <span class="mr-2">⚠️</span>
-                                    Safety Tips
-                                </h4>
-                                <ul class="text-sm text-gray-700 space-y-1" id="safety-tips">
-                                    <li>• Check weather before hiking</li>
-                                    <li>• Bring essential supplies</li>
-                                    <li>• Stay on marked trails</li>
-                                    <li>• Inform someone of plans</li>
-                                    <li>• Know your limits</li>
-                                </ul>
-                            </div>
-                            <div>
-                                <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
-                                    <span class="mr-2">🌤️</span>
-                                    Current Conditions
-                                </h4>
-                                <div class="space-y-2 text-sm" id="current-conditions">
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Weather:</span>
-                                        <span id="weather-info" class="font-medium">Loading...</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Trail Status:</span>
-                                        <span id="trail-status" class="font-medium">Loading...</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Hazards:</span>
-                                        <span id="hazards" class="font-medium">None reported</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Visibility:</span>
-                                        <span id="visibility" class="font-medium">Good</span>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -284,93 +165,6 @@
         </div>
     </div>
 
-    <!-- Clean Help Modal -->
-    <div id="help-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl p-6 max-w-2xl mx-4 shadow-2xl border border-gray-200 max-h-[80vh] overflow-y-auto">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-xl font-bold text-gray-900 flex items-center">
-                    <span class="mr-2">🗺️</span>
-                    Map Guide
-                </h3>
-                <button id="close-help" class="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            <div class="space-y-6">
-                <div class="bg-green-50 p-4 rounded-lg">
-                    <h4 class="font-semibold text-green-800 mb-3 flex items-center">
-                        <span class="mr-2">🔍</span>
-                        Search & Navigation
-                    </h4>
-                    <ul class="space-y-2 text-sm text-green-700">
-                        <li class="flex items-start">
-                            <span class="mr-2 mt-1">•</span>
-                            <span>Use the search bar to find trails by name or location</span>
-                        </li>
-                        <li class="flex items-start">
-                            <span class="mr-2 mt-1">•</span>
-                            <span>Click "My Location" to find nearby trails</span>
-                        </li>
-                        <li class="flex items-start">
-                            <span class="mr-2 mt-1">•</span>
-                            <span>Filter by difficulty level and search radius</span>
-                        </li>
-                        <li class="flex items-start">
-                            <span class="mr-2 mt-1">•</span>
-                            <span>Click on trail markers for detailed information</span>
-                        </li>
-                    </ul>
-                </div>
-                <div class="bg-blue-50 p-4 rounded-lg">
-                    <h4 class="font-semibold text-blue-800 mb-3 flex items-center">
-                        <span class="mr-2">🎛️</span>
-                        Map Features
-                    </h4>
-                    <ul class="space-y-2 text-sm text-blue-700">
-                        <li class="flex items-start">
-                            <span class="mr-2 mt-1">•</span>
-                            <span>View different map types (terrain, satellite, roadmap)</span>
-                        </li>
-                        <li class="flex items-start">
-                            <span class="mr-2 mt-1">•</span>
-                            <span>Get directions to trailheads directly from the map</span>
-                        </li>
-                        <li class="flex items-start">
-                            <span class="mr-2 mt-1">•</span>
-                            <span>Use fullscreen mode for better viewing experience</span>
-                        </li>
-                    </ul>
-                </div>
-                <div class="bg-orange-50 p-4 rounded-lg">
-                    <h4 class="font-semibold text-orange-800 mb-3 flex items-center">
-                        <span class="mr-2">⚠️</span>
-                        Safety Features
-                    </h4>
-                    <ul class="space-y-2 text-sm text-orange-700">
-                        <li class="flex items-start">
-                            <span class="mr-2 mt-1">•</span>
-                            <span>Check current trail conditions and weather</span>
-                        </li>
-                        <li class="flex items-start">
-                            <span class="mr-2 mt-1">•</span>
-                            <span>Access emergency contacts and safety information</span>
-                        </li>
-                        <li class="flex items-start">
-                            <span class="mr-2 mt-1">•</span>
-                            <span>View real-time hazards and trail status</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            <div class="mt-6 pt-4 border-t border-gray-200">
-                <button id="close-help-bottom" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors">
-                    Got it!
-                </button>
-            </div>
-        </div>
-    </div>
 
     @push('scripts')
     <!-- Add CSRF token meta tag -->

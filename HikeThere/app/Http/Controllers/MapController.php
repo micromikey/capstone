@@ -7,6 +7,8 @@ use App\Models\Trail;
 use App\Services\TrailImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class MapController extends Controller
 {
@@ -29,33 +31,33 @@ class MapController extends Controller
 
     public function getTrails()
     {
-        \Log::info('MapController::getTrails called');
+    Log::info('MapController::getTrails called');
 
         try {
             $trails = Cache::remember('enhanced_map_trails', 1800, function () {
-                \Log::info('Fetching enhanced trails from database');
+                Log::info('Fetching enhanced trails from database');
 
-                $trails = Trail::with(['location', 'images', 'user'])
+                $trails = Trail::with(['location', 'images', 'user', 'package'])
                     ->where('is_active', true)
                     ->get();
 
-                \Log::info("Found {$trails->count()} trails in database");
+                Log::info("Found {$trails->count()} trails in database");
 
                 return $trails->map(function ($trail) {
                     // Check if trail has location data
                     if (! $trail->location) {
-                        \Log::warning("Trail {$trail->id} ({$trail->trail_name}) has no location data");
+                        Log::warning("Trail {$trail->id} ({$trail->trail_name}) has no location data");
 
                         return null;
                     }
 
-                    \Log::info("Processing trail: {$trail->trail_name} at location: {$trail->location->name}");
+                    Log::info("Processing trail: {$trail->trail_name} at location: {$trail->location->name}");
 
                     // Get enhanced primary image using the image service
                     try {
                         $primaryImageData = $this->imageService->getPrimaryTrailImage($trail);
                     } catch (\Exception $e) {
-                        \Log::error("Error getting primary image for trail {$trail->id}: ".$e->getMessage());
+                        Log::error("Error getting primary image for trail {$trail->id}: ".$e->getMessage());
                         $primaryImageData = [
                             'url' => '/img/default-trail.jpg',
                             'source' => 'default',
@@ -74,7 +76,7 @@ class MapController extends Controller
                         'elevation_high' => $trail->elevation_high,
                         'elevation_low' => $trail->elevation_low,
                         'estimated_time' => $trail->estimated_time_formatted,
-                        'duration' => $trail->duration,
+                        'duration' => optional($trail->package)->duration ?? $trail->duration,
                         'best_season' => $trail->best_season,
                         'coordinates' => [
                             'lat' => (float) $trail->location->latitude,
@@ -96,10 +98,47 @@ class MapController extends Controller
                         'features' => $trail->features ?? [],
                         'organization' => $trail->user->display_name ?? 'Unknown',
                         'organization_id' => $trail->user_id,
-                        'price' => $trail->price,
+                        'price' => optional($trail->package)->price ?? $trail->price,
                         'permit_required' => $trail->permit_required,
                         'average_rating' => number_format($trail->average_rating, 1),
                         'total_reviews' => $trail->total_reviews,
+                        // package schedule (if any)
+                        'package' => $trail->package ? (function($pkg) {
+                            $opening = $pkg->opening_time ?? null;
+                            $closing = $pkg->closing_time ?? null;
+                            $pickup = $pkg->pickup_time ?? null;
+                            $departure = $pkg->departure_time ?? null;
+                            $openingShort = null;
+                            $closingShort = null;
+                            $pickupShort = null;
+                            $departureShort = null;
+                            try {
+                                if ($opening) $openingShort = Carbon::parse($opening)->format('H:i');
+                                if ($closing) $closingShort = Carbon::parse($closing)->format('H:i');
+                                if ($pickup) $pickupShort = Carbon::parse($pickup)->format('H:i');
+                                if ($departure) $departureShort = Carbon::parse($departure)->format('H:i');
+                            } catch (\Exception $e) {
+                                // If parsing fails, fall back to raw values (safe)
+                                Log::warning('Could not parse package times for package id '.($pkg->id ?? 'unknown').': '.$e->getMessage());
+                            }
+
+                            return [
+                                'id' => $pkg->id ?? null,
+                                'opening_time' => $opening,
+                                'closing_time' => $closing,
+                                'pickup_time' => $pickup,
+                                'departure_time' => $departure,
+                                // side trips stored on package (may be string, array or JSON)
+                                'side_trips' => $pkg->side_trips ?? null,
+                                'side_trips_meta' => $pkg->side_trips_meta ?? null,
+                                'opening_time_short' => $openingShort,
+                                'closing_time_short' => $closingShort,
+                                'pickup_time_short' => $pickupShort,
+                                'departure_time_short' => $departureShort,
+                                'hours' => $pkg->hours ?? null,
+                            ];
+                        })($trail->package) : null,
+
                         // Enhanced hiking data
                         'trail_conditions' => $this->getTrailConditions($trail),
                         'cell_coverage' => $this->getCellCoverage($trail),
@@ -112,13 +151,13 @@ class MapController extends Controller
                     ->values(); // Re-index array
             });
 
-            \Log::info('Returning '.count($trails).' processed trails');
+            Log::info('Returning '.count($trails).' processed trails');
 
             return response()->json($trails);
 
         } catch (\Exception $e) {
-            \Log::error('Error in MapController::getTrails: '.$e->getMessage());
-            \Log::error('Stack trace: '.$e->getTraceAsString());
+            Log::error('Error in MapController::getTrails: '.$e->getMessage());
+            Log::error('Stack trace: '.$e->getTraceAsString());
 
             return response()->json(['error' => 'Failed to load trails'], 500);
         }
@@ -126,7 +165,7 @@ class MapController extends Controller
 
     public function getTrailDetails($id)
     {
-        $trail = Trail::with(['location', 'images', 'reviews', 'user'])
+        $trail = Trail::with(['location', 'images', 'reviews', 'user', 'package'])
             ->findOrFail($id);
 
         // Get enhanced images using the image service
@@ -146,6 +185,40 @@ class MapController extends Controller
             'location_name' => $trail->location->name,
             'images' => $images,
             'description' => $trail->description,
+            // include package schedule if present
+            'package' => $trail->package ? (function($pkg) {
+                $opening = $pkg->opening_time ?? null;
+                $closing = $pkg->closing_time ?? null;
+                $pickup = $pkg->pickup_time ?? null;
+                $departure = $pkg->departure_time ?? null;
+                $openingShort = null;
+                $closingShort = null;
+                $pickupShort = null;
+                $departureShort = null;
+                try {
+                    if ($opening) $openingShort = Carbon::parse($opening)->format('H:i');
+                    if ($closing) $closingShort = Carbon::parse($closing)->format('H:i');
+                    if ($pickup) $pickupShort = Carbon::parse($pickup)->format('H:i');
+                    if ($departure) $departureShort = Carbon::parse($departure)->format('H:i');
+                } catch (\Exception $e) {
+                    Log::warning('Could not parse package times for package id '.($pkg->id ?? 'unknown').': '.$e->getMessage());
+                }
+
+                return [
+                    'id' => $pkg->id ?? null,
+                    'opening_time' => $opening,
+                    'closing_time' => $closing,
+                    'pickup_time' => $pickup,
+                    'departure_time' => $departure,
+                    'side_trips' => $pkg->side_trips ?? null,
+                    'side_trips_meta' => $pkg->side_trips_meta ?? null,
+                    'opening_time_short' => $openingShort,
+                    'closing_time_short' => $closingShort,
+                    'pickup_time_short' => $pickupShort,
+                    'departure_time_short' => $departureShort,
+                    'hours' => $pkg->hours ?? null,
+                ];
+            })($trail->package) : null,
             'estimated_time' => $trail->estimated_time,
             'reviews' => $trail->reviews->take(5)->map(function ($review) {
                 return [

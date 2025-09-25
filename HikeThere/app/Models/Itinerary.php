@@ -27,8 +27,7 @@ class Itinerary extends Model
         'emergency_contacts',
         'schedule',
         'stopovers',
-        'sidetrips',
-        'transportation',
+    'sidetrips',
         'route_coordinates',
         'daily_schedule',
         'transport_details',
@@ -60,6 +59,16 @@ class Itinerary extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function days()
+    {
+        return $this->hasMany(ItineraryDay::class, 'itinerary_id')->orderBy('day_index');
+    }
+
+    public function activities()
+    {
+        return $this->hasManyThrough(ItineraryActivity::class, ItineraryDay::class, 'itinerary_id', 'itinerary_day_id', 'id', 'id');
     }
 
     public function getDifficultyColorAttribute()
@@ -170,7 +179,6 @@ class Itinerary extends Model
         return [
             'departure' => $departure['full_datetime'].' from '.$departure['location'],
             'destination' => $arrival['trail_name'].' ('.$arrival['difficulty'].') at '.$arrival['location'],
-            'transportation' => $this->transportation,
             'total_distance' => $routeData['total_distance_km'] ?? $routeData['total_distance'] ?? $this->distance ?? 'Distance TBD',
             'estimated_duration' => $routeData['total_duration_hours'] ?? $routeData['total_duration'] ?? $this->estimated_duration ?? 'Duration TBD',
         ];

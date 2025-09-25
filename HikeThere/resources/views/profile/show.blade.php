@@ -4,6 +4,11 @@
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 {{ __('Profile') }}
             </h2>
+            <div class="mt-3 md:mt-0">
+                <a href="{{ route('profile.saved-trails') }}" class="inline-flex items-center px-3 py-2 bg-emerald-600 text-white rounded-md text-sm font-medium">
+                    Your Saved Trails
+                </a>
+            </div>
             
             {{-- Search Bar --}}
             <form class="flex items-center max-w-lg" action="{{ route('trails.search') }}" method="GET">   

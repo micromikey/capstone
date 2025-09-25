@@ -189,7 +189,7 @@
                                 </svg>
                                 {{ number_format($trail->average_rating, 1) }} ({{ $trail->total_reviews }})
                             </div>
-                            <span class="font-medium">₱{{ number_format($trail->price, 0) }}</span>
+                            <span class="font-medium">₱{{ number_format(optional($trail->package)->price ?? $trail->price ?? 0, 0) }}</span>
                         </div>
 
                         <div class="mt-4">

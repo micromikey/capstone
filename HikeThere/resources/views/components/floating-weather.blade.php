@@ -131,11 +131,17 @@
             </div>
         </div>
 
-        <!-- Last Updated -->
+        <!-- Last Updated and actions -->
         <div class="mt-3 pt-2 border-t border-gray-200">
-            <div class="flex items-center justify-between text-xs weather-text-secondary">
-                <span class="weather-text-secondary">Last updated</span>
-                <span id="weather-last-updated" class="weather-text-secondary">{{ \Carbon\Carbon::now()->setTimezone('Asia/Manila')->format('H:i') }}</span>
+            <div class="flex items-center justify-between gap-3 text-xs weather-text-secondary">
+                <div class="flex items-center gap-3">
+                    <span class="weather-text-secondary">Last updated</span>
+                    <span id="weather-last-updated" class="weather-text-secondary">{{ \Carbon\Carbon::now()->format('H:i') }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <!-- Inline 'Use my location' button (non-absolute to avoid overlap) -->
+                    <button id="floating-use-location-inline" class="use-location-btn text-xs px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-white/80">Use my location</button>
+                </div>
             </div>
         </div>
     </div>
@@ -274,6 +280,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const minimizedWeather = document.getElementById('floating-weather-minimized');
     const toggleBtn = document.getElementById('toggle-weather-card');
     const expandBtn = document.getElementById('expand-weather-card');
+
+    // Replace server-rendered last-updated with client-localized time immediately
+    try {
+        const lastUpdatedEl = document.getElementById('weather-last-updated');
+        if (lastUpdatedEl) {
+            const now = new Date();
+            lastUpdatedEl.textContent = now.toLocaleTimeString(undefined, { hour12: false, hour: '2-digit', minute: '2-digit' });
+        }
+    } catch (e) {}
 
     // Toggle weather card
     toggleBtn?.addEventListener('click', function() {
@@ -523,8 +538,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update last refresh time
         const now = new Date();
-        const timeString = now.toLocaleTimeString('en-PH', {
-            timeZone: 'Asia/Manila',
+        // Use client's locale/timezone for the last-updated stamp
+        const timeString = now.toLocaleTimeString(undefined, {
             hour12: false,
             hour: '2-digit',
             minute: '2-digit'
@@ -687,14 +702,10 @@ document.addEventListener('DOMContentLoaded', function() {
         lastScrollTop = scrollTop;
     }, { passive: true });
 
-    // Add 'Use my location' small action button on the floating card
-    const floatingCardRoot = document.getElementById('floating-weather');
-    if (floatingCardRoot && !document.querySelector('.floating-use-location')) {
-        const useBtn = document.createElement('button');
-        useBtn.className = 'floating-use-location absolute bottom-4 left-6 bg-white/10 hover:bg-white/20 text-white/80 px-2 py-1 rounded text-xs';
-        useBtn.textContent = 'Use my location';
-        useBtn.title = 'Use my location';
-        useBtn.onclick = function() {
+    // Wire the inline 'Use my location' button (rendered in the Last updated row)
+    const inlineUseBtn = document.getElementById('floating-use-location-inline');
+    if (inlineUseBtn) {
+        inlineUseBtn.addEventListener('click', function() {
             if (!navigator.geolocation) {
                 alert('Geolocation not supported by your browser.');
                 return;
@@ -714,11 +725,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.warn('Floating weather geolocation denied/failed', err);
                 alert('Unable to retrieve your location. Please check browser permissions.');
             }, { timeout: 10000 });
-        };
-
-        // Append into the inner card div to position correctly
-        const innerDiv = floatingCardRoot.querySelector('div');
-        if (innerDiv) innerDiv.appendChild(useBtn);
+        });
     }
 });
 </script>

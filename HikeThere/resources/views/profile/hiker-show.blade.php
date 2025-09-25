@@ -16,17 +16,44 @@
                     <!-- Profile Picture and Basic Info -->
                     <div class="absolute bottom-0 left-0 right-0 p-6">
                         <div class="flex items-end space-x-6">
-                            <div class="relative">
-                                <img src="{{ $user->profile_picture_url }}"
-                                    alt="{{ $user->name }}"
-                                    class="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover">
-                                <div class="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-2">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                    </svg>
-                                </div>
+                            <div class="relative" id="profile-picture-root">
+                                {{-- Profile picture edit form and preview --}}
+                                <form id="profile-picture-form" method="POST" enctype="multipart/form-data" action="{{ route('profile.update') }}">
+                                    @csrf
+                                    @method('PUT')
+
+                                    <label for="profile-picture-input" class="cursor-pointer block">
+                                        @if($user->profile_picture)
+                                            <img id="profile-picture-img" src="{{ $user->profile_picture_url }}"
+                                                alt="{{ $user->name }}"
+                                                class="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover">
+                                        @else
+                                            <div id="profile-picture-placeholder" role="img" aria-label="{{ $user->name }}'s avatar" class="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gray-200 flex items-center justify-center text-3xl font-bold text-gray-700">
+                                                {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
+                                            </div>
+                                        @endif
+                                    </label>
+
+                                    {{-- Hidden file input triggered by clicking the avatar area --}}
+                                    <input id="profile-picture-input" name="profile_picture" type="file" accept="image/*" class="hidden" />
+
+                                    {{-- Overlay edit icon (clickable) --}}
+                                    <button type="button" id="profile-picture-edit-btn" class="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-2 focus:outline-none" title="Change profile picture">
+                                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                    </button>
+
+                                    {{-- Preview actions removed from here and placed above the user name to avoid overlapping/hidden UI --}}
+                                </form>
                             </div>
                             <div class="flex-1 text-white">
+                                {{-- Moved preview actions here so they sit above the username and do not get clipped --}}
+                                <div id="profile-picture-actions" class="hidden space-x-2 mb-2 relative z-50">
+                                    <button type="button" id="profile-picture-save" class="inline-flex items-center px-3 py-1 bg-emerald-600 text-white rounded-md text-sm">Save</button>
+                                    <!-- Ensure Cancel text contrasts against the parent text-white by forcing a dark text color -->
+                                    <button type="button" id="profile-picture-cancel" class="inline-flex items-center px-3 py-1 bg-white border text-sm rounded-md text-gray-800">Cancel</button>
+                                </div>
                                 <h1 class="text-3xl font-bold">{{ $user->name }}</h1>
                                 <p class="text-white/90">{{ $user->email }}</p>
                                 @if($user->location)
@@ -195,21 +222,46 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Your Saved Trails -->
+                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
+                    <div class="p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5v14l7-5 7 5V5a2 2 0 00-2-2H7a2 2 0 00-2 2z" />
+                            </svg>
+                            Your Saved Trails
+                        </h3>
+
+                        @php
+                            // If the user relationship exists, get count; otherwise fallback to 0
+                            $savedCount = 0;
+                            if (isset($user) && method_exists($user, 'favoriteTrails')) {
+                                try { $savedCount = $user->favoriteTrails()->count(); } catch (
+                                    Throwable $e) { $savedCount = 0; }
+                            }
+                        @endphp
+
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-2xl font-bold text-gray-900">{{ $savedCount }}</p>
+                                <p class="text-sm text-gray-500">trails saved</p>
+                            </div>
+                            <div class="text-right">
+                                <a href="{{ route('profile.saved-trails') }}" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                    View Saved Trails
+                                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Enhanced Hiking Tools & Results Section -->
             <div class="mb-8">
-                <!-- Section Header with Decorative Elements -->
-                <div class="text-center mb-8">
-                    <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-400 to-blue-500 rounded-full mb-4">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                    </div>
-                    <h3 class="text-3xl font-bold text-gray-800 mb-2">Your Hiking Adventure Tools</h3>
-                    <p class="text-gray-600 text-lg">Track your progress and plan your next adventure</p>
-                </div>
-
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                                  <!-- Enhanced Assessment Results -->
                          <div class="bg-gradient-to-br from-white via-green-50 to-emerald-50 overflow-hidden shadow-2xl sm:rounded-2xl border border-green-200 relative">
@@ -258,44 +310,44 @@
                                          <div class="text-center p-4 bg-gradient-to-br from-white to-green-50 rounded-xl border border-green-200 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105">
                                              <div class="text-2xl font-bold text-green-600 mb-1">{{ $user->latestAssessmentResult->gear_score }}%</div>
                                              <div class="text-sm font-medium text-gray-700 mb-2">Gear</div>
-                                             <div class="w-full bg-gray-200 rounded-full h-2">
-                                                 <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500" style="width: {{ $user->latestAssessmentResult->gear_score }}%"></div>
-                                             </div>
+                                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                                    <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500 rating-fill" data-percentage="{{ $user->latestAssessmentResult->gear_score }}"></div>
+                                                </div>
                                          </div>
                                          <div class="text-center p-4 bg-gradient-to-br from-white to-green-50 rounded-xl border border-green-200 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105">
                                              <div class="text-2xl font-bold text-green-600 mb-1">{{ $user->latestAssessmentResult->fitness_score }}%</div>
                                              <div class="text-sm font-medium text-gray-700 mb-2">Fitness</div>
-                                             <div class="w-full bg-gray-200 rounded-full h-2">
-                                                 <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500" style="width: {{ $user->latestAssessmentResult->fitness_score }}%"></div>
-                                             </div>
+                                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                                    <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500 rating-fill" data-percentage="{{ $user->latestAssessmentResult->fitness_score }}"></div>
+                                                </div>
                                          </div>
                                          <div class="text-center p-4 bg-gradient-to-br from-white to-green-50 rounded-xl border border-green-200 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105">
                                              <div class="text-2xl font-bold text-green-600 mb-1">{{ $user->latestAssessmentResult->health_score }}%</div>
                                              <div class="text-sm font-medium text-gray-700 mb-2">Health</div>
-                                             <div class="w-full bg-gray-200 rounded-full h-2">
-                                                 <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500" style="width: {{ $user->latestAssessmentResult->health_score }}%"></div>
-                                             </div>
+                                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                                    <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500 rating-fill" data-percentage="{{ $user->latestAssessmentResult->health_score }}"></div>
+                                                </div>
                                          </div>
                                          <div class="text-center p-4 bg-gradient-to-br from-white to-green-50 rounded-xl border border-green-200 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105">
                                              <div class="text-2xl font-bold text-green-600 mb-1">{{ $user->latestAssessmentResult->weather_score }}%</div>
                                              <div class="text-sm font-medium text-gray-700 mb-2">Weather</div>
-                                             <div class="w-full bg-gray-200 rounded-full h-2">
-                                                 <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500" style="width: {{ $user->latestAssessmentResult->weather_score }}%"></div>
-                                             </div>
+                                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                                    <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500 rating-fill" data-percentage="{{ $user->latestAssessmentResult->weather_score }}"></div>
+                                                </div>
                                          </div>
                                          <div class="text-center p-4 bg-gradient-to-br from-white to-green-50 rounded-xl border border-green-200 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105">
                                              <div class="text-2xl font-bold text-green-600 mb-1">{{ $user->latestAssessmentResult->emergency_score }}%</div>
                                              <div class="text-sm font-medium text-gray-700 mb-2">Emergency</div>
-                                             <div class="w-full bg-gray-200 rounded-full h-2">
-                                                 <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500" style="width: {{ $user->latestAssessmentResult->emergency_score }}%"></div>
-                                             </div>
+                                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                                    <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500 rating-fill" data-percentage="{{ $user->latestAssessmentResult->emergency_score }}"></div>
+                                                </div>
                                          </div>
                                          <div class="text-center p-4 bg-gradient-to-br from-white to-green-50 rounded-xl border border-green-200 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105">
                                              <div class="text-2xl font-bold text-green-600 mb-1">{{ $user->latestAssessmentResult->environment_score }}%</div>
                                              <div class="text-sm font-medium text-gray-700 mb-2">Environment</div>
-                                             <div class="w-full bg-gray-200 rounded-full h-2">
-                                                 <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500" style="width: {{ $user->latestAssessmentResult->environment_score }}%"></div>
-                                             </div>
+                                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                                    <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500 rating-fill" data-percentage="{{ $user->latestAssessmentResult->environment_score }}"></div>
+                                                </div>
                                          </div>
                                      </div>
 
@@ -424,3 +476,340 @@
     
 
 </x-app-layout>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        document.querySelectorAll('.rating-fill').forEach(el => {
+            const pct = parseInt(el.dataset.percentage || '0', 10);
+            el.style.width = pct + '%';
+        });
+    });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Profile picture edit handlers
+    const root = document.getElementById('profile-picture-root');
+    if (!root) return;
+
+    // Small toast utility: non-blocking notifications
+    function showToast(message, type = 'info', duration = 4000) {
+        try {
+            let container = document.getElementById('js-toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'js-toast-container';
+                container.style.position = 'fixed';
+                container.style.top = '1rem';
+                container.style.right = '1rem';
+                container.style.zIndex = 9999;
+                container.style.display = 'flex';
+                container.style.flexDirection = 'column';
+                container.style.gap = '0.5rem';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'js-toast shadow-lg rounded px-4 py-2 text-sm text-white';
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 150ms ease-in-out, transform 150ms ease-in-out';
+            toast.style.transform = 'translateY(-6px)';
+
+            if (type === 'success') {
+                toast.style.background = '#16a34a'; // green-600
+            } else if (type === 'error') {
+                toast.style.background = '#dc2626'; // red-600
+            } else {
+                toast.style.background = '#0ea5e9'; // sky-500
+            }
+
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            // animate in
+            requestAnimationFrame(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+            });
+
+            // auto-remove
+            const timeout = setTimeout(() => {
+                try {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(-6px)';
+                    setTimeout(() => { toast.remove(); if (!container.hasChildNodes()) container.remove(); }, 160);
+                } catch (e) {}
+            }, duration);
+
+            // allow click to dismiss
+            toast.addEventListener('click', () => {
+                clearTimeout(timeout);
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-6px)';
+                setTimeout(() => { toast.remove(); if (!container.hasChildNodes()) container.remove(); }, 160);
+            });
+        } catch (e) {
+            // fallback to alert if something unexpected happens
+            try { alert(message); } catch (e) { console.log(message); }
+        }
+    }
+
+    const input = document.getElementById('profile-picture-input');
+    const editBtn = document.getElementById('profile-picture-edit-btn');
+    const actions = document.getElementById('profile-picture-actions');
+    const saveBtn = document.getElementById('profile-picture-save');
+    const cancelBtn = document.getElementById('profile-picture-cancel');
+    let img = document.getElementById('profile-picture-img');
+    let placeholder = document.getElementById('profile-picture-placeholder');
+    const form = document.getElementById('profile-picture-form');
+
+    // Keep a clone of the original placeholder so we can restore it if needed
+    const originalPlaceholderClone = placeholder ? placeholder.cloneNode(true) : null;
+
+    // Helper to show/hide actions consistently
+    function showActions() { if (actions) { actions.classList.remove('hidden'); actions.classList.add('flex'); } }
+    function hideActions() { if (actions) { actions.classList.add('hidden'); actions.classList.remove('flex'); } }
+
+    let originalSrc = img ? img.src : null;
+    let pendingObjectUrl = null;
+    // Keep track of navigation avatars so we can show an instant preview and restore on cancel
+    const navOriginals = []; // { el: HTMLImageElement, src: string }
+    const navReplacedPlaceholders = []; // { placeholderEl: Element, replacementEl: Element }
+
+    // Open file picker when edit icon clicked
+    editBtn?.addEventListener('click', function(e) {
+        e.preventDefault();
+        input && input.click();
+    });
+
+    // Also allow clicking the avatar area (label already exists) -> file input will open
+
+    input?.addEventListener('change', function(e) {
+        const file = input.files && input.files[0];
+        if (!file) return;
+
+        // Basic validation
+        if (!file.type.startsWith('image/')) {
+            showToast('Please choose an image file.', 'error');
+            input.value = '';
+            return;
+        }
+        const MAX_BYTES = 2 * 1024 * 1024; // 2MB (match server-side validation)
+        if (file.size > MAX_BYTES) {
+            showToast('Please choose an image smaller than 2 MB.', 'error');
+            input.value = '';
+            return;
+        }
+
+        // Show preview (profile area)
+        if (pendingObjectUrl) URL.revokeObjectURL(pendingObjectUrl);
+        pendingObjectUrl = URL.createObjectURL(file);
+
+        if (img) {
+            img.src = pendingObjectUrl;
+        } else if (placeholder) {
+            // replace placeholder with img element and update references
+            const newImg = document.createElement('img');
+            newImg.id = 'profile-picture-img';
+            newImg.className = 'w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover';
+            newImg.src = pendingObjectUrl;
+            placeholder.replaceWith(newImg);
+            img = newImg;
+            // placeholder has been removed from DOM
+            placeholder = null;
+        }
+
+        // Show instant preview in navigation (if present)
+        try {
+            // Only populate originals once per selection session
+            if (navOriginals.length === 0) {
+                document.querySelectorAll('.js-profile-avatar').forEach(navImg => {
+                    if (navImg && navImg.tagName === 'IMG') {
+                        navOriginals.push({ el: navImg, src: navImg.src });
+                        navImg.src = pendingObjectUrl;
+                    }
+                });
+
+                // Replace any placeholders in nav with a temporary img
+                document.querySelectorAll('.js-profile-avatar-placeholder').forEach(placeholderEl => {
+                    // Clone so we can restore later
+                    const clone = placeholderEl.cloneNode(true);
+                    const navImg = document.createElement('img');
+                    // preserve placeholder classes but ensure it is recognized as a nav avatar
+                    navImg.className = (placeholderEl.className || '') + ' js-profile-avatar dynamic-temp-avatar rounded-full object-cover';
+                    navImg.src = pendingObjectUrl;
+                    navImg.alt = document.title || '';
+                    placeholderEl.replaceWith(navImg);
+                    navReplacedPlaceholders.push({ placeholderEl: clone, replacementEl: navImg });
+                });
+            } else {
+                // If we already have nav originals (user changed selection again), just update temp imgs
+                document.querySelectorAll('.js-profile-avatar').forEach(navImg => {
+                    if (navImg && navImg.tagName === 'IMG') navImg.src = pendingObjectUrl;
+                });
+            }
+        } catch (e) {
+            // Defensive: do not block profile preview if nav update fails
+            console.error('Nav preview update failed', e);
+        }
+
+    // Show actions (make container flex and visible)
+    showActions();
+    });
+
+    cancelBtn?.addEventListener('click', function() {
+        // Clear selection, restore original image/placeholder
+        if (pendingObjectUrl) {
+            URL.revokeObjectURL(pendingObjectUrl);
+            pendingObjectUrl = null;
+        }
+
+        // If we had an original image, restore it
+        if (img && originalSrc) {
+            img.src = originalSrc;
+        } else if (!img && originalPlaceholderClone) {
+            // If we created an img from a placeholder earlier, restore the placeholder
+            const root = document.getElementById('profile-picture-root');
+            if (root) {
+                // remove any current img
+                const currentImg = document.getElementById('profile-picture-img');
+                if (currentImg) currentImg.remove();
+                // re-insert cloned placeholder
+                root.querySelector('label')?.prepend(originalPlaceholderClone.cloneNode(true));
+                // restore local references
+                placeholder = document.getElementById('profile-picture-placeholder');
+                img = document.getElementById('profile-picture-img');
+            }
+        }
+
+        // Restore navigation avatars/placeholders if we modified them for preview
+        try {
+            if (navOriginals.length > 0) {
+                navOriginals.forEach(entry => {
+                    try { if (entry.el && entry.el.tagName === 'IMG') entry.el.src = entry.src; } catch(e){}
+                });
+                navOriginals.length = 0;
+            }
+
+            if (navReplacedPlaceholders.length > 0) {
+                navReplacedPlaceholders.forEach(pair => {
+                    try {
+                        const { placeholderEl, replacementEl } = pair;
+                        if (replacementEl && replacementEl.parentNode) {
+                            replacementEl.parentNode.replaceChild(placeholderEl, replacementEl);
+                        }
+                    } catch(e){}
+                });
+                navReplacedPlaceholders.length = 0;
+            }
+        } catch (e) {
+            console.error('Nav restore failed', e);
+        }
+
+    if (input) input.value = '';
+    hideActions();
+    });
+
+    saveBtn?.addEventListener('click', async function() {
+        const file = input.files && input.files[0];
+        if (!file) {
+            showToast('No image selected', 'error');
+            return;
+        }
+
+    // Prepare multipart form data
+    const fd = new FormData();
+    fd.append('profile_picture', file);
+    // We'll POST to the dedicated AJAX upload endpoint instead of the full profile update
+    const uploadUrl = '{{ route("profile.picture.upload") }}';
+
+        // CSRF token from meta
+        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        // Disable buttons
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+        const previousSaveText = saveBtn.textContent;
+        saveBtn.textContent = 'Saving...';
+
+        try {
+            const headers = token ? { 'X-CSRF-TOKEN': token } : {};
+            // Mark as AJAX / JSON expected so the server can return JSON
+            headers['X-Requested-With'] = 'XMLHttpRequest';
+            headers['Accept'] = 'application/json';
+
+            const response = await fetch(uploadUrl, {
+                method: 'POST',
+                headers,
+                body: fd
+            });
+
+            if (!response.ok) {
+                const text = await response.text().catch(() => null);
+                throw new Error('Upload failed: ' + (text || response.status));
+            }
+
+            // Try parse JSON; if server returns non-JSON (e.g. redirect), fallback to full reload
+            let data = {};
+            try { data = await response.json(); } catch (e) { data = null; }
+
+                if (data && data.profile_picture_url) {
+                // Update displayed image to server-provided URL (ensure cache-bust so change appears)
+                let imgEl = document.getElementById('profile-picture-img');
+                if (imgEl) {
+                    const cacheBust = data.cache_bust || Date.now();
+                    // append or replace query string to ensure fresh image
+                    const sep = data.profile_picture_url.includes('?') ? '&' : '?';
+                    const newSrc = data.profile_picture_url + sep + 'v=' + cacheBust;
+
+                    // Collect all image elements we should update
+                    const imgsToWait = new Set();
+                    imgsToWait.add(imgEl);
+                    document.querySelectorAll('.js-profile-avatar').forEach(el => {
+                        if (el && el.tagName === 'IMG') imgsToWait.add(el);
+                    });
+                    // Also include any dynamic temporary avatars we created during preview
+                    document.querySelectorAll('.dynamic-temp-avatar').forEach(el => {
+                        if (el && el.tagName === 'IMG') imgsToWait.add(el);
+                    });
+
+                    // Hide actions and reload the page so the server-served image is used.
+                    // This avoids fragile probe/poll behavior in local dev environments where
+                    // repeated GET probes can produce connection errors. The server already
+                    // accepted the upload, so a reload with a cache-bust will display the
+                    // newly stored image consistently.
+                    hideActions();
+                    try {
+                        if (pendingObjectUrl) { try { URL.revokeObjectURL(pendingObjectUrl); } catch (e) {} pendingObjectUrl = null; }
+                        input.value = '';
+                        if (actions) { actions.classList.add('hidden'); actions.classList.remove('flex'); }
+                    } catch (e) { console.error('Cleanup before reload failed', e); }
+
+                    // Notify user and then reload with cache-bust to ensure fresh image
+                    showToast('Profile picture updated', 'success');
+                    const reloadUrl = window.location.href.split('?')[0] + '?_=' + Date.now();
+                    window.location.replace(reloadUrl);
+                }
+                // Success toast shown below before reload
+            } else if (response.ok) {
+                // Server accepted upload but didn't return JSON (likely redirected).
+                // Force a reload with cache-bust so the updated image becomes visible.
+                const url = window.location.href.split('?')[0] + '?_=' + Date.now();
+                window.location.replace(url);
+            } else {
+                // Non-ok handled earlier, but fallback to reload
+                window.location.reload();
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Failed to upload profile picture. Please try again.', 'error');
+            // restore preview to original
+            if (img && originalSrc) img.src = originalSrc;
+        } finally {
+            saveBtn.disabled = false;
+            cancelBtn.disabled = false;
+            saveBtn.textContent = previousSaveText;
+        }
+    });
+});
+</script>

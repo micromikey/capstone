@@ -21,6 +21,47 @@ class ItineraryMap {
         this.init();
     }
 
+    // Convert a relative path to an absolute URL based on current origin
+    getAbsoluteUrl(path) {
+        const baseUrl = window.location.origin;
+        const cleanPath = path.startsWith('/') ? path : '/' + path;
+        return baseUrl + cleanPath;
+    }
+
+    // Ensure image URL is valid: return absolute URL for relative paths and a default when missing
+    getValidImageUrl(imageUrl) {
+        if (!imageUrl) return this.getAbsoluteUrl('/img/default-trail.jpg');
+        if (/^https?:\/\//i.test(imageUrl)) return imageUrl;
+
+        if (imageUrl.startsWith('storage/') || imageUrl.startsWith('/storage/')) {
+            const clean = imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl;
+            return this.getAbsoluteUrl(clean);
+        }
+
+        if (imageUrl.startsWith('trail-images') || imageUrl.includes('/trail-images/')) {
+            const clean = imageUrl.startsWith('/') ? imageUrl : ('/storage/' + imageUrl.replace(/^\/?storage\//, ''));
+            return this.getAbsoluteUrl(clean);
+        }
+
+        if (imageUrl.startsWith('profile-pictures') || imageUrl.includes('/profile-pictures/')) {
+            const clean = imageUrl.startsWith('/') ? imageUrl : ('/storage/' + imageUrl.replace(/^\//, ''));
+            return this.getAbsoluteUrl(clean);
+        }
+
+        if (imageUrl.startsWith('img/') || imageUrl.includes('/img/')) {
+            const clean = imageUrl.startsWith('/') ? imageUrl : ('/' + imageUrl);
+            return this.getAbsoluteUrl(clean);
+        }
+
+        try {
+            const clean = imageUrl.startsWith('/') ? imageUrl : ('/' + imageUrl);
+            return this.getAbsoluteUrl(clean);
+        } catch (e) {
+            console.warn('ItineraryMap.getValidImageUrl failed for', imageUrl, e);
+            return this.getAbsoluteUrl('/img/default-trail.jpg');
+        }
+    }
+
     async init() {
         try {
             console.log('Initializing Itinerary Map...');
@@ -187,7 +228,8 @@ class ItineraryMap {
             const autocomplete = new AutoClass(searchInput, {
                 componentRestrictions: { country: 'ph' },
                 fields: ['name', 'formatted_address', 'geometry'],
-                types: ['establishment', 'geocode']
+                // Prefer geocode-only to support address/region/natural feature searches
+                types: ['geocode']
             });
 
             autocomplete.addListener('place_changed', () => {
@@ -217,7 +259,7 @@ class ItineraryMap {
                 const AutoClass = google.maps.places.Autocomplete;
                 this.stopoverAutocomplete = new AutoClass(stopoverInput, {
                     componentRestrictions: { country: 'ph' },
-                    types: ['establishment', 'geocode'],
+                    types: ['geocode'],
                     fields: ['formatted_address', 'name', 'place_id', 'geometry']
                 });
 
@@ -236,7 +278,7 @@ class ItineraryMap {
                 const AutoClass2 = google.maps.places.Autocomplete;
                 this.sideTripAutocomplete = new AutoClass2(sideTripInput, {
                     componentRestrictions: { country: 'ph' },
-                    types: ['establishment', 'geocode'],
+                    types: ['geocode'],
                     fields: ['formatted_address', 'name', 'place_id', 'geometry']
                 });
 
@@ -334,11 +376,38 @@ class ItineraryMap {
             
             // Add trails to map with delay to prevent browser freeze
             this.displayTrailsAsync();
+            // Attach transport data to any matching <option> elements so the UI preview
+            // can read transport info even if the server didn't render data-transport attributes.
+            try { this.attachOptionTransportData(); } catch (e) { console.warn('attachOptionTransportData failed', e); }
             
         } catch (error) {
             console.error('Trail loading failed:', error);
             this.updateMapStatus('Failed to load trails');
         }
+    }
+
+    // Iterate over trailSelect options and attach data-transport from loaded trails when available.
+    attachOptionTransportData() {
+        const trailSelect = document.getElementById('trailSelect');
+        if (!trailSelect || !Array.isArray(this.trails) || this.trails.length === 0) return;
+
+        const options = Array.from(trailSelect.options);
+        options.forEach(opt => {
+            try {
+                // Skip placeholder/disabled options
+                if (!opt.value) return;
+                // Try to find a matching trail by exact name or inclusion
+                const match = this.trails.find(t => (t.name && t.name === opt.value) || (t.name && opt.value.includes(t.name)) || (t.trail_name && t.trail_name === opt.value));
+                if (match) {
+                    const transportObj = match.transportation || match.transport || match.transport_details || match.transportation_details || null;
+                    if (transportObj) {
+                        opt.setAttribute('data-transport', JSON.stringify(transportObj));
+                    }
+                }
+            } catch (e) {
+                // ignore per-option errors
+            }
+        });
     }
 
     displayTrailsAsync() {
@@ -470,10 +539,10 @@ class ItineraryMap {
             <div style="display: flex; gap: 8px; margin-bottom: 8px;">
                 <!-- Small square image -->
                 <div style="flex-shrink: 0;">
-                    <img src="${trail.image_url || '/img/default-trail.jpg'}" 
-                         alt="${trail.name}" 
-                         style="width: 56px; height: 56px; border-radius: 8px; object-fit: cover; border: 1px solid #e5e7eb;"
-                         onerror="this.src='/img/default-trail.jpg';">
+                <img src="${this.getValidImageUrl(trail.image_url)}" 
+                    alt="${trail.name}" 
+                    style="width: 56px; height: 56px; border-radius: 8px; object-fit: cover; border: 1px solid #e5e7eb;"
+                    onerror="(function(img){console.warn('Itinerary preview image failed to load:', img.src); img.src='${this.getAbsoluteUrl('/img/default-trail.jpg')}';})(this);">
                 </div>
                 
                 <!-- Trail details -->
@@ -481,7 +550,7 @@ class ItineraryMap {
                     <h3 style="font-size: 14px; font-weight: bold; color: #111827; margin-bottom: 4px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${trail.name}</h3>
                     <div style="display: flex; align-items: center; font-size: 12px; color: #6b7280; margin-bottom: 6px;">
                         <svg style="width: 12px; height: 12px; margin-right: 4px; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 0 1111.314 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1 1 11.314 0z"></path>
                         </svg>
                         <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${trail.location_name || trail.location || 'Location not specified'}</span>
                     </div>
@@ -617,11 +686,22 @@ class ItineraryMap {
             const option = Array.from(trailSelect.options).find(opt => 
                 opt.value === trail.name || opt.text.includes(trail.name)
             );
-            if (option) {
-                trailSelect.value = option.value;
-                // Trigger change event to update other displays
-                trailSelect.dispatchEvent(new Event('change'));
-            }
+                if (option) {
+                    // Attach transport payload to the option BEFORE dispatching change so any listeners
+                    // (like the transport preview) can read it synchronously.
+                    try {
+                        const transportObj = trail.transportation || trail.transport || trail.transport_details || trail.transportation_details || null;
+                        if (transportObj) {
+                            option.setAttribute('data-transport', JSON.stringify(transportObj));
+                        }
+                    } catch (e) {
+                        console.warn('Failed to serialize transport for option:', e);
+                    }
+
+                    trailSelect.value = option.value;
+                    // Trigger change event to update other displays
+                    trailSelect.dispatchEvent(new Event('change'));
+                }
         }
         
         // Update trail count to show selected trail
@@ -634,6 +714,10 @@ class ItineraryMap {
         if (trailDifficultyDisplay && trail.difficulty) {
             trailDifficultyDisplay.textContent = `Difficulty: ${trail.difficulty.charAt(0).toUpperCase() + trail.difficulty.slice(1)}`;
         }
+
+        // Ensure the matching <option> in the dropdown has a data-transport attribute
+        // (Previously this block attached data-transport after dispatching change. We moved that logic
+        // above to ensure listeners triggered synchronously can read it.)
     }
 
     highlightTrail(trail) {

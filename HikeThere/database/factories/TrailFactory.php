@@ -22,10 +22,8 @@ class TrailFactory extends Factory
             'mountain_name' => $mountain,
             'trail_name' => $trailName,
             'slug' => Str::slug($trailName.'-'.$mountain.'-'.uniqid()),
-            'price' => $this->faker->randomFloat(2, 50, 5000),
-            'package_inclusions' => 'Guide, Permit, Meals',
             'difficulty' => $this->faker->randomElement(['beginner','intermediate','advanced']),
-            'duration' => '1 day',
+            // package fields moved to TrailPackage; created in afterCreating callback
             'best_season' => 'November - February',
             'terrain_notes' => 'Rocky sections, forested ridge',
             'packing_list' => 'Water, Food, Headlamp',
@@ -38,5 +36,17 @@ class TrailFactory extends Factory
             'estimated_time' => null,
             'is_active' => true,
         ];
+    }
+
+    public function configure()
+    {
+        return $this->afterCreating(function (\App\Models\Trail $trail) {
+            \App\Models\TrailPackage::create([
+                'trail_id' => $trail->id,
+                'price' => $this->faker->randomFloat(2, 50, 5000),
+                'package_inclusions' => 'Guide, Permit, Meals',
+                'duration' => '1 day',
+            ]);
+        });
     }
 }

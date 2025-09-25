@@ -39,6 +39,9 @@ Route::prefix('trails')->group(function () {
     Route::get('/nearby', [TrailController::class, 'getNearbyTrails']); // New nearby trails endpoint
     Route::get('/debug', [TrailController::class, 'debugTrails']); // Debug endpoint
     Route::post('/search-osm', [TrailController::class, 'searchOSM']);
+    // Favorite/unfavorite a trail (authenticated)
+    Route::post('/favorite/toggle', [App\Http\Controllers\Api\TrailFavoriteController::class, 'toggle'])->middleware('auth:sanctum');
+    Route::get('/favorites', [App\Http\Controllers\Api\TrailFavoriteController::class, 'index'])->middleware('auth:sanctum');
     Route::get('/map-data', [TrailController::class, 'getMapData']);
     Route::get('/{trail}', [TrailController::class, 'show']);
     Route::get('/{trail}/details', [TrailController::class, 'getDetails']);

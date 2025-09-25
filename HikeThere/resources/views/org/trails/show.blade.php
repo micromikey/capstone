@@ -48,10 +48,10 @@
                                     {{ $trail->difficulty_label }}
                                 </span>
                                 <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-white/20">
-                                    {{ $trail->duration }}
+                                    {{ optional($trail->package)->duration ?? $trail->duration }}
                                 </span>
                                 <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-white/20">
-                                    ₱{{ number_format($trail->price, 2) }}
+                                    ₱{{ number_format(optional($trail->package)->price ?? $trail->price ?? 0, 2) }}
                                 </span>
                             </div>
                         </div>
@@ -77,7 +77,7 @@
                                     </div>
                                     <div class="flex justify-between">
                                         <span class="text-gray-600">Departure Point:</span>
-                                        <span class="font-medium">{{ $trail->departure_point }}</span>
+                                        <span class="font-medium">{{ optional($trail->package)->transport_details ?? $trail->departure_point ?? 'N/A' }}</span>
                                     </div>
                                     <div class="flex justify-between">
                                         <span class="text-gray-600">Transport Options:</span>
@@ -90,7 +90,7 @@
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Package Inclusions</h3>
                                 <div class="bg-gray-50 rounded-lg p-4">
-                                    <p class="text-gray-700">{{ $trail->package_inclusions }}</p>
+                                    <p class="text-gray-700">{{ optional($trail->package)->package_inclusions ?? $trail->package_inclusions }}</p>
                                 </div>
                             </div>
 
@@ -160,10 +160,10 @@
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
                                 <div class="bg-gray-50 rounded-lg p-4 space-y-3">
-                                    @if($trail->side_trips)
+                                    @if(optional($trail->package)->side_trips ?? $trail->side_trips)
                                     <div>
                                         <span class="text-gray-600 font-medium">Side Trips:</span>
-                                        <p class="text-gray-700 mt-1">{{ $trail->side_trips }}</p>
+                                        <p class="text-gray-700 mt-1">{{ optional($trail->package)->side_trips ?? $trail->side_trips }}</p>
                                     </div>
                                     @endif
                                     @if($trail->campsite_info)

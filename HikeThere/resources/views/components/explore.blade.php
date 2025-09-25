@@ -211,7 +211,7 @@
                                     <!-- Price Badge -->
                                     <div class="absolute top-4 right-4">
                                         <span class="bg-green-500 text-white px-3 py-1 text-sm font-bold rounded-full shadow-lg">
-                                            ₱{{ number_format($trail->price, 0) }}
+                                            ₱{{ number_format(optional($trail->package)->price ?? $trail->price ?? 0, 0) }}
                                         </span>
                                     </div>
 

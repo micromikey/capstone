@@ -312,7 +312,7 @@
             <span class="quick-stat-label">Meters Gain</span>
         </div>
         <div class="quick-stat">
-            <span class="quick-stat-value">{{ $trail->estimated_time_formatted ?? ($trail->duration ?? 'N/A') }}</span>
+            <span class="quick-stat-value">{{ $trail->estimated_time_formatted ?? (optional($trail->package)->duration ?? $trail->duration ?? 'N/A') }}</span>
             <span class="quick-stat-label">Duration</span>
         </div>
     </div>
@@ -362,7 +362,7 @@
                 <tr>
                     <td class="metrics-value">{{ $trail->length ?? 'N/A' }} km</td>
                     <td class="metrics-value">{{ $trail->elevation_gain ?? 'N/A' }} m</td>
-                    <td class="metrics-value">{{ $trail->duration ?? 'N/A' }}</td>
+                    <td class="metrics-value">{{ optional($trail->package)->duration ?? $trail->duration ?? 'N/A' }}</td>
                     <td class="metrics-value">{{ $trail->estimated_time_formatted ?? 'N/A' }}</td>
                 </tr>
             </table>

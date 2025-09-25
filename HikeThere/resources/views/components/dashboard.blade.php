@@ -463,7 +463,7 @@ $imageService = app('App\Services\TrailImageService');
                     {{-- Location and Date --}}
                     <div class="mb-6">
                         <h2 class="text-xl font-semibold text-white/90 mb-1 weather-city">{{ $weather['city'] ?? 'Unknown' }}</h2>
-                        <p class="text-sm text-white/80">{{ now()->setTimezone('Asia/Manila')->format('l, F j, Y') }}</p>
+                        <p class="text-sm text-white/80">{{ now()->format('l, F j, Y') }}</p>
                     </div>
 
                     {{-- Temperature and Description --}}
@@ -531,8 +531,8 @@ $imageService = app('App\Services\TrailImageService');
                         <div class="relative overflow-hidden">
                             <div class="overflow-x-auto pb-2 custom-scrollbar relative" style="scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.3) transparent;">
                                 @php
-                                // Set Philippines timezone
-                                $currentTime = now()->setTimezone('Asia/Manila');
+                                // Use server timezone; client will display localized times when possible
+                                $currentTime = now();
 
                                 // Generate hourly temperatures for dynamic line
                                 $hourlyTemps = [];
@@ -876,7 +876,7 @@ $imageService = app('App\Services\TrailImageService');
                         if (lastRequestedCoords) {
                             el.textContent = `Showing weather for: ${lastRequestedCoords.lat.toFixed(4)}, ${lastRequestedCoords.lon.toFixed(4)}`;
                         } else {
-                            el.textContent = `Showing weather for: Manila (default)`;
+                            el.textContent = `Showing weather for: current location (no default)`;
                         }
                     }
                 } catch (e) {}
@@ -999,8 +999,8 @@ $imageService = app('App\Services\TrailImageService');
 
         // Update last refresh time
         const now = new Date();
-        const timeString = now.toLocaleTimeString('en-PH', {
-            timeZone: 'Asia/Manila',
+        // Use the client's locale and timezone for the displayed timestamp
+        const timeString = now.toLocaleTimeString(undefined, {
             hour12: false,
             hour: '2-digit',
             minute: '2-digit'
@@ -1122,8 +1122,8 @@ $imageService = app('App\Services\TrailImageService');
 
     // Initialize real-time updates when the page loads
     document.addEventListener('DOMContentLoaded', function() {
-        // Attempt to get browser geolocation. If it fails or is denied, fallback to Manila coordinates.
-        const defaultCoords = { lat: 14.5995, lon: 120.9842 }; // Manila
+    // Attempt to get browser geolocation. If it fails or is denied, do not default to a specific city.
+    const defaultCoords = null; // explicit: no geographic fallback
 
         function startUpdates(coords) {
             // Prevent double-starts
@@ -1676,7 +1676,7 @@ $imageService = app('App\Services\TrailImageService');
                             </div>
                             <span class="text-sm text-gray-600 ml-2">{{ number_format($trail->average_rating, 1) }} ({{ $trail->total_reviews }})</span>
                         </div>
-                        <span class="text-lg font-bold text-purple-600">₱{{ number_format($trail->price, 0) }}</span>
+                        <span class="text-lg font-bold text-purple-600">₱{{ number_format(optional($trail->package)->price ?? $trail->price ?? 0, 0) }}</span>
                     </div>
 
                     <a href="{{ route('trails.show', $trail->slug) }}"

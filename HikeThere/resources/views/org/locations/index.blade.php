@@ -27,7 +27,7 @@
                         <td class="px-4 py-2">{{ $loc->latitude }}</td>
                         <td class="px-4 py-2">{{ $loc->longitude }}</td>
                         <td class="px-4 py-2 text-right space-x-2">
-                            <button data-edit='@json($loc)' class="editLocation inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-500">Edit</button>
+                            <button data-edit="@json($loc)" class="editLocation inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-500">Edit</button>
                             <form action="{{ route('org.locations.destroy', $loc->slug) }}" method="POST" class="inline" onsubmit="return confirm('Delete this location?');">
                                 @csrf
                                 @method('DELETE')

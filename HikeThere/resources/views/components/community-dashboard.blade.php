@@ -245,7 +245,7 @@ $imageService = app('App\\Services\\TrailImageService');
                             </svg>
                             {{ number_format($trail->average_rating, 1) }} ({{ $trail->total_reviews }})
                         </div>
-                        <span>₱{{ number_format($trail->price, 0) }}</span>
+                        <span>₱{{ number_format(optional($trail->package)->price ?? $trail->price ?? 0, 0) }}</span>
                     </div>
 
                     <div class="mt-4">

@@ -133,11 +133,9 @@ class GPXLibraryController extends Controller
                 foreach ($files as $file) {
                     $filename = basename($file);
                     
-                    // Prioritize Philippine trail files
-                    if (!str_contains($filename, 'philippine') && !str_contains($filename, 'luzon') && !str_contains($filename, 'test')) {
-                        continue;
-                    }
-                    
+                    // Consider all GPX files in the directory when searching. Previously we
+                    // skipped files unless they contained 'philippine', 'luzon', or 'test'
+                    // in the filename which excluded many valid files (e.g. mt-pulag-...gpx).
                     $gpxContent = file_get_contents($file);
                     $gpxData = $this->parseGPXContent($gpxContent);
                     
@@ -188,59 +186,129 @@ class GPXLibraryController extends Controller
     private function findMatchingTrails($trails, $mountainName, $trailName, $location)
     {
         $matches = [];
-        
+
+        // Normalize incoming search terms
+        $mountainClean = $this->normalizeKeyword($mountainName);
+        $trailClean = $this->normalizeKeyword($trailName);
+        $locationClean = $this->normalizeKeyword($location);
+
         foreach ($trails as $trail) {
             $score = 0;
-            $trailNameLower = strtolower($trail['name']);
-            $trailDescLower = strtolower($trail['description'] ?? '');
-            
-            // Exact mountain name match (highest score)
-            if (str_contains($trailNameLower, $mountainName)) {
-                $score += 100;
+
+            $trailNameText = $trail['name'] ?? '';
+            $trailDescText = $trail['description'] ?? '';
+            $trailCombined = trim($trailNameText . ' ' . $trailDescText);
+            $trailClean = $this->normalizeKeyword($trailCombined);
+
+            // If cleaned strings are identical or the trail contains the cleaned term, boost strongly
+            if (!empty($mountainClean) && mb_stripos($trailClean, $mountainClean) !== false) {
+                $score += 40;
             }
-            
-            // Partial mountain name match
-            $mountainWords = explode(' ', $mountainName);
-            foreach ($mountainWords as $word) {
-                if (strlen($word) > 2 && str_contains($trailNameLower, $word)) {
-                    $score += 30;
+
+            if (!empty($trailClean) && mb_stripos($trailClean, $trailClean) !== false) {
+                $score += 40;
+            }
+
+            // Token overlap: count common tokens between search tokens and trail tokens
+            $mountTokens = $this->tokens($mountainClean);
+            $trailTokens = $this->tokens($trailClean);
+            $tokenMatches = count(array_intersect($mountTokens, $trailTokens));
+            if ($tokenMatches > 0) {
+                $score += min(30, $tokenMatches * 12);
+            }
+
+            // If explicit trail name provided, prefer tokens from that too
+            $searchTrailTokens = $this->tokens($trailClean);
+            $queryTrailTokens = $this->tokens($trailName);
+            $trailTokenMatches = count(array_intersect($searchTrailTokens, $queryTrailTokens));
+            if ($trailTokenMatches > 0) {
+                $score += min(40, $trailTokenMatches * 15);
+            }
+
+            // Fuzzy distance improvements: compare each search token to trail tokens
+            foreach (array_merge($mountTokens, $this->tokens($trailName)) as $qToken) {
+                foreach ($trailTokens as $tToken) {
+                    if (!$qToken || !$tToken) continue;
+                    $dist = levenshtein($qToken, $tToken);
+                    $len = max(mb_strlen($qToken), mb_strlen($tToken));
+                    if ($len === 0) continue;
+                    $ratio = 1 - ($dist / $len); // similarity
+                    if ($ratio >= 0.8) {
+                        $score += 12; // very close
+                    } elseif ($ratio >= 0.6) {
+                        $score += 6; // somewhat close
+                    }
                 }
             }
-            
-            // Trail name match (if provided)
-            if ($trailName && str_contains($trailNameLower, $trailName)) {
-                $score += 50;
+
+            // Location match
+            if (!empty($locationClean) && (mb_stripos($trailClean, $locationClean) !== false)) {
+                $score += 15;
             }
-            
-            // Location match (if available)
-            if ($location && (str_contains($trailNameLower, $location) || str_contains($trailDescLower, $location))) {
-                $score += 20;
+
+            // Bonus for explicit substring presence in original name/description
+            if (!empty($mountainClean) && mb_stripos($trailCombined, $mountainClean) !== false) {
+                $score += 10;
             }
-            
-            // Special keywords for better matching
-            $keywords = ['mount', 'mt', 'peak', 'summit'];
-            foreach ($keywords as $keyword) {
-                if (str_contains($mountainName, $keyword) && str_contains($trailNameLower, $keyword)) {
-                    $score += 10;
-                }
+
+            if (!empty($trailName) && mb_stripos($trailCombined, $trailName) !== false) {
+                $score += 15;
             }
-            
-            // Philippine-specific mountains get bonus
+
+            // Small boost for Philippine-specific mountains found in text
             $philippineMountains = ['pulag', 'apo', 'kanlaon', 'makiling', 'banahaw', 'batulao', 'pinatubo'];
             foreach ($philippineMountains as $mountain) {
-                if (str_contains($mountainName, $mountain) && str_contains($trailNameLower, $mountain)) {
-                    $score += 20;
+                if (!empty($mountainClean) && mb_stripos($mountainClean, $mountain) !== false && mb_stripos($trailClean, $mountain) !== false) {
+                    $score += 8;
                 }
             }
-            
-            // Only include trails with reasonable match score
-            if ($score >= 30) {
+
+            // Normalize score to 0-100 range
+            $score = max(0, min(100, (int)$score));
+
+            // Only include trails with reasonable match score (>= 35)
+            if ($score >= 35) {
                 $trail['match_score'] = $score;
                 $matches[] = $trail;
             }
         }
-        
+
         return $matches;
+    }
+
+    /**
+     * Normalize a keyword: lowercase, remove punctuation, strip generic tokens
+     */
+    private function normalizeKeyword($raw)
+    {
+        if (empty($raw)) return '';
+        $s = mb_strtolower($raw);
+        // Remove punctuation, keep unicode letters and numbers and spaces
+        $s = preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $s);
+        $s = preg_replace('/\s+/u', ' ', $s);
+        $s = trim($s);
+
+        if ($s === '') return '';
+
+        // Remove common generic tokens that add noise
+        $generic = ['mount', 'mountain', 'mt', 'mtn', 'trail', 'trails', 'hill', 'peak', 'range', 'summit'];
+        $parts = preg_split('/\s+/u', $s);
+        $parts = array_filter($parts, function($p) use ($generic) {
+            return !in_array($p, $generic);
+        });
+
+        return trim(implode(' ', $parts));
+    }
+
+    /**
+     * Tokenize a cleaned string into meaningful words
+     */
+    private function tokens($cleaned)
+    {
+        if (empty($cleaned)) return [];
+        $parts = preg_split('/\s+/u', mb_strtolower(trim($cleaned)));
+        $parts = array_filter($parts, function($p) { return mb_strlen($p) > 1; });
+        return array_values($parts);
     }
     
     /**

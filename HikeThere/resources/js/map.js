@@ -18,7 +18,9 @@ class HikeThereMap {
             isEmbedded: options.isEmbedded || false,
             mapElementId: options.mapElementId || 'map',
             defaultCenter: { lat: 12.8797, lng: 121.7740 }, // Philippines
-            defaultZoom: 6,
+            mapTypeId: google.maps.MapTypeId.SATELLITE,
+        // Ensure a sensible default zoom when not provided
+        defaultZoom: (options.config && options.config.defaultZoom) || 6,
             maxZoom: 18,
             minZoom: 4,
             ...options.config
@@ -85,14 +87,12 @@ class HikeThereMap {
             zoom: this.config.defaultZoom,
             mapTypeId: google.maps.MapTypeId.TERRAIN,
             styles: this.getEnhancedMapStyles(),
-            mapTypeControl: true,
-            mapTypeControlOptions: {
-                style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-                position: google.maps.ControlPosition.TOP_RIGHT
-            },
+            // hide the default map type control since we'll provide a compact custom toggle
+            mapTypeControl: false,
             streetViewControl: false,
             fullscreenControl: true,
-            zoomControl: true,
+            // Disable native camera controls so we can replace them with our compact quick actions
+            zoomControl: false,
             zoomControlOptions: {
                 position: google.maps.ControlPosition.RIGHT_BOTTOM
             },
@@ -103,7 +103,7 @@ class HikeThereMap {
             minZoom: this.config.minZoom,
             backgroundColor: '#f8fafc',
             scaleControl: true,
-            rotateControl: true,
+            rotateControl: false,
             rotateControlOptions: {
                 position: google.maps.ControlPosition.RIGHT_TOP
             },
@@ -134,8 +134,147 @@ class HikeThereMap {
         
         this.directionsRenderer.setMap(this.map);
         
-        this.addEnhancedControls();
+    this.addEnhancedControls();
+        // Add compact circular map-type toggle (satellite <-> terrain)
+        this.addMapTypeToggleControl();
+        // Add quick action circular buttons (current location + reset)
+        // Add quick action circular buttons (current location + reset) in place of camera controls
+        this.addQuickActionControls();
+        // Once tiles are loaded, hide the map-loading overlay and ensure fallback elements are hidden
+        google.maps.event.addListenerOnce(this.map, 'tilesloaded', () => {
+            try {
+                console.log('Map tiles loaded');
+                const loadingOverlay = document.getElementById('map-loading');
+                if (loadingOverlay) loadingOverlay.style.display = 'none';
+
+                const fallback = document.getElementById('fallback-map');
+                if (fallback) fallback.style.display = 'none';
+
+                // Count visible tile images (for debugging) - may vary by provider
+                const tiles = document.querySelectorAll(`#${this.config.mapElementId} img`);
+                console.log(`Map tile images present: ${tiles.length}`);
+            } catch (e) {
+                console.warn('Error during tilesloaded handler', e);
+            }
+        });
+
         this.setupMapEvents();
+    }
+
+    addQuickActionControls() {
+        try {
+            const container = document.createElement('div');
+            // Position stacked vertically and align to the right-bottom camera control area
+            container.style.display = 'flex';
+            container.style.flexDirection = 'column-reverse';
+            container.style.gap = '8px';
+            container.style.margin = '8px';
+            container.style.alignItems = 'flex-end';
+
+            // Current location button (top) - larger with target icon
+            const locBtn = document.createElement('button');
+            locBtn.className = 'bg-white rounded-full shadow-md border border-gray-200 w-12 h-12 flex items-center justify-center';
+            locBtn.title = 'My location';
+            locBtn.innerHTML = `
+                <svg class="w-6 h-6 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="M2 12h2" />
+                    <path d="M20 12h2" />
+                    <path d="M4.93 4.93l1.41 1.41" />
+                    <path d="M17.66 17.66l1.41 1.41" />
+                    <path d="M4.93 19.07l1.41-1.41" />
+                    <path d="M17.66 6.34l1.41-1.41" />
+                </svg>
+            `;
+            locBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (typeof this.useCurrentLocation === 'function') {
+                    this.useCurrentLocation();
+                }
+            });
+
+            // Reset map view button (below) with reset/refresh icon
+            const resetBtn = document.createElement('button');
+            resetBtn.className = 'bg-white rounded-full shadow-md border border-gray-200 w-10 h-10 flex items-center justify-center';
+            resetBtn.title = 'Reset map view';
+            resetBtn.innerHTML = `
+                <svg class="w-5 h-5 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 11-3.9-7.2" />
+                    <polyline points="21 3 21 9 15 9" />
+                </svg>
+            `;
+            resetBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.resetMapView();
+            });
+
+            container.appendChild(locBtn);
+            container.appendChild(resetBtn);
+
+            // Push into the map controls at RIGHT_BOTTOM to replace the native camera controls
+            this.map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(container);
+        } catch (e) {
+            console.error('Failed to add quick action controls', e);
+        }
+    }
+
+    addMapTypeToggleControl() {
+        try {
+            // Create a compact circular toggle button
+            const btn = document.createElement('button');
+            btn.className = 'bg-white rounded-full shadow-md border border-gray-200 w-10 h-10 flex items-center justify-center';
+            btn.title = 'Toggle map type';
+
+            const updateIcon = () => {
+                const isSatellite = this.map.getMapTypeId() === google.maps.MapTypeId.SATELLITE;
+                btn.innerHTML = isSatellite ? `
+                    <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7z" />
+                    </svg>
+                ` : `
+                    <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h4l3 9 4-18 3 9h4" />
+                    </svg>
+                `;
+            };
+
+            // Initial icon
+            updateIcon();
+
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                try {
+                    const current = this.map.getMapTypeId();
+                    const next = (current === google.maps.MapTypeId.SATELLITE) ? google.maps.MapTypeId.TERRAIN : google.maps.MapTypeId.SATELLITE;
+                    this.map.setMapTypeId(next);
+                    updateIcon();
+                } catch (err) {
+                    console.error('Failed to toggle map type', err);
+                }
+            });
+
+            // Place the button in the TOP_RIGHT corner
+            const wrapper = document.createElement('div');
+            wrapper.style.margin = '8px';
+            wrapper.appendChild(btn);
+            this.map.controls[google.maps.ControlPosition.TOP_RIGHT].push(wrapper);
+        } catch (e) {
+            console.error('Failed to add map type toggle control', e);
+        }
+    }
+
+    resetMapView() {
+        try {
+            if (!this.map) return;
+            const center = this.config.defaultCenter || { lat: 12.8797, lng: 121.7740 };
+            const zoom = this.config.defaultZoom || 6;
+            this.map.panTo(center);
+            this.map.setZoom(zoom);
+        } catch (e) {
+            console.error('Failed to reset map view', e);
+        }
     }
 
     getEnhancedMapStyles() {
@@ -154,7 +293,8 @@ class HikeThereMap {
             },
             // Enhance natural terrain
             {
-                featureType: 'natural.terrain',
+                // use valid featureType for natural landscape
+                featureType: 'landscape.natural',
                 elementType: 'geometry',
                 stylers: [
                     { visibility: 'on' },
@@ -164,7 +304,8 @@ class HikeThereMap {
             },
             // Enhance water features
             {
-                featureType: 'natural.water',
+                // use valid featureType for water
+                featureType: 'water',
                 elementType: 'geometry',
                 stylers: [
                     { visibility: 'on' },
@@ -208,23 +349,11 @@ class HikeThereMap {
     }
 
     addEnhancedControls() {
-        // Add custom map controls with proper spacing
-        const controlDiv = document.createElement('div');
-        controlDiv.className = 'hikethere-map-controls flex flex-col gap-3 p-3';
-        
-        // Trail count control
-        const trailCountControl = this.createTrailCountControl();
-        controlDiv.appendChild(trailCountControl);
-        
-        // Performance control
-        const performanceControl = this.createPerformanceControl();
-        controlDiv.appendChild(performanceControl);
-        
-        // Hiking tools control
-        const hikingControl = this.createHikingControl();
-        controlDiv.appendChild(hikingControl);
-        
-        this.map.controls[google.maps.ControlPosition.TOP_LEFT].push(controlDiv);
+        // Removed embedded Trail Count, Performance, and Hiking Tools controls
+        // These controls are intentionally not added directly on the map to keep
+        // the map UI uncluttered. If needed, controls can be rendered elsewhere
+        // in the page UI and wired to HikeThereMap methods.
+        return;
     }
 
     createTrailCountControl() {
@@ -366,18 +495,50 @@ class HikeThereMap {
     }
 
     getValidImageUrl(imageUrl) {
+        console.debug('[getValidImageUrl] input:', imageUrl);
         // If no image URL provided, use default
         if (!imageUrl) {
             return this.getAbsoluteUrl('/img/default-trail.jpg');
         }
         
         // If it's already an absolute URL (starts with http/https), return as is
-        if (imageUrl.startsWith('http')) {
+        if (/^https?:\/\//i.test(imageUrl)) {
             return imageUrl;
         }
         
-        // If it's a relative URL, make it absolute
-        return this.getAbsoluteUrl(imageUrl);
+        // If the image is stored via Laravel storage path (storage/...), convert to asset path
+        // Many backends expose images under /storage/<path>
+        if (imageUrl.startsWith('storage/') || imageUrl.startsWith('/storage/')) {
+            const clean = imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl;
+            return this.getAbsoluteUrl(clean);
+        }
+
+        // Common relative folder patterns used in the app -> normalize them
+        if (imageUrl.startsWith('trail-images') || imageUrl.includes('/trail-images/')) {
+            // stored files usually live under /storage/trail-images/...
+            const clean = imageUrl.startsWith('/') ? imageUrl : ('/storage/' + imageUrl.replace(/^\/?storage\//, ''));
+            return this.getAbsoluteUrl(clean);
+        }
+
+        if (imageUrl.startsWith('profile-pictures') || imageUrl.includes('/profile-pictures/')) {
+            const clean = imageUrl.startsWith('/') ? imageUrl : ('/storage/' + imageUrl.replace(/^\//, ''));
+            return this.getAbsoluteUrl(clean);
+        }
+
+        // App local public images
+        if (imageUrl.startsWith('img/') || imageUrl.includes('/img/')) {
+            const clean = imageUrl.startsWith('/') ? imageUrl : ('/' + imageUrl);
+            return this.getAbsoluteUrl(clean);
+        }
+
+        // If it's a relative URL, convert to absolute using public path
+        try {
+            const clean = imageUrl.startsWith('/') ? imageUrl : ('/' + imageUrl);
+            return this.getAbsoluteUrl(clean);
+        } catch (e) {
+            console.warn('getValidImageUrl: failed to build absolute URL for', imageUrl, e);
+            return this.getAbsoluteUrl('/img/default-trail.jpg');
+        }
     }
 
     getAbsoluteUrl(path) {
@@ -482,14 +643,28 @@ class HikeThereMap {
             'advanced': '🔴'
         };
 
+        // Ensure main image URLs are valid (convert relative/storage paths to absolute)
+        const defaultImage = this.getAbsoluteUrl('/img/default-trail.jpg');
+
+        // Prefer featured/primary/thumb images when available (matches itinerary/build logic)
+        const candidateImage = (
+            trail.featured_image ||
+            trail.primary_image ||
+            trail.image ||
+            trail.image_url ||
+            (trail.images && trail.images.length ? (trail.images[0].thumb_url || trail.images[0].url) : null)
+        );
+
+        const imageSrc = this.getValidImageUrl(candidateImage);
+
         return `
             <div class="enhanced-trail-info-window max-w-sm bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
                 <div class="relative h-40 overflow-hidden">
-                    <img src="${trail.image_url || '/img/default-trail.jpg'}" 
+                    <img src="${imageSrc}" 
                          alt="${trail.name}" 
-                         class="w-full h-full object-cover"
-                         onerror="this.src='/img/default-trail.jpg';">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+                         class="w-full h-full object-cover relative z-10"
+                         onerror="(function(img){ if(img.dataset._err) return; img.dataset._err='1'; console.warn('Trail preview image failed to load:', img.src); img.onerror=null; img.src='${defaultImage}'; })(this);">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-0 pointer-events-none"></div>
                 </div>
                 
                 <div class="p-3">
@@ -498,7 +673,7 @@ class HikeThereMap {
                         <h3 class="text-base font-bold text-gray-900 mb-1 leading-tight">${trail.name}</h3>
                         <div class="flex items-center text-xs text-gray-600">
                             <svg class="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 0 1111.314 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1 1 11.314 0z"></path>
                         </svg>
                             <span class="truncate">${trail.location_name || 'Location not specified'}</span>
                     </div>
@@ -966,19 +1141,33 @@ class HikeThereMap {
             'advanced': '🔴'
         };
 
+        // Use helper to convert relative URLs to absolute and ensure a reliable default
+        const defaultImage = this.getAbsoluteUrl('/img/default-trail.jpg');
+
+        // Prefer featured/primary/thumb images when available (same logic as info-window)
+        const candidateImage = (
+            trail.featured_image ||
+            trail.primary_image ||
+            trail.image ||
+            trail.image_url ||
+            (trail.images && trail.images.length ? (trail.images[0].thumb_url || trail.images[0].url) : null)
+        );
+
+        const imageSrc = this.getValidImageUrl(candidateImage);
+
         return `
             <!-- Trail Header with Image -->
-            <div class="relative h-32 mb-4 rounded-lg overflow-hidden">
-                <img src="${trail.image_url || '/img/default-trail.jpg'}" 
-                     alt="${trail.name}" 
-                     class="w-full h-full object-cover"
-                     onerror="this.src='/img/default-trail.jpg';">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent"></div>
+          <div class="relative h-32 mb-4 rounded-lg overflow-hidden">
+             <img src="${imageSrc}" 
+                 alt="${trail.name}" 
+                 class="w-full h-full object-cover relative z-10"
+                 onerror="(function(img){ if(img.dataset._err) return; img.dataset._err='1'; console.warn('Trail detail image failed to load:', img.src); img.onerror=null; img.src='${defaultImage}'; })(this);">
+             <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent z-0 pointer-events-none"></div>
                 <div class="absolute bottom-2 left-2 right-2">
                     <h3 class="text-base font-bold text-white mb-1">${trail.name}</h3>
                     <div class="flex items-center text-white/90 text-xs">
                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 0 1111.314 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1 1 11.314 0z"></path>
                         </svg>
                         <span>${trail.location_name || 'Location not specified'}</span>
                 </div>
@@ -1453,11 +1642,23 @@ class HikeThereMap {
             try {
                 console.log('[Map] Setting up search autocomplete...');
                 const AutoClass = google.maps.places.Autocomplete; // legacy path still works after importLibrary
+                // NOTE: The Places Autocomplete 'types' option does not allow mixing
+                // 'establishment' with other type specifiers. Mixing causes errors like:
+                // "establishment cannot be mixed with other types." To provide a
+                // friendly search experience for trails (addresses, regions, natural
+                // features) we prefer geocoding results. If you want strictly business
+                ///place results, use types: ['establishment'] alone.
                 this.searchAutocomplete = new AutoClass(searchInput, {
-                    types: ['establishment', 'geocode', 'natural_feature'], // Include businesses, addresses, and natural features
+                    // Use geocode to allow addresses/regions/natural feature queries
+                    // without mixing incompatible types. You can switch to
+                    // ['establishment'] if you only want business/place results.
+                    types: ['geocode'],
                     componentRestrictions: { country: 'ph' }, // Philippines
                     fields: ['formatted_address', 'name', 'place_id', 'geometry', 'types']
                 });
+
+                // Ensure the Places dropdown appears above other UI
+                this.injectPlacesZIndexFix();
 
                 // Add place_changed event listener
                 this.searchAutocomplete.addListener('place_changed', () => {
@@ -1965,10 +2166,10 @@ class HikeThereMap {
                     ${images.slice(0, 4).map((image, index) => `
                         <div class="relative group cursor-pointer rounded-lg overflow-hidden ${index === 0 ? 'col-span-2' : ''}" 
                              onclick="window.hikeThereMap.showImageModal(${trailId}, ${index})">
-                            <img src="${image.thumb_url || image.url}" 
+                       <img src="${this.getValidImageUrl(image.thumb_url || image.url)}" 
                                  alt="${image.caption || 'Trail image'}"
                                  class="w-full ${index === 0 ? 'h-32' : 'h-20'} object-cover transition-transform duration-200 group-hover:scale-105"
-                                 onerror="this.src='/img/default-trail.jpg';">
+                           onerror="this.src='${this.getAbsoluteUrl('/img/default-trail.jpg')}';">
                             <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors">
                                 <div class="absolute bottom-1 left-1">
                                     <span class="text-xs px-1.5 py-0.5 rounded ${this.getImageSourceBadgeStyle(image.source)}">
@@ -2073,9 +2274,9 @@ class HikeThereMap {
                     
                     <!-- Image -->
                     <div class="relative">
-                        <img src="${image.url}" alt="${image.caption || 'Trail image'}"
+                    <img src="${this.getValidImageUrl(image.url)}" alt="${image.caption || 'Trail image'}"
                              class="w-full max-h-[60vh] object-contain bg-gray-100"
-                             onerror="this.src='/img/default-trail.jpg';">
+                        onerror="this.src='${this.getAbsoluteUrl('/img/default-trail.jpg')}';">
                         
                         <!-- Navigation -->
                         ${images.length > 1 ? `

@@ -261,7 +261,7 @@
             </div>
             <div class="metric-card" role="listitem">
                 <div class="metric-label">Trail Duration</div>
-                <div class="metric-value">{{ $trail->duration ?? 'N/A' }}</div>
+                <div class="metric-value">{{ optional($trail->package)->duration ?? $trail->duration ?? 'N/A' }}</div>
             </div>
             <div class="metric-card" role="listitem">
                 <div class="metric-label">Est. Hiking Time</div>

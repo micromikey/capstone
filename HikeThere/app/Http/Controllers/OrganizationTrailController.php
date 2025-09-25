@@ -6,12 +6,16 @@ use App\Models\Trail;
 use App\Models\TrailImage;
 use App\Models\Location;
 use App\Services\GoogleDirectionsService;
+use App\Services\TrailMetricsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use App\Jobs\EnrichTrailData;
+use Illuminate\Support\Facades\DB;
+use App\Models\TrailPackage;
 
 class OrganizationTrailController extends Controller
 {
@@ -47,7 +51,8 @@ class OrganizationTrailController extends Controller
             'user_type' => Auth::user()->user_type ?? 'unknown'
         ]);
 
-        $request->validate([
+    // Build validation rules; support side_trips as either string (legacy textarea) or array (new UI)
+    $updateRules = [
             'mountain_name' => 'required|string|max:255',
             'trail_name' => 'required|string|max:255',
             'location_id' => 'required|exists:locations,id',
@@ -61,9 +66,13 @@ class OrganizationTrailController extends Controller
             'other_trail_notes' => 'nullable|string',
             'permit_required' => 'boolean',
             'permit_process' => 'nullable|string',
-            'departure_point' => 'required|string|max:255',
-            'transport_options' => 'required|string',
-            'side_trips' => 'nullable|string',
+            // departure_point removed; organizations will store transport details instead
+            'transport_details' => 'required|string',
+            'transport_included' => 'nullable|in:0,1',
+            'transportation_details' => 'nullable|string|max:2000',
+            // Use stable keys for vehicle values - restrict to known keys
+            'transportation_vehicle' => 'nullable|in:van,jeep,bus,car,motorbike',
+            'side_trips' => 'nullable',
             'packing_list' => 'required|string',
             'health_fitness' => 'required|string',
             'requirements' => 'nullable|string',
@@ -81,13 +90,57 @@ class OrganizationTrailController extends Controller
             'summary' => 'nullable|string',
             'description' => 'nullable|string',
             'trail_coordinates' => 'nullable|string',
-            'gpx_file' => 'nullable|file|mimes:gpx,kml,kmz|max:10240', // 10MB max
+            // Accept common GPX/KML/KMZ files. Some GPX files may be detected as 'xml' by the OS/clients,
+            // so allow .gpx, .kml, .kmz and .xml extensions and common MIME types as a fallback.
+            'gpx_file' => ['nullable','file','max:10240',
+                // allow standard extensions
+                function($attribute, $value, $fail) {
+                    $allowedExt = ['gpx','kml','kmz','xml'];
+                    $extension = strtolower($value->getClientOriginalExtension() ?: '');
+                    if (!in_array($extension, $allowedExt)) {
+                        return $fail('The '.$attribute.' must be a file of type: gpx, kml, kmz.');
+                    }
+                    // basic mime check: accept xml/gpx/kml types
+                    $mime = $value->getMimeType();
+                    $allowedMimes = ['application/gpx+xml','application/gpx','application/xml','text/xml','application/vnd.google-earth.kml+xml','application/octet-stream'];
+                    if ($mime && !in_array($mime, $allowedMimes)) {
+                        // allow unknown mime for recognized extensions (some environments return octet-stream)
+                        if (!in_array($extension, ['gpx','kml','kmz'])) {
+                            return $fail('The '.$attribute.' must be a GPX/KML/KMZ file.');
+                        }
+                    }
+                }
+            ],
             'activities' => 'nullable|array',
             'activities.*' => 'string',
-        ]);
+        ];
+
+        // time fields validation (HH:MM)
+        $updateRules['opening_time'] = 'nullable|date_format:H:i';
+        $updateRules['closing_time'] = 'nullable|date_format:H:i';
+        $updateRules['pickup_time'] = 'nullable|date_format:H:i';
+        $updateRules['departure_time'] = 'nullable|date_format:H:i';
+
+        // If an array was submitted for side_trips, validate its items
+        if (is_array($request->input('side_trips'))) {
+            $updateRules['side_trips'] = 'nullable|array';
+            $updateRules['side_trips.*'] = 'nullable|string';
+        }
+
+        $request->validate($updateRules);
 
         try {
             $input = $request->all();
+
+            // Normalize side_trips: if an array was submitted, convert to a single string for storage
+            if (isset($input['side_trips']) && is_array($input['side_trips'])) {
+                $input['side_trips'] = implode(', ', array_values(array_filter($input['side_trips'], function($v){
+                    return $v !== null && $v !== '';
+                })));
+                if ($input['side_trips'] === '') {
+                    $input['side_trips'] = null;
+                }
+            }
 
             // Remove trail_coordinates from input as it's not a database field
             // It will be processed separately into the coordinates field
@@ -105,12 +158,91 @@ class OrganizationTrailController extends Controller
                 $input['features'] = null;
             }
 
+            // Remove package-related fields that belong to the `trail_packages` table
+            // so they are not mass-assigned to the `trails` table (avoid SQL errors).
+            $packageFields = [
+                'price', 'package_inclusions', 'duration', 'permit_required', 'permit_process',
+                'transport_included', 'transport_details', 'transportation_details', 'transportation_vehicle',
+                'commute_legs', 'commute_summary', 'opening_time', 'closing_time', 'pickup_time', 'departure_time'
+            ];
+            foreach ($packageFields as $k) {
+                if (array_key_exists($k, $input)) {
+                    unset($input[$k]);
+                }
+            }
+
             $trail = new Trail($input);
             $trail->user_id = Auth::id();
             $trail->slug = $this->generateUniqueSlug(Str::slug($request->trail_name . '-' . $request->mountain_name));
 
-            // Explicit boolean handling
-            $trail->permit_required = $request->has('permit_required');
+            // Build package data separately so we do not attempt to mass-assign package fields to Trail
+            $packageData = [];
+            $packageData['price'] = $request->input('price');
+            $packageData['package_inclusions'] = $request->input('package_inclusions');
+            $packageData['duration'] = $request->input('duration');
+            $packageData['permit_required'] = $request->has('permit_required');
+            $packageData['permit_process'] = $request->input('permit_process');
+            $packageData['transport_included'] = $request->input('transport_included') === '1' || $request->has('transport_included');
+
+            // schedule/time fields
+            $packageData['opening_time'] = $request->input('opening_time');
+            $packageData['closing_time'] = $request->input('closing_time');
+            $packageData['pickup_time'] = $request->input('pickup_time');
+            $packageData['departure_time'] = $request->input('departure_time');
+
+            // transport details / legacy transportation_details
+            if ($request->filled('transport_details')) {
+                $packageData['transport_details'] = $request->input('transport_details');
+                $packageData['transportation_details'] = $request->input('transport_details');
+            } elseif ($request->filled('transportation_details')) {
+                $raw = $request->input('transportation_details');
+                $decoded = null;
+                if ($raw) {
+                    try { $decoded = json_decode($raw, true); } catch (\Throwable $e) { $decoded = null; }
+                }
+
+                if (is_array($decoded) && isset($decoded['type']) && $decoded['type'] === 'commute' && isset($decoded['legs'])) {
+                    $packageData['transportation_details'] = $raw;
+                    $packageData['transport_details'] = $raw;
+
+                    $legs = array_values(array_filter($decoded['legs'], function($l){
+                        return (isset($l['from']) && trim($l['from']) !== '') || (isset($l['to']) && trim($l['to']) !== '') || (isset($l['vehicle']) && trim($l['vehicle']) !== '');
+                    }));
+
+                    $allowedVehicleKeys = ['van','jeep','bus','car','motorbike'];
+                    foreach ($legs as $idx => $leg) {
+                        if (isset($leg['vehicle']) && trim($leg['vehicle']) !== '') {
+                            $key = trim($leg['vehicle']);
+                            if (!in_array($key, $allowedVehicleKeys, true)) {
+                                return redirect()->back()->withInput()->withErrors(['transportation_details' => "Invalid vehicle type in commute leg #".($idx+1).": {$key}"]);
+                            }
+                        }
+                    }
+
+                    // store legs as JSON text
+                    $packageData['commute_legs'] = json_encode($legs);
+
+                    $vehicleLabelMap = [
+                        'van' => __('Van'), 'jeep' => __('Jeep'), 'bus' => __('Bus'), 'car' => __('Car'), 'motorbike' => __('Motorbike'),
+                    ];
+                    $summaryParts = [];
+                    foreach ($legs as $leg) {
+                        $from = trim($leg['from'] ?? '');
+                        $to = trim($leg['to'] ?? '');
+                        $vehicleKey = isset($leg['vehicle']) && trim($leg['vehicle']) !== '' ? trim($leg['vehicle']) : '';
+                        $vehicle = $vehicleKey ? ' (' . ($vehicleLabelMap[$vehicleKey] ?? $vehicleKey) . ')' : '';
+                        if ($from && $to) $summaryParts[] = $from . ' → ' . $to . $vehicle;
+                        elseif ($from) $summaryParts[] = $from . ' → (unknown)' . $vehicle;
+                        elseif ($to) $summaryParts[] = '(unknown) → ' . $to . $vehicle;
+                    }
+                    $packageData['commute_summary'] = count($summaryParts) ? implode('; ', $summaryParts) : null;
+                } else {
+                    $packageData['transportation_details'] = $raw;
+                    $packageData['transport_details'] = $raw;
+                    $packageData['commute_legs'] = null;
+                    $packageData['commute_summary'] = null;
+                }
+            }
 
             // Handle trail coordinates
             $trailData = $this->processTrailCoordinates($request);
@@ -139,14 +271,56 @@ class OrganizationTrailController extends Controller
                     $trail->elevation_low = $trailData['min_elevation_m'];
                 }
                 
-                // Store GPX file if uploaded
-                if ($request->hasFile('gpx_file') && isset($trailData['gpx_content'])) {
-                    $gpxPath = $this->storeGPXFile($request->file('gpx_file'), $trail);
-                    $trail->gpx_file = $gpxPath;
+                // If a GPX/KML/KMZ was uploaded, processTrailCoordinates will store it under public/geojson and
+                // return its path inside $trailData['gpx_path']. Use that path regardless of whether parsing succeeded.
+                if (isset($trailData['gpx_path'])) {
+                    $trail->gpx_file = $trailData['gpx_path'];
+                }
+            }
+            
+            // Always compute and overwrite estimated_time on the server when we have a derived length
+            // (and optional elevation_gain). The server should be the canonical source of truth for
+            // trail time estimates so we ignore any client-supplied value when sufficient metrics exist.
+            if ($trail->length) {
+                try {
+                    $metrics = new TrailMetricsService();
+                    $est = $metrics->estimateTime($trail->length, $trail->elevation_gain ?? null);
+                    if ($est !== null) {
+                        $trail->estimated_time = $est;
+                    }
+                } catch (\Throwable $e) {
+                    // non-fatal: log and continue, leave estimated_time as provided (if any)
+                    Log::warning('Failed to compute estimated_time: ' . $e->getMessage());
                 }
             }
 
+            DB::beginTransaction();
             $trail->save();
+
+            // Create or update TrailPackage linked to this trail
+            $packagePayload = array_filter([
+                'price' => $packageData['price'] ?? null,
+                'package_inclusions' => $packageData['package_inclusions'] ?? null,
+                'duration' => $packageData['duration'] ?? null,
+                'permit_required' => $packageData['permit_required'] ?? false,
+                'permit_process' => $packageData['permit_process'] ?? null,
+                'transport_included' => $packageData['transport_included'] ?? false,
+                'transport_details' => $packageData['transport_details'] ?? null,
+                'transportation_details' => $packageData['transportation_details'] ?? null,
+                'commute_legs' => $packageData['commute_legs'] ?? null,
+                'commute_summary' => $packageData['commute_summary'] ?? null,
+                'side_trips' => isset($input['side_trips']) ? $input['side_trips'] : null,
+                // times
+                'opening_time' => $packageData['opening_time'] ?? null,
+                'closing_time' => $packageData['closing_time'] ?? null,
+                'pickup_time' => $packageData['pickup_time'] ?? null,
+                'departure_time' => $packageData['departure_time'] ?? null,
+            ], function($v){ return $v !== null; });
+
+            // Create package
+            $package = new TrailPackage($packagePayload);
+            $package->trail_id = $trail->id;
+            $package->save();
 
             // Save activities explicitly (ensure array or null)
             if ($request->has('activities')) {
@@ -162,11 +336,21 @@ class OrganizationTrailController extends Controller
             // Handle image uploads
             $this->handleTrailImages($request, $trail);
 
-                        Log::info('Trail created successfully', ['trail_id' => $trail->id]);
+            DB::commit();
+
+            Log::info('Trail and package created successfully', ['trail_id' => $trail->id, 'package_id' => $package->id]);
+
+            // Clear cached enhanced map trails so newly created trail appears immediately
+            try {
+                Cache::forget('enhanced_map_trails');
+            } catch (\Exception $e) {
+                Log::warning('Failed to clear enhanced_map_trails cache: ' . $e->getMessage());
+            }
 
             return redirect()->route('org.trails.index')
                 ->with('success', 'Trail created successfully!');
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Trail creation failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -218,9 +402,11 @@ class OrganizationTrailController extends Controller
             'other_trail_notes' => 'nullable|string',
             'permit_required' => 'boolean',
             'permit_process' => 'nullable|string',
-            'departure_point' => 'required|string|max:255',
-            'transport_options' => 'required|string',
-            'side_trips' => 'nullable|string',
+            // departure_point removed; accept transport_details instead
+            'transport_details' => 'required|string',
+            'transportation_vehicle' => 'nullable|string|max:100',
+            'side_trips' => 'nullable|array',
+            'side_trips.*' => 'nullable|string',
             'packing_list' => 'required|string',
             'health_fitness' => 'required|string',
             'requirements' => 'nullable|string',
@@ -239,6 +425,10 @@ class OrganizationTrailController extends Controller
             'description' => 'nullable|string',
             'activities' => 'nullable|array',
             'activities.*' => 'string',
+            'opening_time' => 'nullable|date_format:H:i',
+            'closing_time' => 'nullable|date_format:H:i',
+            'pickup_time' => 'nullable|date_format:H:i',
+            'departure_time' => 'nullable|date_format:H:i',
         ]);
 
         $input = $request->all();
@@ -255,16 +445,59 @@ class OrganizationTrailController extends Controller
             $input['features'] = null;
         }
 
+        // Normalize side_trips for update: accept array inputs from form and convert to stored string
+        if (isset($input['side_trips']) && is_array($input['side_trips'])) {
+            $input['side_trips'] = implode(', ', array_values(array_filter($input['side_trips'], function($v){
+                return $v !== null && $v !== '';
+            })));
+            if ($input['side_trips'] === '') {
+                $input['side_trips'] = null;
+            }
+        }
+
+        // Remove package-related fields before filling Trail model (those belong to trail_packages table)
+        $packageFields = [
+            'price', 'package_inclusions', 'duration', 'permit_required', 'permit_process',
+            'transport_included', 'transport_details', 'transportation_details', 'transportation_vehicle',
+            'commute_legs', 'commute_summary', 'side_trips', 'opening_time', 'closing_time', 'pickup_time', 'departure_time'
+        ];
+        foreach ($packageFields as $k) {
+            if (array_key_exists($k, $input)) {
+                unset($input[$k]);
+            }
+        }
+
         $trail->fill($input);
         // Ensure activities array is preserved/updated
         if ($request->has('activities')) {
             $trail->activities = array_values(array_filter((array) $request->input('activities')));
+        }
+        // Always recompute and overwrite estimated_time on update when length exists. Server should be
+        // authoritative for time estimates and therefore any client-provided value is replaced when
+        // sufficient metrics are available.
+        if ($trail->length) {
+            try {
+                $metrics = new TrailMetricsService();
+                $est = $metrics->estimateTime($trail->length, $trail->elevation_gain ?? null);
+                if ($est !== null) {
+                    $trail->estimated_time = $est;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Failed to compute estimated_time during update: ' . $e->getMessage());
+            }
         }
         $newBaseSlug = Str::slug($request->trail_name . '-' . $request->mountain_name);
         if ($trail->isDirty('trail_name') || $trail->isDirty('mountain_name')) {
             $trail->slug = $this->generateUniqueSlug($newBaseSlug, $trail->id);
         }
         $trail->save();
+
+        // Clear cached enhanced map trails so updates are reflected
+        try {
+            Cache::forget('enhanced_map_trails');
+        } catch (\Exception $e) {
+            Log::warning('Failed to clear enhanced_map_trails cache after update: ' . $e->getMessage());
+        }
 
         return redirect()->route('org.trails.index')
             ->with('success', 'Trail updated successfully!');
@@ -279,6 +512,13 @@ class OrganizationTrailController extends Controller
 
         $trail->delete();
 
+        // Clear cache so deleted trail no longer appears on maps
+        try {
+            Cache::forget('enhanced_map_trails');
+        } catch (\Exception $e) {
+            Log::warning('Failed to clear enhanced_map_trails cache after delete: ' . $e->getMessage());
+        }
+
         return redirect()->route('org.trails.index')
             ->with('success', 'Trail deleted successfully!');
     }
@@ -291,6 +531,13 @@ class OrganizationTrailController extends Controller
         }
 
         $trail->update(['is_active' => !$trail->is_active]);
+
+        // Clear cache so status changes reflect on maps
+        try {
+            Cache::forget('enhanced_map_trails');
+        } catch (\Exception $e) {
+            Log::warning('Failed to clear enhanced_map_trails cache after toggleStatus: ' . $e->getMessage());
+        }
 
         return redirect()->route('org.trails.index')
             ->with('success', 'Trail status updated successfully!');
@@ -376,16 +623,51 @@ class OrganizationTrailController extends Controller
         try {
             // Priority: GPX file upload first
             if ($request->hasFile('gpx_file')) {
-                $gpxService = app(\App\Services\GPXService::class);
-                $gpxData = $gpxService->processGPXUpload($request->file('gpx_file'));
-                
-                Log::info('GPX file processed', [
-                    'points' => $gpxData['total_points'],
-                    'distance' => $gpxData['total_distance_km'],
-                    'elevation_gain' => $gpxData['elevation_gain_m']
-                ]);
-                
-                return $gpxData;
+                // Store uploaded file in public/geojson for later community/outsourced usage
+                try {
+                    $uploaded = $request->file('gpx_file');
+                    $originalName = pathinfo($uploaded->getClientOriginalName(), PATHINFO_FILENAME);
+                    $ext = strtolower($uploaded->getClientOriginalExtension());
+                    $safeName = Str::slug($originalName) . '.' . $ext;
+                    $publicDir = public_path('geojson');
+                    if (!is_dir($publicDir)) {
+                        mkdir($publicDir, 0755, true);
+                    }
+                    $destinationPath = $publicDir . DIRECTORY_SEPARATOR . $safeName;
+                    $uploaded->move($publicDir, $safeName);
+
+                    // Attempt to parse file but do not fail creation if parsing fails
+                    $gpxService = app(\App\Services\GPXService::class);
+                    try {
+                        $gpxData = $gpxService->processGPXUpload($request->file('gpx_file'));
+                        // attach the stored path so caller can persist it
+                        $gpxData['gpx_path'] = 'geojson/' . $safeName;
+
+                        Log::info('GPX file processed', [
+                            'points' => $gpxData['total_points'] ?? 0,
+                            'distance' => $gpxData['total_distance_km'] ?? 0,
+                            'elevation_gain' => $gpxData['elevation_gain_m'] ?? 0,
+                            'stored_path' => $gpxData['gpx_path']
+                        ]);
+
+                        return $gpxData;
+                    } catch (\Exception $e) {
+                        // Parsing failed, but we should still return the stored path so the trail record can reference the uploaded file
+                        Log::warning('GPX parsing failed after storing file: ' . $e->getMessage());
+                        return [
+                            'coordinates' => [],
+                            'total_distance_km' => null,
+                            'elevation_gain_m' => null,
+                            'min_elevation_m' => null,
+                            'max_elevation_m' => null,
+                            'total_points' => 0,
+                            'gpx_path' => 'geojson/' . $safeName
+                        ];
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to store uploaded GPX file: ' . $e->getMessage());
+                    // continue to other sources
+                }
             }
             
             // Second priority: Manual drawing or preview coordinates

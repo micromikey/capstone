@@ -12,6 +12,14 @@
                     </svg>
                     Back to Explore
                 </a>
+                <!-- Favorite Button -->
+                <button id="favorite-btn" data-trail-id="{{ $trail->id }}" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors">
+                    <svg id="favorite-icon" class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.343l-6.828-6.829a4 4 0 010-5.656z" />
+                    </svg>
+                    <span id="favorite-text">Save</span>
+                    <span id="favorite-count" class="ml-2 text-sm text-white/80">({{ $trail->favoritedBy()->count() }})</span>
+                </button>
             </div>
         </div>
     </x-slot>
@@ -79,7 +87,7 @@
                                 <p class="text-gray-300">{{ $trail->location->name }}, {{ $trail->location->province }}</p>
                             </div>
                             <div class="text-right text-white">
-                                <div class="text-3xl font-bold">₱{{ number_format($trail->price, 2) }}</div>
+                                <div class="text-3xl font-bold">₱{{ number_format(optional($trail->package)->price ?? $trail->price ?? 0, 2) }}</div>
                                 <div class="text-sm text-gray-200">Package Price</div>
                             </div>
                         </div>
@@ -99,12 +107,36 @@
                             <div class="text-sm text-gray-500">Elevation Gain</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-2xl font-bold text-gray-900">{{ $trail->duration }}</div>
+                            <div class="text-2xl font-bold text-gray-900">{{ optional($trail->package)->duration ?? $trail->duration }}</div>
                             <div class="text-sm text-gray-500">Duration</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-2xl font-bold text-gray-900">{{ $trail->estimated_time_formatted }}</div>
-                            <div class="text-sm text-gray-500">Estimated Time</div>
+                            @php
+                                // Prefer the formatted value if model provides it. If not, and we have an integer
+                                // `estimated_time` (stored as minutes), convert to a friendly string here.
+                                function format_minutes_to_human($mins) {
+                                    if (!$mins || !is_numeric($mins) || $mins <= 0) return 'N/A';
+                                    $m = (int)$mins;
+                                    if ($m >= 60*24) {
+                                        $days = intdiv($m, 60*24);
+                                        $hours = intdiv($m % (60*24), 60);
+                                        return $days . ' day' . ($days>1 ? 's' : '') . ($hours ? ' ' . $hours . ' h' : '');
+                                    }
+                                    if ($m >= 60) {
+                                        $hours = intdiv($m, 60);
+                                        $minutes = $m % 60;
+                                        return $hours . ' h' . ($minutes ? ' ' . $minutes . ' m' : '');
+                                    }
+                                    return $m . ' m';
+                                }
+
+                                $estDisplay = $trail->estimated_time_formatted ?? null;
+                                if (!$estDisplay && isset($trail->estimated_time)) {
+                                    $estDisplay = format_minutes_to_human($trail->estimated_time);
+                                }
+                            @endphp
+                            <div class="text-2xl font-bold text-gray-900">{{ $estDisplay ?? 'N/A' }}</div>
+                            <div class="text-sm text-gray-500">Estimated Hiking Time</div>
                         </div>
                     </div>
 
@@ -126,7 +158,7 @@
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="font-medium">Package Price:</span>
-                                    <span class="font-semibold text-green-600">₱{{ number_format($trail->price, 2) }}</span>
+                                    <span class="font-semibold text-green-600">₱{{ number_format(optional($trail->package)->price ?? $trail->price ?? 0, 2) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -294,11 +326,11 @@
                     @endif
 
                     <!-- Package Inclusions -->
-                    @if($trail->package_inclusions)
+                    @if(optional($trail->package)->package_inclusions ?? $trail->package_inclusions)
                         <div class="mb-8">
                             <h3 class="text-lg font-semibold text-gray-900 mb-3">Package Inclusions</h3>
                             <div class="bg-gray-50 rounded-lg p-4">
-                                <p class="text-gray-700 whitespace-pre-line">{{ $trail->package_inclusions }}</p>
+                                <p class="text-gray-700 whitespace-pre-line">{{ optional($trail->package)->package_inclusions ?? $trail->package_inclusions }}</p>
                             </div>
                         </div>
                     @endif
@@ -345,7 +377,7 @@
                                             </svg>
                                             <div class="flex-1 mx-2">
                                                 <div class="w-full bg-gray-200 rounded-full h-2">
-                                                    <div class="bg-yellow-400 h-2 rounded-full" style="width: {{ $data['percentage'] }}%"></div>
+                                                    <div class="bg-yellow-400 h-2 rounded-full rating-fill" data-percentage="{{ $data['percentage'] }}"></div>
                                                 </div>
                                             </div>
                                             <span class="text-sm text-gray-500">{{ $data['count'] }}</span>
@@ -533,10 +565,11 @@
                                                          <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2">
                                                              @foreach($review->review_images as $image)
                                                                  <div class="relative group">
-                                                                     <img src="{{ asset('storage/' . $image['path']) }}" 
-                                                                          alt="Review photo" 
-                                                                          class="w-full h-20 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                                                                          onclick="openImageModal('{{ asset('storage/' . $image['path']) }}', '{{ $review->user->name }}')">
+                                                        <img src="{{ asset('storage/' . $image['path']) }}" 
+                                                            alt="Review photo" 
+                                                            class="w-full h-20 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity review-image"
+                                                            data-image-src="{{ asset('storage/' . $image['path']) }}"
+                                                            data-image-caption="{{ $review->user->name }}">
                                                                  </div>
                                                              @endforeach
                                                          </div>
@@ -597,8 +630,8 @@
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Trail Photos ({{ count($allImages) }})</h3>
                         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                             @foreach($allImages as $index => $image)
-                                <button onclick="window.trailGalleryComponent.setImage({{ $index }})"
-                                        class="aspect-square rounded-lg overflow-hidden hover:opacity-75 transition-opacity group">
+                                <button data-index="{{ $index }}"
+                                        class="aspect-square rounded-lg overflow-hidden hover:opacity-75 transition-opacity group gallery-thumb">
                                     <img src="{{ $image['url'] }}" 
                                          alt="{{ $image['caption'] }}"
                                          class="w-full h-full object-cover">
@@ -618,23 +651,163 @@
         </div>
     </div>
 
+<script>
+    // Server-provided constants (moved up so earlier scripts can use them)
+    (function(){
+        const _serverDataEl = document.getElementById('server-data');
+        const _serverData = _serverDataEl ? _serverDataEl.dataset : {};
+        // Expose as globals for older inline scripts that run before the later block
+        window.API_REVIEWS_STORE = _serverData.apiReviewsStore || null;
+        window.CSRF_TOKEN = _serverData.csrf || '';
+        window.FAVORITE_COUNT = parseInt(_serverData.favoriteCount || 0, 10);
+        window.SAVED_TRAILS_ROUTE = _serverData.savedTrailsRoute || '/profile/saved-trails';
+        window.TRAIL_NAME = _serverData.trailName || '';
+        window.COMMUNITY_UNFOLLOW_ROUTE = _serverData.communityUnfollow || null;
+        window.COMMUNITY_FOLLOW_ROUTE = _serverData.communityFollow || null;
+        window.ELEVATION_PROFILE_ROUTE = _serverData.elevationProfileRoute || null;
+        window.BASE_URL = _serverData.baseUrl || '';
+    })();
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const favBtn = document.getElementById('favorite-btn');
+        if (!favBtn) return;
+
+        const trailId = favBtn.dataset.trailId;
+        const favText = document.getElementById('favorite-text');
+        const favIcon = document.getElementById('favorite-icon');
+        const favCount = document.getElementById('favorite-count');
+
+        // Determine initial state for authenticated user
+        let isFavorited = false;
+
+        // Helper to update UI
+        function updateFavoriteUI(state, count){
+            isFavorited = state;
+            if(state){
+                favBtn.classList.remove('bg-emerald-600');
+                favBtn.classList.add('bg-gray-200');
+                favBtn.classList.remove('text-white');
+                favBtn.classList.add('text-gray-800');
+                favText.textContent = 'Saved';
+                favIcon.classList.add('text-rose-500');
+            } else {
+                favBtn.classList.remove('bg-gray-200');
+                favBtn.classList.add('bg-emerald-600');
+                favBtn.classList.remove('text-gray-800');
+                favBtn.classList.add('text-white');
+                favText.textContent = 'Save';
+                favIcon.classList.remove('text-rose-500');
+            }
+            if(typeof count !== 'undefined') favCount.textContent = `(${count})`;
+        }
+
+        // Prefer session-based check first (works for users logged in via session)
+        fetch(`/trails/${trailId}/is-favorited`, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.success) {
+                    updateFavoriteUI(!!data.is_favorited, FAVORITE_COUNT);
+                } else {
+                    // Fallback to checking API favorites (may require token)
+                    return fetch(`/api/trails/favorites`, { credentials: 'same-origin' })
+                        .then(r => r.json())
+                        .then(data => {
+                            if(data.success && data.data){
+                                const items = data.data.data || data.data;
+                                const found = items.find(it => parseInt(it.id) === parseInt(trailId));
+                                updateFavoriteUI(!!found, FAVORITE_COUNT);
+                            }
+                        })
+                        .catch(() => {});
+                }
+            })
+            .catch(() => {
+                // Ignore errors; leave default UI
+            });
+
+        favBtn.addEventListener('click', function(){
+            favBtn.disabled = true;
+            const payload = { trail_id: trailId };
+
+            const doRequest = (url, isApi = false) => {
+                return fetch(url, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: isApi ? {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': CSRF_TOKEN,
+                        'Accept': 'application/json'
+                    } : {
+                        'X-CSRF-TOKEN': CSRF_TOKEN,
+                        'Accept': 'application/json'
+                    },
+                    body: isApi ? JSON.stringify(payload) : new URLSearchParams(payload)
+                });
+            };
+
+            // Try API (sanctum token) first
+            doRequest('/api/trails/favorite/toggle', true)
+            .then(response => {
+                if(response.status === 401){
+                    // Fallback to web route using session auth
+                    return doRequest('/trails/favorite/toggle', false);
+                }
+                return response;
+            })
+            .then(r => r.json())
+            .then(data => {
+                if(data && data.success){
+                    updateFavoriteUI(data.is_favorited, data.count);
+                    // Debug log before showing toast
+                    console.debug('Favorite toggle response', data);
+                    // Show rich success toast with trail name and link
+                    showToast('success', data.message || (data.is_favorited ? ('Saved "' + TRAIL_NAME + '"') : 'Removed from saved trails'), {
+                        details: data.is_favorited ? ('Saved "' + TRAIL_NAME + '"') : ('Removed "' + TRAIL_NAME + '"'),
+                        viewLink: SAVED_TRAILS_ROUTE
+                    });
+                } else if(data && data.message){
+                    console.debug('Favorite toggle error response', data);
+                    showToast('error', data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showToast('error', 'Unable to update favorites.');
+            })
+            .finally(() => { favBtn.disabled = false; });
+        });
+    });
+</script>
+
     <!-- Success Toast -->
-    <div id="success-toast" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 z-50">
-        <div class="flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-            </svg>
-            <span id="success-message"></span>
+    <div id="success-toast" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-full transition-all duration-300 z-50" style="display:none; opacity:0;">
+        <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 mt-1">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <div>
+                <div id="success-message" class="font-medium"></div>
+                <div id="success-details" class="text-sm opacity-90 mt-1"></div>
+            </div>
+            <div class="ml-4 flex items-center">
+                <a id="success-view-link" href="{{ route('profile.saved-trails') }}" class="text-sm underline">View Saved Trails &raquo;</a>
+            </div>
         </div>
     </div>
 
     <!-- Error Toast -->
-    <div id="error-toast" class="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 z-50">
-        <div class="flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-            </svg>
-            <span id="error-message"></span>
+    <div id="error-toast" class="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-full transition-all duration-300 z-50" style="display:none; opacity:0;">
+        <div class="flex items-center gap-3">
+            <div class="flex-shrink-0 mt-1">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <div>
+                <div id="error-message" class="font-medium"></div>
+            </div>
         </div>
     </div>
  
@@ -657,6 +830,34 @@
          </div>
      </div>
 
+    @php
+        // Prepare gallery image arrays for JS
+        $imageService = app(App\Services\TrailImageService::class);
+        $allImages = $imageService->getTrailImages($trail, 10);
+        $imageUrls = [];
+        $imageCaptions = [];
+        foreach ($allImages as $image) {
+            $imageUrls[] = $image['url'];
+            $imageCaptions[] = $image['caption'] ?? $trail->trail_name;
+        }
+    @endphp
+
+    {{-- Server-provided data for JS (use data-* to avoid Blade-in-JS parsing) --}}
+    <div id="server-data" style="display:none;"
+        data-saved-trails-route="{{ route('profile.saved-trails') }}"
+        data-trail-name="{{ $trail->trail_name }}"
+        data-api-reviews-store="{{ route('api.trails.reviews.store') }}"
+        data-community-unfollow="{{ route('api.community.unfollow') }}"
+        data-community-follow="{{ route('api.community.follow') }}"
+        data-elevation-profile-route="{{ route('trails.elevation-profile', $trail) }}"
+        data-base-url="{{ url('/') }}"
+        data-csrf="{{ csrf_token() }}"
+        data-favorite-count="{{ $trail->favoritedBy()->count() }}"></div>
+
+    <script id="trail-images" type="application/json">{!! json_encode($imageUrls) !!}</script>
+    <script id="image-captions" type="application/json">{!! json_encode($imageCaptions) !!}</script>
+    <script id="trail-coordinates" type="application/json">{!! json_encode($trail->coordinates ?? []) !!}</script>
+
     <script>
         // Trail Gallery Component
         function trailGallery() {
@@ -671,21 +872,11 @@
                 },
                 
                 loadImages() {
-                    @php
-                        // Use the enhanced TrailImageService to get all available images
-                        $imageService = app(App\Services\TrailImageService::class);
-                        $allImages = $imageService->getTrailImages($trail, 10);
-                        $imageUrls = [];
-                        $imageCaptions = [];
-                        
-                        foreach ($allImages as $image) {
-                            $imageUrls[] = $image['url'];
-                            $imageCaptions[] = $image['caption'] ?? $trail->trail_name;
-                        }
-                    @endphp
-                    
-                    const trailImages = @json($imageUrls);
-                    const imageCaptions = @json($imageCaptions);
+                    // Read precomputed JSON blobs injected by the server
+                    const imagesScript = document.getElementById('trail-images');
+                    const captionsScript = document.getElementById('image-captions');
+                    const trailImages = imagesScript ? JSON.parse(imagesScript.textContent || '[]') : [];
+                    const imageCaptions = captionsScript ? JSON.parse(captionsScript.textContent || '[]') : [];
                     
                     this.images = trailImages.filter(img => img);
                     this.captions = imageCaptions;
@@ -799,13 +990,13 @@
                 // Disable button during request
                 button.disabled = true;
                 
-                const url = isFollowing ? '{{ route("api.community.unfollow") }}' : '{{ route("api.community.follow") }}';
+                const url = isFollowing ? COMMUNITY_UNFOLLOW_ROUTE : COMMUNITY_FOLLOW_ROUTE;
                 
                 fetch(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-CSRF-TOKEN': CSRF_TOKEN,
                         'Accept': 'application/json',
                     },
                     body: JSON.stringify({
@@ -878,10 +1069,10 @@
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Submitting...';
                 
-                fetch('{{ route("api.trails.reviews.store") }}', {
+                fetch(API_REVIEWS_STORE, {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-CSRF-TOKEN': CSRF_TOKEN,
                         'Accept': 'application/json',
                     },
                     body: formData // Use FormData for file uploads
@@ -913,16 +1104,63 @@
                 });
             }
 
-            function showToast(type, message) {
-                const toast = document.getElementById(type + '-toast');
-                const messageSpan = document.getElementById(type + '-message');
-                
-                messageSpan.textContent = message;
-                toast.classList.remove('translate-x-full');
-                
-                setTimeout(() => {
-                    toast.classList.add('translate-x-full');
-                }, 3000);
+            window.showToast = function showToast(type, message, opts = {}) {
+                try {
+                    const toast = document.getElementById(type + '-toast');
+                    if (!toast) {
+                        console.debug('showToast: no toast element for type', type);
+                        return;
+                    }
+
+                    // elements
+                    const messageEl = toast.querySelector('#' + type + '-message');
+                    const detailsEl = toast.querySelector('#' + (type === 'success' ? 'success-details' : 'error-details'));
+                    const viewLink = document.getElementById('success-view-link');
+
+                    // set contents (allow plain text or HTML)
+                    if (messageEl) messageEl.textContent = message || '';
+                    if (opts.detailsHtml && detailsEl) {
+                        detailsEl.innerHTML = opts.detailsHtml;
+                    } else if (opts.details && detailsEl) {
+                        detailsEl.textContent = opts.details;
+                    }
+                    if (opts.viewLink && viewLink) {
+                        viewLink.href = opts.viewLink;
+                        // ensure link is visible
+                        viewLink.style.display = '';
+                    }
+
+                    // force styles to ensure visibility
+                    toast.style.display = 'block';
+                    toast.style.zIndex = opts.zIndex || 99999;
+                    toast.style.pointerEvents = 'auto';
+
+                    // Remove translate and set transform directly to avoid class timing issues
+                    requestAnimationFrame(() => {
+                        toast.style.opacity = '1';
+                        toast.style.transform = 'translateX(0)';
+                        toast.classList.remove('translate-x-full');
+                    });
+
+                    // hide after duration with proper cleanup so no sliver remains
+                    const hide = () => {
+                        // fade & slide out
+                        toast.style.opacity = '0';
+                        toast.style.transform = 'translateX(100%)';
+                        toast.classList.add('translate-x-full');
+                        // remove display after transition (duration ~300ms)
+                        setTimeout(() => {
+                            try { toast.style.display = 'none'; } catch(e){}
+                        }, (opts.transitionMs || 300) + 50);
+                    };
+
+                    // clear any existing timer
+                    if (toast._hideTimer) clearTimeout(toast._hideTimer);
+                    toast._hideTimer = setTimeout(hide, opts.duration || 3000);
+                    console.debug('showToast shown', type, message, opts);
+                } catch (err) {
+                    console.error('showToast error', err);
+                }
             }
 
             // Image Modal Functionality
@@ -1070,11 +1308,24 @@
             }
         });
 
-        // Interactive Trail Map and Tracking Features
+    // Interactive Trail Map and Tracking Features
         let map, trailPath, userMarker, userLocation;
         let isTracking = false;
         let watchId = null;
-        const trailCoordinates = @json($trail->coordinates ?? []);
+    const trailCoordinates = JSON.parse(document.getElementById('trail-coordinates').textContent || '[]');
+
+    // server data
+    const _serverDataEl = document.getElementById('server-data');
+    const _serverData = _serverDataEl ? _serverDataEl.dataset : {};
+    const API_REVIEWS_STORE = _serverData.apiReviewsStore || null;
+    const CSRF_TOKEN = _serverData.csrf || '';
+    const FAVORITE_COUNT = parseInt(_serverData.favoriteCount || 0, 10);
+    const SAVED_TRAILS_ROUTE = _serverData.savedTrailsRoute || '/profile/saved-trails';
+    const TRAIL_NAME = _serverData.trailName || '';
+    const COMMUNITY_UNFOLLOW_ROUTE = _serverData.communityUnfollow || null;
+    const COMMUNITY_FOLLOW_ROUTE = _serverData.communityFollow || null;
+    const ELEVATION_PROFILE_ROUTE = _serverData.elevationProfileRoute || null;
+    const BASE_URL = _serverData.baseUrl || '';
 
         // Initialize Google Maps
         function initTrailMap() {
@@ -1286,9 +1537,34 @@
             document.getElementById('stop-tracking').addEventListener('click', stopTracking);
         });
 
+        // gallery thumbnail click handling (avoid inline onclick with Blade)
+        document.querySelectorAll('.gallery-thumb').forEach(btn => {
+            btn.addEventListener('click', function(e){
+                const idx = this.getAttribute('data-index');
+                if (window.trailGalleryComponent && typeof window.trailGalleryComponent.setImage === 'function') {
+                    window.trailGalleryComponent.setImage(parseInt(idx, 10));
+                }
+            });
+        });
+
+        // review image modal handling
+        document.querySelectorAll('.review-image').forEach(img => {
+            img.addEventListener('click', function(){
+                const src = this.dataset.imageSrc;
+                const caption = this.dataset.imageCaption || '';
+                openImageModal(src, caption);
+            });
+        });
+
+        // Apply rating-fill widths from data attributes to avoid inline CSS parsing in Blade
+        document.querySelectorAll('.rating-fill').forEach(el => {
+            const pct = el.getAttribute('data-percentage') || '0';
+            el.style.width = pct + '%';
+        });
+
         // Load and display elevation profile using Chart.js
         function loadElevationProfile() {
-            fetch(`{{ route('trails.elevation-profile', $trail) }}`)
+            fetch(ELEVATION_PROFILE_ROUTE)
                 .then(response => response.json())
                 .then(data => {
                     if (data.elevations && data.elevations.length > 0) {
@@ -1387,7 +1663,7 @@
 
             // Fallback to constructed URL if no data attribute provided
             if(!url){
-                url = `{{ url('/') }}/${"trails"}/` + trailId + '/print-map';
+                url = `${BASE_URL}/trails/` + trailId + '/print-map';
             }
 
             // Fetch the rendered print view (server should render same as route('trails.print-map', $trail))

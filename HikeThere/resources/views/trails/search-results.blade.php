@@ -60,7 +60,7 @@
                                 <!-- Price Badge -->
                                 <div class="absolute top-3 right-3">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white bg-green-600">
-                                        ₱{{ number_format($trail->price, 2) }}
+                                        ₱{{ number_format(optional($trail->package)->price ?? $trail->price ?? 0, 2) }}
                                     </span>
                                 </div>
                             </div>
@@ -89,7 +89,7 @@
                                         <div class="text-xs text-gray-500">Elevation</div>
                                     </div>
                                     <div>
-                                        <div class="text-sm font-semibold text-gray-900">{{ $trail->duration }}</div>
+                                        <div class="text-sm font-semibold text-gray-900">{{ optional($trail->package)->duration ?? $trail->duration }}</div>
                                         <div class="text-xs text-gray-500">Duration</div>
                                     </div>
                                 </div>

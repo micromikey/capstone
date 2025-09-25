@@ -105,7 +105,8 @@ Route::middleware([
 
     Route::get('/hiker/itinerary/build', [ItineraryController::class, 'build'])->name('hiker.itinerary.build');
 
-    Route::post('/hiker/itinerary/generate', [ItineraryController::class, 'generate'])->name('hiker.itinerary.generate');
+    // Submission: handle itinerary payloads via ItineraryController@store
+    Route::post('/hiker/itinerary/generate', [ItineraryController::class, 'store'])->name('hiker.itinerary.generate');
 
     // Assessment routes
     Route::get('/assessment/instruction', [AssessmentController::class, 'instruction'])->name('assessment.instruction');
@@ -129,7 +130,8 @@ Route::middleware([
 
     // Itinerary routes
     Route::get('/itinerary/build', [ItineraryController::class, 'build'])->name('itinerary.build');
-    Route::post('/itinerary/generate', [ItineraryController::class, 'generate'])->name('itinerary.generate');
+    // Submission: handle itinerary payloads via ItineraryController@store
+    Route::post('/itinerary/generate', [ItineraryController::class, 'store'])->name('itinerary.generate');
     Route::get('/itinerary/{itinerary}/pdf', [ItineraryController::class, 'pdf'])->name('itinerary.pdf');
     Route::get('/itinerary/{itinerary}', [ItineraryController::class, 'show'])->name('itinerary.show');
 
@@ -204,6 +206,16 @@ Route::get('/trails/{trail}/elevation-profile', [TrailPdfController::class, 'get
 // Public AJAX routes for trail reviews (anyone can view reviews)
 Route::get('/api/trails/{trail}/reviews', [TrailReviewController::class, 'getTrailReviews'])->name('api.trails.reviews.index');
 
+// Web route to toggle favorites using session-based auth (fallback for logged-in users)
+Route::post('/trails/favorite/toggle', [App\Http\Controllers\Api\TrailFavoriteController::class, 'toggle'])
+    ->middleware('auth')
+    ->name('trails.favorite.toggle');
+
+// Check if the current user has favorited a specific trail (session auth)
+Route::get('/trails/{trail}/is-favorited', [App\Http\Controllers\Api\TrailFavoriteController::class, 'isFavorited'])
+    ->middleware('auth')
+    ->name('trails.is-favorited');
+
 // Public AJAX routes for trail information
 Route::get('/api/trails/{trail}', [App\Http\Controllers\Api\TrailController::class, 'show'])->name('api.trails.show');
 
@@ -225,9 +237,17 @@ Route::post('/map/search-nearby', [MapController::class, 'searchNearby'])->name(
 // Profile routes (require authentication)
 Route::middleware(['auth:sanctum', 'ensure.hiking.preferences'])->group(function () {
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('custom.profile.show');
+    // Saved Trails view (server-side rendered)
+    Route::get('/profile/saved-trails', [App\Http\Controllers\SavedTrailsController::class, 'index'])
+        ->name('profile.saved-trails');
+
+    // Proxy JSON endpoint for favorites (session auth) - returns same shape as API index()
+    Route::get('/profile/api/favorites', [App\Http\Controllers\Api\TrailFavoriteController::class, 'index'])->name('profile.api.favorites');
     Route::get('/profile/edit', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile/picture', [App\Http\Controllers\ProfileController::class, 'deleteProfilePicture'])->name('profile.picture.delete');
+    // Dedicated AJAX upload endpoint for profile picture (returns JSON)
+    Route::post('/profile/picture/upload', [App\Http\Controllers\ProfileController::class, 'uploadProfilePicture'])->name('profile.picture.upload');
 
     // Account Settings route
     Route::get('/account/settings', [App\Http\Controllers\AccountSettingsController::class, 'index'])->name('account.settings');

@@ -369,6 +369,15 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Trails that the user has favorited
+     */
+    public function favoriteTrails()
+    {
+        return $this->belongsToMany(\App\Models\Trail::class, 'trail_favorites', 'user_id', 'trail_id')
+                    ->withTimestamps();
+    }
+
+    /**
      * Get trails created by this organization
      * (Only applicable for organization users)
      */

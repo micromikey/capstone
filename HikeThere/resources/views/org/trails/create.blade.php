@@ -1,3 +1,29 @@
+                   <script>
+                       document.addEventListener('DOMContentLoaded', function() {
+                           const transportCheckbox = document.getElementById('transport_included');
+                           const pickupTimeContainer = document.getElementById('pickup_time_container');
+                           const departureTimeContainer = document.getElementById('departure_time_container');
+                           if (transportCheckbox) {
+                               transportCheckbox.addEventListener('change', function() {
+                                   if (this.checked) {
+                                       pickupTimeContainer.classList.add('hidden');
+                                       departureTimeContainer.classList.remove('hidden');
+                                   } else {
+                                       pickupTimeContainer.classList.remove('hidden');
+                                       departureTimeContainer.classList.add('hidden');
+                                   }
+                               });
+                               // Initial state
+                               if (transportCheckbox.checked) {
+                                   pickupTimeContainer.classList.add('hidden');
+                                   departureTimeContainer.classList.remove('hidden');
+                               } else {
+                                   pickupTimeContainer.classList.remove('hidden');
+                                   departureTimeContainer.classList.add('hidden');
+                               }
+                           }
+                       });
+                   </script>
 <x-app-layout>
     <x-slot name="header">
         <div class="space-y-4">
@@ -57,33 +83,39 @@
                 <!-- Progress Steps -->
                 <div class="border-b border-gray-200">
                     <nav class="flex space-x-8 px-6" aria-label="Tabs">
-                        <button type="button" onclick="showStep(1)" class="step-nav whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm step-1-nav border-[#336d66] text-[#336d66]">
+                        <button type="button" data-step="1" onclick="showStep(1)" class="step-nav whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm step-1-nav border-[#336d66] text-[#336d66]">
                             <span class="flex items-center">
                                 <span class="w-8 h-8 rounded-full bg-[#336d66] text-white flex items-center justify-center text-sm font-medium mr-2">1</span>
                                 Basic Info
                             </span>
                         </button>
-                        <button type="button" onclick="showStep(2)" class="step-nav whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm step-2-nav border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        <button type="button" data-step="2" onclick="showStep(2)" class="step-nav whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm step-2-nav border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                             <span class="flex items-center">
                                 <span class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-medium mr-2">2</span>
                                 Trail Details
                             </span>
                         </button>
-                        <button type="button" onclick="showStep(3)" class="step-nav whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm step-3-nav border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        <button type="button" data-step="3" onclick="showStep(3)" class="step-nav whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm step-3-nav border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                             <span class="flex items-center">
                                 <span class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-medium mr-2">3</span>
+                                Trail Package
+                            </span>
+                        </button>
+                        <button type="button" data-step="4" onclick="showStep(4)" class="step-nav whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm step-4-nav border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                            <span class="flex items-center">
+                                <span class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-medium mr-2">4</span>
                                 Access & Safety
                             </span>
                         </button>
-                        <button type="button" onclick="showStep(4)" class="step-nav whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm step-4-nav border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        <button type="button" data-step="5" onclick="showStep(5)" class="step-nav whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm step-5-nav border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                             <span class="flex items-center">
-                                <span class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-medium mr-2">4</span>
+                                <span class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-medium mr-2">5</span>
                                 Additional Info
                             </span>
                         </button>
-                        <button type="button" onclick="showStep(5)" class="step-nav whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm step-5-nav border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        <button type="button" data-step="6" onclick="showStep(6)" class="step-nav whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm step-6-nav border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                             <span class="flex items-center">
-                                <span class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-medium mr-2">5</span>
+                                <span class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-medium mr-2">6</span>
                                 Trail Images
                             </span>
                         </button>
@@ -94,8 +126,6 @@
                     @csrf
                     <!-- Hidden field to store accepted trail geometry (array of {lat,lng,elevation}) -->
                     <input type="hidden" id="trail_coordinates" name="trail_coordinates" />
-                    <!-- Hidden field for estimated_time since it was removed from the form but still expected by backend -->
-                    <input type="hidden" id="estimated_time" name="estimated_time" value="" />
 
                     <!-- Debug: Display any validation errors at the top -->
                     @if ($errors->any())
@@ -231,16 +261,7 @@
                                 <x-input-error for="location_id" class="mt-2" />
                             </div>
 
-                            <div>
-                                <x-label for="price" value="Price (₱) *" />
-                                <div class="relative mt-1">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="text-gray-500 sm:text-sm">₱</span>
-                                    </div>
-                                    <x-input id="price" type="number" name="price" step="0.01" min="0" class="pl-8 block w-full" placeholder="0.00" required />
-                                </div>
-                                <x-input-error for="price" class="mt-2" />
-                            </div>
+                            
 
                             <div>
                                 <x-label for="difficulty" value="Difficulty Level *" />
@@ -252,11 +273,11 @@
                                 </select>
                                 <x-input-error for="difficulty" class="mt-2" />
                             </div>
-
+                            
                             <div class="md:col-span-2">
-                                <x-label for="package_inclusions" value="Package Inclusions *" />
-                                <textarea id="package_inclusions" name="package_inclusions" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="e.g., Guide, Meals, Environmental Fee, Transportation" required></textarea>
-                                <x-input-error for="package_inclusions" class="mt-2" />
+                                <x-label for="description" value="Trail Description" />
+                                <textarea id="description" name="description" rows="2" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="Short description shown in listings (this will be saved to the trail description field)"></textarea>
+                                <x-input-error for="description" class="mt-2" />
                             </div>
                         </div>
 
@@ -284,9 +305,21 @@
                                 <div class="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
                                     <div class="flex flex-wrap gap-4 mb-4">
                                         <button type="button" id="draw_trail_btn" onclick="enableTrailDrawing()"
-                                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center"
+                                            title="Draw Trail Manually"
+                                            aria-label="Draw Trail Manually">
                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                            </svg>
+                                            Draw Trail Manually
+                                        </button>
+
+                                        <button type="button" id="load_gpx_library_btn" onclick="openGPXLibrary()"
+                                            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                            </svg>
+                                            Load from GPX Library
                                         </button>
 
                                         <button type="button" id="upload_gpx_btn" onclick="document.getElementById('gpx_file').click()"
@@ -311,6 +344,8 @@
                                         <span id="preview_provider" class="font-medium"></span>
                                         <span id="preview_message" class="ml-2"></span>
                                     </div>
+
+                                    <!-- Auto-route debug output removed in production -->
 
                                     <!-- Hidden GPX file input -->
                                     <input type="file" id="gpx_file" name="gpx_file" accept=".gpx,.kml,.kmz" style="display: none;" onchange="handleGPXUpload(this)">
@@ -356,19 +391,69 @@
                                     </div>
                                 </div>
 
-                                <!-- Provider/Source info -->
-                                <div id="preview_provider" class="mt-2 text-sm text-gray-600"></div>
+                                    <!-- Provider/Source info (kept inside preview_feedback above) -->
                             </div>
 
+
+
+                            <!-- Duration moved to Step 3: Trail Package -->
+
+                            <!-- Estimated Time (auto-populated from route stats) -->
                             <div>
-                                <x-label for="duration" value="Duration *" />
-                                <x-input id="duration" type="text" name="duration" class="mt-1 block w-full" placeholder="e.g., 3-4 hours" required />
-                                <x-input-error for="duration" class="mt-2" />
+                                <x-label for="estimated_time" value="Estimated Time (minutes)" />
+                                <x-input id="estimated_time" type="number" name="estimated_time" step="1" min="0" class="mt-1 block w-full" placeholder="Auto-calculated from route (server will override client value when route metrics exist)" />
+                                <div class="mt-1 text-sm text-gray-500">This is a suggested total hiking time in minutes. The server will recompute and override this value if route distance/elevation data are available.</div>
+                                <x-input-error for="estimated_time" class="mt-2" />
                             </div>
+
+                            <!-- Trail Opening and Closing Time -->
+                               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                   <div>
+                                       <x-label for="opening_time" value="Trail Opening Time" />
+                                       <x-input id="opening_time" type="time" name="opening_time" class="mt-1 block w-full" />
+                                   </div>
+                                   <div>
+                                       <x-label for="closing_time" value="Trail Closing Time" />
+                                       <x-input id="closing_time" type="time" name="closing_time" class="mt-1 block w-full" />
+                                   </div>
+                               </div>
 
                             <div>
                                 <x-label for="best_season" value="Best Season *" />
-                                <x-input id="best_season" type="text" name="best_season" class="mt-1 block w-full" placeholder="e.g., November to March" required />
+                                <div class="mt-1 grid grid-cols-2 gap-2" id="best-season-selects" data-old="@json(old('best_season', ''))">
+                                    <select id="best_season_from" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]">
+                                        <option value="">From (month)</option>
+                                        <option value="January">January</option>
+                                        <option value="February">February</option>
+                                        <option value="March">March</option>
+                                        <option value="April">April</option>
+                                        <option value="May">May</option>
+                                        <option value="June">June</option>
+                                        <option value="July">July</option>
+                                        <option value="August">August</option>
+                                        <option value="September">September</option>
+                                        <option value="October">October</option>
+                                        <option value="November">November</option>
+                                        <option value="December">December</option>
+                                    </select>
+                                    <select id="best_season_to" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]">
+                                        <option value="">To (month)</option>
+                                        <option value="January">January</option>
+                                        <option value="February">February</option>
+                                        <option value="March">March</option>
+                                        <option value="April">April</option>
+                                        <option value="May">May</option>
+                                        <option value="June">June</option>
+                                        <option value="July">July</option>
+                                        <option value="August">August</option>
+                                        <option value="September">September</option>
+                                        <option value="October">October</option>
+                                        <option value="November">November</option>
+                                        <option value="December">December</option>
+                                    </select>
+                                </div>
+                                <input type="hidden" id="best_season" name="best_season" value="" />
+                                <p id="best-season-help" class="mt-1 text-sm text-gray-600">Select the best season months (From - To)</p>
                                 <x-input-error for="best_season" class="mt-2" />
                             </div>
 
@@ -475,6 +560,118 @@
                                 Previous
                             </button>
                             <button type="button" onclick="nextStep(3)" class="bg-[#336d66] hover:bg-[#2a5a54] text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                                Next: Trail Package
+                                <svg class="inline-block w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Trail Package -->
+                    <div id="step-3" class="step-content hidden">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Step 3: Trail Package</h3>
+                            <p class="text-gray-600 text-sm">Define package pricing, inclusions, duration, permits and transportation options.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <x-label for="price" value="Price (₱) *" />
+                                <div class="relative mt-1">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">₱</span>
+                                    </div>
+                                    <x-input id="price" type="number" name="price" step="0.01" min="0" class="pl-8 block w-full" placeholder="0.00" required />
+                                </div>
+                                <x-input-error for="price" class="mt-2" />
+                            </div>
+
+                            <div>
+                                <x-label for="duration" value="Duration *" />
+                                <x-input id="duration" type="text" name="duration" class="mt-1 block w-full" placeholder="e.g., 36 hours or 2 days" required />
+                                <x-input-error for="duration" class="mt-2" />
+                                <p class="mt-1 text-sm text-gray-500">Enter total package duration (hours or days). Examples: "36 hours" or "2 days". The system will parse this to days/nights and minutes for display and scheduling.</p>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <x-label for="package_inclusions" value="Package Inclusions *" />
+                                <textarea id="package_inclusions" name="package_inclusions" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="e.g., Guide, Meals, Environmental Fee, Transportation" required></textarea>
+                                <x-input-error for="package_inclusions" class="mt-2" />
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <div class="flex items-center">
+                                    <input type="hidden" name="transport_included" value="0" />
+                                    <input id="transport_included" type="checkbox" name="transport_included" value="1"
+                                           class="h-4 w-4 text-[#336d66] focus:ring-[#336d66] border-gray-300 rounded">
+                                    <x-label for="transport_included" value="Transportation Included?" class="ml-2" />
+                                </div>
+                                <p class="mt-2 text-sm text-gray-600">Check if transportation from the meeting point (e.g., pickup/return transfer) is included in the package.</p>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <x-label for="transportation_details" value="Transport Details" />
+                                <div class="flex gap-2 items-center">
+                                    <input id="transportation_details_visible" type="text"
+                                        class="mt-1 flex-1 w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66] hidden"
+                                        placeholder="Start typing a pickup location (e.g., Cubao Terminal)" autocomplete="off" />
+
+                                    <select id="transportation_vehicle_visible" class="mt-1 w-48 border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66] hidden" name="transportation_vehicle">
+                                        <option value="" disabled selected>{{ __('Vehicle (optional)') }}</option>
+                                        <option value="van">{{ __('Van') }}</option>
+                                        <option value="jeep">{{ __('Jeep') }}</option>
+                                        <option value="bus">{{ __('Bus') }}</option>
+                                        <option value="car">{{ __('Car') }}</option>
+                                        <option value="motorbike">{{ __('Motorbike') }}</option>
+                                    </select>
+                                </div>
+
+                                <!-- Pickup/Departure Time -->
+                                <div id="pickup_time_container" class="mb-4">
+                                    <label for="pickup_time" class="block text-sm font-medium text-gray-700">Pickup Time</label>
+                                    <input type="time" id="pickup_time" name="pickup_time" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
+                                </div>
+                                <div id="departure_time_container" class="mb-4 hidden">
+                                    <label for="departure_time" class="block text-sm font-medium text-gray-700">Departure Time</label>
+                                    <input type="time" id="departure_time" name="departure_time" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
+                                </div>
+
+                                <!-- Commute UI -->
+                                <div id="commute_ui" class="mt-3">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Commute Guide (From → To)</label>
+                                    <div id="commute_legs" class="space-y-2"></div>
+                                    <div class="flex gap-2 mt-2">
+                                        <button type="button" id="add_commute_leg_btn" class="px-3 py-1 bg-[#336d66] text-white text-xs rounded">Add Leg</button>
+                                        <button type="button" id="clear_commute_legs_btn" class="px-3 py-1 bg-gray-200 text-xs rounded">Clear</button>
+                                    </div>
+                                    <p class="mt-2 text-xs text-gray-500">Add one or more legs to show how hikers should commute from a meeting point to the trail (example: "Cubao Terminal → Baguio Bus Terminal"). This is informational only.</p>
+                                </div>
+
+                                <!-- Legacy visible textarea is preserved but hidden: we keep writing a human-friendly summary into it for the server/validation. -->
+                                <textarea id="transport_details" name="transport_details" rows="2" class="mt-1 w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66] hidden" placeholder="e.g., Bus to Tanay, Jeep to Jump-off">{{ old('transport_details') }}</textarea>
+
+                                <!-- Always-submitted canonical field -->
+                                <input type="hidden" id="transportation_details" name="transportation_details" value="">
+                                <!-- Hidden canonical vehicle field for pickup mode when transport included -->
+                                <input type="hidden" id="transportation_vehicle" name="transportation_vehicle" value="">
+                                <!-- Optional: store pickup place metadata when transport included (place_id, name, lat/lng) -->
+                                <input type="hidden" id="transportation_pickup_place" name="transportation_pickup_place" value="">
+
+                                <x-input-error for="transportation_details" class="mt-2" />
+                            </div>
+
+                            <!-- Side trips moved to Step 3: Trail Package -->
+                        </div>
+
+                        <div class="mt-8 flex justify-between">
+                            <button type="button" onclick="prevStep(3)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg transition-colors">
+                                <svg class="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                </svg>
+                                Previous
+                            </button>
+                            <button type="button" onclick="nextStep(4)" class="bg-[#336d66] hover:bg-[#2a5a54] text-white font-bold py-2 px-6 rounded-lg transition-colors">
                                 Next: Access & Safety
                                 <svg class="inline-block w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -483,30 +680,152 @@
                         </div>
                     </div>
 
-                    <!-- Step 3: Access & Safety -->
-                    <div id="step-3" class="step-content hidden">
+                    <!-- Step 4: Access & Safety -->
+                    <div id="step-4" class="step-content hidden">
                         <div class="mb-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">Step 3: Access & Safety</h3>
-                            <p class="text-gray-600 text-sm">Provide transportation details and safety information.</p>
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Step 4: Access & Safety</h3>
+                            <p class="text-gray-600 text-sm">Provide safety, access and permit information. Transport details are handled in Step 3 (Trail Package).</p>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <x-label for="departure_point" value="Departure Point *" />
-                                <x-input id="departure_point" type="text" name="departure_point" class="mt-1 block w-full" placeholder="e.g., Cubao Terminal" required />
-                                <x-input-error for="departure_point" class="mt-2" />
-                            </div>
+                            <!-- Transport details intentionally omitted here; managed in Step 3 -->
 
-                            <div>
-                                <x-label for="transport_options" value="Transport Options *" />
-                                <textarea id="transport_options" name="transport_options" rows="2" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="e.g., Bus to Tanay, Jeep to Jump-off" required></textarea>
-                                <x-input-error for="transport_options" class="mt-2" />
-                            </div>
+                            <!-- Transport UI intentionally removed from Step 4 (managed in Step 3) -->
 
                             <div class="md:col-span-2">
                                 <x-label for="side_trips" value="Side Trips" />
-                                <textarea id="side_trips" name="side_trips" rows="2" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="e.g., Tinipak River or enter N/A if none"></textarea>
+
+                                <div id="side-trips-list" class="space-y-2 mt-1" data-old="@json(old('side_trips', []))" data-stored="@json("")">
+                                    <!-- Template row (hidden) -->
+                                    <div id="side-trip-row-template" class="hidden">
+                                        <div class="flex items-center space-x-2">
+                                            <input type="text" name="side_trips[]" class="side-trip-input block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="e.g., Tinipak River or enter N/A if none">
+                                            <button type="button" class="remove-side-trip inline-flex items-center px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700">Remove</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-2 flex space-x-2">
+                                    <button type="button" id="add-side-trip" class="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                        Add Side Trip
+                                    </button>
+                                    <button type="button" id="clear-side-trips" class="inline-flex items-center px-3 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
+                                        Clear All
+                                    </button>
+                                </div>
+
+                                <!-- Hidden field to store per-side-trip place metadata for itinerary builder -->
+                                <input type="hidden" id="side_trips_meta" name="side_trips_meta" value="">
+
+                                <!-- Diagnostic banner for Google Maps/Places loader (visible in dev) -->
+                                <div id="gmaps-diagnostic" class="mt-3 p-3 rounded border hidden">
+                                    <strong id="gmaps-diagnostic-title">Maps status:</strong>
+                                    <div id="gmaps-diagnostic-msg" class="mt-1 text-sm text-gray-700"></div>
+                                    <div id="gmaps-diagnostic-actions" class="mt-2 text-sm"></div>
+                                </div>
+
                                 <x-input-error for="side_trips" class="mt-2" />
+
+                                <!-- Side trips Places Autocomplete initialization -->
+                                <script>
+                                    (function(){
+                                        // Ensure Google Places dropdown appears above other UI
+                                        try{
+                                            var style = document.createElement('style');
+                                            style.innerHTML = '.pac-container{ z-index:10000 !important; }';
+                                            document.head.appendChild(style);
+                                        }catch(e){ /* noop */ }
+
+                                        function attachToInput(input){
+                                            if (!input) return;
+                                            // don't attach to the hidden template
+                                            if (input.closest && input.closest('#side-trip-row-template')) return;
+                                            if (input.dataset._placesAttached) return;
+                                            input.dataset._placesAttached = '1';
+
+                                            function doAttach(){
+                                                try{
+                                                    if (typeof initPlaceAutocomplete === 'function'){
+                                                        initPlaceAutocomplete(input);
+                                                        return;
+                                                    }
+                                                    if (window.google && google.maps && google.maps.places){
+                                                        var ac = new google.maps.places.Autocomplete(input, { types: ['geocode'] });
+                                                        ac.setFields(['place_id','name','formatted_address','geometry']);
+                                                        ac.addListener('place_changed', function(){
+                                                            var place = ac.getPlace();
+                                                            if (!place) return;
+                                                            var meta = {
+                                                                place_id: place.place_id || null,
+                                                                name: place.name || place.formatted_address || input.value || null,
+                                                                lat: place.geometry && place.geometry.location ? place.geometry.location.lat() : null,
+                                                                lng: place.geometry && place.geometry.location ? place.geometry.location.lng() : null,
+                                                                address_components: place.address_components || null
+                                                            };
+                                                            input.dataset.place = JSON.stringify(meta);
+                                                        });
+                                                    }
+                                                }catch(e){ console.warn('side-trip autocomplete attach failed', e); }
+                                            }
+
+                                            if (typeof loadMapsScript === 'function'){
+                                                loadMapsScript(doAttach);
+                                            } else {
+                                                // If loader not present, try immediate attach and rely on retry inside doAttach
+                                                setTimeout(doAttach, 50);
+                                            }
+                                        }
+
+                                        function initAll(){
+                                            document.querySelectorAll('.side-trip-input').forEach(function(inp){
+                                                attachToInput(inp);
+                                            });
+                                        }
+
+                                        // Expose initializer so other page code (e.g., when showing Step 3) can trigger it
+                                        window.initSideTrips = initAll;
+
+                                        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAll);
+                                        else initAll();
+
+                                        // Hook into add-side-trip so newly appended rows get initialized immediately
+                                        document.addEventListener('click', function(e){
+                                            var t = e.target;
+                                            if (!t) return;
+                                            if (t.id === 'add-side-trip' || t.closest && t.closest('#add-side-trip')){
+                                                // allow existing add logic to run, then attach to the newest input
+                                                setTimeout(function(){
+                                                    var inputs = document.querySelectorAll('.side-trip-input');
+                                                    if (!inputs.length) return;
+                                                    var last = inputs[inputs.length - 1];
+                                                    // clear any cloned dataset flags and value placeholder
+                                                    try{ delete last.dataset._placesAttached; }catch(e){}
+                                                    last.dataset.place = '';
+                                                    attachToInput(last);
+                                                }, 80);
+                                            }
+
+                                            // (showStep already initializes side-trip autocompletes when Step 3 is shown)
+                                        });
+
+                                        // Serialize metadata on submit
+                                        var form = document.getElementById('trailForm');
+                                        if (form){
+                                            form.addEventListener('submit', function(){
+                                                var metas = [];
+                                                document.querySelectorAll('.side-trip-input').forEach(function(input){
+                                                    var text = (input.value || '').trim();
+                                                    if (!text) return;
+                                                    var place = null;
+                                                    try{ if (input.dataset.place) place = JSON.parse(input.dataset.place); }catch(e){ place = null; }
+                                                    metas.push({ text: text, place: place });
+                                                });
+                                                var hidden = document.getElementById('side_trips_meta');
+                                                if (hidden) hidden.value = JSON.stringify(metas);
+                                            });
+                                        }
+                                    })();
+                                </script>
                             </div>
 
                             <div class="md:col-span-2">
@@ -535,13 +854,13 @@
                         </div>
 
                         <div class="mt-8 flex justify-between">
-                            <button type="button" onclick="prevStep(2)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg transition-colors">
+                            <button type="button" onclick="prevStep(3)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg transition-colors">
                                 <svg class="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                                 </svg>
                                 Previous
                             </button>
-                            <button type="button" onclick="nextStep(4)" class="bg-[#336d66] hover:bg-[#2a5a54] text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                            <button type="button" onclick="nextStep(5)" class="bg-[#336d66] hover:bg-[#2a5a54] text-white font-bold py-2 px-6 rounded-lg transition-colors">
                                 Next: Additional Info
                                 <svg class="inline-block w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -550,10 +869,10 @@
                         </div>
                     </div>
 
-                    <!-- Step 4: Additional Information -->
-                    <div id="step-4" class="step-content hidden">
+                    <!-- Step 5: Additional Information -->
+                    <div id="step-5" class="step-content hidden">
                         <div class="mb-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">Step 4: Additional Information</h3>
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Step 5: Additional Information</h3>
                             <p class="text-gray-600 text-sm">Complete the trail profile with permits, requirements, and feedback.</p>
                         </div>
 
@@ -644,13 +963,13 @@
                         </div>
 
                         <div class="mt-8 flex justify-between">
-                            <button type="button" onclick="prevStep(3)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg transition-colors">
+                            <button type="button" onclick="prevStep(4)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg transition-colors">
                                 <svg class="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                                 </svg>
                                 Previous
                             </button>
-                            <button type="button" onclick="nextStep(5)" class="bg-[#336d66] hover:bg-[#2a5a54] text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                            <button type="button" onclick="nextStep(6)" class="bg-[#336d66] hover:bg-[#2a5a54] text-white font-bold py-2 px-6 rounded-lg transition-colors">
                                 Next: Trail Images
                                 <svg class="inline-block w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -659,10 +978,10 @@
                         </div>
                     </div>
 
-                    <!-- Step 5: Trail Images -->
-                    <div id="step-5" class="step-content hidden">
+                    <!-- Step 6: Trail Images -->
+                    <div id="step-6" class="step-content hidden">
                         <div class="mb-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">Step 5: Trail Images</h3>
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Step 6: Trail Images</h3>
                             <p class="text-gray-600 text-sm">Upload beautiful photos of your trail to attract hikers. Add multiple images to showcase different views and trail features.</p>
                         </div>
 
@@ -711,9 +1030,8 @@
                                 <p class="text-sm text-gray-600 mb-4">Add more photos to showcase different views, trail features, or seasonal variations (up to 5 images)</p>
 
                                 <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    <!-- Additional Image Slots -->
-                                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors"
-                                        onclick="document.getElementById('additional_1').click()">
+                                    <!-- Slot 1 -->
+                                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors" onclick="document.getElementById('additional_1').click()">
                                         <div class="space-y-2">
                                             <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -724,8 +1042,8 @@
                                         <div id="additional_1_preview" class="mt-2 hidden"></div>
                                     </div>
 
-                                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors"
-                                        onclick="document.getElementById('additional_2').click()">
+                                    <!-- Slot 2 -->
+                                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors" onclick="document.getElementById('additional_2').click()">
                                         <div class="space-y-2">
                                             <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -736,8 +1054,8 @@
                                         <div id="additional_2_preview" class="mt-2 hidden"></div>
                                     </div>
 
-                                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors"
-                                        onclick="document.getElementById('additional_3').click()">
+                                    <!-- Slot 3 -->
+                                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors" onclick="document.getElementById('additional_3').click()">
                                         <div class="space-y-2">
                                             <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -748,8 +1066,8 @@
                                         <div id="additional_3_preview" class="mt-2 hidden"></div>
                                     </div>
 
-                                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors"
-                                        onclick="document.getElementById('additional_4').click()">
+                                    <!-- Slot 4 -->
+                                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors" onclick="document.getElementById('additional_4').click()">
                                         <div class="space-y-2">
                                             <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -760,8 +1078,8 @@
                                         <div id="additional_4_preview" class="mt-2 hidden"></div>
                                     </div>
 
-                                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors"
-                                        onclick="document.getElementById('additional_5').click()">
+                                    <!-- Slot 5 -->
+                                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors" onclick="document.getElementById('additional_5').click()">
                                         <div class="space-y-2">
                                             <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -810,7 +1128,7 @@
 
                         <!-- Navigation -->
                         <div class="mt-8 flex justify-between">
-                            <button type="button" onclick="prevStep(4)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg transition-colors">
+                            <button type="button" onclick="prevStep(5)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg transition-colors">
                                 <svg class="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                                 </svg>
@@ -830,8 +1148,8 @@
     </div>
 
     <script>
-        let currentStep = 1;
-        const totalSteps = 5;
+    let currentStep = 1;
+    const totalSteps = 6;
         let locationSearchTimeout;
 
 
@@ -849,7 +1167,7 @@
                 const currentVisibleStep = document.querySelector('.step-content:not(.hidden)');
                 
                 // Get all originally required field names (stored as data attributes)
-                const originallyRequiredFields = ['mountain_name', 'trail_name', 'location_id', 'price', 'difficulty', 'package_inclusions', 'duration', 'best_season', 'terrain_notes', 'departure_point', 'transport_options', 'emergency_contacts', 'packing_list', 'health_fitness'];
+                const originallyRequiredFields = ['mountain_name', 'trail_name', 'location_id', 'price', 'difficulty', 'package_inclusions', 'duration', 'best_season', 'terrain_notes', 'transport_details', 'emergency_contacts', 'packing_list', 'health_fitness'];
                 
                 if (currentVisibleStep) {
                     // Check visible required fields only
@@ -940,6 +1258,15 @@
                     }
                 }
                 
+                // Before submit, ensure transportation_details hidden input contains the correct payload.
+                try {
+                    if (typeof prepareTransportationDetailsBeforeSubmit === 'function') {
+                        prepareTransportationDetailsBeforeSubmit();
+                    }
+                } catch (err) {
+                    console.error('Error preparing transportation details before submit', err);
+                }
+
                 // Submit the form without browser validation
                 this.submit();
             });
@@ -968,6 +1295,407 @@
                 }
             });
         });
+
+        // --- Transport / Commute UI Handling ---
+        function toggleTransportUI() {
+            const checkbox = document.getElementById('transport_included');
+            const pickupVisible = document.getElementById('transportation_details_visible');
+            const pickupVehicleVisible = document.getElementById('transportation_vehicle_visible');
+            const commuteUI = document.getElementById('commute_ui');
+            const transportDetailsTextarea = document.getElementById('transport_details');
+
+            if (!checkbox) return;
+
+            if (checkbox.checked) {
+                // When transport included, show pickup input and hide commute composer
+                if (pickupVisible) pickupVisible.classList.remove('hidden');
+                if (pickupVehicleVisible) pickupVehicleVisible.classList.remove('hidden');
+                if (commuteUI) commuteUI.classList.add('hidden');
+                // Show a readable notice in the transport_details textarea
+                if (transportDetailsTextarea) {
+                    const val = pickupVisible && pickupVisible.value ? pickupVisible.value.trim() : '';
+                    transportDetailsTextarea.value = val ? ('Pick-Up Point: ' + val) : '';
+                }
+            } else {
+                // When not included, hide pickup input and show commute composer
+                if (pickupVisible) pickupVisible.classList.add('hidden');
+                if (pickupVehicleVisible) pickupVehicleVisible.classList.add('hidden');
+                if (commuteUI) commuteUI.classList.remove('hidden');
+                // Ensure at least one empty leg exists
+                ensureAtLeastOneCommuteLeg();
+                // Update preview (commute summary) into transport_details textarea
+                if (typeof updateTransportDetailsPreview === 'function') updateTransportDetailsPreview();
+            }
+        }
+
+        function ensureAtLeastOneCommuteLeg() {
+            const container = document.getElementById('commute_legs');
+            if (!container) return;
+            if (container.children.length === 0) {
+                addCommuteLeg();
+            }
+        }
+
+        function createCommuteLegRow(from = '', to = '') {
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 items-center';
+
+            const fromInput = document.createElement('input');
+            fromInput.type = 'text';
+            fromInput.placeholder = 'From (e.g., Cubao Terminal)';
+            fromInput.className = 'flex-1 text-sm border-gray-300 rounded px-2 py-1';
+            fromInput.value = from;
+            // store place metadata on the element
+            fromInput.dataset.place = '';
+
+            const arrow = document.createElement('span');
+            arrow.className = 'text-xs text-gray-500';
+            arrow.textContent = '→';
+
+            const toInput = document.createElement('input');
+            toInput.type = 'text';
+            toInput.placeholder = 'To (e.g., Baguio Bus Terminal)';
+            toInput.className = 'flex-1 text-sm border-gray-300 rounded px-2 py-1';
+            toInput.value = to;
+            // store place metadata on the element
+            toInput.dataset.place = '';
+
+            // Vehicle select per leg (values use translated labels from the pickup select)
+            const vehicleSelect = document.createElement('select');
+            vehicleSelect.className = 'text-xs border-gray-300 rounded px-2 py-1';
+            // Try to clone options from the pickup vehicle select so server-side translations and placeholder state are used
+            try {
+                const pickupSelect = document.getElementById('transportation_vehicle_visible');
+                if (pickupSelect && pickupSelect.options && pickupSelect.options.length > 0) {
+                    Array.from(pickupSelect.options).forEach(function(opt){
+                        const newOpt = new Option(opt.text, opt.value);
+                        // preserve placeholder disabled/selected state
+                        if (opt.disabled) newOpt.disabled = true;
+                        if (opt.selected) newOpt.selected = true;
+                        vehicleSelect.appendChild(newOpt);
+                    });
+                } else {
+                    // Fallback: create a disabled placeholder then real options using stable keys
+                    const placeholder = new Option('Vehicle (optional)', '');
+                    placeholder.disabled = true;
+                    placeholder.selected = true;
+                    vehicleSelect.appendChild(placeholder);
+                    vehicleSelect.appendChild(new Option('Van','van'));
+                    vehicleSelect.appendChild(new Option('Jeep','jeep'));
+                    vehicleSelect.appendChild(new Option('Bus','bus'));
+                    vehicleSelect.appendChild(new Option('Car','car'));
+                    vehicleSelect.appendChild(new Option('Motorbike','motorbike'));
+                }
+            } catch(e) {
+                // Safe programmatic fallback: construct options so the placeholder isn't selectable
+                const placeholder = new Option('Vehicle (optional)', '');
+                placeholder.disabled = true;
+                placeholder.selected = true;
+                vehicleSelect.appendChild(placeholder);
+                vehicleSelect.appendChild(new Option('Van','van'));
+                vehicleSelect.appendChild(new Option('Jeep','jeep'));
+                vehicleSelect.appendChild(new Option('Bus','bus'));
+                vehicleSelect.appendChild(new Option('Car','car'));
+                vehicleSelect.appendChild(new Option('Motorbike','motorbike'));
+            }
+
+            // When 'to' changes, try to auto-populate the next leg's 'from'
+            toInput.addEventListener('input', () => {
+                // find this row's index
+                const container = document.getElementById('commute_legs');
+                const rows = Array.from(container.children);
+                const idx = rows.indexOf(row);
+                if (idx >= 0 && idx < rows.length - 1) {
+                    const nextRow = rows[idx + 1];
+                    if (nextRow) {
+                        const nextFrom = nextRow.querySelectorAll('input')[0];
+                        if (nextFrom && !nextFrom.value.trim()) {
+                            nextFrom.value = toInput.value;
+                        }
+                    }
+                }
+                if (typeof updateTransportDetailsPreview === 'function') updateTransportDetailsPreview();
+            });
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'text-xs text-red-600 px-2 py-1';
+            removeBtn.textContent = 'Remove';
+            removeBtn.addEventListener('click', () => {
+                row.remove();
+                // Update preview after removing a leg
+                if (typeof updateTransportDetailsPreview === 'function') updateTransportDetailsPreview();
+            });
+
+            // Update preview when inputs or vehicle change
+            fromInput.addEventListener('input', () => { if (typeof updateTransportDetailsPreview === 'function') updateTransportDetailsPreview(); });
+            toInput.addEventListener('input', () => { if (typeof updateTransportDetailsPreview === 'function') updateTransportDetailsPreview(); });
+            vehicleSelect.addEventListener('change', () => { if (typeof updateTransportDetailsPreview === 'function') updateTransportDetailsPreview(); });
+
+            // Initialize Google Places autocomplete after Maps API is loaded
+            loadMapsScript(() => {
+                try {
+                    if (typeof initPlaceAutocomplete === 'function') {
+                        initPlaceAutocomplete(fromInput);
+                        initPlaceAutocomplete(toInput);
+                    }
+                } catch (e) {
+                    console.debug('initPlaceAutocomplete failed for commute inputs', e);
+                }
+            });
+
+            row.appendChild(fromInput);
+            row.appendChild(arrow);
+            row.appendChild(toInput);
+            row.appendChild(vehicleSelect);
+            row.appendChild(removeBtn);
+
+            return row;
+        }
+
+        function addCommuteLeg(from = '', to = '') {
+            const container = document.getElementById('commute_legs');
+            if (!container) return;
+            // If no explicit from supplied, try to use previous leg's to
+            if (!from) {
+                const last = container.lastElementChild;
+                if (last) {
+                    const lastInputs = last.querySelectorAll('input');
+                    if (lastInputs && lastInputs.length >= 2) {
+                        const lastTo = lastInputs[1].value.trim();
+                        if (lastTo) from = lastTo;
+                    }
+                }
+            }
+            const row = createCommuteLegRow(from, to);
+            container.appendChild(row);
+            // ensure Places autocomplete initialized and focus the 'to' input for immediate editing
+            try{
+                const toInput = row.querySelectorAll('input')[1];
+                if (toInput) toInput.focus();
+            }catch(e){}
+            if (typeof updateTransportDetailsPreview === 'function') updateTransportDetailsPreview();
+        }
+
+        function clearCommuteLegs() {
+            const container = document.getElementById('commute_legs');
+            if (!container) return;
+            container.innerHTML = '';
+            if (typeof updateTransportDetailsPreview === 'function') updateTransportDetailsPreview();
+        }
+
+        function prepareTransportationDetailsBeforeSubmit() {
+            const checkbox = document.getElementById('transport_included');
+            const hidden = document.getElementById('transportation_details');
+            const pickupVisible = document.getElementById('transportation_details_visible');
+            const transportDetailsTextarea = document.getElementById('transport_details');
+
+            if (!hidden) return;
+
+            if (checkbox && checkbox.checked) {
+                // Transport included: submit pickup as canonical JSON so vehicle can be persisted
+                const pickupVal = pickupVisible ? pickupVisible.value.trim() : '';
+                // store pickup place metadata if available
+                const pickupPlaceField = document.getElementById('transportation_pickup_place');
+                if (pickupPlaceField) {
+                    pickupPlaceField.value = pickupVisible && pickupVisible.dataset && pickupVisible.dataset.place ? pickupVisible.dataset.place : '';
+                }
+                // pickup vehicle if selected (key)
+                const pickupVehicleVisible = document.getElementById('transportation_vehicle_visible');
+                const pickupVehicleField = document.getElementById('transportation_vehicle');
+                const vehicleKey = pickupVehicleVisible ? pickupVehicleVisible.value : '';
+                if (pickupVehicleField) pickupVehicleField.value = vehicleKey;
+
+                // Build canonical payload so backend stores both pickup place and vehicle
+                const canonical = { type: 'pickup', pickup_place: pickupVal || '', vehicle: vehicleKey || '' };
+                hidden.value = JSON.stringify(canonical);
+
+                // Keep the user-facing textarea as a readable notice (include human label if available)
+                if (transportDetailsTextarea) {
+                    let vehicleLabelText = '';
+                    try {
+                        if (pickupVehicleVisible && pickupVehicleVisible.selectedIndex > -1) {
+                            vehicleLabelText = pickupVehicleVisible.options[pickupVehicleVisible.selectedIndex].text || '';
+                        }
+                    } catch(e){}
+                    transportDetailsTextarea.value = pickupVal ? ('Pick-Up Point: ' + pickupVal + (vehicleLabelText ? ' (' + vehicleLabelText + ')' : '')) : '';
+                }
+            } else {
+                // No transport included: serialize commute legs array
+                const container = document.getElementById('commute_legs');
+                const legs = [];
+                if (container) {
+                    Array.from(container.children).forEach(row => {
+                        const inputs = row.querySelectorAll('input');
+                        if (inputs.length >= 2) {
+                            const from = inputs[0].value.trim();
+                            const to = inputs[1].value.trim();
+                            // vehicle is the select element (may be present)
+                            const vehicleEl = row.querySelector('select');
+                            const vehicle = vehicleEl ? vehicleEl.value : '';
+                            if (from || to || vehicle) legs.push({ from, to, vehicle });
+                        }
+                    });
+                }
+                // For each leg we may have place metadata saved on inputs (dataset.place)
+                const legsWithPlace = legs.map((leg, idx) => {
+                    const row = container.children[idx];
+                    if (!row) return leg;
+                    const inputs = row.querySelectorAll('input');
+                    const fromMeta = inputs[0] && inputs[0].dataset && inputs[0].dataset.place ? JSON.parse(inputs[0].dataset.place) : null;
+                    const toMeta = inputs[1] && inputs[1].dataset && inputs[1].dataset.place ? JSON.parse(inputs[1].dataset.place) : null;
+                    return Object.assign({}, leg, { from_place: fromMeta, to_place: toMeta });
+                });
+
+                hidden.value = JSON.stringify({ type: 'commute', legs: legsWithPlace });
+                // Also populate the transport_details textarea with a human-friendly summary
+                if (transportDetailsTextarea) {
+                    // Build map of vehicle key -> label from pickup select
+                    const vehicleLabelMap = {};
+                    const pickupSelect = document.getElementById('transportation_vehicle_visible');
+                    if (pickupSelect) {
+                        for (let i = 0; i < pickupSelect.options.length; i++) {
+                            const opt = pickupSelect.options[i];
+                            vehicleLabelMap[opt.value] = opt.text;
+                        }
+                    }
+
+                    const summaryParts = [];
+                    legs.forEach(leg => {
+                        const f = leg.from || '';
+                        const t = leg.to || '';
+                        let v = '';
+                        if (leg.vehicle) {
+                            v = ' (' + (vehicleLabelMap[leg.vehicle] || leg.vehicle) + ')';
+                        }
+                        if (f && t) summaryParts.push(f + ' → ' + t + v);
+                        else if (f) summaryParts.push(f + ' → (unknown)' + v);
+                        else if (t) summaryParts.push('(unknown) → ' + t + v);
+                    });
+                    transportDetailsTextarea.value = summaryParts.length ? summaryParts.join('; ') : '';
+                }
+            }
+        }
+
+        // Update the Step-3 transport_details textarea live when commute legs change
+        function updateTransportDetailsPreview() {
+            const container = document.getElementById('commute_legs');
+            const transportDetailsTextarea = document.getElementById('transport_details');
+            if (!container || !transportDetailsTextarea) return;
+            const legs = [];
+            Array.from(container.children).forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                const vehicleEl = row.querySelector('select');
+                const vehicle = vehicleEl ? vehicleEl.value : '';
+                if (inputs.length >= 2) {
+                    const from = inputs[0].value.trim();
+                    const to = inputs[1].value.trim();
+                    if (from || to || vehicle) legs.push({ from, to, vehicle });
+                }
+            });
+
+            // Build map of vehicle key -> label from pickup select
+            const vehicleLabelMap = {};
+            const pickupSelect = document.getElementById('transportation_vehicle_visible');
+            if (pickupSelect) {
+                for (let i = 0; i < pickupSelect.options.length; i++) {
+                    const opt = pickupSelect.options[i];
+                    vehicleLabelMap[opt.value] = opt.text;
+                }
+            }
+
+            const summaryParts = [];
+            legs.forEach(leg => {
+                const f = leg.from || '';
+                const t = leg.to || '';
+                let v = '';
+                if (leg.vehicle) {
+                    v = ' (' + (vehicleLabelMap[leg.vehicle] || leg.vehicle) + ')';
+                }
+                if (f && t) summaryParts.push(f + ' → ' + t + v);
+                else if (f) summaryParts.push(f + ' → (unknown)' + v);
+                else if (t) summaryParts.push('(unknown) → ' + t + v);
+            });
+            transportDetailsTextarea.value = summaryParts.length ? summaryParts.join('; ') : '';
+        }
+
+        // Attach handlers for add/clear buttons and toggle checkbox
+        document.addEventListener('DOMContentLoaded', function() {
+            const addBtn = document.getElementById('add_commute_leg_btn');
+            const clearBtn = document.getElementById('clear_commute_legs_btn');
+            const checkbox = document.getElementById('transport_included');
+            const pickupVisible = document.getElementById('transportation_details_visible');
+
+            if (addBtn) addBtn.addEventListener('click', () => addCommuteLeg());
+            if (clearBtn) clearBtn.addEventListener('click', () => clearCommuteLegs());
+            if (checkbox) {
+                checkbox.addEventListener('change', toggleTransportUI);
+            }
+
+            // Initialize UI and Places after Maps API is loaded
+            loadMapsScript(() => {
+                // Initialize UI state on load
+                toggleTransportUI();
+                // Attach autocomplete to pickup input
+                if (pickupVisible && typeof initPlaceAutocomplete === 'function') {
+                    initPlaceAutocomplete(pickupVisible);
+                }
+            });
+        });
+
+        // Initialize Google Places Autocomplete on a text input element
+        function initPlaceAutocomplete(inputEl) {
+            try {
+                if (!window.google || !window.google.maps || !window.google.maps.places) return;
+                const autocomplete = new google.maps.places.Autocomplete(inputEl, { types: ['geocode'] });
+                autocomplete.setFields(['place_id','name','formatted_address','geometry']);
+                autocomplete.addListener('place_changed', () => {
+                    const place = autocomplete.getPlace();
+                    if (!place || !place.place_id) return;
+                    // Save place metadata as JSON on the input's dataset
+                    const meta = {
+                        place_id: place.place_id,
+                        name: place.name || place.formatted_address || '',
+                        lat: place.geometry && place.geometry.location ? place.geometry.location.lat() : null,
+                        lng: place.geometry && place.geometry.location ? place.geometry.location.lng() : null,
+                    };
+                    inputEl.dataset.place = JSON.stringify(meta);
+                });
+            } catch (e) {
+                console.debug('Places API not available or init failed', e);
+            }
+        }
+
+        // Auto-load GPX when mountain_name and trail_name are provided
+        (function setupAutoGPXLoad(){
+            const mountainInput = document.getElementById('mountain_name');
+            const trailInput = document.getElementById('trail_name');
+            let debounceTimer = null;
+
+            function tryAutoRoute() {
+                if (!mountainInput || !trailInput) return;
+                const mountain = mountainInput.value.trim();
+                const trail = trailInput.value.trim();
+                if (mountain.length + trail.length < 3) return;
+
+                // Call search / load routine
+                try {
+                    autoRouteFromInputs();
+                } catch (e) {
+                    console.debug('autoRouteFromInputs not available yet');
+                }
+            }
+
+            function scheduleAutoRoute() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(tryAutoRoute, 600);
+            }
+
+            if (mountainInput) mountainInput.addEventListener('input', scheduleAutoRoute);
+            if (trailInput) trailInput.addEventListener('input', scheduleAutoRoute);
+
+            // Triggering auto-route is handled inside the primary showStep implementation elsewhere.
+        })();
 
         // Location search functionality using Google Places
         function initializeLocationSearch() {
@@ -1041,66 +1769,124 @@
             loadingDiv.classList.remove('hidden');
 
             // Prepare data for backend processing
-            const locationData = {
-                place_id: place.place_id,
-                formatted_address: place.formatted_address,
-                latitude: place.geometry.location.lat(),
-                longitude: place.geometry.location.lng(),
-                name: place.name || place.formatted_address.split(',')[0]
-            };
+                    // Helper to extract province / city from address_components
+                    function extractAddrComponents(ac) {
+                        const comps = ac || [];
+                        let province = '';
+                        let city = '';
+                        comps.forEach(c => {
+                            if (!c.types) return;
+                            if (c.types.indexOf('administrative_area_level_1') !== -1) {
+                                province = c.long_name;
+                            }
+                            if (c.types.indexOf('locality') !== -1 || c.types.indexOf('postal_town') !== -1 || c.types.indexOf('administrative_area_level_2') !== -1) {
+                                if (!city) city = c.long_name;
+                            }
+                        });
+                        return { province, city };
+                    }
+
+                    const coords = {
+                        lat: place.geometry && place.geometry.location ? place.geometry.location.lat() : null,
+                        lng: place.geometry && place.geometry.location ? place.geometry.location.lng() : null
+                    };
+
+                    const comp = extractAddrComponents(place.address_components);
+                    const initialProvince = comp.province || '';
+                    const initialCity = comp.city || '';
+
+                    const locationData = {
+                        place_id: place.place_id,
+                        formatted_address: place.formatted_address || '',
+                        latitude: coords.lat,
+                        longitude: coords.lng,
+                        name: place.name || (place.formatted_address ? place.formatted_address.split(',')[0] : ''),
+                        province: initialProvince,
+                        city: initialCity
+                    };
 
             console.log('Processing Google Places location:', locationData);
+                    // Function to finalize UI and send to backend
+                    function finalizeAndSend(ld) {
+                        // Update search display (prefer province, then city)
+                        const displayParts = [];
+                        if (ld.name) displayParts.push(ld.name);
+                        if (ld.province) displayParts.push(ld.province);
+                        else if (ld.city) displayParts.push(ld.city);
 
-            // Send to backend to create/find location
-            fetch('/api/locations/google-places', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify(locationData)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    loadingDiv.classList.add('hidden');
-
-                    if (data.success && data.location) {
-                        // Update form fields
-                        hiddenInput.value = data.location.id;
-                        latInput.value = locationData.latitude;
-                        lngInput.value = locationData.longitude;
-
-                        // Update search input display
-                        searchInput.value = data.location.name + ', ' + data.location.province;
-                        searchInput.dataset.lastSelectedValue = searchInput.value;
-
-                        // Add visual feedback
-                        searchInput.classList.add('border-green-500', 'bg-green-50');
-                        searchInput.classList.remove('border-gray-300');
-
-                        // Add checkmark
-                        addLocationCheckmark();
-
-                        console.log('Location processed successfully:', data.location);
-
-                        // Update the map if it's initialized
-                        if (drawingMap) {
-                            drawingMap.setCenter(place.geometry.location);
-                            drawingMap.setZoom(13);
+                        const display = displayParts.join(', ');
+                        if (display) {
+                            searchInput.value = display;
+                            searchInput.dataset.lastSelectedValue = display;
+                        } else if (ld.formatted_address) {
+                            searchInput.value = ld.formatted_address;
+                            searchInput.dataset.lastSelectedValue = ld.formatted_address;
                         }
 
-                    } else {
-                        console.error('Failed to process location:', data.error || 'Unknown error');
-                        clearLocationSelection();
-                        alert('Failed to process the selected location. Please try again.');
+                        // Prepare payload to send
+                        const payload = Object.assign({}, ld);
+
+                        fetch('/api/locations/google-places', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify(payload)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            loadingDiv.classList.add('hidden');
+
+                            if (data.success && data.location) {
+                                hiddenInput.value = data.location.id;
+                                latInput.value = ld.latitude;
+                                lngInput.value = ld.longitude;
+
+                                // Visual feedback
+                                searchInput.classList.add('border-green-500', 'bg-green-50');
+                                searchInput.classList.remove('border-gray-300');
+                                addLocationCheckmark();
+
+                                // Center map if available
+                                if (drawingMap && ld.latitude && ld.longitude) {
+                                    drawingMap.setCenter({ lat: ld.latitude, lng: ld.longitude });
+                                    drawingMap.setZoom(13);
+                                }
+                            } else {
+                                console.error('Failed to process location:', data.error || 'Unknown error');
+                                clearLocationSelection();
+                                alert('Failed to process the selected location. Please try again.');
+                            }
+                        })
+                        .catch(error => {
+                            loadingDiv.classList.add('hidden');
+                            console.error('Error processing location:', error);
+                            clearLocationSelection();
+                            alert('Error processing location. Please check your connection and try again.');
+                        });
                     }
-                })
-                .catch(error => {
-                    loadingDiv.classList.add('hidden');
-                    console.error('Error processing location:', error);
-                    clearLocationSelection();
-                    alert('Error processing location. Please check your connection and try again.');
-                });
+
+                    // If province is available immediately, finalize; otherwise attempt reverse geocode
+                    if (locationData.province || locationData.city) {
+                        finalizeAndSend(locationData);
+                    } else if (coords.lat !== null && typeof google !== 'undefined' && google.maps && google.maps.Geocoder) {
+                        // Try reverse geocoding to get administrative levels (province/city)
+                        const geocoder = new google.maps.Geocoder();
+                        geocoder.geocode({ location: new google.maps.LatLng(coords.lat, coords.lng) }, function(results, status) {
+                            if (status === 'OK' && results && results.length > 0) {
+                                const r = results[0];
+                                const parsed = extractAddrComponents(r.address_components);
+                                locationData.province = parsed.province || '';
+                                locationData.city = parsed.city || '';
+                            }
+                            // Finalize regardless of reverse geocode success (we updated province if found)
+                            finalizeAndSend(locationData);
+                        });
+                    } else {
+                        // No province and cannot reverse geocode — finalize with what we have
+                        finalizeAndSend(locationData);
+                    }
         }
 
         // Remove visual selection/checkmark if user edits the search input after selecting a location
@@ -1182,10 +1968,64 @@
             if (step === 2) {
                 setTimeout(() => {
                     ensureDrawingMapInitialized();
+                    // Also attempt auto-route using current form inputs once the map is ready
+                    try {
+                        // Delay slightly to ensure Maps API callbacks finished
+                        setTimeout(() => {
+                            if (typeof autoRouteFromInputs === 'function') {
+                                autoRouteFromInputs();
+                            }
+                        }, 300);
+                    } catch (e) {
+                        console.debug('autoRouteFromInputs not available at showStep time');
+                    }
                 }, 100);
             }
 
             currentStep = step;
+
+            // Ensure the form submit button is only visible on the final step
+            try {
+                const submitBtns = document.querySelectorAll('button[type="submit"]');
+                submitBtns.forEach(btn => btn.classList.add('hidden'));
+                // Reveal submit only when on the last step
+                if (step === totalSteps) {
+                    submitBtns.forEach(btn => btn.classList.remove('hidden'));
+                }
+            } catch (e) { /* no-op */ }
+
+            // Ensure only a single Previous button exists in the visible navigation area
+            try {
+                if (activeStep) {
+                    const prevButtons = activeStep.querySelectorAll('button[onclick^="prevStep("]');
+                    if (prevButtons.length > 1) {
+                        // Remove duplicates leaving the first
+                        for (let i = 1; i < prevButtons.length; i++) {
+                            prevButtons[i].remove();
+                        }
+                    }
+                }
+            } catch (e) { /* no-op */ }
+
+            // Additional safety: hide any prev/next buttons that are not inside the active step
+            try {
+                // Hide global duplicate prev/next buttons and reveal only those inside the active step
+                document.querySelectorAll('button[onclick^="prevStep("]').forEach(function(btn){
+                    if (!activeStep || !activeStep.contains(btn)) {
+                        btn.style.display = 'none';
+                    } else {
+                        btn.style.display = '';
+                    }
+                });
+
+                document.querySelectorAll('button[onclick^="nextStep("]').forEach(function(btn){
+                    if (!activeStep || !activeStep.contains(btn)) {
+                        btn.style.display = 'none';
+                    } else {
+                        btn.style.display = '';
+                    }
+                });
+            } catch (e) { /* no-op */ }
         }
 
         function nextStep(step) {
@@ -1201,22 +2041,26 @@
         }
 
         function updateNavigation(activeStep) {
-            // Reset all navigation
-            document.querySelectorAll('.step-nav').forEach((nav, index) => {
-                const stepNumber = index + 1;
+            // Reset all navigation using data-step attribute so insertion of steps won't break numbering
+            document.querySelectorAll('.step-nav').forEach((nav) => {
+                const stepAttr = nav.getAttribute('data-step');
+                const stepNumber = stepAttr ? parseInt(stepAttr, 10) : NaN;
                 const circle = nav.querySelector('span span');
-                const text = nav.querySelector('span');
 
-                if (stepNumber <= activeStep) {
+                if (!isNaN(stepNumber) && stepNumber <= activeStep) {
                     nav.classList.remove('border-transparent', 'text-gray-500');
                     nav.classList.add('border-[#336d66]', 'text-[#336d66]');
-                    circle.classList.remove('bg-gray-300', 'text-gray-600');
-                    circle.classList.add('bg-[#336d66]', 'text-white');
+                    if (circle) {
+                        circle.classList.remove('bg-gray-300', 'text-gray-600');
+                        circle.classList.add('bg-[#336d66]', 'text-white');
+                    }
                 } else {
                     nav.classList.remove('border-[#336d66]', 'text-[#336d66]');
                     nav.classList.add('border-transparent', 'text-gray-500');
-                    circle.classList.remove('bg-[#336d66]', 'text-white');
-                    circle.classList.add('bg-gray-300', 'text-gray-600');
+                    if (circle) {
+                        circle.classList.remove('bg-[#336d66]', 'text-white');
+                        circle.classList.add('bg-gray-300', 'text-gray-600');
+                    }
                 }
             });
         }
@@ -1403,6 +2247,63 @@
             };
             document.head.appendChild(s);
         }
+
+        // Diagnostic helper: show a visible dev banner if Maps/Places fail to load
+        (function gmapsDiagnostic(){
+            var diag = document.getElementById('gmaps-diagnostic');
+            var title = document.getElementById('gmaps-diagnostic-title');
+            var msg = document.getElementById('gmaps-diagnostic-msg');
+            var actions = document.getElementById('gmaps-diagnostic-actions');
+            if (!diag) return;
+
+            function show(statusText, detail, level){
+                diag.classList.remove('hidden');
+                diag.classList.remove('border-red-200','bg-red-50','border-yellow-200','bg-yellow-50','border-green-200','bg-green-50');
+                if (level === 'error') diag.classList.add('border-red-200','bg-red-50');
+                else if (level === 'warn') diag.classList.add('border-yellow-200','bg-yellow-50');
+                else diag.classList.add('border-green-200','bg-green-50');
+                title.textContent = 'Maps status: ' + statusText;
+                msg.textContent = detail;
+            }
+
+            // If meta tag missing, show immediate warning
+            var keyMeta = document.querySelector('meta[name="google-maps-api-key"]');
+            if (!keyMeta || !keyMeta.content){
+                show('No API key', 'No <meta name="google-maps-api-key"> found. Add your key to the page for Places autocomplete to work. See README or environment settings.', 'warn');
+                actions.innerHTML = '<a href="javascript:void(0)" id="gmaps-refresh" class="text-blue-600 underline">Retry check</a>';
+                document.getElementById('gmaps-refresh').addEventListener('click', function(){ location.reload(); });
+                return;
+            }
+
+            // Wait for loadMapsScript to actually load the script. We'll consider it failed if google.maps doesn't exist after timeout
+            var timedOut = false;
+            var t = setTimeout(function(){
+                timedOut = true;
+                if (!window.google || !window.google.maps || !window.google.maps.places){
+                    show('Load failed', 'Google Maps/Places script did not load within 6 seconds. Check network, API key restrictions, or billing status. Open DevTools Console/Network for details.', 'error');
+                    actions.innerHTML = '<a href="javascript:void(0)" id="gmaps-retry" class="text-blue-600 underline">Retry loading script</a>';
+                    document.getElementById('gmaps-retry').addEventListener('click', function(){ location.reload(); });
+                }
+            }, 6000);
+
+            // Use loadMapsScript to attempt to load the script; when successful clear timeout and show success briefly
+            try{
+                loadMapsScript(function(){
+                    if (timedOut) return; // already timed out and banner shown
+                    clearTimeout(t);
+                    if (window.google && window.google.maps && window.google.maps.places){
+                        show('OK', 'Google Maps & Places loaded successfully.', 'ok');
+                        setTimeout(function(){ diag.classList.add('hidden'); }, 2500);
+                    } else {
+                        // Unexpected: loader called but maps missing
+                        show('Partial load', 'Loader executed but Google Maps/Places object missing. Check console for errors.', 'warn');
+                    }
+                });
+            }catch(e){
+                clearTimeout(t);
+                show('Loader error', 'Error when invoking loadMapsScript: '+(e && e.message ? e.message : String(e)), 'error');
+            }
+        })();
 
         function initializeDrawingMap() {
             loadMapsScript(() => {
@@ -1805,33 +2706,58 @@
         }
 
         // Auto-Route from Form Inputs using GPX Library
+        // Clean a user-provided name for use in GPX library searches.
+        function cleanAutoRouteKeyword(raw) {
+            if (!raw || typeof raw !== 'string') return '';
+            // Lowercase, remove punctuation, and strip common generic tokens
+            let s = raw.toLowerCase();
+            // Replace punctuation with spaces
+            s = s.replace(/[.,/#!$%^&*;:{}=_`"~()\[\]-]/g, ' ');
+            // Remove common generic words that add noise
+            const generic = ['mount', 'mountain', 'mt', 'mtn', 'trail', 'trails', 'hill', 'peak', 'range'];
+            const parts = s.split(/\s+/).filter(Boolean).filter(part => !generic.includes(part));
+            // Rejoin and trim
+            return parts.join(' ').trim();
+        }
+
         function autoRouteFromInputs() {
-            const mountainName = document.getElementById('mountain_name').value.trim();
-            const trailName = document.getElementById('trail_name').value.trim();
-            const locationSelect = document.getElementById('location_id');
-            const selectedLocation = locationSelect.options[locationSelect.selectedIndex];
+            const mountainNameRaw = document.getElementById('mountain_name').value.trim();
+            const trailNameRaw = document.getElementById('trail_name').value.trim();
+            const mountainName = cleanAutoRouteKeyword(mountainNameRaw);
+            const trailName = cleanAutoRouteKeyword(trailNameRaw);
+            // `location_id` is a hidden input (not a select). Read the visible `location_search`
+            // value and the hidden id safely to avoid runtime errors when a select isn't present.
+            const locationSearchEl = document.getElementById('location_search');
+            const locationIdEl = document.getElementById('location_id');
+            let locationTextFallback = '';
+            if (locationSearchEl && locationSearchEl.value) locationTextFallback = locationSearchEl.value;
+            // If the UI stored a last selected display value, prefer that
+            if (locationSearchEl && locationSearchEl.dataset && locationSearchEl.dataset.lastSelectedValue) {
+                locationTextFallback = locationSearchEl.dataset.lastSelectedValue;
+            }
             
-            if (!mountainName) {
+            if (!mountainNameRaw) {
+                // If the raw field is empty, ask user to fill it. If it's non-empty but cleaned result is empty it means
+                // the user typed only generic tokens (e.g. "Mount"), so we'll proceed but warn in console.
                 alert('Please enter a mountain name first.');
                 document.getElementById('mountain_name').focus();
                 return;
             }
 
+            if (mountainNameRaw && !mountainName) {
+                console.debug('Auto-route: mountain name cleaned to empty after stripping generic tokens. Using raw input for search.');
+            }
+
             showStatus('Searching for trail in GPX library...', 'blue');
 
-            // Get location text safely
-            let locationText = '';
-            if (selectedLocation && selectedLocation.textContent) {
-                locationText = selectedLocation.textContent;
-            } else if (selectedLocation && selectedLocation.text) {
-                locationText = selectedLocation.text;
-            }
+            // Use the previously-determined location text fallback
+            let locationText = locationTextFallback || '';
             
             console.log('Auto Route Debug:', {
                 mountainName: mountainName,
                 trailName: trailName,
                 locationText: locationText,
-                selectedLocation: selectedLocation
+                location_id: locationIdEl ? locationIdEl.value : null
             });
 
             // Use the direct search endpoint instead of parsing all files
@@ -1846,14 +2772,17 @@
                     'X-CSRF-TOKEN': csrfValue
                 },
                 body: JSON.stringify({
-                    mountain_name: mountainName,
-                    trail_name: trailName,
+                    // Prefer cleaned tokens; fall back to raw if cleaning removed everything
+                    mountain_name: mountainName || mountainNameRaw,
+                    trail_name: trailName || trailNameRaw,
                     location: locationText
                 })
             })
             .then(response => response.json())
-            .then(data => {
+                .then(data => {
                 if (data.success && data.trails && data.trails.length > 0) {
+                    // Also log to console for developers
+                    console.log('Auto Route Results:', data.trails);
                     handleAutoRouteResults(data.trails, mountainName, trailName);
                 } else {
                     showStatus('No matching trails found in GPX library. Try manual coordinate entry.', 'orange');
@@ -1975,16 +2904,66 @@
                 return;
             }
 
-            // If exact match or high confidence match, auto-load the best one
+            // Decide whether to auto-load the top match or prompt user selection.
             const bestMatch = foundTrails[0];
-            
-            if (bestMatch.match_score >= 100 || foundTrails.length === 1) {
-                // Auto-load the best match
-                loadTrailFromGPX(bestMatch, { filename: bestMatch.source_file });
-                showStatus(`Auto-loaded trail: "${bestMatch.name}" (Score: ${bestMatch.match_score})`, 'green');
+            const secondMatch = foundTrails.length > 1 ? foundTrails[1] : null;
+
+            const ABSOLUTE_THRESHOLD = 80; // absolute score to auto-load (relaxed from 90 for better auto-load success)
+            const DOMINANCE_GAP = 25; // score gap vs next best to auto-load
+
+            const shouldAutoLoad = (
+                foundTrails.length === 1 ||
+                bestMatch.match_score >= ABSOLUTE_THRESHOLD ||
+                (secondMatch && (bestMatch.match_score - secondMatch.match_score) >= DOMINANCE_GAP)
+            );
+
+            if (shouldAutoLoad) {
+                // Auto-load the best match into the map
+                try {
+                    // If bestMatch doesn't include coordinates, request server parse for the source file
+                    if (!bestMatch.coordinates || bestMatch.coordinates.length === 0) {
+                        fetch('/api/gpx-library/parse', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            },
+                            body: JSON.stringify({ filename: bestMatch.source_file })
+                        })
+                        .then(r => r.json())
+                        .then(parseData => {
+                            if (parseData.success && Array.isArray(parseData.data.trails)) {
+                                const parsedTrail = parseData.data.trails.find(t => t.name === bestMatch.name) || parseData.data.trails[0];
+                                if (parsedTrail && parsedTrail.coordinates && parsedTrail.coordinates.length > 0) {
+                                    parsedTrail.match_score = bestMatch.match_score;
+                                    parsedTrail.source_file = bestMatch.source_file;
+                                    loadTrailFromGPX(parsedTrail, { filename: bestMatch.source_file });
+                                    showStatus(`Auto-loaded trail: "${parsedTrail.name}" (Score: ${bestMatch.match_score})`, 'green');
+                                } else {
+                                    throw new Error('Parsed trail contained no coordinates');
+                                }
+                            } else {
+                                throw new Error('Failed to parse GPX on server');
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Failed to auto-parse GPX for auto-load:', err);
+                            showStatus('Found a good match but failed to parse the GPX file. Open the GPX Library to select manually.', 'red');
+                            // Do not automatically open the selection dialog; require manual user action
+                        });
+                    } else {
+                        loadTrailFromGPX(bestMatch, { filename: bestMatch.source_file });
+                        showStatus(`Auto-loaded trail: "${bestMatch.name}" (Score: ${bestMatch.match_score})`, 'green');
+                    }
+                } catch (e) {
+                    console.error('Failed to auto-load GPX:', e);
+                    showStatus('Found a good match but failed to auto-load the GPX. Open the GPX Library to select manually.', 'red');
+                    // Not opening the dialog automatically
+                }
             } else {
-                // Show selection dialog for multiple matches
-                showTrailSelectionDialog(foundTrails, mountainName, trailName);
+                // Inform the user there are multiple plausible matches but do not open a popup
+                showStatus(`Multiple matching trails found for "${mountainName}${trailName ? ' - ' + trailName : ''}". Open the GPX Library to choose the correct trail.`, 'yellow');
             }
         }
 
@@ -2313,6 +3292,47 @@
                 updateFieldIfAutoGenerated('elevation_gain', Math.round(elevationGain));
                 updateFieldIfAutoGenerated('elevation_high', Math.round(highestPoint));
                 updateFieldIfAutoGenerated('elevation_low', Math.round(lowestPoint));
+            }
+
+            // Estimate trail time (start-to-end) using a Naismith-like rule:
+            // - Base pace: 5 km/h on flat (12 min per km)
+            // - Add 10 minutes for every 100 m of ascent (approx)
+            // The result is in minutes and stored in the hidden `estimated_time` (integer minutes).
+            try {
+                const distanceKm = totalDistance / 1000;
+                const baseMinutes = distanceKm * 60 / 5; // distanceKm * 12
+                const climbMinutes = hasElevation ? (elevationGain / 100.0) * 10 : 0; // 10 min per 100m
+                const estimatedMinutes = Math.max(1, Math.round(baseMinutes + climbMinutes));
+
+                const hiddenEstimated = document.getElementById('estimated_time');
+                if (hiddenEstimated) {
+                    // store as integer minutes
+                    hiddenEstimated.value = String(estimatedMinutes);
+                }
+                // Also update visible estimated time text in the stats panel
+                try {
+                    const estEl = document.getElementById('trail_estimated_time');
+                    if (estEl) {
+                        const m = parseInt(estimatedMinutes, 10);
+                        let display = 'N/A';
+                        if (!isNaN(m) && m > 0) {
+                            if (m >= 60*24) {
+                                const days = Math.floor(m / (60*24));
+                                const hours = Math.floor((m % (60*24)) / 60);
+                                display = days + ' day' + (days>1 ? 's' : '') + (hours ? ' ' + hours + ' h' : '');
+                            } else if (m >= 60) {
+                                const hours = Math.floor(m / 60);
+                                const mins = m % 60;
+                                display = hours + ' h' + (mins ? ' ' + mins + ' m' : '');
+                            } else {
+                                display = m + ' m';
+                            }
+                        }
+                        estEl.textContent = display;
+                    }
+                } catch (err) { /* ignore */ }
+            } catch (e) {
+                // silently ignore
             }
 
             statsDiv.classList.remove('hidden');
@@ -2805,3 +3825,297 @@
     </div>
 
 </x-app-layout>
+
+<script>
+    // Initialize Google Places Autocomplete for transportation details input
+    (function initTransportAutocomplete(){
+        function attachAutocomplete(){
+            if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
+                // Wait and retry
+                setTimeout(attachAutocomplete, 200);
+                return;
+            }
+
+            const input = document.getElementById('transportation_details');
+            if (!input) return;
+            try {
+                const autocomplete = new google.maps.places.Autocomplete(input, {types: ['establishment', 'geocode']});
+                // Optionally bias to the map location if available
+                if (window.itineraryMap && window.itineraryMap.map) {
+                    const map = window.itineraryMap.map;
+                    autocomplete.bindTo('bounds', map);
+                }
+
+                autocomplete.addListener('place_changed', () => {
+                    const place = autocomplete.getPlace();
+                    if (place && place.formatted_address) {
+                        input.value = place.formatted_address;
+                    }
+                });
+            } catch (e) {
+                console.warn('Places autocomplete not initialized:', e);
+            }
+        }
+
+        attachAutocomplete();
+    })();
+</script>
+<script>
+    (function(){
+        function createRow(value = ''){
+            const template = document.getElementById('side-trip-row-template');
+            const row = template.cloneNode(true);
+            row.id = '';
+            row.classList.remove('hidden');
+            const input = row.querySelector('.side-trip-input');
+            input.value = value;
+            // Clear dataset flags on cloned inputs so autocomplete can be attached
+            try{ delete input.dataset._placesAttached; }catch(e){}
+            input.dataset.place = '';
+            const removeBtn = row.querySelector('.remove-side-trip');
+            removeBtn.addEventListener('click', function(){
+                row.remove();
+            });
+            // Ensure Places Autocomplete is attached for this new input
+            try{
+                if (typeof window.initSideTrips === 'function'){
+                    // Global initializer will attach only to inputs not yet attached
+                    try{ window.initSideTrips(); }catch(e){ console.warn('window.initSideTrips failed', e); }
+                } else if (typeof initPlaceAutocomplete === 'function'){
+                    try{ initPlaceAutocomplete(input); }catch(e){ console.warn('initPlaceAutocomplete failed for side-trip input', e); }
+                } else if (typeof loadMapsScript === 'function'){
+                    // loadMapsScript will call our callback after Maps loads
+                    loadMapsScript(function(){
+                        try{
+                            if (typeof window.initSideTrips === 'function'){
+                                window.initSideTrips();
+                            } else if (typeof initPlaceAutocomplete === 'function'){
+                                initPlaceAutocomplete(input);
+                            } else if (window.google && google.maps && google.maps.places){
+                                var ac = new google.maps.places.Autocomplete(input, {componentRestrictions: {country: 'ph'}});
+                                ac.addListener('place_changed', function(){
+                                    var place = ac.getPlace();
+                                    var obj = {
+                                        place_id: place.place_id || null,
+                                        name: place.name || input.value || null,
+                                        lat: place.geometry && place.geometry.location ? place.geometry.location.lat() : null,
+                                        lng: place.geometry && place.geometry.location ? place.geometry.location.lng() : null,
+                                        address_components: place.address_components || null,
+                                    };
+                                    input.dataset.place = JSON.stringify(obj);
+                                });
+                            }
+                        }catch(e){ console.warn('side-trip autocomplete init failed', e); }
+                    });
+                }
+            }catch(e){ console.warn('side-trip autocomplete attach error', e); }
+            return row;
+        }
+
+        function addSideTrip(value){
+            const list = document.getElementById('side-trips-list');
+            const row = createRow(value);
+            list.appendChild(row);
+        }
+
+        function clearSideTrips(){
+            const list = document.getElementById('side-trips-list');
+            list.querySelectorAll(':scope > div').forEach(el => el.remove());
+        }
+
+        document.addEventListener('DOMContentLoaded', function(){
+            const addBtn = document.getElementById('add-side-trip');
+            const clearBtn = document.getElementById('clear-side-trips');
+            addBtn.addEventListener('click', function(){ addSideTrip(''); });
+            clearBtn.addEventListener('click', function(){
+                clearSideTrips();
+                // ensure at least one empty row remains
+                addSideTrip('');
+            });
+
+            // initialize from server-side old input or empty (read from data-attributes to avoid Blade-in-script issues)
+            try{
+                let oldValues = [];
+                try{
+                    const container = document.getElementById('side-trips-list');
+                    const rawOld = container.getAttribute('data-old');
+                    if(rawOld){
+                        const parsed = JSON.parse(rawOld);
+                        if(Array.isArray(parsed)) oldValues = parsed;
+                    }
+                }catch(e){ oldValues = []; }
+
+                if(Array.isArray(oldValues) && oldValues.length){
+                    oldValues.forEach(v => addSideTrip(v));
+                } else {
+                    // if no old values, add a single empty row so users can start typing
+                    addSideTrip('');
+                }
+            }catch(e){
+                // fallback: add one empty row
+                addSideTrip('');
+            }
+
+            // Ensure any rows added programmatically get autocomplete attached.
+            // Sometimes other DOMContentLoaded handlers run after this and the Maps loader isn't ready yet;
+            // call initAll after a short delay and attempt a direct attach for safety.
+            setTimeout(function(){
+                try{
+                    if (typeof initAll === 'function') initAll();
+                    else if (typeof window.initSideTrips === 'function') window.initSideTrips();
+                }catch(ignore){}
+                try{
+                    document.querySelectorAll('.side-trip-input').forEach(function(inp){
+                        try{ delete inp.dataset._placesAttached; }catch(e){}
+                        try{ attachToInput(inp); }catch(e){}
+                    });
+                }catch(ignore){}
+            }, 120);
+        });
+        // Duration parsing helper
+        function parseDurationInput(raw){
+            if(!raw || !raw.toString) return null;
+            const s = raw.toString().trim().toLowerCase();
+
+            // Patterns: numbers + units
+            // examples: "36hours", "36 hours", "36h", "2 days", "2d", "1 night", "48"
+            const hourMatch = s.match(/^(\d+(?:\.\d+)?)\s*(h|hr|hrs|hour|hours)?$/i);
+            if(hourMatch){
+                const hours = parseFloat(hourMatch[1]);
+                return { hours };
+            }
+
+            const explicitHours = s.match(/(\d+(?:\.\d+)?)\s*(hours|hour|hrs|h|hr)/i);
+            if(explicitHours){
+                return { hours: parseFloat(explicitHours[1]) };
+            }
+
+            const daysMatch = s.match(/(\d+(?:\.\d+)?)\s*(days|day|d)/i);
+            if(daysMatch){
+                const days = parseFloat(daysMatch[1]);
+                return { days };
+            }
+
+            const nightsMatch = s.match(/(\d+(?:\.\d+)?)\s*(nights|night|n)/i);
+            if(nightsMatch){
+                const nights = parseFloat(nightsMatch[1]);
+                return { nights };
+            }
+
+            // Mixed e.g. "2 days 1 night" or "2d1n"
+            const combined = s.match(/(?:(\d+)\s*d(?:ays?)?)?\s*(?:(\d+)\s*n(?:ights?)?)?/i);
+            if(combined && (combined[1] || combined[2])){
+                return { days: combined[1] ? parseInt(combined[1],10) : 0, nights: combined[2] ? parseInt(combined[2],10) : 0 };
+            }
+
+            return null;
+        }
+
+        function normalizeDuration(value){
+            const parsed = parseDurationInput(value);
+            if(!parsed) return null;
+
+            // If hours provided, convert to days/nights heuristically: 24 hours -> 1 day, nights = Math.floor((hours-1)/24)
+            if(parsed.hours !== undefined){
+                const hours = parsed.hours;
+                let days = 0;
+                let nights = 0;
+                if(hours >= 24){
+                    // round up days for partial days
+                    days = Math.ceil(hours / 24);
+                    // If hours is an exact multiple of 24 (e.g. 48 -> 2 days),
+                    // infer nights equal to days (organizer likely means whole days with nights per day).
+                    // Otherwise (partial-day rounding) infer nights as days - 1 (typical travel logic).
+                    if (Math.abs(hours % 24) < 1e-9) {
+                        nights = days; // exact multiples: nights match days
+                    } else {
+                        nights = Math.max(0, days - 1);
+                    }
+                }
+                return { hours, days, nights };
+            }
+
+            // If days provided, nights default to days - 1 (typical travel logic: 2 days = 1 night)
+            if(parsed.days !== undefined){
+                const days = parsed.days;
+                const nights = Math.max(0, Math.floor(days) - 1);
+                return { days, nights, hours: days * 24 };
+            }
+
+            if(parsed.nights !== undefined){
+                const nights = parsed.nights;
+                const days = nights + 1; // infer days
+                return { nights, days, hours: days * 24 };
+            }
+
+            return null;
+        }
+
+        function updateDurationSummary(){
+            const input = document.getElementById('duration');
+            const hidden = document.getElementById('estimated_time');
+            const summaryText = document.getElementById('duration-summary-text');
+            if(!input || !hidden || !summaryText) return;
+
+            const raw = input.value;
+            const norm = normalizeDuration(raw);
+            if(!norm){
+                summaryText.textContent = 'N/A';
+                // Do NOT modify the hidden `estimated_time` here. Leave it at the server-provided
+                // default so the hiker-facing side does not receive a value derived from this
+                // free-text `duration` field.
+                return;
+            }
+
+            // Build human summary
+            const parts = [];
+            if(norm.days !== undefined && norm.days > 0) parts.push(norm.days + ' day' + (norm.days>1?'s':''));
+            if(norm.nights !== undefined && norm.nights > 0) parts.push(norm.nights + ' night' + (norm.nights>1?'s':''));
+            if(parts.length === 0 && norm.hours !== undefined) parts.push(norm.hours + ' hour' + (norm.hours>1?'s':''));
+
+            summaryText.textContent = parts.join(', ');
+            // Previously we saved an integer hour estimate into the hidden `estimated_time`.
+            // That caused the hiker-facing record to inherit this value from the organizer's
+            // duration free-text. We intentionally do NOT set `hidden.value` here to avoid
+            // copying the `duration` into `estimated_time`.
+        }
+
+        // Attach listener
+        document.addEventListener('DOMContentLoaded', function(){
+            const dur = document.getElementById('duration');
+            if(dur){
+                dur.addEventListener('input', updateDurationSummary);
+                // initialize summary if there is old input
+                updateDurationSummary();
+            }
+        });
+        // Best season month selects syncing
+        document.addEventListener('DOMContentLoaded', function(){
+            const from = document.getElementById('best_season_from');
+            const to = document.getElementById('best_season_to');
+            const hidden = document.getElementById('best_season');
+            function syncBestSeason(){
+                if(!hidden) return;
+                const vFrom = from ? from.value : '';
+                const vTo = to ? to.value : '';
+                hidden.value = vFrom && vTo ? `${vFrom} to ${vTo}` : (vFrom ? `${vFrom}` : (vTo ? `${vTo}` : ''));
+            }
+            if(from) from.addEventListener('change', syncBestSeason);
+            if(to) to.addEventListener('change', syncBestSeason);
+
+            // initialize selects from old input if available (server-side old will populate a string like "November to March")
+            try{
+                const container = document.getElementById('best-season-selects');
+                const existing = container ? container.getAttribute('data-old') : '';
+                if(existing && existing.indexOf('to') !== -1){
+                    const parts = existing.split('to').map(s => s.trim());
+                    if(parts[0] && from) from.value = parts[0];
+                    if(parts[1] && to) to.value = parts[1];
+                } else if(existing){
+                    if(from) from.value = existing;
+                }
+                syncBestSeason();
+            }catch(e){ syncBestSeason(); }
+        });
+    })();
+</script>

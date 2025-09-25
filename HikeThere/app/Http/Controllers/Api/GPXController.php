@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\GPXService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Str;
 
 class GPXController extends Controller
 {
@@ -23,7 +24,21 @@ class GPXController extends Controller
     {
         try {
             $request->validate([
-                'gpx_file' => 'required|file|mimes:gpx,kml,kmz|max:10240', // 10MB max
+                // Accept GPX/KML/KMZ and xml variations (clients may send xml mime)
+                'gpx_file' => ['required','file','max:10240', function($attribute, $value, $fail) {
+                    $allowedExt = ['gpx','kml','kmz','xml'];
+                    $extension = strtolower($value->getClientOriginalExtension() ?: '');
+                    if (!in_array($extension, $allowedExt)) {
+                        return $fail('The '.$attribute.' must be a file of type: gpx, kml, kmz.');
+                    }
+                    $mime = $value->getMimeType();
+                    $allowedMimes = ['application/gpx+xml','application/gpx','application/xml','text/xml','application/vnd.google-earth.kml+xml','application/octet-stream'];
+                    if ($mime && !in_array($mime, $allowedMimes)) {
+                        if (!in_array($extension, ['gpx','kml','kmz'])) {
+                            return $fail('The '.$attribute.' must be a GPX/KML/KMZ file.');
+                        }
+                    }
+                }], // 10MB max
             ]);
 
             $gpxData = $this->gpxService->processGPXUpload($request->file('gpx_file'));
@@ -67,7 +82,7 @@ class GPXController extends Controller
                 'success' => true,
                 'message' => 'GPX file generated successfully',
                 'gpx_content' => $gpxContent,
-                'filename' => \Str::slug($trailName) . '.gpx'
+                'filename' => Str::slug($trailName) . '.gpx'
             ]);
 
         } catch (\Exception $e) {

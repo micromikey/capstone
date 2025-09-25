@@ -55,7 +55,9 @@
                 </ul>
               </div>
             </div>
-          </div>
+                        </div>
+                        <!-- Debug panel (temporary) -->
+                        <div id="transport-debug-panel" class="mt-2 text-xs text-red-600">Transport debug: (open console for more details)</div>
         </div>
         @endif
 
@@ -130,7 +132,7 @@
                     <div class="flex items-center justify-between text-white">
                       <div class="flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 0 1111.314 0z"/>
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1 1 11.314 0z"/>
                         </svg>
                         <span class="text-xs font-medium" id="map-status">Ready to plan your hike</span>
                       </div>
@@ -202,17 +204,146 @@
                             @if($filteredTrails->count() > 0)
                               <optgroup label="Recommended for your level ({{ $filteredTrails->count() }} trails)">
                                 @foreach($filteredTrails as $trail)
-                                  <option value="{{ $trail->trail_name }}" {{ old('trail') == $trail->trail_name ? 'selected' : '' }}>
-                                    {{ $trail->trail_name }} - {{ $trail->location ? $trail->location->province . ', ' . $trail->location->region : ($trail->mountain_name ?? 'Location N/A') }} ({{ ucfirst($trail->difficulty ?? 'Unknown') }})
-                                  </option>
-                                @endforeach
+                                    @php
+                                      // side_trips may be stored as JSON array, newline-separated list, or a single string.
+                                      if ($trail->side_trips) {
+                                        $decoded = json_decode($trail->side_trips, true);
+                                        if (is_array($decoded)) {
+                                          $sideTripsArray = array_values(array_filter(array_map('trim', $decoded)));
+                                        } elseif (strpos($trail->side_trips, "\n") !== false) {
+                                          $sideTripsArray = array_values(array_filter(array_map('trim', explode("\n", $trail->side_trips))));
+                                        } else {
+                                          // Treat entire string as a single entry (prevents splitting Google Places with commas)
+                                          $sideTripsArray = [trim($trail->side_trips)];
+                                        }
+                                      } else {
+                                        $sideTripsArray = [];
+                                      }
+                                      // Gather canonical transport fields used in admin create view
+                                      $canonical = $trail->transportation_details ?? $trail->transportation ?? $trail->transport ?? $trail->transport_details ?? null;
+                                      // Also include explicit pickup/vehicle/place fields as separate attributes so the preview has deterministic access
+                                      $pickup_place = $trail->transportation_pickup_place ?? null;
+                                      // transportation_vehicle usually stores the key; transportation_vehicle_label may store the human label
+                                      $vehicle_key = $trail->transportation_vehicle ?? null;
+                                      $vehicle_label = $trail->transportation_vehicle_label ?? ($vehicle_key ? ucfirst($vehicle_key) : null);
+
+                                      // Build a unified transport payload that preserves canonical payload and explicit fields
+                                      $transportPayload = (object)[];
+                                      if ($canonical) $transportPayload->canonical = $canonical;
+                                      if ($pickup_place) $transportPayload->pickup_place = $pickup_place;
+                                      if ($vehicle_key) $transportPayload->vehicle = $vehicle_key;
+                                      if ($vehicle_label) $transportPayload->vehicle_label = $vehicle_label;
+                                    @endphp
+                                    @php
+                                      $hours = null;
+                                      // Primary: explicit trail fields
+                                      if (!empty($trail->opening_time) || !empty($trail->closing_time)) {
+                                        $hours = [
+                                          'open' => $trail->opening_time ?? null,
+                                          'close' => $trail->closing_time ?? null,
+                                        ];
+                                      }
+
+                                      // Secondary: trail.hours JSON
+                                      if (!$hours && !empty($trail->hours)) {
+                                        $decodedHours = json_decode($trail->hours, true);
+                                        if (is_array($decodedHours)) $hours = $decodedHours;
+                                      }
+
+                                      // Tertiary: try the related package (package table) if available
+                                      if (!$hours && isset($trail->package) && $trail->package) {
+                                        // package may have opening_time/closing_time or hours JSON
+                                        if (!empty($trail->package->opening_time) || !empty($trail->package->closing_time)) {
+                                          $hours = [
+                                            'open' => $trail->package->opening_time ?? null,
+                                            'close' => $trail->package->closing_time ?? null,
+                                          ];
+                                        } elseif (!empty($trail->package->hours)) {
+                                          $decodedPkgHours = json_decode($trail->package->hours, true);
+                                          if (is_array($decodedPkgHours)) $hours = $decodedPkgHours;
+                                        }
+                                      }
+                                    @endphp
+                                    <option value="{{ $trail->trail_name }}" data-trail-id="{{ $trail->id }}" {{ old('trail') == $trail->trail_name ? 'selected' : '' }} data-side-trips='@json($sideTripsArray)' data-transport='@json($transportPayload)'
+                                      @if($hours) data-hours='{{ htmlspecialchars(json_encode($hours), ENT_QUOTES, 'UTF-8') }}' @endif
+                                      @if(!empty($trail->opening_time)) data-opening="{{ e($trail->opening_time) }}" @endif
+                                      @if(!empty($trail->closing_time)) data-closing="{{ e($trail->closing_time) }}" @endif
+                                      @if(!empty($trail->pickup_time)) data-pickup-time="{{ e($trail->pickup_time) }}" @elseif(!empty($trail->pickup_time)) data-pickup-time="{{ e($trail->pickup_time) }}" @endif
+                                      @if(!empty($trail->departure_time)) data-departure-time="{{ e($trail->departure_time) }}" @elseif(!empty($trail->departure_time)) data-departure-time="{{ e($trail->departure_time) }}" @endif
+                                      @if(!empty($trail->pickup_time)) data-pickup-time-short="{{ e(\Carbon\Carbon::parse($trail->pickup_time)->format('H:i')) }}" @elseif(!empty($trail->pickup_time)) data-pickup-time-short="{{ e(\Carbon\Carbon::parse($trail->pickup_time)->format('H:i')) }}" @endif
+                                      @if(!empty($trail->departure_time)) data-departure-time-short="{{ e(\Carbon\Carbon::parse($trail->departure_time)->format('H:i')) }}" @elseif(!empty($trail->departure_time)) data-departure-time-short="{{ e(\Carbon\Carbon::parse($trail->departure_time)->format('H:i')) }}" @endif>
+                                      {{ $trail->trail_name }} - {{ $trail->location ? $trail->location->province . ', ' . $trail->location->region : ($trail->mountain_name ?? 'Location N/A') }} ({{ ucfirst($trail->difficulty ?? 'Unknown') }})
+                                    </option>
+                                  @endforeach
                               </optgroup>
                             @endif
                             
                             @if($filteredTrails->count() < $trails->count())
                               <optgroup label="Other trails ({{ $trails->count() - $filteredTrails->count() }} trails)">
                                 @foreach($trails->whereNotIn('id', $filteredTrails->pluck('id')) as $trail)
-                                  <option value="{{ $trail->trail_name }}" {{ old('trail') == $trail->trail_name ? 'selected' : '' }}>
+                                  @php
+                                    // side_trips may be stored as JSON array, newline-separated list, or a single string.
+                                    if ($trail->side_trips) {
+                                      $decoded = json_decode($trail->side_trips, true);
+                                      if (is_array($decoded)) {
+                                        $sideTripsArray = array_values(array_filter(array_map('trim', $decoded)));
+                                      } elseif (strpos($trail->side_trips, "\n") !== false) {
+                                        $sideTripsArray = array_values(array_filter(array_map('trim', explode("\n", $trail->side_trips))));
+                                      } else {
+                                        // Treat entire string as a single entry (prevents splitting Google Places with commas)
+                                        $sideTripsArray = [trim($trail->side_trips)];
+                                      }
+                                    } else {
+                                      $sideTripsArray = [];
+                                    }
+                                    $canonical = $trail->transportation_details ?? $trail->transportation ?? $trail->transport ?? $trail->transport_details ?? null;
+                                    $pickup_place = $trail->transportation_pickup_place ?? null;
+                                    $vehicle_label = $trail->transportation_vehicle ?? null;
+                                    $vehicle_key = $trail->transportation_vehicle ?? null;
+                                    $vehicle_label = $trail->transportation_vehicle_label ?? ($vehicle_key ? ucfirst($vehicle_key) : null);
+                                    $transportPayload = (object)[];
+                                    if ($canonical) $transportPayload->canonical = $canonical;
+                                    if ($pickup_place) $transportPayload->pickup_place = $pickup_place;
+                                    if ($vehicle_key) $transportPayload->vehicle = $vehicle_key;
+                                    if ($vehicle_label) $transportPayload->vehicle_label = $vehicle_label;
+                                  @endphp
+                                  @php
+                                    $hours = null;
+                                    // Primary: explicit trail fields
+                                    if (!empty($trail->opening_time) || !empty($trail->closing_time)) {
+                                      $hours = [
+                                        'open' => $trail->opening_time ?? null,
+                                        'close' => $trail->closing_time ?? null,
+                                      ];
+                                    }
+
+                                    // Secondary: trail.hours JSON
+                                    if (!$hours && !empty($trail->hours)) {
+                                      $decodedHours = json_decode($trail->hours, true);
+                                      if (is_array($decodedHours)) $hours = $decodedHours;
+                                    }
+
+                                    // Tertiary: try the related package (package table) if available
+                                    if (!$hours && isset($trail->package) && $trail->package) {
+                                      if (!empty($trail->package->opening_time) || !empty($trail->package->closing_time)) {
+                                        $hours = [
+                                          'open' => $trail->package->opening_time ?? null,
+                                          'close' => $trail->package->closing_time ?? null,
+                                        ];
+                                      } elseif (!empty($trail->package->hours)) {
+                                        $decodedPkgHours = json_decode($trail->package->hours, true);
+                                        if (is_array($decodedPkgHours)) $hours = $decodedPkgHours;
+                                      }
+                                    }
+                                  @endphp
+                                  <option value="{{ $trail->trail_name }}" data-trail-id="{{ $trail->id }}" {{ old('trail') == $trail->trail_name ? 'selected' : '' }} data-side-trips='@json($sideTripsArray)' data-transport='@json($transportPayload)'
+                                    @if($hours) data-hours='{{ htmlspecialchars(json_encode($hours), ENT_QUOTES, 'UTF-8') }}' @endif
+                                    @if(!empty($trail->opening_time)) data-opening="{{ e($trail->opening_time) }}" @endif
+                                    @if(!empty($trail->closing_time)) data-closing="{{ e($trail->closing_time) }}" @endif
+                                    @if(!empty($trail->pickup_time)) data-pickup-time="{{ e($trail->pickup_time) }}" @elseif(!empty($trail->pickup_time)) data-pickup-time="{{ e($trail->pickup_time) }}" @endif
+                                    @if(!empty($trail->departure_time)) data-departure-time="{{ e($trail->departure_time) }}" @elseif(!empty($trail->departure_time)) data-departure-time="{{ e($trail->departure_time) }}" @endif
+                                    @if(!empty($trail->pickup_time)) data-pickup-time-short="{{ e(\Carbon\Carbon::parse($trail->pickup_time)->format('H:i')) }}" @elseif(!empty($trail->pickup_time)) data-pickup-time-short="{{ e(\Carbon\Carbon::parse($trail->pickup_time)->format('H:i')) }}" @endif
+                                    @if(!empty($trail->departure_time)) data-departure-time-short="{{ e(\Carbon\Carbon::parse($trail->departure_time)->format('H:i')) }}" @elseif(!empty($trail->departure_time)) data-departure-time-short="{{ e(\Carbon\Carbon::parse($trail->departure_time)->format('H:i')) }}" @endif>
                                     {{ $trail->trail_name }} - {{ $trail->location ? $trail->location->province . ', ' . $trail->location->region : ($trail->mountain_name ?? 'Location N/A') }} ({{ ucfirst($trail->difficulty ?? 'Unknown') }})
                                   </option>
                                 @endforeach
@@ -315,6 +446,21 @@
                       <div class="mt-2 text-xs text-gray-500">
                         <span id="trailDifficultyDisplay">Difficulty: Not selected</span>
                       </div>
+                      <!-- Trail Opening / Closing Time Preview -->
+                      <div id="trail-times-preview" class="mt-3 hidden">
+                        <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1">Trail Hours</div>
+                        <div class="flex items-center gap-6">
+                          <div>
+                            <div class="text-[11px] text-gray-500">Opens</div>
+                            <div id="trail-opening" class="text-sm font-semibold text-gray-800">—</div>
+                          </div>
+                          <div>
+                            <div class="text-[11px] text-gray-500">Closes</div>
+                            <div id="trail-closing" class="text-sm font-semibold text-gray-800">—</div>
+                          </div>
+                          <div class="ml-auto text-xs text-gray-400" id="trail-hours-note"></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -408,7 +554,7 @@
                           <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Your Location</p>
                           <button type="button" id="getCurrentLocationBtn" class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-200 transition-colors">
                             <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 0 1111.314 0z"/>
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1 1 11.314 0z"/>
                               <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                             </svg>
                             Current
@@ -447,40 +593,77 @@
                       <div class="border-t border-dashed pt-2">
                         <div class="flex items-center justify-between mb-2">
                           <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Side Trips</p>
-                          <button type="button" id="add-sidetrip-btn" class="text-xs text-blue-600 hover:text-blue-700 font-medium">
-                            + Add Side Trip
-                          </button>
+                          <div class="flex items-center gap-3">
+                            <input type="hidden" name="include_side_trips" id="includeSideTripsHidden" value="0">
+                            <label for="includeSideTrips" class="inline-flex items-center cursor-pointer select-none">
+                              <span class="relative inline-block">
+                                <input id="includeSideTrips" type="checkbox" class="sr-only" />
+                                <!-- track (background) -->
+                                <div class="track w-10 h-5 bg-gray-200 rounded-full shadow-inner transition-colors duration-200 z-0"></div>
+                                <!-- knob -->
+                                <div class="dot absolute left-0 top-0.5 w-4 h-4 bg-white rounded-full shadow transform transition-transform z-10"></div>
+                              </span>
+                              <span class="ml-3 text-xs text-gray-600">Include side trips in itinerary</span>
+                            </label>
+                          </div>
                         </div>
-                        <div class="flex gap-2 mb-2">
-                          <input type="text" id="add-sidetrip-input" placeholder="Search Philippine locations..." 
-                                 class="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-xs ring-1 ring-gray-200 focus:ring-2 focus:ring-emerald-200">
+                        <p class="text-xs text-gray-500">Side trips are part of the selected trail package by default. Toggle this on to include them in the generated itinerary.</p>
+                        <div id="sidetrips-preview" class="mt-3 hidden">
+                          <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1">Included Side Trips Preview</p>
+                          <div class="rounded-md border border-gray-200 bg-white p-3 text-sm text-gray-700" id="sidetrips-preview-list">
+                            <!-- Populated by JS -->
+                            <em class="text-xs text-gray-400">Enable "Include side trips" and select a trail to preview included side trips.</em>
+                          </div>
                         </div>
-                        <div id="sidetrips-container" class="space-y-1">
-                          <!-- Side trips will be added here dynamically -->
+                        
+                        <!-- Minimal Read-only Transportation Preview -->
+                        <div id="transportation-preview-block" class="mt-4 hidden">
+                          <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-1">Transportation Preview</p>
+                          <div class="rounded-md border border-gray-200 bg-white p-3 text-sm text-gray-700">
+                            <div class="grid grid-cols-1 gap-2">
+                              <!-- Pickup block: shown when pickup/meeting info present -->
+                              <div id="transport-pickup-block" class="hidden">
+                                <p class="text-[11px] text-gray-500">Pickup / Meeting Point</p>
+                                <div id="transportation-pickup" class="min-h-[2rem] p-2 bg-gray-50 rounded-md border border-gray-200">—</div>
+                              </div>
+
+                              <!-- Vehicle block: shown when vehicle label is available (paired with pickup or commute) -->
+                              <div id="transport-vehicle-block" class="hidden">
+                                <p class="text-[11px] text-gray-500">Vehicle</p>
+                                <div id="transportation-vehicle" class="min-h-[2rem] p-2 bg-gray-50 rounded-md border border-gray-200">—</div>
+                              </div>
+
+                              <!-- Commute block: shown when commute legs/summary exist -->
+                              <div id="transport-commute-block" class="hidden">
+                                <p class="text-[11px] text-gray-500">Commute / Legs</p>
+                                <div id="transportation-legs" class="min-h-[2rem] p-2 bg-white rounded-md border border-gray-200 text-gray-700">No transport details available.</div>
+                              </div>
+
+                              <!-- Pickup / Departure Time preview - shows only available times -->
+                              <div id="transport-time-preview-block" class="hidden">
+                                <p class="text-[11px] text-gray-500">Times</p>
+                                <div class="flex flex-col gap-1">
+                                  <div class="flex items-center justify-between text-sm">
+                                    <div class="text-xs text-gray-500">Pickup Time</div>
+                                    <div id="transportation-pickup-time" class="text-sm font-semibold text-gray-800">—</div>
+                                  </div>
+                                  <div class="flex items-center justify-between text-sm">
+                                    <div class="text-xs text-gray-500">Departure Time</div>
+                                    <div id="transportation-departure-time" class="text-sm font-semibold text-gray-800">—</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
+
+                  
 
 
 
                   </div>
 
-                  <!-- Transportation -->
-                  <div>
-                    <label class="mb-1 block text-xs font-semibold text-gray-600">Transportation</label>
-                    <div class="relative">
-                      <div class="rounded-md bg-gradient-to-r from-emerald-300/40 to-teal-300/40 p-[1px]">
-                        <select name="transportation" class="appearance-none bg-none shadow-none pr-8 w-full rounded-md bg-white px-3 py-2 text-sm ring-1 ring-gray-300 focus:ring-2 focus:ring-emerald-200">
-                          <option value="" {{ old('transportation') == '' ? 'selected' : '' }} disabled>Select option</option>
-                          <option value="Commute" {{ old('transportation') == 'Commute' ? 'selected' : '' }}>Commute</option>
-                          <option value="Private Vehicle" {{ old('transportation') == 'Private Vehicle' ? 'selected' : '' }}>Private Vehicle</option>
-                        </select>
-                      </div>
-                      <!-- custom arrow (no shadow) -->
-                      <svg class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                      </svg>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -547,6 +730,7 @@
     /* Trail Overview Enhancements */
     .line-clamp-3 {
       display: -webkit-box;
+      line-clamp: 3;
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
@@ -636,15 +820,706 @@
       }
     });
 
-    document.getElementById('add-sidetrip-btn')?.addEventListener('click', () => {
-      const input = document.getElementById('add-sidetrip-input');
-      const value = input.value.trim();
-      if (value) {
-        addItem('#sidetrips-container', value, 'sidetrips');
-        input.value = '';
-        input.focus();
+    // Side trips are included in the trail package by default. Provide a toggle
+    // that controls whether side trips are included in the generated itinerary.
+    const includeCheckbox = document.getElementById('includeSideTrips');
+    const includeHidden = document.getElementById('includeSideTripsHidden');
+    if (includeCheckbox && includeHidden) {
+      // Initialize visual state based on hidden input
+      includeCheckbox.checked = includeHidden.value === '1';
+      // Visual toggle movement for the dot
+      const label = includeCheckbox.closest('label');
+      const dot = label?.querySelector('.dot');
+      const track = label?.querySelector('.track');
+      const updateToggleVisual = () => {
+        if (!dot || !track) return;
+        if (includeCheckbox.checked) {
+          // move knob and set track color (inline to avoid Tailwind purge issues)
+          dot.style.transform = 'translateX(1.25rem)';
+          track.style.backgroundColor = '#10B981'; // emerald-500
+        } else {
+          dot.style.transform = 'translateX(0)';
+          track.style.backgroundColor = ''; // revert to CSS default
+        }
+      };
+
+      includeCheckbox.addEventListener('change', () => {
+        includeHidden.value = includeCheckbox.checked ? '1' : '0';
+        updateToggleVisual();
+      });
+
+      // Run once to set initial visual
+      updateToggleVisual();
+    }
+
+    // Update side trips preview when trail selection changes or the toggle changes
+    function renderSideTripsPreview() {
+      const preview = document.getElementById('sidetrips-preview');
+      const previewList = document.getElementById('sidetrips-preview-list');
+      const trailSelect = document.getElementById('trailSelect');
+      const includeOn = includeHidden && includeHidden.value === '1';
+
+      if (!preview || !previewList || !trailSelect) return;
+
+      if (!includeOn) {
+        preview.classList.add('hidden');
+        return;
       }
+
+      const selectedOption = trailSelect.options[trailSelect.selectedIndex];
+      if (!selectedOption) {
+        previewList.innerHTML = '<em class="text-xs text-gray-400">Select a trail to preview included side trips.</em>';
+        preview.classList.remove('hidden');
+        return;
+      }
+
+      const sideTripsData = selectedOption.getAttribute('data-side-trips');
+      let sideTrips = [];
+      try {
+        sideTrips = sideTripsData ? JSON.parse(sideTripsData) : [];
+      } catch (err) {
+        sideTrips = [];
+      }
+
+      if (!sideTrips || sideTrips.length === 0) {
+        previewList.innerHTML = '<em class="text-xs text-gray-500">No side trips are defined for this trail.</em>';
+      } else {
+        previewList.innerHTML = '<ul class="list-disc pl-5 space-y-1">' + sideTrips.map(s => `<li>${s}</li>`).join('') + '</ul>';
+      }
+
+      preview.classList.remove('hidden');
+    }
+
+    // Helper: format integer minutes into a human-friendly string
+    function formatMinutesHuman(m) {
+      if (!m || isNaN(m)) return 'N/A';
+      m = parseInt(m, 10);
+      if (m <= 0) return 'N/A';
+      if (m >= 60*24) {
+        const days = Math.floor(m / (60*24));
+        const hours = Math.floor((m % (60*24)) / 60);
+        return days + ' day' + (days>1 ? 's' : '') + (hours ? ' ' + hours + ' h' : '');
+      }
+      if (m >= 60) {
+        const hours = Math.floor(m / 60);
+        const mins = m % 60;
+        return hours + ' h' + (mins ? ' ' + mins + ' m' : '');
+      }
+      return m + ' m';
+    }
+
+    document.getElementById('trailSelect')?.addEventListener('change', renderSideTripsPreview);
+    includeCheckbox?.addEventListener('change', renderSideTripsPreview);
+
+    // Lightweight transport preview renderer (non-invasive)
+    // Reads transport data from (in order): option[data-transport] (server or map-injected),
+    // or window.itineraryMap.trails matching the selected option. The data may be:
+    // - a plain pickup string (legacy)
+    // - an object with { type: 'commute', legs: [...] }
+    // - an object with pickup/vehicle fields
+    // The renderer chooses only one representation: "commute" when legs are present / type==='commute',
+    // otherwise pickup/vehicle.
+    function renderTransportationPreview() {
+      const previewBlock = document.getElementById('transportation-preview-block');
+      const pickupEl = document.getElementById('transportation-pickup');
+      const vehicleEl = document.getElementById('transportation-vehicle');
+      const legsEl = document.getElementById('transportation-legs');
+      const pickupBlock = document.getElementById('transport-pickup-block');
+      const vehicleBlock = document.getElementById('transport-vehicle-block');
+      const commuteBlock = document.getElementById('transport-commute-block');
+  const timeBlock = document.getElementById('transport-time-preview-block');
+      const pickupTimeEl = document.getElementById('transportation-pickup-time');
+      const departureTimeEl = document.getElementById('transportation-departure-time');
+      const trailSelect = document.getElementById('trailSelect');
+      if (!previewBlock || !pickupEl || !vehicleEl || !legsEl || !trailSelect) return;
+
+      const selectedOption = trailSelect.options[trailSelect.selectedIndex];
+      if (!selectedOption || !selectedOption.value) {
+        previewBlock.classList.add('hidden');
+        return;
+      }
+
+  // Reset preview fields and blocks to safe defaults to avoid leaking values between different transport types
+  pickupEl.textContent = '—';
+  vehicleEl.textContent = '—';
+  legsEl.textContent = '';
+  pickupBlock.classList.add('hidden');
+  vehicleBlock.classList.add('hidden');
+  commuteBlock.classList.add('hidden');
+  timeBlock.classList.add('hidden');
+  pickupTimeEl.textContent = '—';
+  departureTimeEl.textContent = '—';
+
+      let transportRaw = null; // can be string or object
+      let matchedTrail = null;
+
+      // 1) Prefer structured data attached directly to the <option>
+      // Server embeds a unified object into data-transport with optional keys:
+      //  - canonical: original transportation_details payload (string or object)
+      //  - pickup_place: explicit pickup place string
+      //  - vehicle: explicit vehicle label
+      const dataTransport = selectedOption.getAttribute('data-transport');
+      if (dataTransport) {
+        try {
+          const parsed = JSON.parse(dataTransport);
+          // If parsed is an object with our wrapper keys, prefer its canonical value
+          if (parsed && typeof parsed === 'object' && (parsed.canonical !== undefined || parsed.pickup_place !== undefined || parsed.vehicle !== undefined)) {
+            // Use canonical payload when present, otherwise construct a minimal object from pickup/vehicle
+            if (parsed.canonical !== undefined && parsed.canonical !== null) {
+              transportRaw = parsed.canonical;
+              // canonical itself may be a JSON string
+              if (typeof transportRaw === 'string' && (transportRaw.trim().startsWith('{') || transportRaw.trim().startsWith('['))) {
+                try { transportRaw = JSON.parse(transportRaw); } catch (e) { /* leave as string */ }
+              }
+            } else {
+              // build a small object so downstream code can treat as object
+              // prefer vehicle_label if present; otherwise use vehicle key
+              transportRaw = { pickup_place_name: parsed.pickup_place || '', vehicle_label: parsed.vehicle_label || parsed.vehicle || '' };
+            }
+            // Keep parsed wrapper as matchedTrail for fallback lookups
+            matchedTrail = parsed;
+          } else {
+            // Not the wrapper, use parsed directly (may be object or string)
+            transportRaw = parsed;
+            if (typeof transportRaw === 'string' && (transportRaw.trim().startsWith('{') || transportRaw.trim().startsWith('['))) {
+              try { transportRaw = JSON.parse(transportRaw); } catch (e) { /* ignore */ }
+            }
+          }
+        } catch (e) {
+          // Not JSON — treat as plain string
+          transportRaw = dataTransport;
+        }
+      }
+
+      // 2) Fall back to global itineraryMap trail object (if present)
+      if (transportRaw === null) {
+        try {
+          if (window.itineraryMap && Array.isArray(window.itineraryMap.trails)) {
+            matchedTrail = window.itineraryMap.trails.find(t => {
+              if (!t) return false;
+              // match by exact name or partial inclusion to tolerate formatting differences
+              return (t.name && t.name === selectedOption.value) || (selectedOption.value && t.name && selectedOption.value.includes(t.name));
+            });
+            if (matchedTrail) {
+              transportRaw = matchedTrail.transportation || matchedTrail.transport || matchedTrail.transport_details || matchedTrail.transportation_details || null;
+            }
+          }
+        } catch (e) {
+          transportRaw = null;
+        }
+      }
+
+      // If still null, show fallback but keep preview visible (user requested preview area)
+      if (transportRaw === null || transportRaw === '' || (typeof transportRaw === 'object' && Object.keys(transportRaw).length === 0)) {
+        pickupEl.textContent = '—';
+        vehicleEl.textContent = '—';
+        legsEl.textContent = 'No transport details available.';
+        // show only the minimal vehicle/commute fallback as previously
+        vehicleBlock.classList.remove('hidden');
+        commuteBlock.classList.remove('hidden');
+        previewBlock.classList.remove('hidden');
+        return;
+      }
+
+      // Normalize and decide which UI to render
+      // Case A: plain string (legacy pickup summary) — but the string may be:
+      //  - a JSON string (double-encoded), or
+      //  - a human-friendly commute summary (contains arrows or semicolons), or
+      //  - an actual pickup/meeting point value.
+      if (typeof transportRaw === 'string') {
+        const rawTrim = transportRaw.trim();
+
+        // Try to parse if it looks like JSON
+        if (rawTrim.startsWith('{') || rawTrim.startsWith('[') || (rawTrim.startsWith('"') && (rawTrim.includes('{') || rawTrim.includes('[')))) {
+          try {
+            const parsed = JSON.parse(rawTrim);
+            // If parsing worked, use the parsed object as transportRaw and continue
+            transportRaw = parsed;
+          } catch (e) {
+            // fallthrough
+          }
+        }
+      }
+
+      // If after attempting parse transportRaw is still a string, decide how to render it
+      if (typeof transportRaw === 'string') {
+        const s = transportRaw.trim();
+
+        // Special-case pickup notices created by admin UI: "Pick-Up Point: <place>"
+        if (/pick-?up point\s*:/i.test(s) || /^pick-?up point$/i.test(s)) {
+          const after = s.split(':').slice(1).join(':').trim();
+          pickupEl.textContent = after || '—';
+
+          // Show vehicle: prefer matchedTrail or wrapper vehicle_label/vehicle
+          let vehicleVal = '';
+          if (matchedTrail && typeof matchedTrail === 'object') {
+            vehicleVal = matchedTrail.vehicle_label || matchedTrail.vehicle || matchedTrail.transportation_vehicle_label || matchedTrail.transportation_vehicle || '';
+          }
+          if ((!vehicleVal || vehicleVal === '—') && selectedOption.getAttribute('data-transport')) {
+            try {
+              const rawOption = JSON.parse(selectedOption.getAttribute('data-transport'));
+              if (rawOption && typeof rawOption === 'object') {
+                vehicleVal = rawOption.vehicle_label || rawOption.vehicle || rawOption.transportation_vehicle_label || rawOption.transportation_vehicle || vehicleVal;
+                // If the canonical payload exists inside the wrapper, it may also contain vehicle info
+                if ((!vehicleVal || vehicleVal === '—') && rawOption.canonical) {
+                  try {
+                    const c = typeof rawOption.canonical === 'string' ? JSON.parse(rawOption.canonical) : rawOption.canonical;
+                    if (c && typeof c === 'object') vehicleVal = c.vehicle_label || c.vehicle || c.transportation_vehicle || vehicleVal;
+                  } catch (e) { /* ignore parse errors */ }
+                }
+              }
+            } catch (e) { /* ignore */ }
+          }
+
+          // As a last resort, try to extract a trailing parenthetical vehicle from the original string
+          if ((!vehicleVal || vehicleVal === '—') && s) {
+            const pm = s.match(/\(([^)]+)\)\s*$/);
+            if (pm && pm[1]) vehicleVal = pm[1].trim();
+          }
+
+          // Also, if the wrapper includes a pickup_place explicit field, prefer that as the pickup name
+          try {
+            const rawOption2 = selectedOption.getAttribute('data-transport');
+            if (rawOption2) {
+              const parsedOpt2 = JSON.parse(rawOption2);
+              if (parsedOpt2 && parsedOpt2.pickup_place) {
+                pickupEl.textContent = parsedOpt2.pickup_place;
+              }
+            }
+          } catch (e) { /* ignore */ }
+
+          vehicleEl.textContent = getVehicleLabel(vehicleVal) || '—';
+          legsEl.textContent = 'No transport legs available.';
+          // ensure pickup+vehicle blocks are visible for this representation
+          pickupBlock.classList.remove('hidden');
+          vehicleBlock.classList.remove('hidden');
+          previewBlock.classList.remove('hidden');
+          return;
+        }
+
+        // Heuristics: if it looks like a commute summary (contains arrows or semicolons)
+        const looksLikeSummary = s.includes('→') || s.includes('->') || s.includes(';');
+        if (looksLikeSummary) {
+          pickupEl.textContent = '—';
+          // If the summary contains semicolons, split into list items for readability
+          const parts = s.split(';').map(p => p.trim()).filter(Boolean);
+          if (parts.length > 1) {
+            const vehicles = new Set();
+            const itemsHtml = parts.map(p => {
+              const m = p.match(/^(.*)\s*\(([^)]+)\)\s*$/);
+              let text = p;
+              let veh = '';
+              if (m) {
+                text = m[1].trim();
+                veh = m[2].trim();
+              }
+              // Normalize vehicle labels so they display like commute vehicle labels
+              if (veh) vehicles.add(getVehicleLabel(veh) || veh);
+              const safeText = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+              return `<li class="text-sm text-gray-700">${safeText}</li>`;
+            }).join('');
+            legsEl.innerHTML = '<ul class="list-disc pl-5 space-y-1">' + itemsHtml + '</ul>';
+            const vehArr = Array.from(vehicles).filter(Boolean);
+            vehicleEl.textContent = vehArr.length ? vehArr.join(', ') : '—';
+          } else {
+            const m = s.match(/^(.*)\s*\(([^)]+)\)\s*$/);
+            if (m) {
+              const text = m[1].trim().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+              legsEl.textContent = text || 'Commute details not available.';
+              vehicleEl.textContent = getVehicleLabel(m[2].trim()) || m[2].trim();
+            } else {
+              legsEl.textContent = s || 'Commute details not available.';
+              vehicleEl.textContent = '—';
+            }
+          }
+          // Show commute block (hide pickup block)
+          commuteBlock.classList.remove('hidden');
+          vehicleBlock.classList.remove('hidden');
+          pickupBlock.classList.add('hidden');
+          previewBlock.classList.remove('hidden');
+          return;
+        }
+
+        // Otherwise treat as legacy pickup string
+  pickupEl.textContent = s || '—';
+        let fallbackVeh = '—';
+        if (matchedTrail && typeof matchedTrail === 'object') fallbackVeh = matchedTrail.vehicle || matchedTrail.vehicle_label || matchedTrail.transportation_vehicle || matchedTrail.transportation_vehicle_label || fallbackVeh;
+        if ((!fallbackVeh || fallbackVeh === '—') && selectedOption.getAttribute('data-transport')) {
+          try {
+            const rawOpt = JSON.parse(selectedOption.getAttribute('data-transport'));
+            if (rawOpt && typeof rawOpt === 'object') fallbackVeh = rawOpt.vehicle || rawOpt.vehicle_label || rawOpt.transportation_vehicle || rawOpt.transportation_vehicle_label || fallbackVeh;
+            if ((fallbackVeh === '—' || !fallbackVeh) && rawOpt && rawOpt.canonical) {
+              try {
+                const c = typeof rawOpt.canonical === 'string' ? JSON.parse(rawOpt.canonical) : rawOpt.canonical;
+                if (c && typeof c === 'object') fallbackVeh = c.vehicle || c.vehicle_label || c.transportation_vehicle || fallbackVeh;
+              } catch (e) { /* ignore */ }
+            }
+          } catch (e) { /* ignore */ }
+        }
+        vehicleEl.textContent = getVehicleLabel(fallbackVeh) || '—';
+        legsEl.textContent = 'No transport legs available.';
+        // Show pickup + vehicle blocks only
+        pickupBlock.classList.remove('hidden');
+        vehicleBlock.classList.remove('hidden');
+        commuteBlock.classList.add('hidden');
+        previewBlock.classList.remove('hidden');
+        return;
+      }
+
+      // Case B: object
+      // If transportRaw is actually a full trail object that contains a nested transport block,
+      // unwrap it so callers that accidentally serialized the whole trail still work.
+      let t = transportRaw;
+      if (typeof t === 'object' && (t.transportation || t.transport || t.transport_details)) {
+        t = t.transportation || t.transport || t.transport_details;
+      }
+
+      // Helper: normalize vehicle keys into human labels when possible
+      function getVehicleLabel(v) {
+        if (!v && v !== 0) return '';
+        if (typeof v === 'object') return v.label || v.name || '';
+        const vs = String(v || '').trim();
+        if (!vs) return '';
+        // If option wrapper provided a matchedTrail with vehicle_label, prefer that when keys match
+        if (matchedTrail && typeof matchedTrail === 'object') {
+          try {
+            if (matchedTrail.vehicle && String(matchedTrail.vehicle) === vs && matchedTrail.vehicle_label) return matchedTrail.vehicle_label;
+            if (matchedTrail.vehicle_label && !matchedTrail.vehicle) return matchedTrail.vehicle_label;
+          } catch (e) {}
+        }
+        // Try to read data-transport for a vehicle_label
+        try {
+          const rawOpt = selectedOption.getAttribute('data-transport');
+          if (rawOpt) {
+            const parsedOpt = JSON.parse(rawOpt);
+            if (parsedOpt && typeof parsedOpt === 'object') {
+              if (parsedOpt.vehicle && String(parsedOpt.vehicle) === vs && parsedOpt.vehicle_label) return parsedOpt.vehicle_label;
+              if (parsedOpt.vehicle_label && !parsedOpt.vehicle) return parsedOpt.vehicle_label;
+            }
+          }
+        } catch (e) { /* ignore */ }
+        // Small fallback map
+        const MAP = { van: 'Van', jeep: 'Jeep', bus: 'Bus', car: 'Car', motorbike: 'Motorbike', bike: 'Bike' };
+        if (MAP[vs.toLowerCase()]) return MAP[vs.toLowerCase()];
+        return vs;
+      }
+
+      // If object explicitly indicates commute or contains legs array — treat as commute
+      const legs = Array.isArray(t.legs) && t.legs.length > 0 ? t.legs : (Array.isArray(t.commute) && t.commute.length > 0 ? t.commute : null);
+      if (t.type === 'commute' || legs) {
+        // Render commute only
+        pickupEl.textContent = '—';
+        vehicleEl.textContent = '—';
+
+        // helper to escape HTML
+        function escapeHtml(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  if (legs && legs.length > 0) {
+          const vehicles = new Set();
+          const items = legs.map(l => {
+            // Prefer place metadata names when available
+            const from = (l.from_place && l.from_place.name) || l.from || l.start || '';
+            const to = (l.to_place && l.to_place.name) || l.to || l.end || l.destination || '';
+
+            // vehicle label: normalize via helper so keys map to readable labels
+            let vehLabel = getVehicleLabel(l.vehicle || l.vehicle_type || '');
+            if (vehLabel) vehicles.add(vehLabel);
+
+            if (from && to) return `<li class="text-sm text-gray-700">${escapeHtml(from)} → ${escapeHtml(to)}</li>`;
+            if (from) return `<li class="text-sm text-gray-700">${escapeHtml(from)} → (unknown)</li>`;
+            if (to) return `<li class="text-sm text-gray-700">(unknown) → ${escapeHtml(to)}</li>`;
+            return `<li class="text-sm text-gray-700">Unknown leg</li>`;
+          });
+
+          legsEl.innerHTML = '<ul class="list-disc pl-5 space-y-1">' + items.join('') + '</ul>';
+          const vehArr = Array.from(vehicles);
+          vehicleEl.textContent = vehArr.length ? vehArr.join(', ') : '—';
+          // Show commute and vehicle blocks (pickup hidden)
+          commuteBlock.classList.remove('hidden');
+          vehicleBlock.classList.remove('hidden');
+          pickupBlock.classList.add('hidden');
+        } else {
+          legsEl.textContent = t.summary || t.transport_summary || 'Commute details not available.';
+        }
+
+        previewBlock.classList.remove('hidden');
+        return;
+      }
+
+      // Case C: object with pickup/vehicle information — render pickup
+  let pickupName = t.pickup_place_name || t.pickup || t.meeting_point || (t.pickup_place && (typeof t.pickup_place === 'string' ? t.pickup_place : t.pickup_place.name)) || '';
+      let vehicleLabel = t.vehicle_label || t.vehicle || t.vehicle_type || '';
+
+      // Fallback: if the option wrapper has explicit pickup_place or vehicle keys, prefer them
+      try {
+        const rawOpt = selectedOption.getAttribute('data-transport');
+        if (rawOpt) {
+          const parsedOpt = JSON.parse(rawOpt);
+          if (parsedOpt && typeof parsedOpt === 'object') {
+            if (!pickupName && parsedOpt.pickup_place) pickupName = parsedOpt.pickup_place;
+            if ((!vehicleLabel || vehicleLabel === '') && (parsedOpt.vehicle_label || parsedOpt.vehicle)) vehicleLabel = parsedOpt.vehicle_label || parsedOpt.vehicle;
+          }
+        }
+      } catch (e) { /* ignore */ }
+
+      // Fallback: if matchedTrail (from window.itineraryMap) has pickup fields, use them
+      try {
+        if (!pickupName && matchedTrail && typeof matchedTrail === 'object') {
+          pickupName = matchedTrail.transportation_pickup_place || matchedTrail.pickup_place || matchedTrail.meeting_point || pickupName;
+        }
+        if ((!vehicleLabel || vehicleLabel === '') && matchedTrail && typeof matchedTrail === 'object') {
+          vehicleLabel = matchedTrail.transportation_vehicle_label || matchedTrail.transportation_vehicle || matchedTrail.vehicle_label || matchedTrail.vehicle || vehicleLabel;
+        }
+      } catch (e) { /* ignore */ }
+
+      // Fallback: inspect any human summary fields for a 'Pick-Up Point:' prefix or trailing parenthetical vehicle
+      try {
+        const textCandidates = [t.summary, t.transport_summary, t.transportation_details, t.transport_details];
+        for (const txt of textCandidates) {
+          if (!txt) continue;
+          const sTxt = String(txt || '').trim();
+          // If it contains Pick-Up Point: extract following text as pickup name
+          const mPrefix = sTxt.match(/(?:pick-?up|pickup|meeting point)\s*:\s*(.+)$/i);
+          if (!pickupName && mPrefix && mPrefix[1]) {
+            pickupName = mPrefix[1].trim();
+            break;
+          }
+          // If none, try trailing parenthetical as vehicle if we don't have a vehicle yet
+          if ((!vehicleLabel || vehicleLabel === '') ) {
+            const mPar = sTxt.match(/\(([^)]+)\)\s*$/);
+            if (mPar && mPar[1]) {
+              vehicleLabel = vehicleLabel || mPar[1].trim();
+            }
+          }
+        }
+      } catch (e) { /* ignore */ }
+
+      pickupEl.textContent = pickupName || '—';
+      vehicleEl.textContent = getVehicleLabel(vehicleLabel) || '—';
+
+      // If there is summary text and no commute legs, use it for legs area
+      if (t.summary || t.transport_summary || t.transportation_details || t.transport_details) {
+        legsEl.textContent = t.summary || t.transport_summary || t.transportation_details || t.transport_details;
+      } else {
+        legsEl.textContent = 'No transport legs available.';
+      }
+
+      // By default show pickup+vehicle blocks for this object shape; hide commute block
+      pickupBlock.classList.remove('hidden');
+      vehicleBlock.classList.remove('hidden');
+      commuteBlock.classList.add('hidden');
+
+      // Also attempt to populate pickup/departure times if present on matchedTrail/package
+      try {
+        // selectedOption may contain a wrapper with pickup_time/departure_time
+        const selectedOptionRaw = selectedOption ? selectedOption.getAttribute('data-transport') : null;
+        let optParsed = null;
+        if (selectedOptionRaw) {
+          try { optParsed = JSON.parse(selectedOptionRaw); } catch (e) { optParsed = null; }
+        }
+  // Also read explicit pickup/departure attributes placed on the <option>
+  const optPickupAttr = selectedOption ? selectedOption.getAttribute('data-pickup-time') : null;
+  const optDepartureAttr = selectedOption ? selectedOption.getAttribute('data-departure-time') : null;
+  // Short-format attributes (added as a fallback in case full time has seconds or different format)
+  const optPickupShortAttr = selectedOption ? selectedOption.getAttribute('data-pickup-time-short') : null;
+  const optDepartureShortAttr = selectedOption ? selectedOption.getAttribute('data-departure-time-short') : null;
+
+        // matchedTrail may exist from earlier; check package-level times first
+        let pickupTime = null;
+        let departureTime = null;
+        if (matchedTrail && typeof matchedTrail === 'object') {
+          if (matchedTrail.package) {
+            // Check multiple possible keys from package/map JSON
+            pickupTime = matchedTrail.package.pickup_time || matchedTrail.package.pickup_time_short || matchedTrail.package.pickup_time_formatted || null;
+            departureTime = matchedTrail.package.departure_time || matchedTrail.package.departure_time_short || matchedTrail.package.departure_time_formatted || null;
+          }
+          // also check top-level matchedTrail fields (some map payloads put times at root)
+          if (!pickupTime) pickupTime = matchedTrail.pickup_time || matchedTrail.pickup_time_short || null;
+          if (!departureTime) departureTime = matchedTrail.departure_time || matchedTrail.departure_time_short || null;
+        }
+
+        // Option wrapper overrides
+  if (!pickupTime && optParsed && optParsed.pickup_time) pickupTime = optParsed.pickup_time;
+  if (!departureTime && optParsed && optParsed.departure_time) departureTime = optParsed.departure_time;
+  // Also accept short-format keys in parsed wrapper
+  if (!pickupTime && optParsed && optParsed.pickup_time_short) pickupTime = optParsed.pickup_time_short;
+  if (!departureTime && optParsed && optParsed.departure_time_short) departureTime = optParsed.departure_time_short;
+  // fallback to explicit data-* attributes on the <option>
+  if (!pickupTime && optPickupAttr) pickupTime = optPickupAttr;
+  if (!departureTime && optDepartureAttr) departureTime = optDepartureAttr;
+  // fallback to explicit short attrs
+  if (!pickupTime && optPickupShortAttr) pickupTime = optPickupShortAttr;
+  if (!departureTime && optDepartureShortAttr) departureTime = optDepartureShortAttr;
+
+        // Also check top-level t (transport object) for times
+        if (!pickupTime && t && t.pickup_time) pickupTime = t.pickup_time;
+        if (!departureTime && t && t.departure_time) departureTime = t.departure_time;
+
+        // Helper to normalize various time formats into HH:MM where possible
+        function normalizeToShort(t) {
+          if (!t && t !== 0) return null;
+          try {
+            const s = String(t).trim();
+            // If already HH:MM or H:MM, return first 5 chars
+            const hhmm = s.match(/^(\d{1,2}:\d{2})/);
+            if (hhmm) return hhmm[1].padStart(5, '0');
+            // If format includes seconds (HH:MM:SS), strip seconds
+            const withSec = s.match(/^(\d{2}:\d{2}:\d{2})/);
+            if (withSec) return withSec[1].substr(0,5);
+            // If ISO datetime, extract time part
+            const iso = s.match(/T(\d{2}:\d{2}):\d{2}/);
+            if (iso) return iso[1];
+            // Last resort: return original trimmed
+            return s;
+          } catch (e) { return String(t).trim(); }
+        }
+
+        // Debug: show selected option attributes and matchedTrail pickup/departure data
+        try {
+          const dbg = {
+            optPickupAttr: optPickupAttr || null,
+            optDepartureAttr: optDepartureAttr || null,
+            optPickupShortAttr: optPickupShortAttr || null,
+            optDepartureShortAttr: optDepartureShortAttr || null,
+            optParsed: optParsed || null,
+            matchedTrailPackagePickup: matchedTrail && matchedTrail.package ? (matchedTrail.package.pickup_time || matchedTrail.package.pickup_time_short) : null,
+            matchedTrailPackageDeparture: matchedTrail && matchedTrail.package ? (matchedTrail.package.departure_time || matchedTrail.package.departure_time_short) : null,
+            pickupTimeRaw: pickupTime || null,
+            departureTimeRaw: departureTime || null,
+            timeBlockHidden: timeBlock ? timeBlock.classList.contains('hidden') : null,
+            previewBlockHidden: previewBlock ? previewBlock.classList.contains('hidden') : null,
+          };
+          console.debug('transportPreview-debug', dbg);
+          const panel = document.getElementById('transport-debug-panel');
+          if (panel) {
+            panel.textContent = `pickup:${dbg.pickupTimeRaw || 'null'} departure:${dbg.departureTimeRaw || 'null'} timeHidden:${dbg.timeBlockHidden}`;
+            panel.style.color = (dbg.pickupTimeRaw || dbg.departureTimeRaw) ? '#064e3b' : '#9f1239';
+          }
+        } catch (e) { /* ignore */ }
+
+        // Normalize and show time block only if at least one present
+        const pickupNorm = pickupTime ? normalizeToShort(pickupTime) : null;
+        const departureNorm = departureTime ? normalizeToShort(departureTime) : null;
+        if (pickupNorm || departureNorm) {
+          if (pickupNorm) pickupTimeEl.textContent = pickupNorm;
+          else pickupTimeEl.textContent = '—';
+          if (departureNorm) departureTimeEl.textContent = departureNorm;
+          else departureTimeEl.textContent = '—';
+          timeBlock.classList.remove('hidden');
+        } else {
+          timeBlock.classList.add('hidden');
+        }
+
+      } catch (e) { /* ignore */ }
+
+      previewBlock.classList.remove('hidden');
+    }
+
+    // Hook into the trailSelect change to update transport preview as well
+    document.getElementById('trailSelect')?.addEventListener('change', () => {
+      try { renderTransportationPreview(); } catch (e) { /* silent */ }
     });
+
+    // Render Trail Opening / Closing times preview
+
+    function renderTrailTimesPreview(passedTrail) {
+      const preview = document.getElementById('trail-times-preview');
+      const openingEl = document.getElementById('trail-opening');
+      const closingEl = document.getElementById('trail-closing');
+      const noteEl = document.getElementById('trail-hours-note');
+      const trailSelect = document.getElementById('trailSelect');
+
+      if (!preview || !openingEl || !closingEl || !trailSelect) return;
+
+      // If a trail object is passed (from map), prefer it
+      let opening = null;
+      let closing = null;
+      let source = 'option';
+
+      try {
+        if (passedTrail && typeof passedTrail === 'object') {
+          // common keys: opening_time, closing_time, opening_time_short, closing_time_short, open_time, close_time, hours
+          opening = passedTrail.opening_time_short || passedTrail.opening_time || passedTrail.open_time || (passedTrail.hours && (passedTrail.hours.open || passedTrail.hours.opening)) || (passedTrail.package && (passedTrail.package.opening_time_short || passedTrail.package.opening_time || (passedTrail.package.hours && (passedTrail.package.hours.open || passedTrail.package.hours.opening)))) || null;
+          closing = passedTrail.closing_time_short || passedTrail.closing_time || passedTrail.close_time || (passedTrail.hours && (passedTrail.hours.close || passedTrail.hours.closing)) || (passedTrail.package && (passedTrail.package.closing_time_short || passedTrail.package.closing_time || (passedTrail.package.hours && (passedTrail.package.hours.close || passedTrail.package.hours.closing)))) || null;
+          source = 'map';
+        }
+      } catch (e) { /* ignore */ }
+
+      // If none from map or not provided, inspect the selected <option> data attributes
+      if ((!opening || !closing) && trailSelect.options[trailSelect.selectedIndex]) {
+        const selectedOption = trailSelect.options[trailSelect.selectedIndex];
+        if (selectedOption) {
+          try {
+            // Allow for data-hours JSON wrapper or explicit data-opening/data-closing
+            const dataHours = selectedOption.getAttribute('data-hours');
+            if (dataHours) {
+              try {
+                const parsed = JSON.parse(dataHours);
+                opening = opening || parsed.opening || parsed.open || parsed.opens || null;
+                closing = closing || parsed.closing || parsed.close || parsed.closes || null;
+              } catch (e) {
+                // not JSON, try to parse simple 'HH:MM-HH:MM' format
+                const m = String(dataHours).split('-').map(s => s.trim());
+                if (m.length === 2) { opening = opening || m[0]; closing = closing || m[1]; }
+              }
+            }
+
+            // explicit attributes
+            opening = opening || selectedOption.getAttribute('data-opening') || selectedOption.getAttribute('data-open') || opening;
+            closing = closing || selectedOption.getAttribute('data-closing') || selectedOption.getAttribute('data-close') || closing;
+          } catch (e) { /* ignore */ }
+        }
+      }
+
+      // Additional fallback: if still missing, try to locate the selected trail in window.itineraryMap.trails
+      if ((!opening || !closing)) {
+        try {
+          const selVal = trailSelect.value;
+          const selectedOption = trailSelect.options[trailSelect.selectedIndex];
+          let matchedTrail = null;
+
+          if (window.itineraryMap && Array.isArray(window.itineraryMap.trails)) {
+            matchedTrail = window.itineraryMap.trails.find(t => {
+              if (!t) return false;
+              // match by name (some options contain the trail name as value)
+              if (t.name && selVal && (t.name === selVal || (selVal.includes && selVal.includes(t.name)))) return true;
+              // match by id if option holds a trail id
+              if (selectedOption && selectedOption.dataset && selectedOption.dataset.trailId) {
+                if (String(t.id) === String(selectedOption.dataset.trailId)) return true;
+              }
+              return false;
+            });
+          }
+
+          if (matchedTrail) {
+            // Try package first then direct fields; include short-form keys if present
+            opening = opening || (matchedTrail.package && (matchedTrail.package.opening_time_short || matchedTrail.package.opening_time || (matchedTrail.package.hours && (matchedTrail.package.hours.open || matchedTrail.package.hours.opening)))) || matchedTrail.opening_time_short || matchedTrail.opening_time || matchedTrail.open_time || (matchedTrail.hours && (matchedTrail.hours.open || matchedTrail.hours.opening)) || null;
+            closing = closing || (matchedTrail.package && (matchedTrail.package.closing_time_short || matchedTrail.package.closing_time || (matchedTrail.package.hours && (matchedTrail.package.hours.close || matchedTrail.package.hours.closing)))) || matchedTrail.closing_time_short || matchedTrail.closing_time || matchedTrail.close_time || (matchedTrail.hours && (matchedTrail.hours.close || matchedTrail.hours.closing)) || null;
+            source = 'map';
+          }
+        } catch (e) { /* ignore */ }
+      }
+
+      // Normalize display values
+      const displayOpening = opening ? String(opening).trim() : null;
+      const displayClosing = closing ? String(closing).trim() : null;
+
+      // Debug logging to help determine why preview may not show
+      try { console.debug('renderTrailTimesPreview', { passedTrail: passedTrail || null, opening: displayOpening, closing: displayClosing, source }); } catch (e) { /* ignore */ }
+
+      if (displayOpening || displayClosing) {
+        openingEl.textContent = displayOpening || '—';
+        closingEl.textContent = displayClosing || '—';
+        noteEl.textContent = source === 'map' ? 'Hours from map data' : 'Hours from trail data';
+        preview.classList.remove('hidden');
+      } else {
+        // Show a clear fallback when no hours are defined so users see the preview area
+        openingEl.textContent = '—';
+        closingEl.textContent = '—';
+        noteEl.textContent = 'No hours defined for this trail';
+        preview.classList.remove('hidden');
+      }
+    }
 
 
 
@@ -743,13 +1618,24 @@
       }
     });
 
-    // Set default date to tomorrow
-    document.addEventListener('DOMContentLoaded', function() {
+  // Set default date to tomorrow
+  document.addEventListener('DOMContentLoaded', function() {
       const dateInput = document.querySelector('input[name="date"]');
       if (dateInput) {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        dateInput.value = tomorrow.toISOString().split('T')[0];
+        // Set minimum selectable date to today to prevent selecting past dates
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const isoToday = `${yyyy}-${mm}-${dd}`;
+        dateInput.min = isoToday;
+
+        // If no value already set, default to tomorrow for convenience
+        if (!dateInput.value) {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          dateInput.value = tomorrow.toISOString().split('T')[0];
+        }
       }
       
       // Load saved location from localStorage if available
@@ -763,9 +1649,14 @@
       
       // Simple initialization
       initializeExistingItems();
+  // Render side trips preview on initial load in case a trail is pre-selected
+  try { renderSideTripsPreview(); } catch (e) { /* ignore if function not available */ }
       
       // Don't load weather automatically - only when trail is selected
       // This prevents interference with current location functionality
+
+      // Initialize trail times preview in case a trail is pre-selected
+      try { renderTrailTimesPreview(); } catch (e) { /* ignore if function not available */ }
     });
 
     // Weather Integration Functions
@@ -814,6 +1705,11 @@
           
           // Load weather for the selected trail
           loadWeatherForSelectedTrail();
+
+          // Update transportation preview (try immediately; loadTrailOverview will also call it when data is ready)
+          try { setTimeout(() => { renderTransportationPreview(); }, 100); } catch (e) { /* ignore */ }
+          // Render trail opening/closing times preview
+          try { setTimeout(() => { renderTrailTimesPreview(); }, 50); } catch (e) { /* ignore */ }
           
         } else {
           // Fallback if option not found
@@ -1246,6 +2142,10 @@
         const trailOverviewElement = createTrailOverviewElement(trail);
         trailInfoContainer.innerHTML = '';
         trailInfoContainer.appendChild(trailOverviewElement);
+    // Update trail times preview now that trail data is available
+    try { setTimeout(() => { renderTrailTimesPreview(trail); }, 30); } catch (e) { /* ignore */ }
+  // Ensure transport preview is refreshed after overview renders (map/trail data likely ready now)
+  try { setTimeout(() => { renderTransportationPreview(); }, 50); } catch (e) { /* ignore */ }
         
       } catch (error) {
         console.error('Error loading trail overview:', error);
@@ -1376,8 +2276,8 @@
             
             ${trail.estimated_time ? `
               <div class="text-center p-2 bg-gray-50 rounded-lg">
-                <div class="text-xs text-gray-500 mb-1">Duration</div>
-                <div class="text-sm font-semibold text-gray-800">${trail.estimated_time} min</div>
+                <div class="text-xs text-gray-500 mb-1">Estimated Hiking Time</div>
+                <div class="text-sm font-semibold text-gray-800">${formatMinutesHuman(trail.estimated_time)}</div>
               </div>
             ` : ''}
             
@@ -1675,7 +2575,7 @@
     // Enhanced Google Maps API loading with comprehensive libraries
     async function loadGoogleMapsAPI() {
       return new Promise((resolve, reject) => {
-        const apiKey = '{{ config('services.google.maps_api_key') }}';
+  const apiKey = '{{ config("services.google.maps_api_key") }}';
         if (!apiKey) { reject(new Error('Google Maps API key not configured.')); return; }
         const script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places,visualization,drawing&callback=initItineraryMap`;
@@ -1732,4 +2632,173 @@
       });
   </script>
   @endpush
+
+  <script>
+    // Serialize builder form into an `itinerary` payload expected by ItineraryController@store
+    (function(){
+  const form = document.querySelector(`form[action="{{ route('hiker.itinerary.generate') }}"]`);
+      if (!form) return;
+
+      form.addEventListener('submit', function(e){
+        // Prevent default submission; we'll submit structured payload
+        e.preventDefault();
+
+        // Gather basic fields
+        const formData = new FormData(form);
+        const itinerary = {};
+        itinerary.title = formData.get('title') || null;
+        itinerary.trail_name = formData.get('trail_name') || formData.get('trail') || null;
+        itinerary.start_date = formData.get('date') || null;
+        itinerary.start_time = formData.get('time') || null;
+        // duration_days may not be present in UI; infer 1 if not present
+        itinerary.duration_days = parseInt(formData.get('duration_days') || '1', 10);
+        itinerary.nights = Math.max(0, (itinerary.duration_days || 1) - 1);
+
+        // Stopovers and sidetrips arrays
+        itinerary.stopovers = formData.getAll('stopovers[]') || [];
+        itinerary.sidetrips = formData.getAll('sidetrips[]') || [];
+
+        // Transport preview fields (if set)
+        itinerary.transport_details = {};
+        const pickupEl = document.getElementById('transportation-pickup');
+        const vehicleEl = document.getElementById('transportation-vehicle');
+        if (pickupEl && pickupEl.textContent && pickupEl.textContent.trim() !== '—') itinerary.transport_details.pickup = pickupEl.textContent.trim();
+        if (vehicleEl && vehicleEl.textContent && vehicleEl.textContent.trim() !== '—') itinerary.transport_details.vehicle = vehicleEl.textContent.trim();
+
+        // Also include the structured transport payload if provided on the selected <option> (data-transport)
+        try {
+          const trailSelect = document.getElementById('trailSelect');
+          const selectedOption = trailSelect && trailSelect.options[trailSelect.selectedIndex];
+          if (selectedOption) {
+            const dt = selectedOption.getAttribute('data-transport');
+            if (dt) {
+              try {
+                const parsed = JSON.parse(dt);
+                // Attach canonical payload or wrapper contents to transport_details so it persists fully
+                if (parsed) {
+                  // If wrapper has canonical, attach it; otherwise attach the parsed object
+                  itinerary.transport_details.canonical = parsed.canonical ?? parsed;
+                  if (parsed.pickup_place) itinerary.transport_details.pickup_place = parsed.pickup_place;
+                  if (parsed.vehicle_label || parsed.vehicle) itinerary.transport_details.vehicle_label = parsed.vehicle_label ?? parsed.vehicle;
+                }
+              } catch (e) {
+                // not JSON, store as human-summary
+                itinerary.transport_details.summary = dt;
+              }
+            }
+
+            // If the option carries dataset coordinates, include them
+            if (selectedOption.dataset && selectedOption.dataset.coordinates) {
+              // dataset.coordinates expected as 'lat,lng'
+              itinerary.route_coordinates = selectedOption.dataset.coordinates;
+            }
+          }
+        } catch (e) {
+          // ignore transport metadata errors
+        }
+
+        // Weather data - try to include currentWeatherData if available
+        if (window.currentWeatherData) itinerary.weather_data = window.currentWeatherData;
+
+        // Build a simple daily_schedule placeholder so the controller can persist days if needed
+        itinerary.daily_schedule = [];
+        const days = itinerary.duration_days || 1;
+        // If we have a map-backed trail object, copy useful metadata (length, elevation, estimated_time, package days)
+        try {
+          if (window.itineraryMap && Array.isArray(window.itineraryMap.trails)) {
+            const matchedTrail = window.itineraryMap.trails.find(t => t && (t.name === (itinerary.trail_name) || (itinerary.trail_name && String(itinerary.trail_name).includes(t.name))));
+            if (matchedTrail) {
+              // copy common fields into itinerary so generated view can read persisted metadata
+              if (matchedTrail.id) itinerary.trail_id = matchedTrail.id;
+              if (matchedTrail.length) itinerary.distance_km = matchedTrail.length;
+              if (matchedTrail.elevation_gain) itinerary.elevation_m = matchedTrail.elevation_gain;
+              if (matchedTrail.estimated_time) itinerary.trail_estimated_time = matchedTrail.estimated_time;
+              if (matchedTrail.best_season) itinerary.best_season = matchedTrail.best_season;
+              if (matchedTrail.difficulty) itinerary.difficulty = matchedTrail.difficulty;
+              if (matchedTrail.coordinates) itinerary.route_coordinates = matchedTrail.coordinates;
+              // If the trail package includes a recommended package duration (days), respect it when user hasn't set duration_days explicitly
+              if (!formData.get('duration_days') && (matchedTrail.package_days || matchedTrail.duration_days)) {
+                itinerary.duration_days = matchedTrail.package_days ?? matchedTrail.duration_days;
+                itinerary.nights = Math.max(0, (itinerary.duration_days || 1) - 1);
+              }
+              // attach side trips if present
+              if (matchedTrail.side_trips && (!itinerary.sidetrips || itinerary.sidetrips.length === 0)) {
+                // Normalized shape: may be string, array, or JSON metadata
+                if (Array.isArray(matchedTrail.side_trips)) {
+                  itinerary.sidetrips = matchedTrail.side_trips.filter(Boolean);
+                } else if (typeof matchedTrail.side_trips === 'string' && matchedTrail.side_trips.trim() !== '') {
+                  // server may provide a comma-separated string or newline-separated; prefer comma split
+                  if (matchedTrail.side_trips.includes('\n')) {
+                    itinerary.sidetrips = matchedTrail.side_trips.split('\n').map(s => s.trim()).filter(Boolean);
+                  } else if (matchedTrail.side_trips.includes(',')) {
+                    itinerary.sidetrips = matchedTrail.side_trips.split(',').map(s => s.trim()).filter(Boolean);
+                  } else {
+                    itinerary.sidetrips = [matchedTrail.side_trips.trim()];
+                  }
+                } else if (matchedTrail.package && matchedTrail.package.side_trips) {
+                  // some map payloads include package.side_trips
+                  const pkg = matchedTrail.package;
+                  if (Array.isArray(pkg.side_trips)) itinerary.sidetrips = pkg.side_trips.filter(Boolean);
+                  else if (typeof pkg.side_trips === 'string' && pkg.side_trips.trim() !== '') itinerary.sidetrips = (pkg.side_trips.includes(',') ? pkg.side_trips.split(',') : [pkg.side_trips]).map(s => s.trim()).filter(Boolean);
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+        for (let d = 0; d < days; d++) {
+          itinerary.daily_schedule.push({
+            date: itinerary.start_date || null,
+            activities: [
+              { minutes: 0, title: 'Start', description: 'Begin your hike', location: itinerary.trail_name }
+            ],
+            meta: {}
+          });
+        }
+
+        // Serialize the itinerary object into nested `itinerary[...]` inputs
+        // so Laravel receives a structured array in `$request->input('itinerary')`.
+        function appendField(name, value) {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = name;
+          input.value = value == null ? '' : String(value);
+          form.appendChild(input);
+        }
+
+        function buildFields(prefix, obj) {
+          if (obj === null || obj === undefined) {
+            appendField(prefix, '');
+            return;
+          }
+
+          if (Array.isArray(obj)) {
+            obj.forEach((item, idx) => {
+              buildFields(`${prefix}[${idx}]`, item);
+            });
+            return;
+          }
+
+          if (typeof obj === 'object') {
+              Object.keys(obj).forEach(key => {
+                const val = obj[key];
+                buildFields(`${prefix}[${key}]`, val);
+              });
+            return;
+          }
+
+          // primitive value
+          appendField(prefix, obj);
+        }
+
+        // Remove any previous itinerary.* hidden inputs we created earlier
+        Array.from(form.querySelectorAll('input[name^="itinerary"]')).forEach(el => el.remove());
+
+        buildFields('itinerary', itinerary);
+        // Submit the form normally now that payload fields are present
+        form.submit();
+      });
+    })();
+  </script>
 </x-app-layout>

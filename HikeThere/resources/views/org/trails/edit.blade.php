@@ -22,6 +22,8 @@
                 <form method="POST" action="{{ route('org.trails.update', $trail) }}" class="p-6">
                     @csrf
                     @method('PUT')
+                    <!-- Hidden field for estimated_time (integer hours). Kept hidden and defaults to 0 -->
+                    <input type="hidden" id="estimated_time" name="estimated_time" value="{{ old('estimated_time', $trail->estimated_time ?? '0') }}" />
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Basic Information -->
@@ -58,13 +60,13 @@
 
                         <div>
                             <x-label for="price" value="Price (₱) *" />
-                            <x-input id="price" type="number" name="price" step="0.01" min="0" class="mt-1 block w-full" value="{{ old('price', $trail->price) }}" required />
+                            <x-input id="price" type="number" name="price" step="0.01" min="0" class="mt-1 block w-full" value="{{ old('price', optional($trail->package)->price ?? $trail->price) }}" required />
                             <x-input-error for="price" class="mt-2" />
                         </div>
 
                         <div class="md:col-span-2">
                             <x-label for="package_inclusions" value="Package Inclusions *" />
-                            <textarea id="package_inclusions" name="package_inclusions" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="e.g., Guide, Meals, Environmental Fee" required>{{ old('package_inclusions', $trail->package_inclusions) }}</textarea>
+                            <textarea id="package_inclusions" name="package_inclusions" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="e.g., Guide, Meals, Environmental Fee" required>{{ old('package_inclusions', optional($trail->package)->package_inclusions ?? $trail->package_inclusions) }}</textarea>
                             <x-input-error for="package_inclusions" class="mt-2" />
                         </div>
 
@@ -92,13 +94,47 @@
 
                         <div>
                             <x-label for="duration" value="Duration *" />
-                            <x-input id="duration" type="text" name="duration" class="mt-1 block w-full" value="{{ old('duration', $trail->duration) }}" placeholder="e.g., 3-4 hours" required />
+                            <x-input id="duration" type="text" name="duration" class="mt-1 block w-full" value="{{ old('duration', optional($trail->package)->duration ?? $trail->duration) }}" placeholder="e.g., 36 hours or 2 days" required />
                             <x-input-error for="duration" class="mt-2" />
+                            <p id="duration-summary" class="mt-1 text-sm text-gray-600">Estimated: <span id="duration-summary-text">N/A</span></p>
                         </div>
 
                         <div>
                             <x-label for="best_season" value="Best Season *" />
-                            <x-input id="best_season" type="text" name="best_season" class="mt-1 block w-full" value="{{ old('best_season', $trail->best_season) }}" placeholder="e.g., November to March" required />
+                            <div class="mt-1 grid grid-cols-2 gap-2" id="best-season-selects-edit" data-old="@json(old('best_season', $trail->best_season))">
+                                <select id="best_season_from" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]">
+                                    <option value="">From (month)</option>
+                                    <option value="January">January</option>
+                                    <option value="February">February</option>
+                                    <option value="March">March</option>
+                                    <option value="April">April</option>
+                                    <option value="May">May</option>
+                                    <option value="June">June</option>
+                                    <option value="July">July</option>
+                                    <option value="August">August</option>
+                                    <option value="September">September</option>
+                                    <option value="October">October</option>
+                                    <option value="November">November</option>
+                                    <option value="December">December</option>
+                                </select>
+                                <select id="best_season_to" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]">
+                                    <option value="">To (month)</option>
+                                    <option value="January">January</option>
+                                    <option value="February">February</option>
+                                    <option value="March">March</option>
+                                    <option value="April">April</option>
+                                    <option value="May">May</option>
+                                    <option value="June">June</option>
+                                    <option value="July">July</option>
+                                    <option value="August">August</option>
+                                    <option value="September">September</option>
+                                    <option value="October">October</option>
+                                    <option value="November">November</option>
+                                    <option value="December">December</option>
+                                </select>
+                            </div>
+                            <input type="hidden" id="best_season" name="best_season" value="" />
+                            <p id="best-season-help" class="mt-1 text-sm text-gray-600">Select the best season months (From - To)</p>
                             <x-input-error for="best_season" class="mt-2" />
                         </div>
 
@@ -154,7 +190,26 @@
 
                         <div class="md:col-span-2">
                             <x-label for="side_trips" value="Side Trips" />
-                            <textarea id="side_trips" name="side_trips" rows="2" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="e.g., Tinipak River or enter N/A if none">{{ old('side_trips', $trail->side_trips) }}</textarea>
+
+                            <div id="side-trips-list" class="space-y-2 mt-1" data-old="@json(old('side_trips'))" data-stored="@json(optional($trail->package)->side_trips ?? $trail->side_trips ?? '')">
+                                <!-- Template row (hidden) -->
+                                <div id="side-trip-row-template" class="hidden">
+                                    <div class="flex items-center space-x-2">
+                                        <input type="text" name="side_trips[]" class="side-trip-input block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="e.g., Tinipak River or enter N/A if none">
+                                        <button type="button" class="remove-side-trip inline-flex items-center px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700">Remove</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-2 flex space-x-2">
+                                <button type="button" id="add-side-trip" class="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                    Add Side Trip
+                                </button>
+                                <button type="button" id="clear-side-trips" class="inline-flex items-center px-3 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
+                                    Clear All
+                                </button>
+                            </div>
+
                             <x-input-error for="side_trips" class="mt-2" />
                         </div>
 
@@ -293,8 +348,10 @@
 
             console.log('Location search elements found, setting up legacy widget...');
             try {
+                // Use geocode-only types to avoid mixing 'establishment' with other types
+                // which causes the Places API error: "establishment cannot be mixed with other types." 
                 autocomplete = new google.maps.places.Autocomplete(searchInput, {
-                    types: ['geocode','establishment'],
+                    types: ['geocode'],
                     componentRestrictions: { country: 'PH' },
                     fields: ['place_id','formatted_address','geometry','name']
                 });
@@ -365,5 +422,194 @@
         }
 
     // DOMContentLoaded handled above
+    </script>
+
+    <script>
+    // Side Trips per-item inputs (matching create view behavior)
+    (function(){
+        function createRow(value){
+            const template = document.getElementById('side-trip-row-template');
+            const row = template.cloneNode(true);
+            row.id = '';
+            row.classList.remove('hidden');
+            const input = row.querySelector('.side-trip-input');
+            input.value = value;
+            const removeBtn = row.querySelector('.remove-side-trip');
+            removeBtn.addEventListener('click', function(){
+                row.remove();
+            });
+            return row;
+        }
+
+        function addSideTrip(value){
+            const list = document.getElementById('side-trips-list');
+            const row = createRow(value);
+            list.appendChild(row);
+        }
+
+        function clearSideTrips(){
+            const list = document.getElementById('side-trips-list');
+            list.querySelectorAll(':scope > div').forEach(el => el.remove());
+        }
+
+        document.addEventListener('DOMContentLoaded', function(){
+            const addBtn = document.getElementById('add-side-trip');
+            const clearBtn = document.getElementById('clear-side-trips');
+            addBtn.addEventListener('click', function(){ addSideTrip(''); });
+            clearBtn.addEventListener('click', function(){
+                clearSideTrips();
+                // ensure at least one empty row remains
+                addSideTrip('');
+            });
+
+            // initialize from server-side old input or existing DB value
+            try{
+                // Prefer old input (validation fail); fall back to trail's stored comma-separated string
+                let oldValues = [];
+                try {
+                    const container = document.getElementById('side-trips-list');
+                    const rawOld = container.getAttribute('data-old');
+                    if (rawOld) {
+                        const parsed = JSON.parse(rawOld);
+                        if (Array.isArray(parsed)) oldValues = parsed;
+                    }
+                    if (!Array.isArray(oldValues) || oldValues.length === 0) {
+                        const storedRaw = container.getAttribute('data-stored') || '';
+                        if (storedRaw && storedRaw.trim().length) {
+                            oldValues = storedRaw.split(',').map(s => s.trim()).filter(s => s.length);
+                        }
+                    }
+                } catch(e){
+                    oldValues = [];
+                }
+
+                if(Array.isArray(oldValues) && oldValues.length){
+                    oldValues.forEach(v => addSideTrip(v));
+                } else {
+                    // if no values, add a single empty row so users can start typing
+                    addSideTrip('');
+                }
+            }catch(e){
+                // fallback: add one empty row
+                addSideTrip('');
+            }
+
+            // Duration parsing helper (same behavior as create view)
+            function parseDurationInput(raw){
+                if(!raw || !raw.toString) return null;
+                const s = raw.toString().trim().toLowerCase();
+                const hourMatch = s.match(/^(\d+(?:\.\d+)?)\s*(h|hr|hrs|hour|hours)?$/i);
+                if(hourMatch){
+                    const hours = parseFloat(hourMatch[1]);
+                    return { hours };
+                }
+                const explicitHours = s.match(/(\d+(?:\.\d+)?)\s*(hours|hour|hrs|h|hr)/i);
+                if(explicitHours){
+                    return { hours: parseFloat(explicitHours[1]) };
+                }
+                const daysMatch = s.match(/(\d+(?:\.\d+)?)\s*(days|day|d)/i);
+                if(daysMatch){
+                    const days = parseFloat(daysMatch[1]);
+                    return { days };
+                }
+                const nightsMatch = s.match(/(\d+(?:\.\d+)?)\s*(nights|night|n)/i);
+                if(nightsMatch){
+                    const nights = parseFloat(nightsMatch[1]);
+                    return { nights };
+                }
+                const combined = s.match(/(?:(\d+)\s*d(?:ays?)?)?\s*(?:(\d+)\s*n(?:ights?)?)?/i);
+                if(combined && (combined[1] || combined[2])){
+                    return { days: combined[1] ? parseInt(combined[1],10) : 0, nights: combined[2] ? parseInt(combined[2],10) : 0 };
+                }
+                return null;
+            }
+
+            function normalizeDuration(value){
+                const parsed = parseDurationInput(value);
+                if(!parsed) return null;
+                if(parsed.hours !== undefined){
+                    const hours = parsed.hours;
+                    let days = 0;
+                    let nights = 0;
+                    if(hours >= 24){
+                        days = Math.ceil(hours / 24);
+                        nights = Math.max(0, days - 1);
+                    }
+                    return { hours, days, nights };
+                }
+                if(parsed.days !== undefined){
+                    const days = parsed.days;
+                    const nights = Math.max(0, Math.floor(days) - 1);
+                    return { days, nights, hours: days * 24 };
+                }
+                if(parsed.nights !== undefined){
+                    const nights = parsed.nights;
+                    const days = nights + 1;
+                    return { nights, days, hours: days * 24 };
+                }
+                return null;
+            }
+
+            function updateDurationSummary(){
+                const input = document.getElementById('duration');
+                const hidden = document.getElementById('estimated_time');
+                const summaryText = document.getElementById('duration-summary-text');
+                if(!input || !hidden || !summaryText) return;
+                const raw = input.value;
+                const norm = normalizeDuration(raw);
+                if(!norm){
+                    summaryText.textContent = 'N/A';
+                    // ensure estimated_time is an integer (0 when unknown)
+                    hidden.value = '0';
+                    return;
+                }
+                const parts = [];
+                if(norm.days !== undefined && norm.days > 0) parts.push(norm.days + ' day' + (norm.days>1?'s':''));
+                if(norm.nights !== undefined && norm.nights > 0) parts.push(norm.nights + ' night' + (norm.nights>1?'s':''));
+                if(parts.length === 0 && norm.hours !== undefined) parts.push(norm.hours + ' hour' + (norm.hours>1?'s':''));
+                summaryText.textContent = parts.join(', ');
+                // Save estimated_time as integer hours (rounded) for backend use
+                const hours = typeof norm.hours === 'number' ? Math.round(norm.hours) : (typeof norm.days === 'number' ? Math.round(norm.days * 24) : 0);
+                hidden.value = String(hours);
+            }
+
+            // wire duration input on edit page
+            try{
+                const durInput = document.getElementById('duration');
+                if(durInput){
+                    durInput.addEventListener('input', updateDurationSummary);
+                    // initialize
+                    updateDurationSummary();
+                }
+            }catch(e){}
+
+            // Best season syncing for edit form
+            try{
+                const from = document.getElementById('best_season_from');
+                const to = document.getElementById('best_season_to');
+                const hidden = document.getElementById('best_season');
+                function syncBest(){
+                    if(!hidden) return;
+                    const vFrom = from ? from.value : '';
+                    const vTo = to ? to.value : '';
+                    hidden.value = vFrom && vTo ? `${vFrom} to ${vTo}` : (vFrom ? `${vFrom}` : (vTo ? `${vTo}` : ''));
+                }
+                if(from) from.addEventListener('change', syncBest);
+                if(to) to.addEventListener('change', syncBest);
+
+                // initialize from data-old
+                const container = document.getElementById('best-season-selects-edit');
+                const existing = container ? container.getAttribute('data-old') : '';
+                if(existing && existing.indexOf('to') !== -1){
+                    const parts = existing.split('to').map(s => s.trim());
+                    if(parts[0] && from) from.value = parts[0];
+                    if(parts[1] && to) to.value = parts[1];
+                } else if(existing){
+                    if(from) from.value = existing;
+                }
+                syncBest();
+            }catch(e){}
+        });
+    })();
     </script>
 </x-app-layout>

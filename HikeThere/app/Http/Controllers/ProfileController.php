@@ -50,6 +50,45 @@ class ProfileController extends Controller
 
     private function updateHikerProfile(Request $request, User $user)
     {
+        \Illuminate\Support\Facades\Log::debug('[ProfileController@updateHikerProfile] invoked', [
+            'route' => $request->route()?->getName(),
+            'method' => $request->method(),
+            'expectsJson' => $request->expectsJson(),
+            'isAjax' => $request->ajax(),
+            'hasFile_profile_picture' => $request->hasFile('profile_picture'),
+            'has_name' => $request->has('name'),
+            'has_email' => $request->has('email'),
+            'content_type' => $request->header('Content-Type')
+        ]);
+        // If only a profile picture is being uploaded (no name/email provided),
+        // validate and handle that as a quick partial update so the JS in-place
+        // upload flow can work without providing all required profile fields.
+        $onlyPicture = $request->hasFile('profile_picture') && !$request->has('name') && !$request->has('email');
+
+        if ($onlyPicture) {
+            $request->validate([
+                'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+            ]);
+
+            if ($user->profile_picture) {
+                Storage::disk('public')->delete($user->profile_picture);
+            }
+            $path = $request->file('profile_picture')->store('profile-pictures', 'public');
+            $user->update(['profile_picture' => $path]);
+
+            $url = Storage::disk('public')->url($path);
+            // If it's an AJAX request, return JSON for the client to update in-place
+            if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'profile_picture_url' => $url,
+                    'cache_bust' => time(),
+                ]);
+            }
+
+            return redirect()->route('custom.profile.show')->with('success', 'Profile picture updated successfully!');
+        }
+
+        // Full profile update (name/email required)
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
@@ -134,5 +173,29 @@ class ProfileController extends Controller
         }
 
         return back()->with('success', 'Profile picture removed successfully!');
+    }
+
+    /**
+     * AJAX endpoint specifically for profile picture uploads.
+     * Returns JSON with the public URL when successful so the client can update in-place.
+     */
+    public function uploadProfilePicture(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+        ]);
+
+        if ($user->profile_picture) {
+            Storage::disk('public')->delete($user->profile_picture);
+        }
+
+        $path = $request->file('profile_picture')->store('profile-pictures', 'public');
+        $user->update(['profile_picture' => $path]);
+
+        $url = Storage::disk('public')->url($path);
+
+        return response()->json([ 'profile_picture_url' => $url, 'cache_bust' => time() ]);
     }
 }

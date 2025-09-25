@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Itinerary;
 use App\Models\Trail;
+use App\Models\Location;
 use App\Services\HybridRoutingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class ItineraryController extends Controller
 {
@@ -30,91 +32,59 @@ class ItineraryController extends Controller
                 ->with('warning', 'Please complete the Pre-Hike Self-Assessment first to generate a personalized itinerary.');
         }
 
-        // Get available trails for suggestions
-        $trails = Trail::with('location')->active()->get();
+    // Get available trails for suggestions (eager-load package to access package-side fields)
+    $trails = Trail::with(['location', 'package'])->active()->get();
+
+    // Debug: log first few trails and their package data to help diagnose missing package fields
+    try {
+        \Illuminate\Support\Facades\Log::debug('Itinerary::build loaded trails (sample)', [
+            'count' => $trails->count(),
+            'sample' => $trails->take(10)->map(function($t){
+                return [
+                    'id' => $t->id,
+                    'trail_name' => $t->trail_name ?? $t->name ?? null,
+                    'opening_time' => $t->opening_time ?? null,
+                    'closing_time' => $t->closing_time ?? null,
+                    'package' => $t->package ? [
+                        'id' => $t->package->id ?? null,
+                        'opening_time' => $t->package->opening_time ?? null,
+                        'closing_time' => $t->package->closing_time ?? null,
+                        'pickup_time' => $t->package->pickup_time ?? null,
+                        'departure_time' => $t->package->departure_time ?? null,
+                        'hours' => $t->package->hours ?? null,
+                    ] : null,
+                ];
+            })->values()->all(),
+        ]);
+    } catch (\Throwable $e) { /* non-fatal */ }
+
+        // Organization-provided side trips: aggregate from existing trails' package side_trips or legacy trail side_trips
+        // Trails may store side_trips on the related `trail_packages` table; aggregate by reading the relation
+        $sideTripStrings = $trails->map(function($t){
+            return optional($t->package)->side_trips ?? $t->side_trips;
+        })->filter()->all();
+
+        $orgSideTrips = collect($sideTripStrings)
+            ->flatMap(function ($s) {
+                return array_values(array_filter(array_map('trim', explode(',', $s))));
+            })
+            ->unique()
+            ->values()
+            ->sort()
+            ->map(function ($name) {
+                return (object)['name' => $name];
+            });
 
         // Get user's latest assessment for personalized recommendations
         $assessment = Auth::user()->latestAssessmentResult;
 
-        return view('hiker.itinerary.build', compact('trails', 'assessment'));
+        return view('hiker.itinerary.build', compact('trails', 'assessment', 'orgSideTrips'));
     }
 
     public function generate(Request $request)
     {
-        $user = Auth::user();
-        $assessment = $user->latestAssessmentResult;
-
-        if (! $assessment) {
-            return redirect()->route('assessment.instruction')
-                ->with('warning', 'Please complete the Pre-Hike Self-Assessment first.');
-        }
-
-        // Validate the request
-        $validator = Validator::make($request->all(), [
-            'trail_name' => 'required|string|max:255',
-            'user_location' => 'nullable|string|max:500',
-            'time' => 'required|date_format:H:i',
-            'date' => 'required|date|after:today',
-            'transportation' => 'required|string',
-            'trail' => 'nullable|string',
-            'stopovers.*' => 'nullable|string|max:255',
-            'sidetrips.*' => 'nullable|string|max:255',
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        try {
-            // Generate itinerary based on assessment results and user preferences
-            $itinerary = $this->generatePersonalizedItinerary($assessment, $request);
-
-            // Save the itinerary
-            $savedItinerary = Itinerary::create([
-                'user_id' => $user->id,
-                'title' => $itinerary['title'],
-                'trail_name' => $itinerary['trail_name'],
-                'user_location' => $itinerary['user_location'],
-                'difficulty_level' => $itinerary['difficulty_level'],
-                'estimated_duration' => $itinerary['estimated_duration'],
-                'distance' => $itinerary['distance'],
-                'elevation_gain' => $itinerary['elevation_gain'],
-                'best_time_to_hike' => $itinerary['best_time_to_hike'],
-                'weather_conditions' => $itinerary['weather_conditions'],
-                'gear_recommendations' => $itinerary['gear_recommendations'],
-                'safety_tips' => $itinerary['safety_tips'],
-                'route_description' => $itinerary['route_description'],
-                'waypoints' => $itinerary['waypoints'],
-                'emergency_contacts' => $itinerary['emergency_contacts'],
-                'schedule' => $itinerary['schedule'],
-                'stopovers' => $itinerary['stopovers'],
-                'sidetrips' => $itinerary['sidetrips'],
-                'transportation' => $itinerary['transportation'],
-                'route_coordinates' => $itinerary['route_coordinates'],
-                'daily_schedule' => $itinerary['daily_schedule'],
-                'transport_details' => $itinerary['transport_details'],
-                'departure_info' => $itinerary['departure_info'],
-                'arrival_info' => $itinerary['arrival_info'],
-                'route_data' => $itinerary['route_data'] ?? [],
-                'route_summary' => $itinerary['route_summary'] ?? [],
-            ]);
-
-            return redirect()->route('itinerary.show', $savedItinerary)
-                ->with('success', 'Your personalized itinerary has been generated successfully!');
-
-        } catch (\Exception $e) {
-            Log::error('Itinerary generation failed', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return redirect()->back()
-                ->withErrors(['error' => 'Failed to generate itinerary. Please try again.'])
-                ->withInput();
-        }
+        // Itinerary generation has been disabled per project configuration.
+        return redirect()->back()->withErrors(['error' => 'Itinerary generation is disabled. Please use the itinerary builder.']);
     }
 
     public function show(Itinerary $itinerary)
@@ -124,7 +94,13 @@ class ItineraryController extends Controller
             abort(403, 'Unauthorized access to itinerary.');
         }
 
-        return view('hiker.itinerary.generated', compact('itinerary'));
+        // Presenter removed — pass raw itinerary fields to the view
+        $days = $itinerary->daily_schedule ?? [];
+        $pacing = 1.0;
+        $presenter = null;
+
+    // Previously this returned the generated blade. Per request, render the PDF/print view instead
+    return view('hiker.itinerary.pdf', compact('itinerary', 'days', 'pacing', 'presenter'));
     }
 
     public function pdf(Itinerary $itinerary)
@@ -137,127 +113,117 @@ class ItineraryController extends Controller
         return view('hiker.itinerary.pdf', compact('itinerary'));
     }
 
-    private function generatePersonalizedItinerary($assessment, $request)
+    /**
+     * Persist a generated itinerary payload into the database.
+     * Expected payload: 'itinerary' => array with keys matching Itinerary fields
+     */
+    public function store(Request $request)
     {
-        // Get user preferences
-        $user = Auth::user();
-        $preferences = $user->preferences;
+        $payload = $request->input('itinerary');
 
-        // Determine difficulty level based on assessment scores
-        $difficultyLevel = $this->determineDifficultyLevel($assessment);
-
-        // Get trail preferences from request - FIX: Use trail field if trail_name is empty
-        $trailName = $request->input('trail_name') ?: $request->input('trail');
-        $userLocation = $request->input('user_location') ?: Auth::user()->location ?: 'Location not specified';
-        $time = $request->input('time');
-        $date = $request->input('date');
-        $transportation = $request->input('transportation');
-        $selectedTrail = $request->input('trail');
-        $stopovers = $request->input('stopovers', []);
-        $sidetrips = $request->input('sidetrips', []);
-
-        // Validate that we have a trail name
-        if (empty($trailName)) {
-            throw new \Exception('Trail name is required to generate itinerary');
+        // Expect a nested form array submitted as `itinerary[...]` inputs.
+        if (! $payload || ! is_array($payload)) {
+            return redirect()->back()->withErrors(['itinerary' => 'Invalid itinerary payload: expected structured itinerary data.']);
         }
 
-        // Get trail details for accurate information
-        $trail = $this->getTrailDetails($trailName, $selectedTrail);
-
-        // Generate route using Google Directions API - FIXED: Pass transportation parameter
-        $routeData = $this->generateRouteData($userLocation, $trail, $stopovers, $sidetrips, $transportation);
-
-        // Generate gear recommendations based on assessment
-        $gearRecommendations = $this->generateGearRecommendations($assessment);
-
-        // Generate safety tips based on assessment
-        $safetyTips = $this->generateSafetyTips($assessment);
-
-        // Generate detailed schedule
-        $schedule = $this->generateDetailedSchedule($time, $date, $routeData, $stopovers, $sidetrips);
-
-        // Generate daily schedule with weather integration - FIXED: Pass transportation parameter
-        $dailySchedule = $this->generateDailySchedule($date, $time, $routeData, $trail, $transportation);
-
-        // Store route data in the daily schedule for access in the model
-        if (! empty($dailySchedule) && ! empty($routeData)) {
-            $dailySchedule[0]['route_data'] = $routeData;
-        }
-
-        // Debug logging to see what's being generated
-        Log::info('Itinerary generation debug', [
-            'routeData' => $routeData,
-            'dailySchedule' => $dailySchedule,
-            'stopovers' => $stopovers,
-            'sidetrips' => $sidetrips,
-            'transportation' => $transportation,
+        $validator = Validator::make($payload, [
+            'title' => 'nullable|string|max:255',
+            'start_date' => 'nullable|date',
+            'start_time' => 'nullable',
+            'duration_days' => 'nullable|integer|min:1',
+            'nights' => 'nullable|integer|min:0',
+            // allow flexible JSON for daily_schedule
+            'daily_schedule' => 'nullable',
         ]);
 
-        // Ensure all required fields are present
-        if (! empty($dailySchedule)) {
-            foreach ($dailySchedule as &$day) {
-                if (! isset($day['day_label'])) {
-                    $day['day_label'] = 'Day 1';
-                }
-                if (! isset($day['day_number'])) {
-                    $day['day_number'] = 1;
-                }
-            }
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        // Calculate separate durations
-        $travelDuration = $this->calculateTravelDuration($routeData);
-        $hikingDuration = $this->calculateHikingDuration($trail);
-        $totalTripDuration = $this->calculateTotalTripDuration($travelDuration, $hikingDuration);
+        // Build itinerary record
+        $it = new Itinerary();
+        $it->user_id = Auth::id();
+        $it->title = $payload['title'] ?? ($payload['route_description'] ?? 'Generated Itinerary');
+        $it->trail_name = $payload['trail_name'] ?? $payload['trail'] ?? null;
+        $it->duration_days = intval($payload['duration_days'] ?? 1);
+        $it->nights = intval($payload['nights'] ?? max(0, $it->duration_days - 1));
+        $it->start_date = $payload['start_date'] ?? null;
+        $it->start_time = $payload['start_time'] ?? null;
 
-        return [
-            'title' => "Personalized {$trailName} Itinerary",
-            'trail_name' => $trailName,
-            'user_location' => $userLocation,
-            'difficulty_level' => $difficultyLevel,
-            'estimated_duration' => $this->formatDuration($hikingDuration), // Only hiking duration
-            'travel_duration' => $this->formatDuration($travelDuration), // Separate travel duration
-            'total_trip_duration' => $this->formatDuration($totalTripDuration), // Combined duration
-            'distance' => $routeData['total_distance'] ?? 'Based on route planning',
-            'elevation_gain' => $trail['elevation_gain'] ?? $this->getElevationForDifficulty($difficultyLevel),
-            'best_time_to_hike' => $time,
-            'weather_conditions' => $this->getWeatherConditions($date),
-            'gear_recommendations' => $gearRecommendations,
-            'safety_tips' => $safetyTips,
-            'route_description' => $this->generateRouteDescription($difficultyLevel, $trailName, $routeData),
-            'waypoints' => $this->generateWaypoints($difficultyLevel, $stopovers, $sidetrips, $routeData),
-            'static_map_url' => $this->generateStaticMapUrl($routeData),
-            'emergency_contacts' => $this->getEmergencyContacts($user),
-            'schedule' => $schedule,
-            'stopovers' => $stopovers,
-            'sidetrips' => $sidetrips,
-            'transportation' => $transportation,
-            'route_coordinates' => $routeData['route_coordinates'] ?? [],
-            'daily_schedule' => $dailySchedule,
-            'transport_details' => $routeData['transport_details'] ?? [],
-            'route_summary' => [
-                'departure' => $userLocation,
-                'destination' => $trail['location'] ?? 'Trail destination',
-                'transportation' => $transportation,
-                'total_distance' => $routeData['total_distance'] ?? 'Based on route planning',
-                'travel_duration' => $this->formatDuration($travelDuration),
-                'hiking_duration' => $this->formatDuration($hikingDuration),
-            ],
-            'departure_info' => [
-                'date' => $date,
-                'time' => $time,
-                'location' => $userLocation,
-                'coordinates' => $routeData['origin_coordinates'] ?? null,
-            ],
-            'arrival_info' => [
-                'trail_name' => $trailName,
-                'location' => $trail['location'] ?? 'Trail destination',
-                'coordinates' => $routeData['destination_coordinates'] ?? null,
-                'difficulty' => $difficultyLevel,
-            ],
-            'route_data' => $routeData,
-        ];
+        // Store JSON fields used by the view/model
+        $it->daily_schedule = $payload['daily_schedule'] ?? $payload['schedule'] ?? $payload['days'] ?? [];
+        $it->transport_details = $payload['transport_details'] ?? $payload['build'] ?? $payload['transport'] ?? [];
+        $it->departure_info = $payload['departure_info'] ?? $payload['departure'] ?? null;
+        $it->arrival_info = $payload['arrival_info'] ?? $payload['arrival'] ?? null;
+        $it->route_data = $payload['route_data'] ?? $payload['route'] ?? null;
+        $it->route_summary = $payload['route_summary'] ?? null;
+        $it->weather_conditions = $payload['weather_data'] ?? $payload['weather'] ?? null;
+        $it->route_description = $payload['route_description'] ?? null;
+        $it->stopovers = $payload['stopovers'] ?? $payload['stop_overs'] ?? [];
+        $it->sidetrips = $payload['sidetrips'] ?? $payload['side_trips'] ?? [];
+
+        // Additional meta
+        $it->route_coordinates = $payload['route_coordinates'] ?? null;
+
+    // Map commonly-provided builder metadata into Itinerary model fields so the generated
+    // view can display distance, elevation, difficulty, and estimated durations.
+    $it->trail_id = $payload['trail_id'] ?? $payload['trail'] ?? $it->trail_id ?? null;
+    $it->distance = $payload['distance_km'] ?? $payload['distance'] ?? $payload['length'] ?? $it->distance ?? null;
+    $it->elevation_gain = $payload['elevation_m'] ?? $payload['elevation_gain'] ?? $payload['elevation'] ?? $it->elevation_gain ?? null;
+    $it->difficulty_level = $payload['difficulty'] ?? $payload['difficulty_level'] ?? $it->difficulty_level ?? null;
+    $it->estimated_duration = $payload['estimated_time'] ?? $payload['estimated_duration'] ?? $it->estimated_duration ?? null;
+    $it->best_time_to_hike = $payload['best_season'] ?? $payload['best_time_to_hike'] ?? $it->best_time_to_hike ?? null;
+
+    // Ensure we don't lose scalar metadata if table lacks dedicated columns: merge into route_data/meta JSON
+    $routeData = $it->route_data ?? [];
+    if (!is_array($routeData)) $routeData = (array) $routeData;
+    $routeData['total_distance_km'] = $routeData['total_distance_km'] ?? ($payload['distance_km'] ?? $payload['distance'] ?? $payload['length'] ?? null);
+    $routeData['elevation_gain_m'] = $routeData['elevation_gain_m'] ?? ($payload['elevation_m'] ?? $payload['elevation_gain'] ?? $payload['elevation'] ?? null);
+    $routeData['estimated_duration_hours'] = $routeData['estimated_duration_hours'] ?? ($payload['estimated_time'] ?? $payload['estimated_duration'] ?? null);
+    $routeData['difficulty'] = $routeData['difficulty'] ?? ($payload['difficulty'] ?? $payload['difficulty_level'] ?? null);
+    $it->route_data = $routeData;
+
+    // Wrap creation in a DB transaction and use Eloquent models for days/activities
+    DB::transaction(function () use ($it, $payload) {
+            $it->save();
+
+            $dailySchedule = $it->daily_schedule ?? [];
+            if (is_array($dailySchedule) && count($dailySchedule) > 0) {
+                foreach ($dailySchedule as $dayIndex => $day) {
+                    $dayModel = \App\Models\ItineraryDay::create([
+                        'itinerary_id' => $it->id,
+                        'day_index' => intval($dayIndex) + 1,
+                        'date' => $day['date'] ?? null,
+                        'meta' => $day['meta'] ?? null,
+                    ]);
+
+                    $activities = $day['activities'] ?? [];
+                    if (is_array($activities)) {
+                        foreach ($activities as $order => $act) {
+                            \App\Models\ItineraryActivity::create([
+                                'itinerary_day_id' => $dayModel->id,
+                                'order' => intval($order),
+                                'minutes_offset' => intval($act['minutes'] ?? 0),
+                                'title' => $act['title'] ?? $act['description'] ?? null,
+                                'description' => $act['description'] ?? null,
+                                'location' => $act['location'] ?? null,
+                                'type' => $act['type'] ?? $act['activity_type'] ?? null,
+                                'transport' => $act['transport'] ?? $act['transit_details'] ?? null,
+                                'weather' => $act['condition'] ?? $act['weather'] ?? null,
+                                'notes' => $act['note'] ?? $act['notes'] ?? null,
+                                'meta' => $act['meta'] ?? null,
+                            ]);
+                        }
+                    }
+                }
+            }
+        });
+
+        return redirect()->route('itinerary.show', ['itinerary' => $it->id])->with('success', 'Itinerary saved successfully.');
     }
+
+    // Itinerary generation helpers removed as feature is disabled.
+    // If you need to restore generation, check previous commits for the full implementations.
 
     private function getTrailDetails($trailName, $selectedTrail)
     {
@@ -328,65 +294,7 @@ class ItineraryController extends Controller
         ];
     }
 
-    private function generateRouteData($userLocation, $trail, $stopovers, $sidetrips, $transportation)
-    {
-        try {
-            $origin = $userLocation;
-            $destination = $trail['location'] ?? 'Trail destination';
-            $trailName = $trail['name'] ?? null;
-
-            // Combine all waypoints
-            $allWaypoints = array_merge($stopovers, $sidetrips);
-
-            // Use your hybrid routing service for all transportation modes
-            $routeData = $this->routingService->getBestRoute(
-                $origin,
-                $destination,
-                $allWaypoints,
-                $transportation,
-                $trailName
-            );
-
-            if ($routeData) {
-                // Add stopovers and sidetrips to the route data
-                $routeData['stopovers'] = $stopovers;
-                $routeData['sidetrips'] = $sidetrips;
-                $routeData['transportation'] = $transportation;
-
-                Log::info('Route data generated successfully using hybrid routing', [
-                    'transportation' => $transportation,
-                    'provider' => $routeData['primary_provider'] ?? 'unknown',
-                    'strategy' => $routeData['routing_strategy'] ?? 'unknown',
-                    'hasLegs' => isset($routeData['legs']),
-                    'legsCount' => isset($routeData['legs']) ? count($routeData['legs']) : 0,
-                ]);
-
-                return $routeData;
-            }
-
-        } catch (\Exception $e) {
-            Log::error('Route generation failed', [
-                'error' => $e->getMessage(),
-                'origin' => $userLocation,
-                'destination' => $trail['location'] ?? 'Unknown',
-                'transportation' => $transportation,
-            ]);
-        }
-
-        // If routing service fails, return minimal data
-        Log::warning('Routing service failed, returning minimal route data');
-
-        return [
-            'total_distance' => 'Route calculation failed',
-            'total_duration' => 'Route calculation failed',
-            'legs' => [],
-            'stopovers' => $stopovers,
-            'sidetrips' => $sidetrips,
-            'transportation' => $transportation,
-            'primary_provider' => 'none',
-            'routing_strategy' => 'fallback',
-        ];
-    }
+    // generateRouteData removed — routing is handled elsewhere. Kept as placeholder.
 
     // Removed hardcoded fallback route generation - now using your APIs
 
@@ -394,206 +302,9 @@ class ItineraryController extends Controller
 
     // Removed estimateTransitCost - now using your APIs
 
-    private function generateDetailedSchedule($time, $date, $routeData, $stopovers, $sidetrips)
-    {
-        $departureTime = \Carbon\Carbon::parse("$date $time");
-        $totalDuration = $routeData['total_duration_seconds'] ?? 7200; // Default 2 hours
+    // generateDetailedSchedule removed — detailed scheduling disabled when feature is off.
 
-        $estimatedArrival = $departureTime->copy()->addSeconds($totalDuration);
-
-        return [
-            'date' => $date,
-            'start_time' => $time,
-            'departure_time' => $departureTime->format('H:i'),
-            'estimated_arrival' => $estimatedArrival->format('H:i'),
-            'total_duration' => $routeData['total_duration'] ?? '2 hours',
-            'total_distance' => $routeData['total_distance'] ?? 'Distance TBD',
-            'stopovers' => $stopovers,
-            'sidetrips' => $sidetrips,
-        ];
-    }
-
-    // Enhanced comprehensive daily schedule generation
-    private function generateDailySchedule($date, $startTime, $routeData, $trail, $transportation)
-    {
-        $scheduleDate = \Carbon\Carbon::parse($date);
-        $currentTime = \Carbon\Carbon::parse("$date $startTime");
-        $userLocation = Auth::user()->location ?? 'Your current location';
-
-        // Fetch weather data for the planned date
-        $weatherData = $this->fetchWeatherForDate($date, $trail);
-
-        Log::info('Enhanced daily schedule generation started', [
-            'startTime' => $startTime,
-            'transportation' => $transportation,
-            'hasRouteData' => ! empty($routeData),
-            'hasLegs' => isset($routeData['legs']) && ! empty($routeData['legs']),
-            'legsCount' => isset($routeData['legs']) ? count($routeData['legs']) : 0,
-        ]);
-
-        $dailySchedule = [
-            [
-                'date' => $scheduleDate->format('Y-m-d'),
-                'day_label' => 'Day 1',
-                'day_number' => 1,
-                'activities' => [],
-                'total_duration' => $routeData['total_duration'] ?? 'Calculating...',
-                'total_distance' => $routeData['total_distance'] ?? 'Calculating...',
-                'travel_duration' => $this->formatDuration($this->calculateTravelDuration($routeData)),
-                'hiking_duration' => $this->formatDuration($this->calculateHikingDuration($trail)),
-            ],
-        ];
-
-        // Phase 1: Pre-departure preparation
-        $prepTime = $currentTime->copy()->subMinutes(30);
-        $dailySchedule[0]['activities'][] = [
-            'time' => $prepTime->format('H:i'),
-            'location' => $userLocation,
-            'description' => 'Pre-departure preparation',
-            'condition' => $this->getWeatherCondition($weatherData['departure_temp'] ?? null),
-            'temperature' => $weatherData['departure_temp'] ?? '25°C',
-            'note' => 'Final gear check, weather update, and preparation',
-            'guidelines' => [
-                'Check weather conditions and forecasts',
-                'Verify all hiking gear is packed',
-                'Ensure phone is fully charged',
-                'Check trail conditions and updates',
-                'Inform emergency contact of your plans',
-                'Pack extra water and snacks',
-            ],
-            'transport_mode' => 'Preparation',
-            'duration' => '30 min',
-            'activity_type' => 'preparation',
-            'coordinates' => $routeData['origin_coordinates'] ?? null,
-        ];
-
-        // Phase 2: Departure
-        $dailySchedule[0]['activities'][] = [
-            'time' => $currentTime->format('H:i'),
-            'location' => $userLocation,
-            'description' => 'Begin journey to trail',
-            'condition' => $this->getWeatherCondition($weatherData['departure_temp'] ?? null),
-            'temperature' => $weatherData['departure_temp'] ?? '25°C',
-            'note' => 'Start your journey to '.($trail['name'] ?? 'the trail'),
-            'guidelines' => [
-                'Double-check you have your essentials',
-                'Take a photo of your departure time',
-                'Start GPS tracking if available',
-                'Keep emergency contacts handy',
-            ],
-            'transport_mode' => 'Departure',
-            'duration' => '5 min',
-            'activity_type' => 'departure',
-            'coordinates' => $routeData['origin_coordinates'] ?? null,
-        ];
-
-        // Phase 3: Journey to trail - Enhanced with comprehensive routing
-        if (isset($routeData['legs']) && ! empty($routeData['legs'])) {
-            $currentTime = $currentTime->copy()->addMinutes(5); // Account for departure prep
-
-            $transportMode = strtolower($transportation) === 'commute' ? 'transit' : 'driving';
-
-            Log::info('Processing route legs', [
-                'transportMode' => $transportMode,
-                'legsCount' => count($routeData['legs']),
-            ]);
-
-            if ($transportMode === 'transit') {
-                $this->addEnhancedCommuteActivities($dailySchedule[0]['activities'], $routeData, $currentTime, $weatherData, $userLocation);
-            } else {
-                $this->addEnhancedDrivingActivities($dailySchedule[0]['activities'], $routeData, $currentTime, $weatherData);
-            }
-        } else {
-            // Fallback when no route data is available
-            $this->addFallbackJourneyActivities($dailySchedule[0]['activities'], $currentTime, $weatherData, $trail, $transportation);
-        }
-
-        // Phase 4: Trail arrival and preparation
-        $trailArrivalTime = $this->calculateArrivalTime($currentTime, $routeData);
-        $dailySchedule[0]['activities'][] = [
-            'time' => $trailArrivalTime->format('H:i'),
-            'location' => $trail['location'] ?? $trail['name'] ?? 'Trail destination',
-            'description' => 'Arrived at trailhead',
-            'condition' => $this->getWeatherCondition($weatherData['trail_temp'] ?? null),
-            'temperature' => $weatherData['trail_temp'] ?? '23°C',
-            'note' => 'Final preparations before starting the hike',
-            'guidelines' => [
-                'Use restroom facilities if available',
-                'Fill water bottles from safe sources',
-                'Apply sunscreen and insect repellent',
-                'Check trail map and conditions',
-                'Take a group photo at the trailhead',
-                'Register at trail registry if required',
-                'Double-check gear one final time',
-            ],
-            'transport_mode' => 'Arrival',
-            'duration' => '15 min',
-            'activity_type' => 'arrival',
-            'coordinates' => $routeData['destination_coordinates'] ?? null,
-        ];
-
-        // Phase 5: Hiking activities - Enhanced with trail-specific activities
-        $hikingStartTime = $trailArrivalTime->copy()->addMinutes(15);
-        $this->addHikingActivities($dailySchedule[0]['activities'], $hikingStartTime, $trail, $weatherData);
-
-        // Phase 6: Return journey
-        $hikingDuration = $this->calculateHikingDuration($trail);
-        $returnStartTime = $hikingStartTime->copy()->addSeconds($hikingDuration);
-
-        $dailySchedule[0]['activities'][] = [
-            'time' => $returnStartTime->format('H:i'),
-            'location' => $trail['location'] ?? $trail['name'] ?? 'Trail destination',
-            'description' => 'Prepare for return journey',
-            'condition' => $this->getWeatherCondition($weatherData['trail_temp'] ?? null),
-            'temperature' => $weatherData['trail_temp'] ?? '23°C',
-            'note' => 'Rest and prepare for the journey home',
-            'guidelines' => [
-                'Rest and hydrate before leaving',
-                'Check all gear is packed',
-                'Clean up any trash (Leave No Trace)',
-                'Take final photos of the trail',
-                'Check transportation schedules',
-                'Notify contacts of safe completion',
-            ],
-            'transport_mode' => 'Rest',
-            'duration' => '20 min',
-            'activity_type' => 'return_preparation',
-            'coordinates' => $routeData['destination_coordinates'] ?? null,
-        ];
-
-        // Phase 7: Return journey activities
-        $returnJourneyTime = $returnStartTime->copy()->addMinutes(20);
-        $this->addReturnJourneyActivities($dailySchedule[0]['activities'], $returnJourneyTime, $routeData, $weatherData, $transportation);
-
-        // Phase 8: Arrival home
-        $homeArrivalTime = $this->calculateReturnArrivalTime($returnJourneyTime, $routeData);
-        $dailySchedule[0]['activities'][] = [
-            'time' => $homeArrivalTime->format('H:i'),
-            'location' => $userLocation,
-            'description' => 'Arrived home safely',
-            'condition' => $this->getWeatherCondition($weatherData['departure_temp'] ?? null),
-            'temperature' => $weatherData['departure_temp'] ?? '25°C',
-            'note' => 'Journey completed successfully!',
-            'guidelines' => [
-                'Share your hiking experience with friends',
-                'Log your hike in a journal or app',
-                'Clean and maintain your gear',
-                'Rest and recover',
-                'Plan your next adventure!',
-            ],
-            'transport_mode' => 'Home',
-            'duration' => '0 min',
-            'activity_type' => 'journey_complete',
-            'coordinates' => $routeData['origin_coordinates'] ?? null,
-        ];
-
-        Log::info('Enhanced daily schedule generation completed', [
-            'totalActivities' => count($dailySchedule[0]['activities']),
-            'journeyDuration' => $prepTime->diffInHours($homeArrivalTime).' hours',
-        ]);
-
-        return $dailySchedule;
-    }
+    // generateDailySchedule removed — daily schedule generation disabled.
 
     /**
      * Enhanced commute activities with comprehensive transit information and guidelines
@@ -1280,75 +991,8 @@ class ItineraryController extends Controller
         return $activity;
     }
 
-    /**
-     * Generate estimated activities when no detailed route data is available
-     */
-    private function generateEstimatedActivities($routeData, $currentTime, $weatherData)
-    {
-        $activities = [];
-        $estimatedLegTime = 1800; // 30 minutes per leg
-
-        // Get stopovers and sidetrips from route data or use empty arrays
-        $stopovers = $routeData['stopovers'] ?? [];
-        $sidetrips = $routeData['sidetrips'] ?? [];
-
-        // Add estimated stopover activities
-        if (! empty($stopovers)) {
-            foreach ($stopovers as $stopover) {
-                $currentTime->addSeconds($estimatedLegTime);
-                $activities[] = [
-                    'time' => $currentTime->format('H:i'),
-                    'location' => $stopover,
-                    'description' => 'Rest stop and refreshment',
-                    'condition' => $this->getWeatherCondition($weatherData['route_temp'] ?? null),
-                    'temperature' => $weatherData['route_temp'] ?? 'Route temperature',
-                    'note' => 'Rest stop and refreshment',
-                    'coordinates' => null,
-                    'transport_mode' => 'Travel',
-                    'duration' => '30 min',
-                    'activity_type' => 'stopover',
-                ];
-            }
-        }
-
-        // Add estimated side trip activities
-        if (! empty($sidetrips)) {
-            foreach ($sidetrips as $sidetrip) {
-                $currentTime->addSeconds($estimatedLegTime);
-                $activities[] = [
-                    'time' => $currentTime->format('H:i'),
-                    'location' => $sidetrip,
-                    'description' => 'Optional side trip destination',
-                    'condition' => $this->getWeatherCondition($weatherData['route_temp'] ?? null),
-                    'temperature' => $weatherData['route_temp'] ?? 'Route temperature',
-                    'note' => 'Optional side trip destination',
-                    'coordinates' => null,
-                    'transport_mode' => 'Travel',
-                    'duration' => '30 min',
-                    'activity_type' => 'sidetrip',
-                ];
-            }
-        }
-
-        // If no waypoints, add a generic travel activity
-        if (empty($stopovers) && empty($sidetrips)) {
-            $currentTime->addSeconds(3600); // Add 1 hour for travel
-            $activities[] = [
-                'time' => $currentTime->format('H:i'),
-                'location' => 'En route to trail',
-                'description' => 'Traveling to trail destination',
-                'condition' => $this->getWeatherCondition($weatherData['route_temp'] ?? null),
-                'temperature' => $weatherData['route_temp'] ?? 'Route temperature',
-                'note' => 'Traveling to trail destination',
-                'coordinates' => null,
-                'transport_mode' => 'Travel',
-                'duration' => '60 min',
-                'activity_type' => 'travel',
-            ];
-        }
-
-        return $activities;
-    }
+    // Itinerary generation helper removed: generateEstimatedActivities
+    // Reason: Feature removed per user request. Original implementation is available in VCS if needed.
 
     /**
      * Get weather condition icon/description
@@ -1884,133 +1528,17 @@ class ItineraryController extends Controller
         };
     }
 
-    private function generateGearRecommendations($assessment)
-    {
-        $recommendations = ['Essential Items'];
+    // Itinerary generation helper removed: generateGearRecommendations
+    // Reason: Feature removed per user request. Original implementation is available in VCS if needed.
 
-        if ($assessment->gear_score < 70) {
-            $recommendations[] = 'Navigation tools (compass, map)';
-            $recommendations[] = 'First aid kit';
-            $recommendations[] = 'Emergency shelter';
-        }
+    // Itinerary generation helper removed: generateSafetyTips
+    // Reason: Feature removed per user request. Original implementation is available in VCS if needed.
 
-        if ($assessment->weather_score < 70) {
-            $recommendations[] = 'Weather-appropriate clothing';
-            $recommendations[] = 'Rain gear';
-            $recommendations[] = 'Extra layers';
-        }
+    // Itinerary generation helper removed: generateRouteDescription
+    // Reason: Feature removed per user request. Original implementation is available in VCS if needed.
 
-        if ($assessment->emergency_score < 70) {
-            $recommendations[] = 'Emergency whistle';
-            $recommendations[] = 'Signal mirror';
-            $recommendations[] = 'Emergency blanket';
-        }
-
-        return $recommendations;
-    }
-
-    private function generateSafetyTips($assessment)
-    {
-        $tips = ['Always hike with a buddy or inform someone of your plans'];
-
-        if ($assessment->health_score < 70) {
-            $tips[] = 'Consult with your doctor before hiking';
-            $tips[] = 'Carry necessary medications';
-        }
-
-        if ($assessment->fitness_score < 70) {
-            $tips[] = 'Start with shorter trails and gradually increase difficulty';
-            $tips[] = 'Take frequent breaks and stay hydrated';
-        }
-
-        if ($assessment->environment_score < 70) {
-            $tips[] = 'Check trail conditions before departure';
-            $tips[] = 'Be aware of wildlife in the area';
-        }
-
-        return $tips;
-    }
-
-    private function generateRouteDescription($difficultyLevel, $trailName, $routeData)
-    {
-        $description = "Your journey to {$trailName} begins from your current location. ";
-
-        if (isset($routeData['legs']) && count($routeData['legs']) > 0) {
-            $totalDistance = $routeData['total_distance'] ?? 'unknown distance';
-            $totalDuration = $routeData['total_duration'] ?? 'unknown duration';
-
-            $description .= "The route covers approximately {$totalDistance} and takes about {$totalDuration}. ";
-
-            if (count($routeData['legs']) > 1) {
-                $description .= 'The journey includes multiple segments with various transportation modes. ';
-            }
-
-            // Add information about waypoints if available
-            if (isset($routeData['stopovers']) && count($routeData['stopovers']) > 0) {
-                $description .= "You'll make stops at: ".implode(', ', $routeData['stopovers']).'. ';
-            }
-
-            if (isset($routeData['sidetrips']) && count($routeData['sidetrips']) > 0) {
-                $description .= 'Optional side trips include: '.implode(', ', $routeData['sidetrips']).'. ';
-            }
-        } else {
-            $description .= 'The route details are being calculated. Please check the itinerary for the most up-to-date information. ';
-        }
-
-        $description .= "This trail is rated as {$difficultyLevel} difficulty, so ensure you're prepared for the challenge level. ";
-        $description .= 'Remember to check weather conditions and bring appropriate gear for your journey.';
-
-        return $description;
-    }
-
-    private function generateWaypoints($difficulty, $stopovers, $sidetrips, $routeData)
-    {
-        $waypoints = [
-            [
-                'name' => 'Departure Point',
-                'description' => 'Starting location for your journey',
-                'distance' => '0 km',
-                'elevation' => 'Starting elevation',
-                'time' => 'Departure time',
-                'coordinates' => $routeData['origin_coordinates'] ?? null,
-            ],
-        ];
-
-        // Add stopovers as waypoints with more accurate information
-        foreach ($stopovers as $index => $stopover) {
-            $waypoints[] = [
-                'name' => $stopover,
-                'description' => 'Rest stop and refreshment point',
-                'distance' => $this->calculateWaypointDistance($index + 1, $routeData),
-                'elevation' => 'Stopover elevation',
-                'time' => $this->calculateWaypointTime($index + 1, $routeData),
-                'coordinates' => null, // Will be filled by Google Directions if available
-            ];
-        }
-
-        // Add side trips as waypoints with more accurate information
-        foreach ($sidetrips as $index => $sidetrip) {
-            $waypoints[] = [
-                'name' => $sidetrip,
-                'description' => 'Optional side trip destination',
-                'distance' => $this->calculateWaypointDistance(count($stopovers) + $index + 1, $routeData),
-                'elevation' => 'Side trip elevation',
-                'time' => $this->calculateWaypointTime(count($stopovers) + $index + 1, $routeData),
-                'coordinates' => null, // Will be filled by Google Directions if available
-            ];
-        }
-
-        $waypoints[] = [
-            'name' => 'Trail Destination',
-            'description' => 'Final destination - ready to hike',
-            'distance' => $routeData['total_distance'] ?? 'Total route distance',
-            'elevation' => 'Trail elevation',
-            'time' => 'Estimated arrival time',
-            'coordinates' => $routeData['destination_coordinates'] ?? null,
-        ];
-
-        return $waypoints;
-    }
+    // Itinerary generation helper removed: generateWaypoints
+    // Reason: Feature removed per user request. Original implementation is available in VCS if needed.
 
     private function calculateWaypointDistance($waypointIndex, $routeData)
     {
@@ -2098,44 +1626,8 @@ class ItineraryController extends Controller
         ];
     }
 
-    private function generateStaticMapUrl($routeData)
-    {
-        if (empty($routeData['route_coordinates'])) {
-            return null;
-        }
-
-        $apiKey = config('services.google.maps_api_key');
-        if (! $apiKey) {
-            return null;
-        }
-
-        // Get departure and arrival coordinates
-        $departure = $routeData['origin_coordinates'] ?? $routeData['route_coordinates'][0] ?? null;
-        $arrival = $routeData['destination_coordinates'] ?? end($routeData['route_coordinates']) ?? null;
-
-        if (! $departure || ! $arrival) {
-            return null;
-        }
-
-        // Create path for the route
-        $path = '';
-        foreach ($routeData['route_coordinates'] as $coord) {
-            $path .= $coord['lat'].','.$coord['lng'].'|';
-        }
-        $path = rtrim($path, '|');
-
-        // Build static map URL
-        $url = 'https://maps.googleapis.com/maps/api/staticmap?';
-        $url .= 'size=600x400';
-        $url .= '&scale=2';
-        $url .= '&maptype=terrain';
-        $url .= '&markers=color:green|label:D|'.$departure['lat'].','.$departure['lng'];
-        $url .= '&markers=color:red|label:A|'.$arrival['lat'].','.$arrival['lng'];
-        $url .= '&path=color:0x10B981|weight:4|'.$path;
-        $url .= '&key='.$apiKey;
-
-        return $url;
-    }
+    // Itinerary generation helper removed: generateStaticMapUrl
+    // Reason: Feature removed per user request. Original implementation is available in VCS if needed.
 
     // Removed getRandomTransitMode - now using your APIs
 
