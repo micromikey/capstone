@@ -8,7 +8,11 @@
 
 use App\Services\ItineraryGeneratorService;
 
-// Handle variables that may not be passed from controller
+// Debug: Check what we're receiving
+// dd('Variables passed to template:', compact('itinerary', 'trail', 'build', 'weatherData'));
+
+// Ensure we have proper variable types
+$itinerary = $itinerary ?? [];
 $trail = $trail ?? null;
 $build = $build ?? null;
 $weatherData = $weatherData ?? [];
@@ -28,7 +32,7 @@ $dayActivities = $generatedData['dayActivities'];
 $nightActivities = $generatedData['nightActivities'];
 @endphp
 
-<x-app-layout>	
+<x-app-layout>
     <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div class="bg-white shadow rounded-lg p-6">
             <!-- Header: Trail Route & Details -->
@@ -54,7 +58,6 @@ $nightActivities = $generatedData['nightActivities'];
                         :dateInfo="$dateInfo"
                         :weatherData="$weatherData"
                         :build="$build"
-                        :trail="$trail"
                     />
 
                     {{-- Insert Night table after each day (except the last day) --}}
@@ -65,7 +68,6 @@ $nightActivities = $generatedData['nightActivities'];
                             :dateInfo="$dateInfo"
                             :weatherData="$weatherData"
                             :build="$build"
-                            :trail="$trail"
                         />
                     @endif
                 @endfor

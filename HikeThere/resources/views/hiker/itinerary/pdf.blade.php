@@ -441,11 +441,12 @@
     @endif
 
     <!-- Daily Schedule -->
-    @if($itinerary->daily_schedule_with_weather && count($itinerary->daily_schedule_with_weather) > 0)
+    @if(isset($itinerary->daily_schedule_with_weather) && is_array($itinerary->daily_schedule_with_weather) && count($itinerary->daily_schedule_with_weather) > 0)
     <div class="section page-break">
         <h2>🗓️ Detailed Itinerary Schedule</h2>
         
-        @foreach($itinerary->daily_schedule_with_weather as $day)
+        @if(isset($itinerary->daily_schedule_with_weather) && is_array($itinerary->daily_schedule_with_weather))
+            @foreach($itinerary->daily_schedule_with_weather as $day)
         <div style="margin-bottom: 25px;">
             <h3 style="color: #10B981; margin-bottom: 15px; font-size: 18px;">
                 {{ $day['day_label'] }} - {{ \Carbon\Carbon::parse($day['date'])->format('l, M d, Y') }}
@@ -490,7 +491,10 @@
                 </tbody>
             </table>
         </div>
-        @endforeach
+            @endforeach
+        @else
+            <p style="color: #6b7280; font-style: italic;">No detailed schedule available.</p>
+        @endif
     </div>
     @endif
 
@@ -499,6 +503,25 @@
     <div class="section">
         <h2>🚌 Public Transportation Details</h2>
         @foreach($itinerary->transport_details as $transport)
+            @php
+                // Handle case where transport might be a string instead of array
+                if (is_string($transport)) {
+                    $transport = json_decode($transport, true) ?: ['step' => 'N/A', 'mode' => 'Unknown'];
+                }
+                // Ensure transport is an array with required keys
+                $transport = is_array($transport) ? $transport : ['step' => 'N/A', 'mode' => 'Unknown'];
+                $transport = array_merge([
+                    'step' => 'N/A',
+                    'mode' => 'Unknown',
+                    'line' => 'N/A',
+                    'vehicle' => 'N/A',
+                    'duration' => 'N/A',
+                    'departure_stop' => 'N/A',
+                    'arrival_stop' => 'N/A',
+                    'distance' => 'N/A',
+                    'instruction' => 'N/A'
+                ], $transport);
+            @endphp
         <div style="background: #f8fafc; border-radius: 8px; padding: 15px; margin-bottom: 15px; border-left: 4px solid #3B82F6;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <span style="font-weight: 600; color: #1f2937;">Step {{ $transport['step'] }}</span>
@@ -551,7 +574,7 @@
     @endif
 
     <!-- Route Waypoints -->
-    @if($itinerary->waypoints)
+    @if(isset($itinerary->waypoints) && is_array($itinerary->waypoints) && count($itinerary->waypoints) > 0)
     <div class="section">
         <h2>📍 Route Waypoints</h2>
         <div class="waypoints">
@@ -595,16 +618,20 @@
             <div class="info-card">
                 <h3>Safety Tips</h3>
                 <ul class="safety-list">
-                    @foreach($itinerary->safety_tips as $tip)
-                        <li>{{ $tip }}</li>
-                    @endforeach
+                    @if(isset($itinerary->safety_tips) && is_array($itinerary->safety_tips))
+                        @foreach($itinerary->safety_tips as $tip)
+                            <li>{{ $tip }}</li>
+                        @endforeach
+                    @else
+                        <li>No safety tips available</li>
+                    @endif
                 </ul>
             </div>
         </div>
     </div>
 
     <!-- Gear Recommendations -->
-    @if($itinerary->gear_recommendations)
+    @if(isset($itinerary->gear_recommendations) && is_array($itinerary->gear_recommendations) && count($itinerary->gear_recommendations) > 0)
     <div class="section">
         <h2>🎒 Gear Recommendations</h2>
         <ul class="gear-list">
@@ -616,7 +643,7 @@
     @endif
 
     <!-- Emergency Contacts -->
-    @if($itinerary->emergency_contacts)
+    @if(isset($itinerary->emergency_contacts) && is_array($itinerary->emergency_contacts) && count($itinerary->emergency_contacts) > 0)
     <div class="section emergency-contacts">
         <h3>🚨 Emergency Contacts</h3>
         @foreach($itinerary->emergency_contacts as $type => $contact)
@@ -629,12 +656,12 @@
     @endif
 
     <!-- Stopovers and Side Trips -->
-    @if(($itinerary->stopovers && count($itinerary->stopovers) > 0) || ($itinerary->sidetrips && count($itinerary->sidetrips) > 0))
+    @if((isset($itinerary->stopovers) && is_array($itinerary->stopovers) && count($itinerary->stopovers) > 0) || (isset($itinerary->sidetrips) && is_array($itinerary->sidetrips) && count($itinerary->sidetrips) > 0))
     <div class="section">
         <h2>🛣️ Additional Stops</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             
-            @if($itinerary->stopovers && count($itinerary->stopovers) > 0)
+            @if(isset($itinerary->stopovers) && is_array($itinerary->stopovers) && count($itinerary->stopovers) > 0)
             <div>
                 <h3 style="color: #3B82F6; margin-bottom: 15px; font-size: 16px;">Stopovers</h3>
                 <ul style="list-style: none; padding: 0; margin: 0;">
@@ -648,7 +675,7 @@
             </div>
             @endif
 
-            @if($itinerary->sidetrips && count($itinerary->sidetrips) > 0)
+            @if(isset($itinerary->sidetrips) && is_array($itinerary->sidetrips) && count($itinerary->sidetrips) > 0)
             <div>
                 <h3 style="color: #8B5CF6; margin-bottom: 15px; font-size: 16px;">Side Trips</h3>
                 <ul style="list-style: none; padding: 0; margin: 0;">

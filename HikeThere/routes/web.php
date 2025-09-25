@@ -6,6 +6,7 @@ use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExploreController;
 use App\Http\Controllers\GPXLibraryController;
+use App\Http\Controllers\Hiker\RefactoredItineraryController;
 use App\Http\Controllers\ItineraryController;
 use App\Http\Controllers\LocationWeatherController;
 use App\Http\Controllers\MapController;
@@ -134,6 +135,11 @@ Route::middleware([
     Route::post('/itinerary/generate', [ItineraryController::class, 'store'])->name('itinerary.generate');
     Route::get('/itinerary/{itinerary}/pdf', [ItineraryController::class, 'pdf'])->name('itinerary.pdf');
     Route::get('/itinerary/{itinerary}', [ItineraryController::class, 'show'])->name('itinerary.show');
+    
+    // Refactored itinerary routes for testing
+    Route::get('/itinerary/refactored/preview', [App\Http\Controllers\Hiker\RefactoredItineraryController::class, 'preview'])->name('itinerary.refactored.preview');
+    Route::get('/itinerary/refactored/show', [App\Http\Controllers\Hiker\RefactoredItineraryController::class, 'show'])->name('itinerary.refactored.show');
+    Route::post('/itinerary/refactored/api', [App\Http\Controllers\Hiker\RefactoredItineraryController::class, 'generateApi'])->name('itinerary.refactored.api');
 
     // Community routes
     Route::get('/community', [CommunityController::class, 'index'])->name('community.index');

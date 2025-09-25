@@ -94,13 +94,51 @@ class ItineraryController extends Controller
             abort(403, 'Unauthorized access to itinerary.');
         }
 
-        // Presenter removed — pass raw itinerary fields to the view
+        // Extract stored data from the itinerary
         $days = $itinerary->daily_schedule ?? [];
         $pacing = 1.0;
         $presenter = null;
 
-    // Previously this returned the generated blade. Per request, render the PDF/print view instead
-    return view('hiker.itinerary.pdf', compact('itinerary', 'days', 'pacing', 'presenter'));
+        // Extract stored data
+        $weatherData = $itinerary->weather_conditions ?? [];
+        $trail = null;
+        $build = $itinerary->transport_details ?? [];
+
+        // If we have a trail_id, try to load the trail and fetch fresh weather
+        if ($itinerary->trail_id) {
+            $trail = \App\Models\Trail::find($itinerary->trail_id);
+            
+            // Fetch fresh weather data if trail has coordinates
+            if ($trail && $trail->latitude && $trail->longitude) {
+                try {
+                    $weatherController = new \App\Http\Controllers\Api\WeatherController();
+                    $weatherRequest = new \Illuminate\Http\Request([
+                        'lat' => $trail->latitude,
+                        'lng' => $trail->longitude
+                    ]);
+                    
+                    $weatherResponse = $weatherController->getForecast($weatherRequest);
+                    $freshWeatherData = $weatherResponse->getData(true);
+                    
+                    if (!isset($freshWeatherData['error'])) {
+                        // Keep the original API data for dynamic weather AND add formatted data for backward compatibility
+                        $formattedWeatherData = $this->formatWeatherDataForItinerary($freshWeatherData, $itinerary->start_date, $itinerary->duration_days ?? 1);
+                        
+                        // Start with original API data, then add formatted day data
+                        $weatherData = $freshWeatherData;
+                        foreach ($formattedWeatherData as $dayKey => $dayData) {
+                            $weatherData[$dayKey] = $dayData;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Failed to fetch fresh weather data for trail: ' . $e->getMessage());
+                    // Keep existing weather data as fallback
+                }
+            }
+        }
+
+        // Return the main generated itinerary view with all necessary data
+        return view('hiker.itinerary.generated', compact('itinerary', 'days', 'pacing', 'presenter', 'weatherData', 'trail', 'build'));
     }
 
     public function pdf(Itinerary $itinerary)
@@ -1957,5 +1995,77 @@ class ItineraryController extends Controller
         ];
 
         $currentTime->addSeconds($totalReturnTime);
+    }
+
+    /**
+     * Format API weather data for itinerary system compatibility
+     */
+    private function formatWeatherDataForItinerary($apiWeatherData, $startDate, $durationDays)
+    {
+        if (!isset($apiWeatherData['forecast']) || !is_array($apiWeatherData['forecast'])) {
+            return [];
+        }
+
+        $formattedData = [];
+        $startDateTime = \Carbon\Carbon::parse($startDate);
+
+        foreach ($apiWeatherData['forecast'] as $dayIndex => $dayData) {
+            if ($dayIndex >= $durationDays) break;
+
+            $dayNumber = $dayIndex + 1;
+            
+            // Extract weather info for different times of day from hourly forecasts
+            $formattedData[$dayNumber] = [];
+
+            // If we have hourly data for this day, use it
+            if (isset($dayData['hourly_forecasts']) && is_array($dayData['hourly_forecasts'])) {
+                foreach ($dayData['hourly_forecasts'] as $hourly) {
+                    $time = $hourly['time'] ?? '';
+                    if ($time) {
+                        $formattedData[$dayNumber][$time] = $this->formatWeatherStringFromHourly($hourly);
+                    }
+                }
+            }
+            
+            // Always provide default times with daily summary
+            $defaultWeather = $this->formatWeatherStringFromDaily($dayData);
+            
+            if (!isset($formattedData[$dayNumber]['08:00'])) {
+                $formattedData[$dayNumber]['08:00'] = $defaultWeather;
+            }
+            if (!isset($formattedData[$dayNumber]['12:00'])) {
+                $formattedData[$dayNumber]['12:00'] = $defaultWeather;
+            }
+            if (!isset($formattedData[$dayNumber]['16:00'])) {
+                $formattedData[$dayNumber]['16:00'] = $defaultWeather;
+            }
+            if (!isset($formattedData[$dayNumber]['20:00'])) {
+                $formattedData[$dayNumber]['20:00'] = $defaultWeather;
+            }
+        }
+
+        return $formattedData;
+    }
+
+    /**
+     * Format hourly weather data into display string
+     */
+    private function formatWeatherStringFromHourly($hourlyData)
+    {
+        $condition = $hourlyData['condition'] ?? 'Fair';
+        $temp = $hourlyData['temp'] ?? 25;
+        
+        return $condition . ' / ' . round($temp) . '°C';
+    }
+
+    /**
+     * Format daily weather data into display string
+     */
+    private function formatWeatherStringFromDaily($dailyData)
+    {
+        $condition = $dailyData['condition'] ?? 'Fair';
+        $temp = $dailyData['temp_midday'] ?? $dailyData['temp_max'] ?? 25;
+        
+        return $condition . ' / ' . round($temp) . '°C';
     }
 }
