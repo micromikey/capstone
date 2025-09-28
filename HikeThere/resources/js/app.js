@@ -366,3 +366,6 @@ function trailExplorer() {
 
 // Make it globally available
 window.trailExplorer = trailExplorer;
+
+// Header search behaviour
+import './header-search';

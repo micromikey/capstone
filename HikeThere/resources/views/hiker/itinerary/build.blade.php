@@ -26,7 +26,7 @@
             <div>
               <h1 class="text-2xl font-black tracking-tight">
                 <span class="bg-gradient-to-r from-emerald-700 via-teal-700 to-cyan-700 bg-clip-text text-transparent">
-                  Hiking Itinerary Planner
+                  HikeThere: Itinerary Builder
                 </span>
               </h1>
               <p class="mt-0.5 text-xs text-gray-600">Plan smarter. Hike happier.</p>
@@ -264,7 +264,10 @@
                                         }
                                       }
                                     @endphp
-                                    <option value="{{ $trail->trail_name }}" data-trail-id="{{ $trail->id }}" {{ old('trail') == $trail->trail_name ? 'selected' : '' }} data-side-trips='@json($sideTripsArray)' data-transport='@json($transportPayload)'
+                                    @php
+                                      $isSelected = (old('trail') == $trail->trail_name) || (isset($preselectedTrail) && $preselectedTrail->id == $trail->id);
+                                    @endphp
+                                    <option value="{{ $trail->trail_name }}" data-trail-id="{{ $trail->id }}" {{ $isSelected ? 'selected' : '' }} data-side-trips='@json($sideTripsArray)' data-transport='@json($transportPayload)'
                                       @if($hours) data-hours='{{ htmlspecialchars(json_encode($hours), ENT_QUOTES, 'UTF-8') }}' @endif
                                       @if(!empty($trail->opening_time)) data-opening="{{ e($trail->opening_time) }}" @endif
                                       @if(!empty($trail->closing_time)) data-closing="{{ e($trail->closing_time) }}" @endif
@@ -336,7 +339,10 @@
                                       }
                                     }
                                   @endphp
-                                  <option value="{{ $trail->trail_name }}" data-trail-id="{{ $trail->id }}" {{ old('trail') == $trail->trail_name ? 'selected' : '' }} data-side-trips='@json($sideTripsArray)' data-transport='@json($transportPayload)'
+                                  @php
+                                    $isSelected = (old('trail') == $trail->trail_name) || (isset($preselectedTrail) && $preselectedTrail->id == $trail->id);
+                                  @endphp
+                                  <option value="{{ $trail->trail_name }}" data-trail-id="{{ $trail->id }}" {{ $isSelected ? 'selected' : '' }} data-side-trips='@json($sideTripsArray)' data-transport='@json($transportPayload)'
                                     @if($hours) data-hours='{{ htmlspecialchars(json_encode($hours), ENT_QUOTES, 'UTF-8') }}' @endif
                                     @if(!empty($trail->opening_time)) data-opening="{{ e($trail->opening_time) }}" @endif
                                     @if(!empty($trail->closing_time)) data-closing="{{ e($trail->closing_time) }}" @endif
@@ -684,7 +690,7 @@
         <!--Footer-->
         <footer class="mt-6 text-center text-xs text-gray-600">
           <p class="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-1 ring-1 ring-gray-200 backdrop-blur">
-            &copy; {{ date('Y') }} Hiking Planner • All rights reserved
+            &copy; {{ date('Y') }} HikeThere • All rights reserved
           </p>
         </footer>
       </div>
@@ -1649,14 +1655,12 @@
       
       // Simple initialization
       initializeExistingItems();
-  // Render side trips preview on initial load in case a trail is pre-selected
-  try { renderSideTripsPreview(); } catch (e) { /* ignore if function not available */ }
       
-      // Don't load weather automatically - only when trail is selected
-      // This prevents interference with current location functionality
-
-      // Initialize trail times preview in case a trail is pre-selected
+      // Initialize trail previews on page load
+      try { renderSideTripsPreview(); } catch (e) { /* ignore if function not available */ }
       try { renderTrailTimesPreview(); } catch (e) { /* ignore if function not available */ }
+      
+
     });
 
     // Weather Integration Functions
@@ -1701,7 +1705,7 @@
           }
           
           // Load trail overview for the selected trail
-          loadTrailOverview(selectedTrail);
+          loadTrailOverview();
           
           // Load weather for the selected trail
           loadWeatherForSelectedTrail();
@@ -2800,5 +2804,34 @@
         form.submit();
       });
     })();
+
+    // Handle preselected trail after all event listeners are registered
+    function tryPreselectedTrail(retryCount = 0) {
+      const trailSelect = document.getElementById('trailSelect');
+      if (!trailSelect || !trailSelect.value) return;
+      
+      console.log('Found preselected trail:', trailSelect.value);
+      console.log('Map trails available:', window.itineraryMap?.trails?.length || 0);
+      
+      // Check if map and trail data is ready
+      if (window.itineraryMap && window.itineraryMap.trails && window.itineraryMap.trails.length > 0) {
+        console.log('Map data ready, triggering change event for preselected trail...');
+        
+        // Trigger the change event programmatically
+        const changeEvent = new Event('change', { bubbles: true });
+        trailSelect.dispatchEvent(changeEvent);
+        
+        console.log('Change event dispatched for preselected trail');
+      } else if (retryCount < 10) {
+        // Map data not ready yet, retry after a short delay
+        console.log(`Map data not ready, retrying in 300ms... (attempt ${retryCount + 1}/10)`);
+        setTimeout(() => tryPreselectedTrail(retryCount + 1), 300);
+      } else {
+        console.warn('Map data still not ready after 10 attempts, giving up on preselected trail');
+      }
+    }
+    
+    // Start trying after initial delay
+    setTimeout(tryPreselectedTrail, 500);
   </script>
 </x-app-layout>

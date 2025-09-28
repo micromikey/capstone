@@ -8,6 +8,7 @@ use App\Services\TrailImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class TrailController extends Controller
 {
@@ -58,23 +59,31 @@ class TrailController extends Controller
         $limit = $request->get('limit', 9);
         $offset = ($page - 1) * $limit;
 
+        // Defensive: some deployments migrated away from the legacy `name` column.
+        // Check the schema and only reference `name` when present to avoid SQL errors.
+        $hasNameColumn = Schema::hasColumn('trails', 'name');
+
         $trailsQuery = Trail::active()
             ->with(['location', 'user', 'primaryImage', 'reviews']);
 
         if (!empty($query)) {
-            $searchTerm = trim($query);
-            $trailsQuery->where(function ($q) use ($searchTerm) {
-                $q->where('trail_name', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('mountain_name', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('name', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('difficulty', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('description', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('summary', 'LIKE', "%{$searchTerm}%")
-                  ->orWhereHas('location', function ($locationQuery) use ($searchTerm) {
-                      $locationQuery->where('name', 'LIKE', "%{$searchTerm}%")
-                                   ->orWhere('province', 'LIKE', "%{$searchTerm}%");
-                  });
-            });
+                        $searchTerm = trim($query);
+                        $trailsQuery->where(function ($q) use ($searchTerm, $hasNameColumn) {
+                                $q->where('trail_name', 'LIKE', "%{$searchTerm}%")
+                                    ->orWhere('mountain_name', 'LIKE', "%{$searchTerm}%");
+
+                                if ($hasNameColumn) {
+                                        $q->orWhere('name', 'LIKE', "%{$searchTerm}%");
+                                }
+
+                                $q->orWhere('difficulty', 'LIKE', "%{$searchTerm}%")
+                                    ->orWhere('description', 'LIKE', "%{$searchTerm}%")
+                                    ->orWhere('summary', 'LIKE', "%{$searchTerm}%")
+                                    ->orWhereHas('location', function ($locationQuery) use ($searchTerm) {
+                                            $locationQuery->where('name', 'LIKE', "%{$searchTerm}%")
+                                                                     ->orWhere('province', 'LIKE', "%{$searchTerm}%");
+                                    });
+                        });
         }
 
         // Handle category filters
@@ -243,43 +252,79 @@ class TrailController extends Controller
         $trailName = $request->get('trail_name');
 
         // Search in the OSM trails database with multiple strategies
-        $osmTrails = Trail::where(function ($query) use ($mountainName, $trailName) {
-                // Strategy 1: Combined search - "Mount Arayat Ambangeg Trail"
-                $combined = $mountainName . ' ' . $trailName;
-                $query->where('name', 'LIKE', '%' . $combined . '%');
-                
-                // Strategy 2: Mountain name in trail name - "Old Trail to Mount Arayat North Peak"
-                $query->orWhere('name', 'LIKE', '%' . $mountainName . '%');
-                
-                // Strategy 3: Trail name only - "Makiling Trail", "Talamitam Trail"
-                $query->orWhere('name', 'LIKE', '%' . $trailName . '%');
-                
-                // Strategy 4: Dash separated - "Mount Pulag - Ambangeg Trail"
-                $dashCombined = $mountainName . ' - ' . $trailName;
-                $query->orWhere('name', 'LIKE', '%' . $dashCombined . '%');
-                
-                // Strategy 5: Reverse dash - "Ambangeg Trail - Mount Pulag"
-                $reverseDash = $trailName . ' - ' . $mountainName;
-                $query->orWhere('name', 'LIKE', '%' . $reverseDash . '%');
-            })
-            ->whereNotNull('osm_id') // Only OSM trails
-            ->whereNotNull('geometry')
-            ->orderByRaw("
-                CASE 
-                    WHEN name LIKE ? THEN 1
-                    WHEN name LIKE ? THEN 2
-                    WHEN name LIKE ? THEN 3
-                    WHEN name LIKE ? THEN 4
-                    ELSE 5
-                END
-            ", [
-                '%' . $mountainName . ' ' . $trailName . '%',
-                '%' . $mountainName . ' - ' . $trailName . '%',
-                '%' . $mountainName . '%',
-                '%' . $trailName . '%'
-            ])
-            ->limit(5)
-            ->get();
+        $hasNameColumn = Schema::hasColumn('trails', 'name');
+
+        if ($hasNameColumn) {
+            $osmTrails = Trail::where(function ($query) use ($mountainName, $trailName) {
+                    // Strategy 1: Combined search - "Mount Arayat Ambangeg Trail"
+                    $combined = $mountainName . ' ' . $trailName;
+                    $query->where('name', 'LIKE', '%' . $combined . '%');
+                    
+                    // Strategy 2: Mountain name in trail name - "Old Trail to Mount Arayat North Peak"
+                    $query->orWhere('name', 'LIKE', '%' . $mountainName . '%');
+                    
+                    // Strategy 3: Trail name only - "Makiling Trail", "Talamitam Trail"
+                    $query->orWhere('name', 'LIKE', '%' . $trailName . '%');
+                    
+                    // Strategy 4: Dash separated - "Mount Pulag - Ambangeg Trail"
+                    $dashCombined = $mountainName . ' - ' . $trailName;
+                    $query->orWhere('name', 'LIKE', '%' . $dashCombined . '%');
+                    
+                    // Strategy 5: Reverse dash - "Ambangeg Trail - Mount Pulag"
+                    $reverseDash = $trailName . ' - ' . $mountainName;
+                    $query->orWhere('name', 'LIKE', '%' . $reverseDash . '%');
+                })
+                ->whereNotNull('osm_id') // Only OSM trails
+                ->whereNotNull('geometry')
+                ->orderByRaw("
+                    CASE 
+                        WHEN name LIKE ? THEN 1
+                        WHEN name LIKE ? THEN 2
+                        WHEN name LIKE ? THEN 3
+                        WHEN name LIKE ? THEN 4
+                        ELSE 5
+                    END
+                ", [
+                    '%' . $mountainName . ' ' . $trailName . '%',
+                    '%' . $mountainName . ' - ' . $trailName . '%',
+                    '%' . $mountainName . '%',
+                    '%' . $trailName . '%'
+                ])
+                ->limit(5)
+                ->get();
+        } else {
+            // Fallback when legacy `name` column doesn't exist: search trail_name / mountain_name
+            $osmTrails = Trail::where(function ($query) use ($mountainName, $trailName) {
+                    $combined = $mountainName . ' ' . $trailName;
+                    $query->where('trail_name', 'LIKE', '%' . $combined . '%')
+                          ->orWhere('mountain_name', 'LIKE', '%' . $mountainName . '%')
+                          ->orWhere('trail_name', 'LIKE', '%' . $trailName . '%');
+
+                    $dashCombined = $mountainName . ' - ' . $trailName;
+                    $reverseDash = $trailName . ' - ' . $mountainName;
+
+                    $query->orWhere('trail_name', 'LIKE', '%' . $dashCombined . '%')
+                          ->orWhere('trail_name', 'LIKE', '%' . $reverseDash . '%');
+                })
+                ->whereNotNull('osm_id')
+                ->whereNotNull('geometry')
+                ->orderByRaw("
+                    CASE 
+                        WHEN trail_name LIKE ? THEN 1
+                        WHEN trail_name LIKE ? THEN 2
+                        WHEN mountain_name LIKE ? THEN 3
+                        WHEN trail_name LIKE ? THEN 4
+                        ELSE 5
+                    END
+                ", [
+                    '%' . $mountainName . ' ' . $trailName . '%',
+                    '%' . $mountainName . ' - ' . $trailName . '%',
+                    '%' . $mountainName . '%',
+                    '%' . $trailName . '%'
+                ])
+                ->limit(5)
+                ->get();
+        }
 
         $results = [];
         
@@ -287,7 +332,7 @@ class TrailController extends Controller
         foreach ($osmTrails as $trail) {
             $results[] = [
                 'id' => $trail->id,
-                'name' => $trail->name,
+                'name' => $trail->name ?? $trail->trail_name ?? $trail->mountain_name,
                 'osm_id' => $trail->osm_id,
                 'region' => $trail->region,
                 'difficulty' => $trail->difficulty,

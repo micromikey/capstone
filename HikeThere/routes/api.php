@@ -51,6 +51,9 @@ Route::prefix('trails')->group(function () {
     Route::post('/search-nearby', [TrailController::class, 'searchNearby']);
 });
 
+// Header unified search endpoint (frontend header/search inputs use this)
+Route::get('/header-search', [\App\Http\Controllers\SearchController::class, 'headerSearch']);
+
 // Recommender proxy endpoint (calls local ML service)
 Route::get('/recommender/user/{id}', [App\Http\Controllers\Api\RecommenderController::class, 'forUser']);
 

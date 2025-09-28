@@ -81,6 +81,44 @@ class ItineraryController extends Controller
         return view('hiker.itinerary.build', compact('trails', 'assessment', 'orgSideTrips'));
     }
 
+    public function buildWithTrail(Trail $trail)
+    {
+        // Check if user has completed assessment
+        $hasAssessment = Auth::user()->latestAssessmentResult()->exists();
+
+        if (! $hasAssessment) {
+            return redirect()->route('assessment.instruction')
+                ->with('warning', 'Please complete the Pre-Hike Self-Assessment first to generate a personalized itinerary.');
+        }
+
+        // Get available trails for suggestions (eager-load package to access package-side fields)
+        $trails = Trail::with(['location', 'package'])->active()->get();
+
+        // Organization-provided side trips: aggregate from existing trails' package side_trips or legacy trail side_trips
+        $sideTripStrings = $trails->map(function($t){
+            return optional($t->package)->side_trips ?? $t->side_trips;
+        })->filter()->all();
+
+        $orgSideTrips = collect($sideTripStrings)
+            ->flatMap(function ($s) {
+                return array_values(array_filter(array_map('trim', explode(',', $s))));
+            })
+            ->unique()
+            ->values()
+            ->sort()
+            ->map(function ($name) {
+                return (object)['name' => $name];
+            });
+
+        // Get user's latest assessment for personalized recommendations
+        $assessment = Auth::user()->latestAssessmentResult;
+
+        // Pass the selected trail as preselectedTrail to avoid naming conflicts in the view
+        $preselectedTrail = $trail;
+
+        return view('hiker.itinerary.build', compact('trails', 'assessment', 'orgSideTrips', 'preselectedTrail'));
+    }
+
     public function generate(Request $request)
     {
         // Itinerary generation has been disabled per project configuration.

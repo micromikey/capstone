@@ -6,19 +6,13 @@
             </h2>
             
             <div class="flex items-center gap-3">
-                <a href="{{ route('explore') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back to Explore
-                </a>
                 <!-- Favorite Button -->
-                <button id="favorite-btn" data-trail-id="{{ $trail->id }}" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors">
+                <button id="favorite-btn" data-trail-id="{{ $trail->id }}" data-trail-slug="{{ $trail->slug }}" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors">
                     <svg id="favorite-icon" class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.343l-6.828-6.829a4 4 0 010-5.656z" />
                     </svg>
                     <span id="favorite-text">Save</span>
-                    <span id="favorite-count" class="ml-2 text-sm text-white/80">({{ $trail->favoritedBy()->count() }})</span>
+                    <span id="favorite-count" class="ml-2 text-sm text-white/80" style="display: none;">({{ $trail->favoritedBy()->count() }})</span>
                 </button>
             </div>
         </div>
@@ -335,6 +329,44 @@
                         </div>
                     @endif
 
+                    <!-- Weather Information -->
+                    @if($trail->coordinates && count($trail->coordinates) > 0)
+                        <div class="mb-8">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Weather Information</h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <!-- Current Weather -->
+                                <div>
+                                    <h4 class="text-md font-medium text-gray-800 mb-3 flex items-center">
+                                        <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                                        </svg>
+                                        Current Weather
+                                    </h4>
+                                    <div id="current-weather" class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100 shadow-sm">
+                                        <div class="flex items-center justify-center h-24">
+                                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 5-Day Forecast -->
+                                <div>
+                                    <h4 class="text-md font-medium text-gray-800 mb-3 flex items-center">
+                                        <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        5-Day Forecast
+                                    </h4>
+                                    <div id="forecast-weather" class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-6 border border-green-100 shadow-sm">
+                                        <div class="flex items-center justify-center h-24">
+                                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     <!-- Reviews Section -->
                     <div class="mb-8">
                         <div class="flex items-center justify-between mb-6">
@@ -605,17 +637,24 @@
                     </div>
 
                     <!-- Actions -->
-                    <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
+                    <div id="trail-actions" class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
                         <button class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
+                            <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
                             Book This Trail
                         </button>
-                        <button class="bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
-                            Download GPX
+                        <button id="build-itinerary-btn" data-trail-id="{{ $trail->id }}" data-trail-slug="{{ $trail->slug }}" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
+                            <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                            </svg>
+                            Build Itinerary
                         </button>
-                        <a href="{{ route('explore') }}?location={{ $trail->location->slug }}" 
-                           class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-medium transition-colors text-center">
-                            Explore More Trails
-                        </a>
+                        <button id="original-favorite-btn" data-trail-id="{{ $trail->id }}" data-trail-slug="{{ $trail->slug }}" class="bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
+                            <svg id="original-favorite-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.343l-6.828-6.829a4 4 0 010-5.656z" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
@@ -651,6 +690,31 @@
         </div>
     </div>
 
+    <!-- Floating Actions Bar -->
+    <div id="floating-actions" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg transform translate-y-full transition-transform duration-300 z-40">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row gap-4 p-4">
+                <button class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
+                    <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Book This Trail
+                </button>
+                <button id="floating-build-itinerary-btn" data-trail-id="{{ $trail->id }}" data-trail-slug="{{ $trail->slug }}" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
+                    <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                    </svg>
+                    Build Itinerary
+                </button>
+                <button id="floating-favorite-btn" data-trail-id="{{ $trail->id }}" data-trail-slug="{{ $trail->slug }}" class="bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
+                    <svg id="floating-favorite-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.343l-6.828-6.829a4 4 0 010-5.656z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
 <script>
     // Server-provided constants (moved up so earlier scripts can use them)
     (function(){
@@ -669,40 +733,76 @@
     })();
 
     document.addEventListener('DOMContentLoaded', function() {
-        const favBtn = document.getElementById('favorite-btn');
-        if (!favBtn) return;
+        // Initialize favorite functionality for multiple buttons
+        initializeFavoriteButtons();
+        
+        function initializeFavoriteButtons() {
+            // Get all favorite buttons (header, original actions, floating actions)
+            const favoriteButtons = [
+                {
+                    btn: document.getElementById('favorite-btn'),
+                    text: document.getElementById('favorite-text'),
+                    icon: document.getElementById('favorite-icon'),
+                    count: document.getElementById('favorite-count')
+                },
+                {
+                    btn: document.getElementById('original-favorite-btn'),
+                    text: null,
+                    icon: document.getElementById('original-favorite-icon'),
+                    count: null
+                },
+                {
+                    btn: document.getElementById('floating-favorite-btn'),
+                    text: null,
+                    icon: document.getElementById('floating-favorite-icon'),
+                    count: null
+                }
+            ].filter(item => item.btn); // Only keep buttons that exist
 
-        const trailId = favBtn.dataset.trailId;
-        const favText = document.getElementById('favorite-text');
-        const favIcon = document.getElementById('favorite-icon');
-        const favCount = document.getElementById('favorite-count');
+            if (favoriteButtons.length === 0) return;
 
-        // Determine initial state for authenticated user
-        let isFavorited = false;
+            // Get trail data from the first available button
+            const firstBtn = favoriteButtons[0].btn;
+            const trailId = firstBtn.dataset.trailId;
+            const trailSlug = firstBtn.dataset.trailSlug;
 
-        // Helper to update UI
-        function updateFavoriteUI(state, count){
-            isFavorited = state;
-            if(state){
-                favBtn.classList.remove('bg-emerald-600');
-                favBtn.classList.add('bg-gray-200');
-                favBtn.classList.remove('text-white');
-                favBtn.classList.add('text-gray-800');
-                favText.textContent = 'Saved';
-                favIcon.classList.add('text-rose-500');
-            } else {
-                favBtn.classList.remove('bg-gray-200');
-                favBtn.classList.add('bg-emerald-600');
-                favBtn.classList.remove('text-gray-800');
-                favBtn.classList.add('text-white');
-                favText.textContent = 'Save';
-                favIcon.classList.remove('text-rose-500');
+            // Determine initial state for authenticated user
+            let isFavorited = false;
+
+            // Helper to update UI for all buttons
+            function updateFavoriteUI(state, count) {
+                isFavorited = state;
+                
+                favoriteButtons.forEach(({ btn, text, icon, count: countEl }) => {
+                    if (state) {
+                        // Saved state: Pink background
+                        btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+                        btn.classList.add('bg-pink-500', 'hover:bg-pink-600');
+                        btn.classList.remove('text-gray-800');
+                        btn.classList.add('text-white');
+                        if (text) text.textContent = 'Saved';
+                        if (icon) {
+                            icon.classList.add('text-white');
+                            icon.classList.remove('text-rose-500');
+                        }
+                    } else {
+                        // Unsaved state: Green background
+                        btn.classList.remove('bg-pink-500', 'hover:bg-pink-600');
+                        btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+                        btn.classList.remove('text-gray-800');
+                        btn.classList.add('text-white');
+                        if (text) text.textContent = 'Save';
+                        if (icon) {
+                            icon.classList.remove('text-rose-500', 'text-white');
+                        }
+                    }
+                    // Hide the count display if it exists
+                    if (countEl) countEl.style.display = 'none';
+                });
             }
-            if(typeof count !== 'undefined') favCount.textContent = `(${count})`;
-        }
 
         // Prefer session-based check first (works for users logged in via session)
-        fetch(`/trails/${trailId}/is-favorited`, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+        fetch(`/trails/${trailSlug}/is-favorited`, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
             .then(r => r.json())
             .then(data => {
                 if (data && data.success) {
@@ -725,57 +825,172 @@
                 // Ignore errors; leave default UI
             });
 
-        favBtn.addEventListener('click', function(){
-            favBtn.disabled = true;
-            const payload = { trail_id: trailId };
+            // Add click event listeners to all favorite buttons
+            favoriteButtons.forEach(({ btn }) => {
+                btn.addEventListener('click', function(){
+                    // Disable all buttons during request
+                    favoriteButtons.forEach(({ btn: b }) => b.disabled = true);
+                    
+                    const payload = { trail_id: trailId };
 
-            const doRequest = (url, isApi = false) => {
-                return fetch(url, {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: isApi ? {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': CSRF_TOKEN,
-                        'Accept': 'application/json'
-                    } : {
-                        'X-CSRF-TOKEN': CSRF_TOKEN,
-                        'Accept': 'application/json'
-                    },
-                    body: isApi ? JSON.stringify(payload) : new URLSearchParams(payload)
+                    const doRequest = async (url, isApi = false) => {
+                        return fetch(url, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: isApi ? {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': CSRF_TOKEN,
+                                'Accept': 'application/json'
+                            } : {
+                                'X-CSRF-TOKEN': CSRF_TOKEN,
+                                'Accept': 'application/json'
+                            },
+                            body: isApi ? JSON.stringify(payload) : new URLSearchParams(payload)
+                        });
+                    };
+
+                    // Use web route with session auth directly (since user is authenticated to view this page)
+                    const performToggle = async () => {
+                        try {
+                            // Use web route with session authentication
+                            let response = await doRequest('/trails/favorite/toggle', false);
+                            
+                            if (!response.ok) {
+                                console.error('Response not OK:', response.status, response.statusText);
+                                throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
+                            }
+
+                            const data = await response.json();
+                            
+                            if(data && data.success){
+                                updateFavoriteUI(data.is_favorited, data.count);
+                                // Debug log before showing toast
+                                console.debug('Favorite toggle response', data);
+                                // Show rich success toast with trail name and link
+                                showToast('success', data.message || (data.is_favorited ? ('Saved "' + TRAIL_NAME + '"') : 'Removed from saved trails'), {
+                                    details: data.is_favorited ? ('Saved "' + TRAIL_NAME + '"') : ('Removed "' + TRAIL_NAME + '"'),
+                                    viewLink: SAVED_TRAILS_ROUTE
+                                });
+                            } else if(data && data.message){
+                                console.debug('Favorite toggle error response', data);
+                                showToast('error', data.message);
+                            }
+                            
+                        } catch (error) {
+                            console.error('Error toggling favorite:', error);
+                            console.error('Error details:', error.message);
+                            showToast('error', 'Unable to update favorites: ' + error.message);
+                        } finally {
+                            // Re-enable all buttons
+                            favoriteButtons.forEach(({ btn: b }) => b.disabled = false);
+                        }
+                    };
+
+                    performToggle();
                 });
-            };
+            });
+        }
 
-            // Try API (sanctum token) first
-            doRequest('/api/trails/favorite/toggle', true)
-            .then(response => {
-                if(response.status === 401){
-                    // Fallback to web route using session auth
-                    return doRequest('/trails/favorite/toggle', false);
+        // Initialize build itinerary functionality
+        initializeBuildItineraryButtons();
+        
+        function initializeBuildItineraryButtons() {
+            const buildBtns = [
+                document.getElementById('build-itinerary-btn'),
+                document.getElementById('floating-build-itinerary-btn')
+            ].filter(btn => btn);
+
+            if (buildBtns.length === 0) return;
+
+            buildBtns.forEach(btn => {
+                btn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    
+                    const trailId = btn.dataset.trailId;
+                    const trailSlug = btn.dataset.trailSlug;
+                    
+                    if (!trailId || !trailSlug) {
+                        showToast('error', 'Trail information not found');
+                        return;
+                    }
+
+                    // Disable button during check
+                    btn.disabled = true;
+                    btn.textContent = 'Checking...';
+
+                    try {
+                        // Check if user has completed assessment
+                        const response = await fetch('/api/user/assessment-status', {
+                            credentials: 'same-origin',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': CSRF_TOKEN
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to check assessment status');
+                        }
+
+                        const data = await response.json();
+
+                        if (data.success && data.has_assessment) {
+                            // User has assessment, proceed to build itinerary
+                            window.location.href = `/itinerary/build/${trailSlug}`;
+                        } else {
+                            // User needs to complete assessment first
+                            showAssessmentModal();
+                        }
+
+                    } catch (error) {
+                        console.error('Error checking assessment:', error);
+                        showToast('error', 'Unable to check assessment status. Please try again.');
+                    } finally {
+                        // Re-enable button
+                        btn.disabled = false;
+                        btn.textContent = 'Build Itinerary';
+                    }
+                });
+            });
+        }
+
+        function showAssessmentModal() {
+            const modal = document.getElementById('assessment-modal');
+            if (modal) {
+                modal.style.display = 'block';
+            }
+        }
+
+        function hideAssessmentModal() {
+            const modal = document.getElementById('assessment-modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Assessment modal event listeners
+        const cancelBtn = document.getElementById('cancel-assessment');
+        const startBtn = document.getElementById('start-assessment');
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', hideAssessmentModal);
+        }
+
+        if (startBtn) {
+            startBtn.addEventListener('click', function() {
+                window.location.href = '{{ route("assessment.instruction") }}';
+            });
+        }
+
+        // Close modal when clicking outside
+        const modal = document.getElementById('assessment-modal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    hideAssessmentModal();
                 }
-                return response;
-            })
-            .then(r => r.json())
-            .then(data => {
-                if(data && data.success){
-                    updateFavoriteUI(data.is_favorited, data.count);
-                    // Debug log before showing toast
-                    console.debug('Favorite toggle response', data);
-                    // Show rich success toast with trail name and link
-                    showToast('success', data.message || (data.is_favorited ? ('Saved "' + TRAIL_NAME + '"') : 'Removed from saved trails'), {
-                        details: data.is_favorited ? ('Saved "' + TRAIL_NAME + '"') : ('Removed "' + TRAIL_NAME + '"'),
-                        viewLink: SAVED_TRAILS_ROUTE
-                    });
-                } else if(data && data.message){
-                    console.debug('Favorite toggle error response', data);
-                    showToast('error', data.message);
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                showToast('error', 'Unable to update favorites.');
-            })
-            .finally(() => { favBtn.disabled = false; });
-        });
+            });
+        }
     });
 </script>
 
@@ -807,6 +1022,33 @@
             </div>
             <div>
                 <div id="error-message" class="font-medium"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assessment Required Modal -->
+    <div id="assessment-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" style="display: none;">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
+                    <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mt-2">Assessment Required</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-gray-500">
+                        To build a personalized itinerary for this trail, please complete the Pre-Hike Self-Assessment first. This will help us create recommendations tailored to your fitness level and experience.
+                    </p>
+                </div>
+                <div class="flex justify-center gap-4 px-4 py-3">
+                    <button id="cancel-assessment" class="px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                        Cancel
+                    </button>
+                    <button id="start-assessment" class="px-4 py-2 bg-blue-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                        Start Assessment
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -857,6 +1099,23 @@
     <script id="trail-images" type="application/json">{!! json_encode($imageUrls) !!}</script>
     <script id="image-captions" type="application/json">{!! json_encode($imageCaptions) !!}</script>
     <script id="trail-coordinates" type="application/json">{!! json_encode($trail->coordinates ?? []) !!}</script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 2px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.5);
+            border-radius: 2px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.7);
+        }
+    </style>
 
     <script>
         // Trail Gallery Component
@@ -1306,7 +1565,289 @@
 
                 feedbackElement.textContent = feedback.length > 0 ? feedback.join(', ') : 'Content looks good!';
             }
+
+            // Initialize weather data if coordinates are available
+            initializeWeatherData();
+            
+            // Initialize floating actions
+            initializeFloatingActions();
         });
+
+        // Floating Actions functionality
+        function initializeFloatingActions() {
+            const originalActions = document.getElementById('trail-actions');
+            const floatingActions = document.getElementById('floating-actions');
+            
+            if (!originalActions || !floatingActions) return;
+
+            let originalPosition = null;
+            let isFloating = false;
+
+            function updateFloatingActions() {
+                // Get the position of the original actions element
+                const rect = originalActions.getBoundingClientRect();
+                const windowHeight = window.innerHeight;
+                
+                // Calculate the original position relative to the document
+                if (originalPosition === null) {
+                    originalPosition = rect.top + window.pageYOffset;
+                }
+
+                // Check if the original actions are below the viewport
+                const shouldFloat = rect.top > windowHeight - 100; // 100px buffer
+                
+                if (shouldFloat && !isFloating) {
+                    // Show floating actions
+                    isFloating = true;
+                    floatingActions.classList.remove('translate-y-full');
+                    floatingActions.classList.add('translate-y-0');
+                } else if (!shouldFloat && isFloating) {
+                    // Hide floating actions
+                    isFloating = false;
+                    floatingActions.classList.remove('translate-y-0');
+                    floatingActions.classList.add('translate-y-full');
+                }
+            }
+
+            // Listen for scroll events
+            let ticking = false;
+            function onScroll() {
+                if (!ticking) {
+                    requestAnimationFrame(function() {
+                        updateFloatingActions();
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            }
+
+            window.addEventListener('scroll', onScroll, { passive: true });
+            window.addEventListener('resize', updateFloatingActions);
+            
+            // Initial check
+            setTimeout(updateFloatingActions, 100);
+        }
+
+        // Weather functionality
+        function initializeWeatherData() {
+            const trailCoords = JSON.parse(document.getElementById('trail-coordinates').textContent || '[]');
+            
+            if (!trailCoords || trailCoords.length === 0) {
+                return; // No coordinates available for weather
+            }
+
+            // Use the first coordinate (trail start) for weather data
+            const startCoord = trailCoords[0];
+            const lat = startCoord.lat;
+            const lng = startCoord.lng;
+
+            // Fetch current weather and forecast
+            fetchCurrentWeather(lat, lng);
+            fetchForecast(lat, lng);
+        }
+
+        function fetchCurrentWeather(lat, lng) {
+            fetch(`/api/weather?lat=${lat}&lng=${lng}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        displayWeatherError('current-weather', 'Unable to load current weather');
+                        return;
+                    }
+                    displayCurrentWeather(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching current weather:', error);
+                    displayWeatherError('current-weather', 'Failed to load weather data');
+                });
+        }
+
+        function fetchForecast(lat, lng) {
+            fetch(`/api/weather/forecast?lat=${lat}&lng=${lng}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        displayWeatherError('forecast-weather', 'Unable to load forecast');
+                        displayHourlyError();
+                        return;
+                    }
+                    displayForecast(data);
+                    displayHourlyForecast(data.hourly || []);
+                })
+                .catch(error => {
+                    console.error('Error fetching forecast:', error);
+                    displayWeatherError('forecast-weather', 'Failed to load forecast data');
+                    displayHourlyError();
+                });
+        }
+
+        function displayCurrentWeather(data) {
+            const container = document.getElementById('current-weather');
+            const weatherIcon = getWeatherIcon(data.condition_code, data.icon);
+            
+            container.innerHTML = `
+                <div>
+                    <!-- Main Weather Info -->
+                    <div class="text-center mb-4">
+                        <div class="flex items-center justify-center mb-3">
+                            <div class="p-3 bg-white rounded-full shadow-sm mr-4">
+                                ${weatherIcon}
+                            </div>
+                            <div class="text-left">
+                                <div class="text-3xl font-bold text-gray-900">${data.temperature}°C</div>
+                                <div class="text-lg text-gray-600 capitalize">${data.condition}</div>
+                                <div class="text-sm text-gray-500">Feels like ${data.feels_like}°C</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Weather Details Grid -->
+                    <div class="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-blue-100">
+                        <div class="text-center">
+                            <div class="text-sm text-gray-500">Humidity</div>
+                            <div class="text-lg font-semibold text-gray-800">${data.humidity}%</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-sm text-gray-500">Wind Speed</div>
+                            <div class="text-lg font-semibold text-gray-800">${data.wind_speed} km/h</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-sm text-gray-500">UV Index</div>
+                            <div class="text-lg font-semibold text-gray-800">${data.uvIndex}</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-sm text-gray-500">Pressure</div>
+                            <div class="text-lg font-semibold text-gray-800">${data.pressure} hPa</div>
+                        </div>
+                    </div>
+
+                    <!-- Hourly Forecast -->
+                    <div id="hourly-forecast-container">
+                        <div class="flex items-center justify-center">
+                            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                            <span class="ml-2 text-sm text-gray-500">Loading hourly forecast...</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Store current weather data for hourly forecast
+            window.currentWeatherData = data;
+        }
+
+        function displayForecast(data) {
+            const container = document.getElementById('forecast-weather');
+            
+            if (!data.forecast || data.forecast.length === 0) {
+                displayWeatherError('forecast-weather', 'No forecast data available');
+                return;
+            }
+
+            const forecastHTML = data.forecast.map((day, index) => {
+                const weatherIcon = getWeatherIcon(day.condition_code, day.icon);
+                const isToday = day.day_label === 'TODAY';
+                const isTomorrow = day.day_label === 'TOMORROW';
+                
+                return `
+                    <div class="flex items-center justify-between py-3 px-2 rounded-lg hover:bg-green-100 transition-colors ${isToday ? 'bg-green-100 border border-green-600' : ''} ${index < data.forecast.length - 1 ? 'border-b border-green-100' : ''}">
+                        <div class="flex items-center flex-1">
+                            <div class="p-2 bg-white rounded-full shadow-sm mr-3">
+                                ${weatherIcon}
+                            </div>
+                            <div>
+                                <div class="text-sm font-semibold text-gray-900 ${isToday ? 'text-green-600' : ''}">${day.day_label}</div>
+                                <div class="text-xs text-gray-600">${day.date_formatted}</div>
+                                <div class="text-xs text-gray-500 capitalize">${day.condition}</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-gray-900">${day.temp_max}°<span class="text-gray-500">/${day.temp_min}°</span></div>
+                            <div class="text-xs text-gray-600">${day.precipitation}% rain</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `<div class="space-y-1">${forecastHTML}</div>`;
+        }
+
+        function displayHourlyForecast(hourlyData) {
+            const container = document.getElementById('hourly-forecast-container');
+            
+            if (!hourlyData || hourlyData.length === 0) {
+                displayHourlyError();
+                return;
+            }
+
+            // Take up to 8 hours (24 hours worth from 3-hourly data)
+            const hours = hourlyData.slice(0, 8);
+            
+            const hourlyHTML = hours.map((hour, index) => {
+                const weatherIcon = getWeatherIcon(hour.condition, hour.icon);
+                const isCurrentHour = index === 0;
+                
+                return `
+                    <div class="flex-shrink-0 text-center min-w-[60px] ${isCurrentHour ? 'bg-blue-100 rounded-lg p-2 border border-blue-300' : 'p-2'}">
+                        <div class="text-xs font-medium text-gray-700 mb-1">${hour.time}</div>
+                        <div class="mb-2">${weatherIcon}</div>
+                        <div class="text-sm font-semibold text-gray-900">${hour.temp}°</div>
+                        <div class="text-xs text-blue-600 mt-1">${hour.precipitation}%</div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div>
+                    <h5 class="text-sm font-medium text-gray-700 mb-3">24-Hour Forecast</h5>
+                    <div class="flex space-x-1 overflow-x-auto pb-2 custom-scrollbar">
+                        ${hourlyHTML}
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayHourlyError() {
+            const container = document.getElementById('hourly-forecast-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <p class="text-sm text-gray-500">Hourly forecast unavailable</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayWeatherError(containerId, message) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div class="text-center text-gray-500 py-8">
+                    <div class="p-3 bg-white rounded-full inline-block shadow-sm mb-3">
+                        <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <p class="text-sm font-medium">${message}</p>
+                    <p class="text-xs text-gray-400 mt-1">Please try again later</p>
+                </div>
+            `;
+        }
+
+        function getWeatherIcon(conditionCode, iconCode) {
+            // Map weather conditions to icons
+            const iconMap = {
+                'Clear': '<svg class="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z"/></svg>',
+                'Clouds': '<svg class="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 9.75a6 6 0 0111.573-2.226 3.75 3.75 0 014.133 4.303A4.5 4.5 0 0118 20.25H6.75a5.25 5.25 0 01-2.23-10.004 6.072 6.072 0 01-.02-.496z" clip-rule="evenodd" /></svg>',
+                'Rain': '<svg class="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M6.083 9c.38-2.708 2.687-4.958 5.529-4.958 2.844 0 5.152 2.25 5.531 4.958.29-.085.598-.125.92-.125 1.657 0 3 1.343 3 3s-1.343 3-3 3H6.937c-1.657 0-3-1.343-3-3s1.343-3 3-3c.322 0 .63.04.92.125z"/><path d="M8 16l1 3m3-3l1.5 4m3-4l1 3"/></svg>',
+                'Drizzle': '<svg class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24"><path d="M6.083 9c.38-2.708 2.687-4.958 5.529-4.958 2.844 0 5.152 2.25 5.531 4.958.29-.085.598-.125.92-.125 1.657 0 3 1.343 3 3s-1.343 3-3 3H6.937c-1.657 0-3-1.343-3-3s1.343-3 3-3c.322 0 .63.04.92.125z"/><path d="M9 17l.5 2M12.5 17l.5 2M16 17l.5 2"/></svg>',
+                'Thunderstorm': '<svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 24 24"><path d="M6.083 9c.38-2.708 2.687-4.958 5.529-4.958 2.844 0 5.152 2.25 5.531 4.958.29-.085.598-.125.92-.125 1.657 0 3 1.343 3 3s-1.343 3-3 3H6.937c-1.657 0-3-1.343-3-3s1.343-3 3-3c.322 0 .63.04.92.125z"/><path d="M13 14l-4 6 1.5-2.5-1.5-1.5h2l2-3.5h-2l1.5-1.5z" fill="#7c3aed"/></svg>',
+                'Snow': '<svg class="w-6 h-6 text-blue-300" fill="currentColor" viewBox="0 0 24 24"><path d="M6.083 9c.38-2.708 2.687-4.958 5.529-4.958 2.844 0 5.152 2.25 5.531 4.958.29-.085.598-.125.92-.125 1.657 0 3 1.343 3 3s-1.343 3-3 3H6.937c-1.657 0-3-1.343-3-3s1.343-3 3-3c.322 0 .63.04.92.125z"/><path d="M8 16l1 1m-1 1l1-1m3-1l1 1m-1 1l1-1m3-1l1 1m-1 1l1-1" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>',
+                'Mist': '<svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M3 8h18c.6 0 1 .4 1 1s-.4 1-1 1H3c-.6 0-1-.4-1-1s.4-1 1-1zM3 12h18c.6 0 1 .4 1 1s-.4 1-1 1H3c-.6 0-1-.4-1-1s.4-1 1-1zM3 16h18c.6 0 1 .4 1 1s-.4 1-1 1H3c-.6 0-1-.4-1-1s.4-1 1-1z"/></svg>',
+                'Fog': '<svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M3 8h18c.6 0 1 .4 1 1s-.4 1-1 1H3c-.6 0-1-.4-1-1s.4-1 1-1zM5 12h14c.6 0 1 .4 1 1s-.4 1-1 1H5c-.6 0-1-.4-1-1s.4-1 1-1zM7 16h10c.6 0 1 .4 1 1s-.4 1-1 1H7c-.6 0-1-.4-1-1s.4-1 1-1z"/></svg>',
+                'Haze': '<svg class="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 24 24"><path d="M3 8h18c.6 0 1 .4 1 1s-.4 1-1 1H3c-.6 0-1-.4-1-1s.4-1 1-1zM5 12h14c.6 0 1 .4 1 1s-.4 1-1 1H5c-.6 0-1-.4-1-1s.4-1 1-1zM7 16h10c.6 0 1 .4 1 1s-.4 1-1 1H7c-.6 0-1-.4-1-1s.4-1 1-1z"/></svg>'
+            };
+
+            return iconMap[conditionCode] || iconMap['Clear'];
+        }
 
     // Interactive Trail Map and Tracking Features
         let map, trailPath, userMarker, userLocation;

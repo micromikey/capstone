@@ -142,6 +142,7 @@ Route::middleware([
 
     // Itinerary routes
     Route::get('/itinerary/build', [ItineraryController::class, 'build'])->name('itinerary.build');
+    Route::get('/itinerary/build/{trail}', [ItineraryController::class, 'buildWithTrail'])->name('itinerary.build.trail');
     // Submission: handle itinerary payloads via ItineraryController@store
     Route::post('/itinerary/generate', [ItineraryController::class, 'store'])->name('itinerary.generate');
     Route::get('/itinerary/{itinerary}/pdf', [ItineraryController::class, 'pdf'])->name('itinerary.pdf');
@@ -233,7 +234,6 @@ Route::middleware(['auth:sanctum', 'verified', 'user.type:hiker'])->group(functi
 // Public routes
 Route::get('/location-weather', [LocationWeatherController::class, 'getWeather']);
 Route::get('/trails', [TrailController::class, 'index'])->name('trails.index');
-Route::get('/trails/{trail}', [TrailController::class, 'show'])->name('trails.show');
 Route::get('/trails/search', [TrailController::class, 'search'])->name('trails.search');
 
 // Trail PDF and Elevation routes
@@ -245,12 +245,24 @@ Route::get('/trails/{trail}/elevation-profile', [TrailPdfController::class, 'get
 // Public AJAX routes for trail reviews (anyone can view reviews)
 Route::get('/api/trails/{trail}/reviews', [TrailReviewController::class, 'getTrailReviews'])->name('api.trails.reviews.index');
 
+// API route to check assessment status
+Route::get('/api/user/assessment-status', function(\Illuminate\Http\Request $request) {
+    $user = $request->user();
+    $hasAssessment = $user && $user->latestAssessmentResult()->exists();
+    
+    return response()->json([
+        'success' => true,
+        'has_assessment' => $hasAssessment,
+        'message' => $hasAssessment ? 'User has completed assessment' : 'User needs to complete assessment'
+    ]);
+})->middleware('auth')->name('api.user.assessment-status');
+
 // Web route to toggle favorites using session-based auth (fallback for logged-in users)
 Route::post('/trails/favorite/toggle', [App\Http\Controllers\Api\TrailFavoriteController::class, 'toggle'])
     ->middleware('auth')
     ->name('trails.favorite.toggle');
 
-// Check if the current user has favorited a specific trail (session auth)
+// Check if the current user has favorited a specific trail (authenticated users only)
 Route::get('/trails/{trail}/is-favorited', [App\Http\Controllers\Api\TrailFavoriteController::class, 'isFavorited'])
     ->middleware('auth')
     ->name('trails.is-favorited');
@@ -275,6 +287,9 @@ Route::post('/map/search-nearby', [MapController::class, 'searchNearby'])->name(
 
 // Profile routes (require authentication)
 Route::middleware(['auth:sanctum', 'ensure.hiking.preferences'])->group(function () {
+    // Trail show route (authenticated hikers only)
+    Route::get('/trails/{trail}', [TrailController::class, 'show'])->name('trails.show');
+    
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('custom.profile.show');
     // Saved Trails view (server-side rendered)
     Route::get('/profile/saved-trails', [App\Http\Controllers\SavedTrailsController::class, 'index'])

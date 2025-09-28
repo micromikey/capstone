@@ -63,43 +63,113 @@ class BookingController extends Controller
                 return back()->withInput()->withErrors(['batch_id' => 'Selected batch is invalid for the chosen trail.']);
             }
         } else {
-            // Auto-select an available batch for the trail.
-            // Prefer batches that have starts_at matching the selected date (if provided), else pick next available.
-            $query = Batch::where('trail_id', $data['trail_id']);
-
-            if (!empty($data['date'])) {
-                try {
+            // Check if we're dealing with an undated event
+            if (!empty($data['event_id'])) {
+                $event = \App\Models\Event::find($data['event_id']);
+                if ($event && $event->always_available && !empty($data['date'])) {
+                    // For undated events, we don't use traditional batches
+                    // Instead, we'll create the booking directly against the event
+                    // But we still need to find or create a batch for compatibility
                     $target = Carbon::parse($data['date'])->startOfDay();
-                    $candidate = (clone $query)->whereNotNull('starts_at')
-                        ->whereDate('starts_at', $target)
-                        ->orderBy('starts_at')
-                        ->get()
-                        ->first(function($b){
-                            $count = Booking::where('batch_id', $b->id)->where('status','!=','cancelled')->count();
-                            return $count < $b->capacity;
-                        });
+                    
+                    // Check capacity for the date
+                    $bookedOnDate = Booking::where('event_id', $event->id)
+                        ->where('status', '!=', 'cancelled')
+                        ->whereDate('date', $target)
+                        ->sum('party_size');
+                    
+                    if ($bookedOnDate + $data['party_size'] > $event->capacity) {
+                        return back()->withInput()->withErrors(['date' => 'Not enough capacity available for the selected date.']);
+                    }
+                    
+                    // Create or find a virtual batch for undated events (for compatibility)
+                    $batch = Batch::firstOrCreate([
+                        'event_id' => $event->id,
+                        'trail_id' => $event->trail_id,
+                        'starts_at' => null,
+                        'ends_at' => null,
+                    ], [
+                        'name' => 'Always Available: ' . ($event->title ?? 'Event'),
+                        'capacity' => $event->capacity,
+                    ]);
+                } else {
+                    // Regular batch selection logic for dated events
+                    $query = Batch::where('trail_id', $data['trail_id']);
+
+                    if (!empty($data['date'])) {
+                        try {
+                            $target = Carbon::parse($data['date'])->startOfDay();
+                            $candidate = (clone $query)->whereNotNull('starts_at')
+                                ->whereDate('starts_at', $target)
+                                ->orderBy('starts_at')
+                                ->get()
+                                ->first(function($b){
+                                    $count = Booking::where('batch_id', $b->id)->where('status','!=','cancelled')->sum('party_size');
+                                    return $count < $b->capacity;
+                                });
+
+                            if ($candidate) {
+                                $batch = $candidate;
+                            }
+                        } catch (\Exception $e) {
+                            // ignore parse failures and fall back
+                        }
+                    }
+
+                    if (! $batch) {
+                        // pick the next batch with available capacity (future or undated)
+                        $candidate = (clone $query)->where(function($q){
+                            $q->whereNull('starts_at')->orWhere('starts_at','>=', now());
+                        })->orderBy('starts_at')
+                          ->get()
+                          ->first(function($b){
+                              $count = Booking::where('batch_id', $b->id)->where('status','!=','cancelled')->sum('party_size');
+                              return $count < $b->capacity;
+                          });
+
+                        if ($candidate) {
+                            $batch = $candidate;
+                        }
+                    }
+                }
+            } else {
+                // Regular batch selection logic when no event_id provided
+                $query = Batch::where('trail_id', $data['trail_id']);
+
+                if (!empty($data['date'])) {
+                    try {
+                        $target = Carbon::parse($data['date'])->startOfDay();
+                        $candidate = (clone $query)->whereNotNull('starts_at')
+                            ->whereDate('starts_at', $target)
+                            ->orderBy('starts_at')
+                            ->get()
+                            ->first(function($b){
+                                $count = Booking::where('batch_id', $b->id)->where('status','!=','cancelled')->sum('party_size');
+                                return $count < $b->capacity;
+                            });
+
+                        if ($candidate) {
+                            $batch = $candidate;
+                        }
+                    } catch (\Exception $e) {
+                        // ignore parse failures and fall back
+                    }
+                }
+
+                if (! $batch) {
+                    // pick the next batch with available capacity (future or undated)
+                    $candidate = (clone $query)->where(function($q){
+                        $q->whereNull('starts_at')->orWhere('starts_at','>=', now());
+                    })->orderBy('starts_at')
+                      ->get()
+                      ->first(function($b){
+                          $count = Booking::where('batch_id', $b->id)->where('status','!=','cancelled')->sum('party_size');
+                          return $count < $b->capacity;
+                      });
 
                     if ($candidate) {
                         $batch = $candidate;
                     }
-                } catch (\Exception $e) {
-                    // ignore parse failures and fall back
-                }
-            }
-
-            if (! $batch) {
-                // pick the next batch with available capacity (future or undated)
-                $candidate = (clone $query)->where(function($q){
-                    $q->whereNull('starts_at')->orWhere('starts_at','>=', now());
-                })->orderBy('starts_at')
-                  ->get()
-                  ->first(function($b){
-                      $count = Booking::where('batch_id', $b->id)->where('status','!=','cancelled')->count();
-                      return $count < $b->capacity;
-                  });
-
-                if ($candidate) {
-                    $batch = $candidate;
                 }
             }
         }
@@ -339,8 +409,17 @@ class BookingController extends Controller
                 }
             })->orderBy('start_at')->get();
 
+        // Separate undated (always available) events from dated events
+        $undatedEvents = $events->filter(function($e) {
+            return $e->always_available && empty($e->start_at) && empty($e->end_at);
+        });
+
+        $datedEvents = $events->filter(function($e) {
+            return !($e->always_available && empty($e->start_at) && empty($e->end_at));
+        });
+
         // Debug log: list matched events and their start times
-        Log::info('trailBatches: matched events', ['trail_id' => $trail->id, 'events' => $events->map(fn($e) => ['id' => $e->id, 'start_at' => (string)$e->start_at])->all()]);
+        Log::info('trailBatches: matched events', ['trail_id' => $trail->id, 'events' => $events->map(fn($e) => ['id' => $e->id, 'start_at' => (string)$e->start_at, 'always_available' => $e->always_available])->all()]);
 
         $events_count = $events->count();
         if ($events_count === 0) {
@@ -351,14 +430,49 @@ class BookingController extends Controller
                 ->header('X-Booking-Enabled', 'false');
         }
 
-        // Only consider batches that are associated with events. Batches by themselves do not
-        // represent open slots unless they belong to an Event. Eager-load the event relation
-        // so we can include event metadata in the response.
-        $eventIds = $events->pluck('id')->toArray();
+        // Handle undated events specially - calculate daily slots for the target date
+        $undatedSlots = [];
+        if ($undatedEvents->count() > 0 && !empty($target)) {
+            foreach ($undatedEvents as $event) {
+                // For undated events, calculate available slots for the specific date
+                $capacity = $event->capacity ?? 0;
+                if ($capacity > 0) {
+                    // Count existing bookings for this event on the target date
+                    $bookedOnDate = \App\Models\Booking::where('event_id', $event->id)
+                        ->where('status', '!=', 'cancelled')
+                        ->whereDate('date', $target)
+                        ->sum('party_size');
+
+                    $remaining = max(0, $capacity - $bookedOnDate);
+
+                    $undatedSlots[] = [
+                        'type' => 'undated_event',
+                        'id' => $event->id,
+                        'name' => $event->title ?? $event->name ?? 'Always Available',
+                        'capacity' => $capacity,
+                        'remaining' => $remaining,
+                        'starts_at' => null,
+                        'ends_at' => null,
+                        'starts_at_formatted' => null,
+                        'ends_at_formatted' => null,
+                        'event_id' => $event->id,
+                        'event_title' => $event->title ?? $event->name ?? null,
+                        'slot_label' => ($event->title ?? 'Always Available') . ' — ' . $target->format('M j, Y') . ' (' . $remaining . ' spots left)',
+                        'is_always_available' => true,
+                        'selected_date' => $target->format('Y-m-d'),
+                    ];
+                }
+            }
+        }
+
+        // Only consider batches that are associated with DATED events (not undated ones)
+        // Batches by themselves do not represent open slots unless they belong to an Event.
+        // Eager-load the event relation so we can include event metadata in the response.
+        $datedEventIds = $datedEvents->pluck('id')->toArray();
         $query = Batch::where('trail_id', $trail->id)->whereNotNull('event_id')
             ->with('event')
             ->withCount(['bookings as booked_count' => function($q){ $q->where('status','!=','cancelled'); }])
-            ->whereIn('event_id', $eventIds);
+            ->whereIn('event_id', $datedEventIds);
 
         if (!empty($target)) {
             // when a date is selected, only include batches that occur on that date
@@ -374,7 +488,7 @@ class BookingController extends Controller
     $batchesRaw = $query->orderBy('starts_at')->get();
 
     // Debug log: batches found for matched events
-    Log::info('trailBatches: batches fetched', ['trail_id' => $trail->id, 'batches_count' => $batchesRaw->count(), 'event_ids' => $eventIds ?? []]);
+    Log::info('trailBatches: batches fetched', ['trail_id' => $trail->id, 'batches_count' => $batchesRaw->count(), 'dated_event_ids' => $datedEventIds ?? []]);
 
         $batches = $batchesRaw->map(function($b){
             $remaining = max(0, ($b->capacity ?? 0) - ($b->booked_count ?? 0));
@@ -445,15 +559,15 @@ class BookingController extends Controller
             return ($b['remaining'] ?? 0) > 0;
         })->values()->all();
 
-        // Map previously-fetched events into the slot shape. Events will include
+        // Map previously-fetched DATED events into the slot shape. Events will include
         // event metadata fields as well so the frontend can render consistent labels.
         // When a target date is provided, only include event 'slots' if the
         // event's own start_at occurs on that date. Otherwise, we will rely
         // on the batches for the selected date and avoid showing the event's
         // original start date as a selectable slot (which confused the UI).
-        $eventsToMap = $events;
+        $eventsToMap = $datedEvents;
         if (!empty($target)) {
-            $eventsToMap = $events->filter(function($ev) use ($target) {
+            $eventsToMap = $datedEvents->filter(function($ev) use ($target) {
                 if (empty($ev->start_at)) return false;
                 try {
                     return Carbon::parse($ev->start_at)->isSameDay($target);
@@ -514,7 +628,7 @@ class BookingController extends Controller
             ];
         })->values()->all();
 
-        // Merge events and batches, preferring events when both have the same starts_at timestamp.
+        // Merge events, batches, and undated slots, preferring events when both have the same starts_at timestamp.
         // Use an associative map keyed by starts_at (string) where possible. If starts_at is null,
         // fall back to unique key by type+id to avoid accidental collision.
         $mergedMap = [];
@@ -532,6 +646,12 @@ class BookingController extends Controller
             // Prefer events over batches when keys conflict — always include the event
             // entry so trails with events are visible to the frontend.
             $mergedMap[$key] = $e;
+        }
+
+        // Add undated slots (these will have unique keys since they include date)
+        foreach ($undatedSlots as $u) {
+            $key = 'undated_' . $u['id'] . '_' . ($u['selected_date'] ?? 'nodate');
+            $mergedMap[$key] = $u;
         }
 
         // Finally, sort merged entries by starts_at (nulls last) and return as array
@@ -555,6 +675,8 @@ class BookingController extends Controller
         // metadata in response headers for newer clients.
         return response()->json(array_values($merged))
             ->header('X-Events-Count', $events_count)
+            ->header('X-Dated-Events-Count', $datedEvents->count())
+            ->header('X-Undated-Events-Count', $undatedEvents->count())
             ->header('X-Booking-Enabled', 'true');
     }
 }

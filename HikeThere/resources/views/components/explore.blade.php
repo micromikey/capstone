@@ -18,7 +18,7 @@
 @endphp
 
 <div class="relative bg-gradient-to-br from-green-50 via-white to-blue-50 min-h-screen">
-    <div x-data="trailExplorer()" x-init="init()" x-cloak class="flex flex-col min-h-screen">
+    <div wire:ignore x-data="trailExplorer()" x-init="init()" x-cloak class="flex flex-col min-h-screen">
         
         <!-- Hero Section -->
         <div id="hero-section" class="relative bg-gradient-to-r from-yellow-400 via-yellow-200 to-teal-400 text-white overflow-hidden hero-container">
@@ -84,9 +84,10 @@
                             <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
-                            <input type="text" 
-                                   placeholder="Search trails, mountains, or locations..."
-                                   class="w-full pl-12 pr-4 py-4 text-lg border-0 rounded-2xl focus:ring-4 focus:ring-white focus:ring-opacity-50 transition-all duration-200 text-gray-900 placeholder-gray-500">
+                <input id="explore-search-input" type="text" 
+                    placeholder="Search trails, mountains, or locations..."
+                    x-model.debounce="searchQuery"
+                    class="w-full pl-12 pr-4 py-4 text-lg border-0 rounded-2xl focus:ring-4 focus:ring-white focus:ring-opacity-50 transition-all duration-200 text-gray-900 placeholder-gray-500">
                         </div>
                     </div>
                 </div>
@@ -102,7 +103,7 @@
                         
                         <!-- Mountain/Location Filter -->
                         <div class="relative">
-                            <select class="appearance-none px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white min-w-[180px]">
+                            <select id="explore-location-select" x-model="selectedLocation" class="appearance-none px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white min-w-[180px]">
                                 <option value="">All Mountains</option>
                                 @if(isset($followedTrails) && $followedTrails->count() > 0)
                                     @php
@@ -122,7 +123,7 @@
 
                         <!-- Difficulty Filter -->
                         <div class="relative">
-                            <select class="appearance-none px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white min-w-[160px]">
+                            <select id="explore-difficulty-select" x-model="filters.difficulty" class="appearance-none px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white min-w-[160px]">
                                 <option value="">All Difficulties</option>
                                 <option value="beginner">Beginner</option>
                                 <option value="intermediate">Intermediate</option>
@@ -137,11 +138,12 @@
 
                         <!-- Season Filter -->
                         <div class="relative">
-                            <select class="appearance-none px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white min-w-[140px]">
+                            <select id="explore-season-select" x-model="filters.season" class="appearance-none px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white min-w-[140px]">
                                 <option value="">All Seasons</option>
-                                <option value="dry">Dry Season</option>
-                                <option value="wet">Wet Season</option>
-                                <option value="year-round">Year Round</option>
+                                <!-- Philippine seasons mapping: Dry (Amihan), Wet (Habagat), Transition (both/typhoon) -->
+                                <option value="amihan">Amihan (Dry Season)</option>
+                                <option value="habagat">Habagat (Wet Season)</option>
+                                <option value="year-round">Year Round / All Seasons</option>
                             </select>
                             <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,17 +155,24 @@
 
                     <!-- Results Count & Sort -->
                     <div class="flex items-center gap-4">
-                        <!-- Sort Options -->
+                        <div class="text-gray-700">
+                            @if(isset($followedTrails))
+                                <span class="font-semibold">{{ $followedTrails->count() }}</span> trails found
+                            @else
+                                <span class="font-semibold">0</span> trails found
+                            @endif
+                        </div>
+                        
                         <div class="relative">
-                            <select class="appearance-none px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-sm">
-                                <option value="name">Sort by Name</option>
-                                <option value="difficulty">Sort by Difficulty</option>
-                                <option value="length">Sort by Length</option>
+                            <select id="explore-sort-select" x-model="sortBy" class="appearance-none px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white min-w-[160px]">
+                                <option value="popularity">Sort by Popularity</option>
                                 <option value="rating">Sort by Rating</option>
-                                <option value="price">Sort by Price</option>
+                                <option value="length">Sort by Length</option>
+                                <option value="price_low_high">Price: Low to High</option>
+                                <option value="price_high_low">Price: High to Low</option>
                             </select>
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </div>
@@ -178,10 +187,25 @@
             <div class="max-w-7xl mx-auto">
                 
                 <!-- Trail Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="trails-list">
                     @if(isset($followedTrails) && $followedTrails->count() > 0)
                         @foreach($followedTrails as $trail)
-                            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group">
+                            @php
+                                // Normalize season values if available on the model
+                                $seasonKey = strtolower(str_replace(' ', '-', optional($trail)->best_season ?? ''));
+                                // map some common season labels to our keys
+                                if(in_array($seasonKey, ['dry','dry season','amihan'])) $seasonKey = 'amihan';
+                                if(in_array($seasonKey, ['wet','wet season','habagat','rainy'])) $seasonKey = 'habagat';
+                                if(empty($seasonKey)) $seasonKey = 'year-round';
+                            @endphp
+                            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group" 
+                                 x-data
+                                 data-trail-name="{{ strtolower($trail->trail_name) }}"
+                                 data-mountain-name="{{ strtolower($trail->mountain_name) }}"
+                                 data-organization="{{ strtolower($trail->user->display_name) }}"
+                                 data-location="{{ strtolower(optional($trail->location)->name ?? $trail->mountain_name) }}"
+                                 data-difficulty="{{ strtolower($trail->difficulty) }}"
+                                 data-season="{{ $seasonKey }}">
                                 
                                 <!-- Trail Image -->
                                 <div class="relative h-64 overflow-hidden">
@@ -328,37 +352,199 @@
             return {
                 searchQuery: '',
                 selectedLocation: '',
+                sortBy: 'popularity',
                 filters: {
                     difficulty: '',
                     season: ''
                 },
-                
+                _searchTimer: null,
+
                 init() {
-                    // Basic initialization
-                    console.log('Trail explorer initialized');
-                },
-                
-                filterTrails() {
-                    // For now, just log the filter changes
-                    // This can be enhanced later with actual filtering
-                    console.log('Filters changed:', {
-                        location: this.selectedLocation,
-                        difficulty: this.filters.difficulty,
-                        season: this.filters.season
+                    console.debug('[trailExplorer] init');
+
+                    // Run initial filter to apply any defaults
+                    this.filterTrails();
+
+                    // Watchers: use Alpine's $watch so Livewire doesn't try to evaluate inline handlers
+                    this.$watch('searchQuery', (val) => {
+                        console.debug('[trailExplorer] searchQuery changed', val);
+                        // debounce handled by debounceSearch
+                        this.debounceSearch();
+                    });
+
+                    this.$watch('selectedLocation', (val) => {
+                        console.debug('[trailExplorer] selectedLocation changed', val);
+                        this.filterTrails();
+                    });
+
+                    this.$watch('filters.difficulty', (val) => {
+                        console.debug('[trailExplorer] difficulty changed', val);
+                        this.filterTrails();
+                    });
+
+                    this.$watch('filters.season', (val) => {
+                        console.debug('[trailExplorer] season changed', val);
+                        this.filterTrails();
+                    });
+
+                    this.$watch('sortBy', (val) => {
+                        console.debug('[trailExplorer] sortBy changed', val);
+                        this.sortTrails();
                     });
                 },
-                
-                sortTrails() {
-                    // For now, just log the sort change
-                    console.log('Sort changed');
+
+                filterTrails() {
+                    // get list container and children
+                    const list = document.getElementById('trails-list');
+                    if (!list) return;
+
+                    const cards = Array.from(list.querySelectorAll('[data-trail-name]'));
+
+                    const q = (this.searchQuery || '').toString().trim().toLowerCase();
+                    const loc = (this.selectedLocation || '').toString().trim().toLowerCase();
+                    const diff = (this.filters.difficulty || '').toString().trim().toLowerCase();
+                    const season = (this.filters.season || '').toString().trim().toLowerCase();
+
+                    cards.forEach(card => {
+                        const name = (card.getAttribute('data-trail-name') || '').toLowerCase();
+                        const mountain = (card.getAttribute('data-mountain-name') || '').toLowerCase();
+                        const org = (card.getAttribute('data-organization') || '').toLowerCase();
+                        const location = (card.getAttribute('data-location') || '').toLowerCase();
+                        const difficulty = (card.getAttribute('data-difficulty') || '').toLowerCase();
+                        const cardSeason = (card.getAttribute('data-season') || '').toLowerCase();
+
+                        let visible = true;
+
+                        // Search query: match trail name, mountain, organization, or location
+                        if (q) {
+                            const searchable = `${name} ${mountain} ${org} ${location}`;
+                            if (!searchable.includes(q)) visible = false;
+                        }
+
+                        // Location filter
+                        if (loc) {
+                            if (!location.includes(loc) && !mountain.includes(loc)) visible = false;
+                        }
+
+                        // Difficulty filter
+                        if (diff) {
+                            if (difficulty !== diff) visible = false;
+                        }
+
+                        // Season filter (Philippine seasons)
+                        if (season) {
+                            // season values: 'amihan', 'habagat', 'year-round'
+                            if (season === 'year-round') {
+                                // year-round matches everything
+                            } else {
+                                if (cardSeason !== season) visible = false;
+                            }
+                        }
+
+                        // Toggle display via hidden attribute/class
+                        if (visible) {
+                            card.classList.remove('hidden');
+                            card.style.display = '';
+                        } else {
+                            card.classList.add('hidden');
+                            card.style.display = 'none';
+                        }
+                    });
+                    console.debug('[trailExplorer] filterTrails applied', {q, loc, diff, season});
                 },
-                
+
+                sortTrails() {
+                    // Simple client-side stub: currently doesn't reorder cards because
+                    // reordering would require extracting sort keys from DOM. We'll
+                    // keep the UI responsive and log the selected sort.
+                    console.log('Sorting by', this.sortBy);
+                    // Future improvement: implement DOM reordering based on data attributes
+                },
+
                 debounceSearch() {
-                    // For now, just log the search
-                    console.log('Search query:', this.searchQuery);
+                    clearTimeout(this._searchTimer);
+                    // debounce 300ms
+                    this._searchTimer = setTimeout(() => {
+                        this.filterTrails();
+                    }, 300);
                 }
             }
         }
+    </script>
+    <script>
+        // Global filter function (vanilla JS) that mirrors Alpine filter behavior.
+        (function(){
+            const searchInput = document.getElementById('explore-search-input');
+            const locSelect = document.getElementById('explore-location-select');
+            const diffSelect = document.getElementById('explore-difficulty-select');
+            const seasonSelect = document.getElementById('explore-season-select');
+            const sortSelect = document.getElementById('explore-sort-select');
+            const list = document.getElementById('trails-list');
+            let timer = null;
+
+            function applyFilters() {
+                if (!list) return;
+                const cards = Array.from(list.querySelectorAll('[data-trail-name]'));
+
+                const q = (searchInput ? searchInput.value : '').toString().trim().toLowerCase();
+                const loc = (locSelect ? locSelect.value : '').toString().trim().toLowerCase();
+                const diff = (diffSelect ? diffSelect.value : '').toString().trim().toLowerCase();
+                const season = (seasonSelect ? seasonSelect.value : '').toString().trim().toLowerCase();
+
+                cards.forEach(card => {
+                    const name = (card.getAttribute('data-trail-name') || '').toLowerCase();
+                    const mountain = (card.getAttribute('data-mountain-name') || '').toLowerCase();
+                    const org = (card.getAttribute('data-organization') || '').toLowerCase();
+                    const location = (card.getAttribute('data-location') || '').toLowerCase();
+                    const difficulty = (card.getAttribute('data-difficulty') || '').toLowerCase();
+                    const cardSeason = (card.getAttribute('data-season') || '').toLowerCase();
+
+                    let visible = true;
+
+                    if (q) {
+                        const searchable = `${name} ${mountain} ${org} ${location}`;
+                        if (!searchable.includes(q)) visible = false;
+                    }
+                    if (loc) {
+                        if (!location.includes(loc) && !mountain.includes(loc)) visible = false;
+                    }
+                    if (diff) {
+                        if (difficulty !== diff) visible = false;
+                    }
+                    if (season) {
+                        if (season === 'year-round') {
+                            // match all
+                        } else {
+                            if (cardSeason !== season) visible = false;
+                        }
+                    }
+
+                    if (visible) {
+                        card.classList.remove('hidden');
+                        card.style.display = '';
+                    } else {
+                        card.classList.add('hidden');
+                        card.style.display = 'none';
+                    }
+                });
+            }
+
+            // Attach listeners
+            document.addEventListener('DOMContentLoaded', function(){
+                if (searchInput) {
+                    searchInput.addEventListener('input', function(){
+                        clearTimeout(timer);
+                        timer = setTimeout(applyFilters, 250);
+                    });
+                }
+                [locSelect, diffSelect, seasonSelect, sortSelect].forEach(el => {
+                    if (!el) return;
+                    el.addEventListener('change', function(){
+                        applyFilters();
+                    });
+                });
+            });
+        })();
     </script>
 </div>
 
