@@ -22,6 +22,9 @@ class TrailPackage extends Model
         'commute_legs',
         'commute_summary',
         'side_trips',
+    // new structured fields
+    'package_inclusions_json',
+    'side_trips_json',
         // schedule/time fields
         'opening_time',
         'closing_time',
@@ -38,6 +41,8 @@ class TrailPackage extends Model
         'permit_required' => 'boolean',
         'transport_included' => 'boolean',
         'commute_legs' => 'array',
+        'package_inclusions_json' => 'array',
+        'side_trips_json' => 'array',
         // times stored as string (HH:MM) by default; change to datetime if needed
         'opening_time' => 'string',
         'closing_time' => 'string',

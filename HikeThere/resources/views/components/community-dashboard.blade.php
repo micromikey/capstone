@@ -87,8 +87,17 @@ $imageService = app('App\\Services\\TrailImageService');
     </div>
 </div>
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Tab Buttons -->
+    <div class="mb-6">
+        <div class="flex items-center space-x-3" role="tablist" aria-label="Community Tabs">
+            <button id="tab-featured-organizations" class="tab-button inline-flex items-center px-4 py-2 rounded-full text-sm font-medium focus:outline-none" role="tab" aria-controls="content-featured-organizations" aria-selected="true" tabindex="0">Discover Organizations</button>
+            <button id="tab-events" class="tab-button inline-flex items-center px-4 py-2 rounded-full text-sm font-medium focus:outline-none" role="tab" aria-controls="content-events" aria-selected="false" tabindex="-1">Events</button>
+            <button id="tab-trail-reviews" class="tab-button inline-flex items-center px-4 py-2 rounded-full text-sm font-medium focus:outline-none" role="tab" aria-controls="content-trail-reviews" aria-selected="false" tabindex="-1">Latest Trails</button>
+        </div>
+    </div>
+
     <!-- Discover Organizations Tab -->
-    <div id="featured-organizations" class="tab-content">
+    <div id="featured-organizations" class="tab-content" data-tab="featured-organizations">
         <div class="mb-6">
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <div class="flex">
@@ -180,6 +189,129 @@ $imageService = app('App\\Services\\TrailImageService');
             </svg>
             <h3 class="mt-2 text-sm font-medium text-gray-900">No organizations found</h3>
             <p class="mt-1 text-sm text-gray-500">There are currently no approved organizations available.</p>
+        </div>
+        @endif
+    </div>
+
+    <!-- Events Tab -->
+    <div id="events" class="tab-content hidden" data-tab="events">
+        <div class="mb-6">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Events by Organizations</h2>
+            <p class="text-sm text-gray-600">Discover upcoming events hosted by organizations you follow or across the community.</p>
+        </div>
+
+        @php
+            // Helpful debug / guidance when no events are showing
+            $debugFollowingIds = isset($followingIds) ? $followingIds : [];
+        @endphp
+
+        @if(isset($events) && $events->count() > 0)
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach($events as $event)
+                @php
+                    $now = \Carbon\Carbon::now();
+                @endphp
+            <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-250 p-4 flex flex-col h-full" style="min-height:14rem;">
+                <div class="flex items-start gap-4">
+                    <!-- Date badge -->
+                    <div class="flex-shrink-0">
+                        @php
+                            if (!empty($event->always_available)) {
+                                $dateLabel = 'Always';
+                                $dayLabel = 'Open';
+                            } else {
+                                $dateLabel = $event->start_at ? $event->start_at->format('M') : 'TBA';
+                                $dayLabel = $event->start_at ? $event->start_at->format('d') : '';
+                            }
+                        @endphp
+                        <div class="bg-emerald-600 text-white text-center rounded-lg px-3 py-2 w-16">
+                            <div class="text-xs font-semibold">{{ $dateLabel }}</div>
+                            <div class="text-lg font-bold">{{ $dayLabel }}</div>
+                        </div>
+                    </div>
+
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-gray-900 leading-tight">{{ $event->title }}</h3>
+                        <p class="text-sm text-gray-500 mt-1">{{ optional($event->user)->display_name ?? 'Organization' }} • @if(!empty($event->always_available)) Always Open @else {{ $event->start_at ? $event->start_at->format('M d, Y g:ia') : 'TBA' }} @endif</p>
+                        @if($event->location_name ?? false)
+                            <p class="text-sm text-gray-600 mt-1">📍 {{ $event->location_name }}</p>
+                        @endif
+                        @if($event->description)
+                        <p class="mt-3 text-sm text-gray-600 line-clamp-3">{{ Str::limit($event->description, 140) }}</p>
+                        @endif
+
+                                @if(isset($event->end_at) && $event->end_at->greaterThan($now))
+                                        @php
+                                            // Short relative formatter: prefer days, then hours, then minutes
+                                            // Use absolute diffs (second arg = true) to avoid negative signed values
+                                            // and cast to integers to avoid long floats.
+                                            $diffInDays = (int) max(0, round($event->end_at->diffInDays($now, true)));
+                                            $diffInHours = (int) max(0, round($event->end_at->diffInHours($now, true)));
+                                            $diffInMinutes = (int) max(0, round($event->end_at->diffInMinutes($now, true)));
+
+                                            if ($diffInDays >= 1) {
+                                                $short = $diffInDays . 'd';
+                                            } elseif ($diffInHours >= 1) {
+                                                $short = $diffInHours . 'h';
+                                            } else {
+                                                $short = max(0, $diffInMinutes) . 'm';
+                                            }
+                                        @endphp
+                                    <p class="mt-2 text-sm text-red-600 font-semibold">Ends {{ $short }} left • {{ $event->end_at->format('M d, Y g:ia') }}</p>
+                                @endif
+                    </div>
+                </div>
+
+                <div class="mt-auto flex items-center justify-between">
+                    <a href="{{ route('hiker.events.show', $event->slug) }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-600 text-white text-sm hover:bg-emerald-700 shadow">
+                        <svg class="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                        View Event
+                    </a>
+
+                    @if($event->is_free ?? false)
+                        <span class="text-sm font-semibold text-emerald-700 px-3 py-1 bg-emerald-50 rounded-full">Free</span>
+                    @elseif(isset($event->price) && $event->price > 0)
+                        <span class="text-sm font-semibold text-gray-800">₱{{ number_format($event->price, 0) }}</span>
+                    @endif
+                </div>
+            </div>
+            @endforeach
+        </div>
+        @else
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 20h24M12 28h24M12 36h24" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No events found</h3>
+            <p class="mt-1 text-sm text-gray-500">
+                There are currently no upcoming events from organizations you follow.
+            </p>
+
+            @if(empty($debugFollowingIds))
+                <p class="mt-2 text-sm text-amber-600">Tip: You are not following any organizations yet. Follow organizations to see their events here.</p>
+            @else
+                <p class="mt-2 text-sm text-gray-600">Tip: The organizations you follow may not have upcoming events, or existing events may have start dates in the past.</p>
+            @endif
+
+            {{-- Show debug info when app debug is enabled --}}
+            @if(config('app.debug'))
+                <div class="mt-4 text-left bg-gray-50 border border-gray-200 rounded-lg p-4 text-xs text-gray-700 overflow-auto">
+                    <strong>Debug:</strong>
+                    <div class="mt-2">
+                        <strong>Following IDs:</strong>
+                        <pre class="text-xs">{{ json_encode($debugFollowingIds, JSON_PRETTY_PRINT) }}</pre>
+                    </div>
+                    <div class="mt-2">
+                        <strong>Events (count):</strong> {{ isset($events) ? $events->count() : 0 }}
+                    </div>
+                    @if(isset($events) && $events->count() > 0)
+                        <div class="mt-2">
+                            <strong>Sample Event:</strong>
+                            <pre class="text-xs">{{ json_encode($events->first()->toArray(), JSON_PRETTY_PRINT) }}</pre>
+                        </div>
+                    @endif
+                </div>
+            @endif
         </div>
         @endif
     </div>
@@ -379,36 +511,90 @@ $imageService = app('App\\Services\\TrailImageService');
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
 
+        function activateTab(tabKey) {
+            // Update button states (visual + accessibility)
+            tabButtons.forEach((btn, idx) => {
+                const isActive = btn.id === 'tab-' + tabKey;
+                btn.classList.toggle('active', isActive);
+                if (isActive) {
+                    btn.classList.add('bg-emerald-600', 'text-white', 'shadow-lg');
+                    btn.classList.remove('bg-white', 'text-gray-600');
+                    btn.setAttribute('aria-selected', 'true');
+                    btn.setAttribute('tabindex', '0');
+                } else {
+                    btn.classList.remove('bg-emerald-600', 'text-white', 'shadow-lg');
+                    btn.classList.add('bg-white', 'text-gray-600');
+                    btn.setAttribute('aria-selected', 'false');
+                    btn.setAttribute('tabindex', '-1');
+                }
+            });
+
+            // Update content visibility
+            tabContents.forEach(content => {
+                const key = content.dataset.tab || content.id;
+                if (key === tabKey || content.id === tabKey || content.id === 'content-' + tabKey) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+
+            // Special-case: when showing the following/organization-stats area, load following organizations
+            if (tabKey === 'community-stats') {
+                const followingContainer = document.getElementById('following-organizations');
+                if (followingContainer && !followingContainer.dataset.loaded) {
+                    loadFollowingOrganizations();
+                    followingContainer.dataset.loaded = 'true';
+                }
+            }
+        }
+
+        // Wire buttons
         tabButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const tabId = button.id.replace('tab-', '');
+                activateTab(tabId);
+            });
+        });
 
-                // Update button states
-                tabButtons.forEach(btn => {
-                    btn.classList.remove('active', 'bg-emerald-600', 'text-white', 'shadow-lg');
-                    btn.classList.add('bg-white', 'text-gray-600', 'shadow-md');
-                });
+        // Keyboard navigation for tabs (Left/Right/Home/End)
+        tabButtons.forEach((btn, index) => {
+            btn.addEventListener('keydown', (e) => {
+                const key = e.key;
+                let newIndex = null;
+                if (key === 'ArrowRight') newIndex = (index + 1) % tabButtons.length;
+                if (key === 'ArrowLeft') newIndex = (index - 1 + tabButtons.length) % tabButtons.length;
+                if (key === 'Home') newIndex = 0;
+                if (key === 'End') newIndex = tabButtons.length - 1;
 
-                button.classList.add('active', 'bg-emerald-600', 'text-white', 'shadow-lg');
-                button.classList.remove('bg-white', 'text-gray-600', 'shadow-md');
-
-                // Update content visibility
-                tabContents.forEach(content => {
-                    content.classList.add('hidden');
-                });
-
-                const activeContent = document.getElementById('content-' + tabId);
-                if (activeContent) {
-                    activeContent.classList.remove('hidden');
-
-                    // Load content for following tab if not loaded yet
-                    if (tabId === 'following' && !activeContent.dataset.loaded) {
-                        loadFollowingOrganizations();
-                        activeContent.dataset.loaded = 'true';
-                    }
+                if (newIndex !== null) {
+                    e.preventDefault();
+                    tabButtons[newIndex].focus();
+                    const tabId = tabButtons[newIndex].id.replace('tab-', '');
+                    activateTab(tabId);
                 }
             });
         });
+
+        // Activate initial tab (featured-organizations)
+        activateTab('featured-organizations');
+
+        // If a tab is requested via hash (#events) or query (?tab=events), activate it
+        try {
+            const hash = window.location.hash ? window.location.hash.replace('#', '') : null;
+            const params = new URLSearchParams(window.location.search);
+            const tabParam = params.get('tab');
+            const requested = tabParam || hash;
+            if (requested) {
+                // Normalize ids that may include 'tab-' prefix
+                const normalized = requested.replace(/^tab-/, '');
+                // Delay slightly to ensure DOM ready
+                setTimeout(() => activateTab(normalized), 50);
+            }
+        } catch (e) {
+            // ignore URL parsing errors
+            console.warn('Could not parse requested tab from URL', e);
+        }
 
         // Follow/Unfollow functionality
         const followButtons = document.querySelectorAll('.follow-btn');
@@ -569,6 +755,16 @@ $imageService = app('App\\Services\\TrailImageService');
                 toast.classList.add('translate-x-full');
             }, 3000);
         }
+    
+        // Add lightweight styles for tabs and event cards when Tailwind utilities aren't sufficient
+        const extraStyles = document.createElement('style');
+        extraStyles.textContent = `
+            .tab-button { transition: all .18s ease; }
+            .tab-button[aria-selected="true"] { box-shadow: 0 8px 20px rgba(16,185,129,0.12); }
+            .tab-button:focus { outline: 3px solid rgba(56,189,248,0.18); outline-offset: 2px; }
+            .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        `;
+        document.head.appendChild(extraStyles);
     });
 </script>
 @endpush

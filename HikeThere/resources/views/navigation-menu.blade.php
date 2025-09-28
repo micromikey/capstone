@@ -31,6 +31,12 @@
                     <x-nav-link href="{{ route('org.trails.index') }}" :active="request()->routeIs('org.trails.*')">
                         {{ __('Trails') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('org.events.index') }}" :active="request()->routeIs('org.events.*')">
+                        {{ __('Events') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('org.bookings.index') }}" :active="request()->routeIs('org.bookings.*')">
+                        {{ __('Bookings') }}
+                    </x-nav-link>
                     @else
                     <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
@@ -134,6 +140,12 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('org.trails.index') }}" :active="request()->routeIs('org.trails.*')">
                 {{ __('Trails') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('org.events.index') }}" :active="request()->routeIs('org.events.*')">
+                {{ __('Events') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('org.bookings.index') }}" :active="request()->routeIs('org.bookings.*')">
+                {{ __('Bookings') }}
             </x-responsive-nav-link>
             @else
             <x-responsive-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">

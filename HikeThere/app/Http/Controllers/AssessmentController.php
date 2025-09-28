@@ -398,23 +398,21 @@ class AssessmentController extends Controller
             'high_altitude' => 10
         ];
         
+        // Treat missing answers as neutral so unanswered questions don't implicitly penalize the user.
         foreach ($fitnessQuestions as $q => $pts) {
-            if (isset($data[$q])) {
-                $maxScore += $pts;
-                $score += $this->convertLikertToPoints($data[$q], $pts);
-            }
+            $maxScore += $pts;
+            $response = $data[$q] ?? 'neutral';
+            $score += $this->convertLikertToPoints($response, $pts);
         }
-        
-        // Negative factors with reduced penalties
-        if (isset($data['joint_pain'])) {
-            $maxScore += 10;
-            $score += $this->convertLikertToPoints($data['joint_pain'], 10, true);
-        }
-        
-        if (isset($data['chronic_injuries'])) {
-            $maxScore += 10;
-            $score += $this->convertLikertToPoints($data['chronic_injuries'], 10, true);
-        }
+
+        // Negative factors with reduced penalties: default to 'never' (no problem) when missing
+        $maxScore += 10;
+        $response = $data['joint_pain'] ?? 'never';
+        $score += $this->convertLikertToPoints($response, 10, true);
+
+        $maxScore += 10;
+        $response = $data['chronic_injuries'] ?? 'never';
+        $score += $this->convertLikertToPoints($response, 10, true);
         
         return $maxScore ? max(0, round(($score / $maxScore) * 100)) : 0;
     }
@@ -471,11 +469,11 @@ class AssessmentController extends Controller
             'recognize_hypothermia' => 8, 'have_emergency_shelter' => 8
         ];
         
+        // Missing answers treated as neutral
         foreach ($questions as $q => $pts) {
             $max += $pts;
-            if (isset($data[$q])) {
-                $score += $this->convertLikertToPoints($data[$q], $pts);
-            }
+            $response = $data[$q] ?? 'neutral';
+            $score += $this->convertLikertToPoints($response, $pts);
         }
         
         return $max ? round(($score / $max) * 100) : 0;
@@ -497,11 +495,11 @@ class AssessmentController extends Controller
             'assess_avoid_risks' => 8
         ];
         
+        // Missing answers treated as neutral
         foreach ($questions as $q => $pts) {
             $max += $pts;
-            if (isset($data[$q])) {
-                $score += $this->convertLikertToPoints($data[$q], $pts);
-            }
+            $response = $data[$q] ?? 'neutral';
+            $score += $this->convertLikertToPoints($response, $pts);
         }
         
         return $max ? round(($score / $max) * 100) : 0;
@@ -524,22 +522,21 @@ class AssessmentController extends Controller
             'Be considerate of other visitors',
         ];
         
-        $selected = $data['principles'] ?? [];
-        $score += count(array_intersect($selected, $correctPrinciples)) * 10;
-        $max += 70;
+    $selected = $data['principles'] ?? [];
+    $score += count(array_intersect($selected, $correctPrinciples)) * 10;
+    $max += 70;
 
         // Score for Likert questions (10 questions, each max 3 points)
         for ($i = 0; $i < 10; $i++) {
-            if (isset($data["question_$i"])) {
-                $val = [
-                    'never' => 0,
-                    'rarely' => 1,
-                    'sometimes' => 2,
-                    'often' => 2.5,
-                    'very_often' => 3,
-                ][$data["question_$i"]] ?? 1.5;
-                $score += $val;
-            }
+            $response = $data["question_$i"] ?? 'sometimes';
+            $val = [
+                'never' => 0,
+                'rarely' => 1,
+                'sometimes' => 2,
+                'often' => 2.5,
+                'very_often' => 3,
+            ][$response] ?? 2;
+            $score += $val;
             $max += 3;
         }
 
@@ -678,6 +675,36 @@ class AssessmentController extends Controller
                 ];
             }
         }
-        return $recommendations;
+
+        // Deduplicate recommendations by category+message and sort by priority
+        $seen = [];
+        $deduped = [];
+        foreach ($recommendations as $rec) {
+            $key = strtolower($rec['category'] . '|' . $rec['message']);
+            if (isset($seen[$key])) {
+                // upgrade priority if necessary (critical > high > medium > low)
+                $existingIndex = $seen[$key];
+                $existing = $deduped[$existingIndex];
+                $priorityOrder = ['low' => 0, 'medium' => 1, 'high' => 2, 'critical' => 3];
+                if ($priorityOrder[$rec['priority']] > $priorityOrder[$existing['priority']]) {
+                    $deduped[$existingIndex]['priority'] = $rec['priority'];
+                }
+            } else {
+                $seen[$key] = count($deduped);
+                $deduped[] = $rec;
+            }
+        }
+
+        usort($deduped, function ($a, $b) {
+            $priorityOrder = ['critical' => 3, 'high' => 2, 'medium' => 1, 'low' => 0];
+            $pa = $priorityOrder[$a['priority']] ?? 0;
+            $pb = $priorityOrder[$b['priority']] ?? 0;
+            if ($pa === $pb) {
+                return strcmp($a['category'], $b['category']);
+            }
+            return $pb <=> $pa;
+        });
+
+        return $deduped;
     }
 }

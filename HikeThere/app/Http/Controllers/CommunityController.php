@@ -32,6 +32,27 @@ class CommunityController extends Controller
         // Get organizations the hiker is following
         $followingIds = $user->following()->pluck('users.id')->toArray();
 
+        // Get upcoming events from followed organizations
+        $events = collect();
+        if (!empty($followingIds)) {
+            // Select events that are relevant:
+            // - always_available
+            // - start in the future
+            // - or have an explicit end date in the future (ongoing events)
+            $events = \App\Models\Event::whereIn('user_id', $followingIds)
+                ->where(function($q) {
+                    $q->where('always_available', true)
+                      ->orWhere('start_at', '>=', now())
+                      ->orWhere(function($q2) {
+                          $q2->whereNotNull('end_at')->where('end_at', '>', now());
+                      });
+                })
+                ->with(['user'])
+                ->orderBy('start_at', 'asc')
+                ->limit(6)
+                ->get();
+        }
+
         // Get recent trails from followed organizations
         $followedTrails = $user->followedOrganizationsTrails()
             ->with(['user', 'location', 'primaryImage'])
@@ -44,7 +65,7 @@ class CommunityController extends Controller
                   ->where('approval_status', 'approved');
         })->where('is_active', true)->count();
 
-        return view('hiker.community.index', compact('organizations', 'followingIds', 'followedTrails', 'totalTrails'));
+    return view('hiker.community.index', compact('organizations', 'followingIds', 'followedTrails', 'totalTrails', 'events'));
     }
 
     /**

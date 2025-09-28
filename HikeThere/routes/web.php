@@ -23,7 +23,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Include Jetstream routes
-require __DIR__.'/jetstream.php';
+require __DIR__ . '/jetstream.php';
 
 Route::get('/', function () {
     return view('welcome');
@@ -70,12 +70,12 @@ Route::middleware([
     'verified',
 ])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Weather animation test page
     Route::get('/weather-animation-test', function () {
         return view('weather-animation-test');
     })->name('weather-animation-test');
-    
+
     Route::get('/explore', [ExploreController::class, 'index'])->name('explore');
 
     // Advanced Trail Map
@@ -92,13 +92,24 @@ Route::middleware([
         return view('hiker.hiking-tools');
     })->name('hiking-tools');
 
-    Route::get('/hiker/booking/booking-details', function () {
-        return view('hiker.booking.booking-details');
-    })->name('booking.details');
+    // Booking controller routes
+    // Compatibility: legacy route name `booking.details` used in some views -> route to create page
+    Route::get('/hiker/booking/booking-details', [App\Http\Controllers\Hiker\BookingController::class, 'create'])->name('booking.details');
+    Route::get('/hiker/booking', [App\Http\Controllers\Hiker\BookingController::class, 'index'])->name('booking.index');
+    Route::get('/hiker/booking/create', [App\Http\Controllers\Hiker\BookingController::class, 'create'])->name('booking.create');
+    Route::post('/hiker/booking', [App\Http\Controllers\Hiker\BookingController::class, 'store'])->name('booking.store');
+    Route::get('/hiker/booking/{booking}', [App\Http\Controllers\Hiker\BookingController::class, 'show'])->name('booking.show');
+    Route::get('/hiker/booking/package-details', [App\Http\Controllers\Hiker\BookingController::class, 'packageDetails'])->name('package.details');
 
-    Route::get('/hiker/booking/package-details', function () {
-        return view('hiker.booking.package-details');
-    })->name('package.details');
+    // AJAX endpoint to fetch trails for an organization (only for followed orgs)
+    Route::get('/hiker/api/organization/{organization}/trails', [App\Http\Controllers\Hiker\BookingController::class, 'organizationTrails'])->name('api.hiker.organization.trails');
+
+    // Trail package details used by booking preview
+    // Bind by id (Trail model uses slug as default route key) so numeric ids work
+    Route::get('/hiker/api/trail/{trail:id}/package', [App\Http\Controllers\Hiker\BookingController::class, 'trailPackage'])->name('api.hiker.trail.package');
+
+    // Batches API for booking form
+    Route::get('/hiker/api/trail/{trail:id}/batches', [App\Http\Controllers\Hiker\BookingController::class, 'trailBatches'])->name('api.hiker.trail.batches');
 
     Route::get('/hiker/itinerary/itinerary-instructions', function () {
         return view('hiker.itinerary.itinerary-instructions');
@@ -135,7 +146,7 @@ Route::middleware([
     Route::post('/itinerary/generate', [ItineraryController::class, 'store'])->name('itinerary.generate');
     Route::get('/itinerary/{itinerary}/pdf', [ItineraryController::class, 'pdf'])->name('itinerary.pdf');
     Route::get('/itinerary/{itinerary}', [ItineraryController::class, 'show'])->name('itinerary.show');
-    
+
     // Refactored itinerary routes for testing
     Route::get('/itinerary/refactored/preview', [App\Http\Controllers\Hiker\RefactoredItineraryController::class, 'preview'])->name('itinerary.refactored.preview');
     Route::get('/itinerary/refactored/show', [App\Http\Controllers\Hiker\RefactoredItineraryController::class, 'show'])->name('itinerary.refactored.show');
@@ -181,13 +192,13 @@ Route::middleware(['auth:sanctum', 'check.approval'])->group(function () {
     Route::get('/org/locations/{location:slug}/edit', [OrganizationLocationController::class, 'edit'])->name('org.locations.edit');
     Route::patch('/org/locations/{location:slug}', [OrganizationLocationController::class, 'update'])->name('org.locations.update');
     Route::delete('/org/locations/{location:slug}', [OrganizationLocationController::class, 'destroy'])->name('org.locations.destroy');
-    
+
     // Organization Trail Coordinate Generation routes
     Route::post('/org/trails/generate-coordinates', [TrailCoordinateController::class, 'generateCoordinatesFromForm'])->name('org.trails.generate-coordinates');
     Route::post('/org/trails/generate-google-coordinates', [TrailCoordinateController::class, 'generateCoordinatesFromForm'])->name('org.trails.generate-google-coordinates');
     Route::post('/org/trails/generate-custom-coordinates', [TrailCoordinateController::class, 'generateCustomCoordinatesFromForm'])->name('org.trails.generate-custom-coordinates');
     Route::post('/org/trails/preview-coordinates', [TrailCoordinateController::class, 'previewCoordinates'])->name('org.trails.preview-coordinates');
-    
+
     // GPX Library routes for trail creation
     Route::get('/api/gpx-library', [\App\Http\Controllers\GPXLibraryController::class, 'index'])->name('api.gpx-library');
     Route::post('/api/gpx-library/parse', [\App\Http\Controllers\GPXLibraryController::class, 'parseGPX'])->name('api.gpx-library.parse');
@@ -196,6 +207,28 @@ Route::middleware(['auth:sanctum', 'check.approval'])->group(function () {
     // Protected routes that require approval
     // These routes will be accessible to approved organizations
 })->middleware('user.type:organization');
+
+// Organization Bookings management - accessible to approved organizations
+Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])->group(function () {
+    // Organization bookings listing and details
+    Route::get('/org/bookings', [App\Http\Controllers\OrganizationBookingController::class, 'index'])->name('org.bookings.index');
+    Route::get('/org/bookings/{booking}', [App\Http\Controllers\OrganizationBookingController::class, 'show'])->name('org.bookings.show');
+    Route::patch('/org/bookings/{booking}/status', [App\Http\Controllers\OrganizationBookingController::class, 'updateStatus'])->name('org.bookings.update-status');
+});
+
+// Organization Events management
+Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])->group(function () {
+    Route::resource('org/events', App\Http\Controllers\OrganizationEventController::class, ['as' => 'org']);
+});
+
+// Public Events
+Route::get('/events', [App\Http\Controllers\EventController::class, 'index'])->name('events.index');
+Route::get('/events/{slug}', [App\Http\Controllers\EventController::class, 'show'])->name('events.show');
+
+// Hiker-specific event detail route (authenticated hikers)
+Route::middleware(['auth:sanctum', 'verified', 'user.type:hiker'])->group(function () {
+    Route::get('/hiker/events/{slug}', [App\Http\Controllers\EventController::class, 'show'])->name('hiker.events.show');
+});
 
 // Public routes
 Route::get('/location-weather', [LocationWeatherController::class, 'getWeather']);
@@ -263,7 +296,6 @@ Route::middleware(['auth:sanctum', 'ensure.hiking.preferences'])->group(function
     Route::post('/account/preferences', [App\Http\Controllers\AccountSettings\PreferencesController::class, 'update'])->name('preferences.update');
     Route::post('/account/preferences/reset', [App\Http\Controllers\AccountSettings\PreferencesController::class, 'reset'])->name('preferences.reset');
     Route::get('/account/preferences/export', [App\Http\Controllers\AccountSettings\PreferencesController::class, 'export'])->name('preferences.export');
-
 });
 
 // Guest routes (registration and login)

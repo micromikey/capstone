@@ -302,7 +302,7 @@
                                class="inline-flex items-center px-8 py-4 text-white text-lg font-semibold rounded-lg shadow-lg transition duration-150 hover:shadow-xl hover:scale-105"
                                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
                                 💾 Save Results to Profile
-                                <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="ml-2 w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                 </svg>
                             </button>
@@ -317,7 +317,7 @@
                            class="inline-flex items-center px-8 py-4 text-white text-lg font-semibold rounded-lg shadow-lg transition duration-150 hover:shadow-xl hover:scale-105"
                            style="background: linear-gradient(135deg, #e3a746 0%, #f4b942 100%);">
                             Create Personalized Itinerary
-                            <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="ml-2 w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                             </svg>
                         </a>

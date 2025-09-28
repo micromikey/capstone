@@ -89,7 +89,7 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
                                 @foreach($principles as $i => $principle)
                                     <label class="inline-flex items-center text-base">
-                                        <input type="checkbox" name="principles[]" value="{{ $principle }}" class="mr-3 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                                        <input type="checkbox" name="principles[]" value="{{ $principle }}" class="mr-3 w-6 h-6 text-green-600 border-gray-300 rounded focus:ring-green-500"
                                             {{ isset($environmentData['principles']) && in_array($principle, $environmentData['principles']) ? 'checked' : '' }}>
                                         {{ $principle }}
                                     </label>

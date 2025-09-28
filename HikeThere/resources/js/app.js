@@ -1,4 +1,5 @@
 import './bootstrap';
+import initializeTrailPreview from './trailPreview';
 
 document.addEventListener('DOMContentLoaded', function () {
     // Feature Cards Animation
@@ -25,6 +26,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // Trail Explorer Component
     const trailExplorerComponent = trailExplorer();
     trailExplorerComponent.init();
+
+    // Expose trail preview initializer globally so Blade templates can call it
+    try {
+        window.initializeTrailPreview = initializeTrailPreview;
+    } catch (e) {
+        console.warn('Unable to attach initializeTrailPreview to window', e);
+    }
 });
 
 function initializeFeatureCards() {
