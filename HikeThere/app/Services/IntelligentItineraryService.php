@@ -92,7 +92,7 @@ class IntelligentItineraryService
         $adjustedHikeTime = $this->adjustTimeForProfile($baseHikeTime, $profile);
         
         // 1. Trail Start - Always included
-        $activities[] = $this->createTrailStartActivity($cursor, $trail, $profile);
+        $activities[] = $this->createTrailStartActivity($cursor, $trail, $profile, $dayIndex, $dateInfo);
         
         // 2. Early activities based on experience level
         if ($profile['experience_level'] === 'beginner' || $profile['emergency_preparedness'] < 60) {
@@ -307,20 +307,46 @@ class IntelligentItineraryService
         return intval($baseTime * $multiplier);
     }
     
-    protected function createTrailStartActivity($time, $trail, $profile)
+    protected function createTrailStartActivity($time, $trail, $profile, $dayIndex = 0, $dateInfo = null)
     {
         $trailName = $trail['name'] ?? 'Trail';
-        $description = $profile['experience_level'] === 'beginner' 
-            ? 'Take your time and enjoy the journey ahead'
-            : 'Begin your adventure with confidence';
+        
+        // Calculate cumulative distance for Day 2+ (same logic as ItineraryGeneratorService)
+        $cumulativeDistance = 0.0;
+        if ($dayIndex > 1 && $dateInfo) {
+            $totalKm = floatval($trail['distance_km'] ?? 10);
+            $durationDays = $dateInfo['duration_days'] ?? 2;
+            
+            // Calculate distance covered by previous days
+            for ($prevDay = 1; $prevDay < $dayIndex; $prevDay++) {
+                $prevDayDistance = $totalKm / max(1, $durationDays); // Simple equal split for now
+                $cumulativeDistance += $prevDayDistance;
+            }
+        }
+        
+        if ($dayIndex === 1) {
+            // Day 1: Start at trailhead
+            $title = "Start {$trailName}";
+            $location = $trailName;
+            $description = $profile['experience_level'] === 'beginner' 
+                ? 'Take your time and enjoy the journey ahead'
+                : 'Begin your adventure with confidence';
+        } else {
+            // Day 2+: Continue from campsite
+            $title = "Break Camp & Continue Hike";
+            $location = "Campsite";
+            $description = $profile['experience_level'] === 'beginner' 
+                ? 'Pack up camp carefully and continue your journey'
+                : 'Break camp efficiently and resume hiking';
+        }
             
         return [
             'minutes' => $time,
             'cum_minutes' => $time,
-            'cum_distance_km' => 0.0,
-            'title' => "Start {$trailName}",
+            'cum_distance_km' => $cumulativeDistance,
+            'title' => $title,
             'type' => 'hike',
-            'location' => $trailName,
+            'location' => $location,
             'description' => $description
         ];
     }

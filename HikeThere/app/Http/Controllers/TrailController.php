@@ -17,7 +17,22 @@ class TrailController extends Controller
     public function show(Trail $trail)
     {
         $trail->load(['location', 'images', 'reviews.user']);
-        return view('trails.show', compact('trail'));
+        
+        // Get related events for this trail (limit to 6 for display)
+        $relatedEvents = \App\Models\Event::with(['user', 'trail.location'])
+            ->where('trail_id', $trail->id)
+            ->where('is_public', true)
+            ->where(function($query) {
+                // Show events that are always available or haven't ended yet
+                $query->where('always_available', true)
+                    ->orWhere('end_at', '>=', now())
+                    ->orWhereNull('end_at');
+            })
+            ->orderBy('start_at', 'asc')
+            ->limit(6)
+            ->get();
+        
+        return view('trails.show', compact('trail', 'relatedEvents'));
     }
 
     public function search(Request $request)

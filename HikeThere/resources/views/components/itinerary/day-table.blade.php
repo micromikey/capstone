@@ -19,15 +19,15 @@
     </div>
 
     <div class="overflow-x-auto">
-        <table class="min-w-full table-auto divide-y divide-gray-200 border border-gray-300">
+        <table class="min-w-full table-fixed divide-y divide-gray-200 border border-gray-300">
             <thead class="bg-gray-100">
                 <tr>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300">Time</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300">Activity</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300">Elapsed</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300">Distance</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300">Weather</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300">Transport</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300 w-20">Time</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300 w-1/4">Activity</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300 w-16">Elapsed</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300 w-16">Distance</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300 w-24">Weather</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300 w-20">Transport</th>
                     <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Notes</th>
                 </tr>
             </thead>

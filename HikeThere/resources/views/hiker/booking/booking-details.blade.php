@@ -9,7 +9,7 @@
             <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-8 max-w-7xl mx-auto transform hover:shadow-2xl transition-all duration-300">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                     <div class="md:col-span-1">
-                        <form action="{{ route('booking.store') }}" method="POST" class="space-y-4">
+                        <form id="booking-form" action="{{ route('booking.store') }}" method="POST" class="space-y-4">
                     @csrf
                     {{-- Prefill event association (optional) --}}
                     @if(!empty($prefill['event_id'] ?? null))
@@ -229,19 +229,13 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                    <div class="flex items-center justify-start pt-6 border-t border-gray-200">
                         <a href="{{ route('booking.index') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors duration-200">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                             </svg>
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 text-white font-semibold rounded-xl shadow-lg hover:from-emerald-700 hover:via-emerald-800 hover:to-teal-800 transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-emerald-200">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            Create Booking
-                        </button>
                     </div>
                 </form>
             </div>
@@ -282,6 +276,16 @@
                                         <span id="selected_slot_remaining" class="inline-flex items-center px-2 py-1 text-xs font-bold text-green-800 bg-green-100 rounded-full">—</span>
                                     </div>
                                 </div>
+                            </div>
+                            
+                            <!-- Create Booking Button -->
+                            <div class="mt-6 pt-4 border-t border-gray-200">
+                                <button type="submit" form="booking-form" class="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 text-white font-semibold rounded-xl shadow-lg hover:from-emerald-700 hover:via-emerald-800 hover:to-teal-800 transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-emerald-200">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    Create Booking
+                                </button>
                             </div>
                         </div>
                     </aside>

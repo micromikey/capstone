@@ -76,12 +76,16 @@ class ItineraryGeneratorService
         $durationDays = isset($itinerary['duration_days']) ? intval($itinerary['duration_days']) : null;
         $nights = isset($itinerary['nights']) ? intval($itinerary['nights']) : null;
         
-        // Try to parse duration from trail package data if available
-        if (empty($durationDays) && !empty($trail)) {
+        // Always try to parse duration from trail package data first (authoritative source)
+        if (!empty($trail)) {
             $trailDuration = null;
             
-            // Handle different trail data formats
-            if (is_object($trail) && isset($trail->duration)) {
+            // Handle different trail data formats - check package duration first
+            if (is_object($trail) && isset($trail->package) && isset($trail->package->duration)) {
+                $trailDuration = $trail->package->duration;
+            } elseif (is_array($trail) && isset($trail['package']['duration'])) {
+                $trailDuration = $trail['package']['duration'];
+            } elseif (is_object($trail) && isset($trail->duration)) {
                 $trailDuration = $trail->duration;
             } elseif (is_array($trail) && isset($trail['duration'])) {
                 $trailDuration = $trail['duration'];
@@ -92,6 +96,7 @@ class ItineraryGeneratorService
                 try {
                     $parsedDuration = $this->durationParser->normalizeDuration($trailDuration);
                     if ($parsedDuration) {
+                        // Trail package duration takes precedence over user input
                         $durationDays = $parsedDuration['days'];
                         $nights = $parsedDuration['nights'];
                     }
@@ -100,6 +105,14 @@ class ItineraryGeneratorService
                     Log::warning("Failed to parse trail duration: " . $trailDuration, ['error' => $e->getMessage()]);
                 }
             }
+        }
+        
+        // If no trail duration found, use user input
+        if (empty($durationDays) && isset($itinerary['duration_days'])) {
+            $durationDays = intval($itinerary['duration_days']);
+        }
+        if (empty($nights) && isset($itinerary['nights'])) {
+            $nights = intval($itinerary['nights']);
         }
         
         // Fallback to trail calculator if still no duration
@@ -144,14 +157,20 @@ class ItineraryGeneratorService
             $dayUserActivities = $userActivities[$day] ?? [];
             
             if (empty($dayUserActivities)) {
-                // Use intelligent generation based on user profile and preferences
-                $dayActivities = $this->intelligentItinerary->generatePersonalizedActivities(
-                    $itinerary, $trail, $dateInfo, $routeData, $day
-                );
-                
-                // Fallback to default plan if intelligent generation fails
-                if (empty($dayActivities)) {
+                // For multi-day hikes, use fallback generation for accurate distance/time progression
+                // TODO: Update intelligent generation to fully support multi-day progression
+                if ($dateInfo['duration_days'] > 1) {
                     $dayActivities = $this->generateDayPlan($day, $trail, $dateInfo, $routeData);
+                } else {
+                    // Use intelligent generation for single-day hikes
+                    $dayActivities = $this->intelligentItinerary->generatePersonalizedActivities(
+                        $itinerary, $trail, $dateInfo, $routeData, $day
+                    );
+                    
+                    // Fallback to default plan if intelligent generation fails
+                    if (empty($dayActivities)) {
+                        $dayActivities = $this->generateDayPlan($day, $trail, $dateInfo, $routeData);
+                    }
                 }
             } else {
                 // Expand user activities with scaffold
@@ -207,8 +226,23 @@ class ItineraryGeneratorService
         $totalKm = floatval($trail['distance_km'] ?? 10);
         $durationDays = $dateInfo['duration_days'];
         
-        // Calculate distance for this specific day
-        $distPerDay = $this->trailCalculator->calculateDayDistance($dayIndex, $totalKm, $durationDays, $routeData);
+        // Calculate cumulative progress and remaining distance for multi-day continuity
+        if ($dayIndex === 1) {
+            // Day 1: Start from 0, calculate first day distance
+            $cumulativeDistance = 0;
+            $distPerDay = $this->trailCalculator->calculateDayDistance($dayIndex, $totalKm, $durationDays, $routeData);
+        } else {
+            // Day 2+: Calculate cumulative distance from previous days
+            $cumulativeDistance = 0;
+            for ($prevDay = 1; $prevDay < $dayIndex; $prevDay++) {
+                $prevDayDistance = $this->trailCalculator->calculateDayDistance($prevDay, $totalKm, $durationDays, $routeData);
+                $cumulativeDistance += $prevDayDistance;
+            }
+            
+            // Remaining distance for this day = total - already covered
+            $remainingDistance = max(0, $totalKm - $cumulativeDistance);
+            $distPerDay = $remainingDistance;
+        }
         
         // Calculate hiking time
         $speed = $this->trailCalculator->computeHikingSpeedKph($trail);
@@ -238,30 +272,53 @@ class ItineraryGeneratorService
         $activities = [];
         $cursor = 0;
 
-        // Trail start activity
+        // Trail start activity - different for each day
         $trailName = $trail['name'] ?? 'Trail';
-        $startTitle = 'Start ' . $trailName;
-        $startDescription = 'Begin your hike';
         
-        $activities[] = array_merge(
-            $this->createActivity($cursor, 0.0, $startTitle, 'hike', $trailName),
-            ['description' => $startDescription]
-        );
+        if ($dayIndex === 1) {
+            // Day 1: Start from trailhead
+            $startTitle = 'Start ' . $trailName;
+            $startDescription = 'Begin your hike';
+            $startLocation = $trailName;
+            
+            $activities[] = array_merge(
+                $this->createActivity($cursor, 0.0, $startTitle, 'hike', $startLocation),
+                ['description' => $startDescription]
+            );
 
-        // Create more detailed trail activities for better experience
-        $activities[] = $this->createActivity(
-            $cursor + 15, 
-            0.0, 
-            'Safety Briefing & Equipment Check', 
-            'prep', 
-            'Trailhead'
-        );
+            // Safety briefing only on Day 1
+            $activities[] = $this->createActivity(
+                $cursor + 15, 
+                0.0, 
+                'Safety Briefing & Equipment Check', 
+                'prep', 
+                'Trailhead'
+            );
+        } else {
+            // Day 2+: Continue from campsite
+            $startTitle = 'Break Camp & Continue Hike';
+            $startDescription = 'Pack up camp and resume your journey';
+            
+            $activities[] = array_merge(
+                $this->createActivity($cursor, $cumulativeDistance, $startTitle, 'prep', 'Campsite'),
+                ['description' => $startDescription]
+            );
+
+            // Morning preparation for subsequent days  
+            $activities[] = $this->createActivity(
+                $cursor + 15, 
+                $cumulativeDistance, 
+                'Morning Check & Route Planning', 
+                'prep', 
+                'Campsite'
+            );
+        }
 
         // Early trail segment (first 20% - usually steeper/more challenging)
         $earlyBreak = intval(round($hikeMinutes * 0.2));
         $activities[] = $this->createActivity(
             $cursor + $earlyBreak, 
-            round($distPerDay * 0.2, 2), 
+            round($cumulativeDistance + ($distPerDay * 0.2), 2), 
             'First Water Break', 
             'rest', 
             'Trail'
@@ -271,7 +328,7 @@ class ItineraryGeneratorService
         $quarterTime = intval(round($hikeMinutes * 0.35));
         $activities[] = $this->createActivity(
             $cursor + $quarterTime, 
-            round($distPerDay * 0.35, 2), 
+            round($cumulativeDistance + ($distPerDay * 0.35), 2), 
             'Scenic Photo Stop', 
             'photo', 
             'Viewpoint'
@@ -281,7 +338,7 @@ class ItineraryGeneratorService
         $halfTime = intval(round($hikeMinutes * 0.5));
         $activities[] = $this->createActivity(
             $cursor + $halfTime, 
-            round($distPerDay / 2, 2), 
+            round($cumulativeDistance + ($distPerDay / 2), 2), 
             'Lunch Break & Rest', 
             'meal', 
             'Rest Area'
@@ -291,7 +348,7 @@ class ItineraryGeneratorService
         $postLunch = intval(round($hikeMinutes * 0.65));
         $activities[] = $this->createActivity(
             $postLunch, 
-            round($distPerDay * 0.65, 2), 
+            round($cumulativeDistance + ($distPerDay * 0.65), 2), 
             'Hydration & Navigation Check', 
             'checkpoint', 
             'Trail'
@@ -302,7 +359,7 @@ class ItineraryGeneratorService
         $approachTitle = ($dayIndex < $durationDays) ? 'Final Approach to Campsite' : 'Final Push to Summit';
         $activities[] = $this->createActivity(
             $finalApproach, 
-            round($distPerDay * 0.85, 2), 
+            round($cumulativeDistance + ($distPerDay * 0.85), 2), 
             $approachTitle, 
             'climb', 
             'Trail'
@@ -317,7 +374,7 @@ class ItineraryGeneratorService
         $activities[] = array_merge(
             $this->createActivity(
                 $cursor + $hikeMinutes, 
-                round($distPerDay, 2), 
+                round($cumulativeDistance + $distPerDay, 2), 
                 $endTitle, 
                 $endType, 
                 $endLocation
@@ -332,7 +389,7 @@ class ItineraryGeneratorService
             
             $activities[] = $this->createActivity(
                 $descentStart, 
-                round($distPerDay, 2), 
+                round($cumulativeDistance + $distPerDay, 2), 
                 'Begin Descent', 
                 'descent', 
                 'Summit'
@@ -340,7 +397,7 @@ class ItineraryGeneratorService
             
             $activities[] = $this->createActivity(
                 $descentStart + intval($descentTime / 2), 
-                round($distPerDay * 0.7, 2), 
+                round($cumulativeDistance + ($distPerDay * 0.7), 2), 
                 'Descent Rest Stop', 
                 'rest', 
                 'Trail'
@@ -364,7 +421,9 @@ class ItineraryGeneratorService
     public function generateNightPlan($nightIndex, $arrivalMinutes = 1080)
     {
         $activities = [];
-        $cursor = max(0, intval($arrivalMinutes));
+        // Ensure night activities start no earlier than 18:00 (1080 minutes)
+        $eveningStart = 18 * 60; // 18:00 = 1080 minutes
+        $cursor = max($eveningStart, intval($arrivalMinutes));
 
         $activities[] = $this->createActivity($cursor, null, 'Set up Camp / Check-in', 'camp', 'Campsite');
         $cursor += 45;
@@ -575,5 +634,37 @@ class ItineraryGeneratorService
         }
 
         return $uniqueActivities;
+    }
+
+    /**
+     * Check if generated activities have incorrect distance progression for multi-day hikes
+     */
+    protected function hasIncorrectDistanceProgression($dayActivities, $dayIndex, $dateInfo)
+    {
+        // Only validate multi-day hikes
+        if ($dateInfo['duration_days'] <= 1) {
+            return false;
+        }
+
+        // For Day 2+, check if distance progression is reasonable
+        if ($dayIndex > 1) {
+            $firstActivity = reset($dayActivities);
+            $lastActivity = end($dayActivities);
+            
+            $startingDistance = $firstActivity['cum_distance_km'] ?? 0;
+            $endingDistance = $lastActivity['cum_distance_km'] ?? 0;
+            
+            // If Day 2+ starts at 0 km, distance progression is definitely incorrect
+            if ($startingDistance <= 0) {
+                return true;
+            }
+            
+            // If activities don't show progressive distance increase, it's likely incorrect
+            if ($endingDistance <= $startingDistance) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

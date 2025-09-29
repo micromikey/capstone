@@ -1,4 +1,16 @@
 <x-app-layout>
+    <!-- Floating Navigation -->
+    <x-floating-navigation :sections="[
+        ['id' => 'trail-gallery', 'title' => 'Trail', 'icon' => '<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z\'/>'],
+        ['id' => 'trail-stats', 'title' => 'Trail Stats', 'icon' => '<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z\'/>'],
+        ['id' => 'trail-info', 'title' => 'Trail Information', 'icon' => '<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\'/>'],
+        ['id' => 'community-events', 'title' => 'Community Events', 'icon' => '<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z\'/>'],
+        ['id' => 'trail-map', 'title' => 'Trail Map & Route', 'icon' => '<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m0 0L9 7\'/>'],
+        ['id' => 'weather-info', 'title' => 'Weather Information', 'icon' => '<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z\'/>'],
+        ['id' => 'reviews-section', 'title' => 'Reviews & Ratings', 'icon' => '<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z\'/>'],
+        ['id' => 'trail-actions', 'title' => 'Book Trail', 'icon' => '<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z\'/>']
+    ]" />
+
     <x-slot name="header">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -22,7 +34,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <!-- Trail Image Gallery -->
-                <div class="relative h-96 bg-gray-200" x-data="trailGallery()" x-init="init()">
+                <div id="trail-gallery" class="relative h-96 bg-gray-200" x-data="trailGallery()" x-init="init()">
                     <!-- Main Image -->
                     <div class="w-full h-full overflow-hidden">
                         <img x-show="currentImage" 
@@ -91,7 +103,7 @@
                 <!-- Trail Content -->
                 <div class="p-6">
                     <!-- Stats Grid -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                    <div id="trail-stats" class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                         <div class="text-center">
                             <div class="text-2xl font-bold text-gray-900">{{ $trail->length }} km</div>
                             <div class="text-sm text-gray-500">Length</div>
@@ -135,7 +147,7 @@
                     </div>
 
                     <!-- Difficulty and Organization -->
-                    <div class="flex flex-col md:flex-row gap-6 mb-8">
+                    <div id="trail-info" class="flex flex-col md:flex-row gap-6 mb-8">
                         <div class="flex-1">
                             <h3 class="text-lg font-semibold text-gray-900 mb-3">Trail Information</h3>
                             <div class="space-y-2 text-sm text-gray-700">
@@ -225,9 +237,101 @@
                         </div>
                     @endif
 
+                    <!-- Events Section -->
+                    <div id="community-events" class="mb-8">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Community Events</h3>
+                            <a href="{{ route('community.index', ['tab' => 'events']) }}" class="text-emerald-600 hover:text-emerald-700 text-sm font-medium">View All Events</a>
+                        </div>
+                        
+                        @php
+                            $now = \Carbon\Carbon::now();
+                        @endphp
+                        
+                        @if($relatedEvents->count() > 0)
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                @foreach($relatedEvents as $event)
+                                <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-250 p-6 flex flex-col h-full" style="min-height:16rem;">
+                                    <div class="flex items-start gap-4">
+                                        <!-- Date badge -->
+                                        <div class="flex-shrink-0">
+                                            @php
+                                                if (!empty($event->always_available)) {
+                                                    $dateLabel = 'Always';
+                                                    $dayLabel = 'Open';
+                                                } else {
+                                                    $dateLabel = $event->start_at ? $event->start_at->format('M') : 'TBA';
+                                                    $dayLabel = $event->start_at ? $event->start_at->format('d') : '';
+                                                }
+                                            @endphp
+                                            <div class="bg-emerald-600 text-white text-center rounded-lg px-3 py-2 w-16">
+                                                <div class="text-xs font-semibold">{{ $dateLabel }}</div>
+                                                <div class="text-lg font-bold">{{ $dayLabel }}</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex-1">
+                                            <h3 class="text-lg font-semibold text-gray-900 leading-tight">{{ $event->title }}</h3>
+                                            <p class="text-sm text-gray-500 mt-1">{{ optional($event->user)->display_name ?? 'Organization' }} • @if(!empty($event->always_available)) Always Open @else {{ $event->start_at ? $event->start_at->format('M d, Y g:ia') : 'TBA' }} @endif</p>
+                                            @if($event->trail && $event->trail->location)
+                                                <p class="text-sm text-gray-600 mt-1">📍 {{ $event->trail->location->name }}, {{ $event->trail->location->province }}</p>
+                                            @endif
+                                            @if($event->description)
+                                            <p class="mt-3 text-sm text-gray-600 line-clamp-3">{{ Str::limit($event->description, 140) }}</p>
+                                            @endif
+
+                                            @if(isset($event->end_at) && $event->end_at->greaterThan($now))
+                                                @php
+                                                    $diffInDays = (int) max(0, round($event->end_at->diffInDays($now, true)));
+                                                    $diffInHours = (int) max(0, round($event->end_at->diffInHours($now, true)));
+                                                    $diffInMinutes = (int) max(0, round($event->end_at->diffInMinutes($now, true)));
+
+                                                    if ($diffInDays >= 1) {
+                                                        $short = $diffInDays . 'd';
+                                                    } elseif ($diffInHours >= 1) {
+                                                        $short = $diffInHours . 'h';
+                                                    } else {
+                                                        $short = max(0, $diffInMinutes) . 'm';
+                                                    }
+                                                @endphp
+                                                <p class="mt-2 text-sm text-red-600 font-semibold">Ends {{ $short }} left • {{ $event->end_at->format('M d, Y g:ia') }}</p>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-auto flex items-center justify-between">
+                                        <a href="{{ route('hiker.events.show', $event->slug) }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-600 text-white text-sm hover:bg-emerald-700 shadow">
+                                            <svg class="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                                            View Event
+                                        </a>
+
+                                        @if($event->capacity)
+                                            <span class="text-sm font-semibold text-blue-700 px-3 py-1 bg-blue-50 rounded-full">{{ $event->capacity }} max</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="bg-gray-50 rounded-xl p-8 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <h4 class="text-lg font-medium text-gray-900 mb-2">No Events Found</h4>
+                                <p class="text-gray-600 mb-4">There are currently no events related to this trail location.</p>
+                                <a href="{{ route('community.index', ['tab' => 'events']) }}" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    Browse All Events
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+
                     <!-- Interactive Trail Map with Route -->
                     @if($trail->coordinates && count($trail->coordinates) > 0)
-                        <div class="mb-8">
+                        <div id="trail-map" class="mb-8">
                             <div class="flex items-center justify-between mb-3">
                                 <h3 class="text-lg font-semibold text-gray-900">Trail Route & Map</h3>
                                 <div class="flex gap-2">
@@ -285,7 +389,7 @@
                             </div>
                         </div>
                     @else
-                        <div class="mb-8">
+                        <div id="trail-map" class="mb-8">
                             <div class="flex items-center justify-between mb-3">
                                 <h3 class="text-lg font-semibold text-gray-900">Trail Route & Map</h3>
                                 @auth
@@ -331,7 +435,7 @@
 
                     <!-- Weather Information -->
                     @if($trail->coordinates && count($trail->coordinates) > 0)
-                        <div class="mb-8">
+                        <div id="weather-info" class="mb-8">
                             <h3 class="text-lg font-semibold text-gray-900 mb-4">Weather Information</h3>
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 <!-- Current Weather -->
@@ -368,7 +472,7 @@
                     @endif
 
                     <!-- Reviews Section -->
-                    <div class="mb-8">
+                    <div id="reviews-section" class="mb-8">
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="text-2xl font-semibold text-gray-900">Reviews & Ratings</h3>
                             <div class="flex items-center space-x-4">
@@ -638,7 +742,7 @@
 
                     <!-- Actions -->
                     <div id="trail-actions" class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
-                        <button class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
+                        <button id="book-trail-btn" data-trail-id="{{ $trail->id }}" data-trail-slug="{{ $trail->slug }}" data-organization-id="{{ $trail->user_id }}" data-organization-name="{{ $trail->user->display_name }}" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
                             <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                             </svg>
@@ -694,7 +798,7 @@
     <div id="floating-actions" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg transform translate-y-full transition-transform duration-300 z-40">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="flex flex-col sm:flex-row gap-4 p-4">
-                <button class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
+                <button id="floating-book-trail-btn" data-trail-id="{{ $trail->id }}" data-trail-slug="{{ $trail->slug }}" data-organization-id="{{ $trail->user_id }}" data-organization-name="{{ $trail->user->display_name }}" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
                     <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
@@ -893,6 +997,42 @@
 
         // Initialize build itinerary functionality
         initializeBuildItineraryButtons();
+        
+        // Initialize book trail functionality
+        initializeBookTrailButtons();
+        
+        function initializeBookTrailButtons() {
+            const bookBtns = [
+                document.getElementById('book-trail-btn'),
+                document.getElementById('floating-book-trail-btn')
+            ].filter(btn => btn);
+
+            if (bookBtns.length === 0) return;
+
+            bookBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const trailId = btn.dataset.trailId;
+                    const trailSlug = btn.dataset.trailSlug;
+                    const organizationId = btn.dataset.organizationId;
+                    const organizationName = btn.dataset.organizationName;
+                    
+                    if (!trailId || !organizationId) {
+                        showToast('error', 'Trail or organization information not found');
+                        return;
+                    }
+
+                    // Build the booking URL with pre-populated data
+                    const bookingUrl = new URL('{{ route("booking.details") }}', window.location.origin);
+                    bookingUrl.searchParams.set('trail_id', trailId);
+                    bookingUrl.searchParams.set('organization_id', organizationId);
+                    
+                    // Redirect to booking page with populated data
+                    window.location.href = bookingUrl.toString();
+                });
+            });
+        }
         
         function initializeBuildItineraryButtons() {
             const buildBtns = [
@@ -2183,6 +2323,16 @@
 
     <!-- Load Chart.js for elevation profile -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        .line-clamp-3 { 
+            display: -webkit-box; 
+            -webkit-line-clamp: 3; 
+            line-clamp: 3;
+            -webkit-box-orient: vertical; 
+            overflow: hidden; 
+        }
+    </style>
 </x-app-layout>
 
 <script>
