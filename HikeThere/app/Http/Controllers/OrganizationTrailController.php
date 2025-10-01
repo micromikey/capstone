@@ -378,6 +378,9 @@ class OrganizationTrailController extends Controller
             abort(403);
         }
 
+        // Load the package relationship to access package data like side_trips
+        $trail->load('package');
+
         return view('org.trails.edit', compact('trail'));
     }
 

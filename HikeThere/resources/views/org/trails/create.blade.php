@@ -6,20 +6,24 @@
                            if (transportCheckbox) {
                                transportCheckbox.addEventListener('change', function() {
                                    if (this.checked) {
-                                       pickupTimeContainer.classList.add('hidden');
-                                       departureTimeContainer.classList.remove('hidden');
-                                   } else {
+                                       // Transport included: show pickup time (organization picks up)
                                        pickupTimeContainer.classList.remove('hidden');
                                        departureTimeContainer.classList.add('hidden');
+                                   } else {
+                                       // Transport not included: show departure time (self-commute)
+                                       pickupTimeContainer.classList.add('hidden');
+                                       departureTimeContainer.classList.remove('hidden');
                                    }
                                });
                                // Initial state
                                if (transportCheckbox.checked) {
-                                   pickupTimeContainer.classList.add('hidden');
-                                   departureTimeContainer.classList.remove('hidden');
-                               } else {
+                                   // Transport included: show pickup time (organization picks up)
                                    pickupTimeContainer.classList.remove('hidden');
                                    departureTimeContainer.classList.add('hidden');
+                               } else {
+                                   // Transport not included: show departure time (self-commute)
+                                   pickupTimeContainer.classList.add('hidden');
+                                   departureTimeContainer.classList.remove('hidden');
                                }
                            }
                        });

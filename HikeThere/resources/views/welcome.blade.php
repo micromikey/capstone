@@ -2943,6 +2943,22 @@ Sample Trails: ${data.sample_trails.length}`);
             }
         }
 
+        // Helper function to get difficulty color classes
+        function getDifficultyColor(difficulty) {
+            const difficultyMap = {
+                'Easy': 'green-600',
+                'Beginner': 'green-600',
+                'Moderate': 'yellow-600',
+                'Intermediate': 'yellow-600',
+                'Hard': 'orange-600',
+                'Difficult': 'orange-600',
+                'Very Hard': 'red-600',
+                'Very_hard': 'red-600',
+                'Expert': 'red-600'
+            };
+            return difficultyMap[difficulty] || 'gray-600';
+        }
+
         // Render nearby trails in the grid
         function renderNearbyTrails() {
             const nearbyGrid = document.getElementById('nearby-trails-grid');
@@ -2953,6 +2969,7 @@ Sample Trails: ${data.sample_trails.length}`);
                     DEFAULT_TRAIL_IMAGE;
 
                 const distance = trail.distance ? parseFloat(trail.distance).toFixed(1) : 'N/A';
+                const difficultyColor = getDifficultyColor(trail.difficulty_level);
 
                 return `
                     <div class="trail-card bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-200 cursor-pointer" 
@@ -2983,7 +3000,7 @@ Sample Trails: ${data.sample_trails.length}`);
                                     <span class="iconify mr-1" data-icon="heroicons:clock" style="font-size:1rem;"></span>
                                     ${trail.estimated_duration || 'N/A'}
                                 </span>
-                                <span class="px-3 py-1 bg-${getDifficultyColor(trail.difficulty_level)}/10 text-${getDifficultyColor(trail.difficulty_level)} rounded-full text-xs font-medium">
+                                <span class="px-3 py-1 bg-${difficultyColor}/10 text-${difficultyColor} rounded-full text-xs font-medium">
                                     ${trail.difficulty_level || 'Unknown'}
                                 </span>
                             </div>

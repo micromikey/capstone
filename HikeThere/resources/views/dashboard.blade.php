@@ -29,7 +29,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <x-dashboard :weather="$weather" :forecast="$forecast" :user="$user" :latestAssessment="$latestAssessment" :latestItinerary="$latestItinerary" :followedTrails="$followedTrails" :followingCount="$followingCount" />
+                <x-dashboard :weather="$weather" :forecast="$forecast" :user="$user" :latestAssessment="$latestAssessment" :latestItinerary="$latestItinerary" :followedTrails="$followedTrails" :followingCount="$followingCount" :upcomingEvents="$upcomingEvents" />
             </div>
         </div>
     </div>

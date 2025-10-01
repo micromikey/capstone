@@ -1,3 +1,34 @@
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const transportCheckbox = document.getElementById('transport_included');
+        const pickupTimeContainer = document.getElementById('pickup_time_container');
+        const departureTimeContainer = document.getElementById('departure_time_container');
+        if (transportCheckbox) {
+            transportCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    // Transport included: show pickup time (organization picks up)
+                    pickupTimeContainer.classList.remove('hidden');
+                    departureTimeContainer.classList.add('hidden');
+                } else {
+                    // Transport not included: show departure time (self-commute)
+                    pickupTimeContainer.classList.add('hidden');
+                    departureTimeContainer.classList.remove('hidden');
+                }
+            });
+            // Initial state
+            if (transportCheckbox.checked) {
+                // Transport included: show pickup time (organization picks up)
+                pickupTimeContainer.classList.remove('hidden');
+                departureTimeContainer.classList.add('hidden');
+            } else {
+                // Transport not included: show departure time (self-commute)
+                pickupTimeContainer.classList.add('hidden');
+                departureTimeContainer.classList.remove('hidden');
+            }
+        }
+    });
+</script>
+
 <x-app-layout>
     <x-slot name="header">
         <div class="space-y-4">
@@ -16,10 +47,15 @@
         </div>
     </x-slot>
 
+    <!-- Google Maps API Key Meta Tag -->
+    <meta name="google-maps-api-key" content="{{ config('services.google.maps_api_key') }}">
+    <!-- CSRF Token Meta Tag -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <div class="py-12">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <form method="POST" action="{{ route('org.trails.update', $trail) }}" class="p-6">
+                <form method="POST" action="{{ route('org.trails.update', $trail) }}" class="p-6" id="trailEditForm" novalidate>
                     @csrf
                     @method('PUT')
                     <!-- Hidden field for estimated_time (integer hours). Kept hidden and defaults to 0 -->
@@ -48,9 +84,11 @@
                             <div class="relative mt-1">
                                 <input type="text" id="location_search" placeholder="Search for a location using Google Places..." class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" value="{{ old('location_search', $trail->location ? $trail->location->name . ', ' . $trail->location->province : '') }}">
                                 <input type="hidden" id="location_id" name="location_id" value="{{ old('location_id', $trail->location_id) }}" required>
-                                <input type="hidden" id="location_name" name="location_name" value="{{ old('location_name', $trail->location ? $trail->location->name : '') }}">
-                                <input type="hidden" id="location_lat" name="location_lat" value="{{ old('location_lat', $trail->location ? $trail->location->latitude : '') }}">
-                                <input type="hidden" id="location_lng" name="location_lng" value="{{ old('location_lng', $trail->location ? $trail->location->longitude : '') }}">
+                                <input type="hidden" id="location_latitude" name="location_latitude" value="{{ old('location_latitude', $trail->location ? $trail->location->latitude : '') }}">
+                                <input type="hidden" id="location_longitude" name="location_longitude" value="{{ old('location_longitude', $trail->location ? $trail->location->longitude : '') }}">
+                            </div>
+                            <div id="location_loading" class="mt-2 text-sm text-blue-600 hidden">
+                                Processing location...
                             </div>
                             <div class="mt-2 text-sm text-gray-600">
                                 <p>Start typing to search for locations using Google Places Autocomplete</p>
@@ -66,8 +104,83 @@
 
                         <div class="md:col-span-2">
                             <x-label for="package_inclusions" value="Package Inclusions *" />
-                            <textarea id="package_inclusions" name="package_inclusions" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="e.g., Guide, Meals, Environmental Fee" required>{{ old('package_inclusions', optional($trail->package)->package_inclusions ?? $trail->package_inclusions) }}</textarea>
+                            <textarea id="package_inclusions" name="package_inclusions" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="e.g., Guide, Meals, Environmental Fee, Transportation" required>{{ old('package_inclusions', optional($trail->package)->package_inclusions ?? $trail->package_inclusions) }}</textarea>
                             <x-input-error for="package_inclusions" class="mt-2" />
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <div class="flex items-center">
+                                <input type="hidden" name="transport_included" value="0" />
+                                <input id="transport_included" type="checkbox" name="transport_included" value="1" 
+                                       {{ old('transport_included', optional($trail->package)->transport_included ?? $trail->transport_included) ? 'checked' : '' }}
+                                       class="h-4 w-4 text-[#336d66] focus:ring-[#336d66] border-gray-300 rounded">
+                                <x-label for="transport_included" value="Transportation Included?" class="ml-2" />
+                            </div>
+                            <p class="mt-2 text-sm text-gray-600">Check if transportation from the meeting point (e.g., pickup/return transfer) is included in the package.</p>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <x-label for="transportation_details" value="Transport Details" />
+                            <div class="flex gap-2 items-center">
+                                <input id="transportation_details_visible" type="text"
+                                    class="mt-1 flex-1 w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66] {{ old('transport_included', optional($trail->package)->transport_included ?? $trail->transport_included) ? '' : 'hidden' }}"
+                                    placeholder="Start typing a pickup location (e.g., Cubao Terminal)" 
+                                    value="{{ old('transportation_details_visible', optional($trail->package)->transportation_details ?? $trail->transportation_details ?? '') }}"
+                                    autocomplete="off" />
+
+                                <select id="transportation_vehicle_visible" class="mt-1 w-48 border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66] {{ old('transport_included', optional($trail->package)->transport_included ?? $trail->transport_included) ? '' : 'hidden' }}" name="transportation_vehicle">
+                                    @php
+                                        // Vehicle field doesn't exist in database yet, only use old() for form validation
+                                        $selectedVehicle = old('transportation_vehicle', '');
+                                        
+                                        // TODO: If vehicle info needs to be extracted from transportation_details,
+                                        // it would be done here. For now, vehicle dropdown starts empty for existing trails.
+                                    @endphp
+                                    <option value="" disabled {{ !$selectedVehicle ? 'selected' : '' }}>{{ __('Vehicle (optional)') }}</option>
+                                    <option value="van" {{ $selectedVehicle == 'van' ? 'selected' : '' }}>{{ __('Van') }}</option>
+                                    <option value="jeep" {{ $selectedVehicle == 'jeep' ? 'selected' : '' }}>{{ __('Jeep') }}</option>
+                                    <option value="bus" {{ $selectedVehicle == 'bus' ? 'selected' : '' }}>{{ __('Bus') }}</option>
+                                    <option value="car" {{ $selectedVehicle == 'car' ? 'selected' : '' }}>{{ __('Car') }}</option>
+                                    <option value="motorbike" {{ $selectedVehicle == 'motorbike' ? 'selected' : '' }}>{{ __('Motorbike') }}</option>
+                                </select>
+                            </div>
+
+                            <!-- Pickup/Departure Time -->
+                            <div id="pickup_time_container" class="mb-4 {{ old('transport_included', optional($trail->package)->transport_included ?? $trail->transport_included) ? '' : 'hidden' }}">
+                                <label for="pickup_time" class="block text-sm font-medium text-gray-700">Pickup Time</label>
+                                <input type="time" id="pickup_time" name="pickup_time" 
+                                       value="{{ old('pickup_time', optional($trail->package)->pickup_time ?? $trail->pickup_time ?? '') }}"
+                                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
+                            </div>
+                            <div id="departure_time_container" class="mb-4 {{ old('transport_included', optional($trail->package)->transport_included ?? $trail->transport_included) ? 'hidden' : '' }}">
+                                <label for="departure_time" class="block text-sm font-medium text-gray-700">Departure Time</label>
+                                <input type="time" id="departure_time" name="departure_time" 
+                                       value="{{ old('departure_time', optional($trail->package)->departure_time ?? $trail->departure_time ?? '') }}"
+                                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
+                            </div>
+
+                            <!-- Commute UI -->
+                            <div id="commute_ui" class="mt-3 {{ old('transport_included', $trail->transport_included) ? 'hidden' : '' }}">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Commute Guide (From → To)</label>
+                                <div id="commute_legs" class="space-y-2"></div>
+                                <div class="flex gap-2 mt-2">
+                                    <button type="button" id="add_commute_leg_btn" class="px-3 py-1 bg-[#336d66] text-white text-xs rounded">Add Leg</button>
+                                    <button type="button" id="clear_commute_legs_btn" class="px-3 py-1 bg-gray-200 text-xs rounded">Clear</button>
+                                </div>
+                                <p class="mt-2 text-xs text-gray-500">Add one or more legs to show how hikers should commute from a meeting point to the trail (example: "Cubao Terminal → Baguio Bus Terminal"). This is informational only.</p>
+                            </div>
+
+                            <!-- Transport details textarea for summary -->
+                            <textarea id="transport_details" name="transport_details" rows="2" class="mt-1 w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66] hidden" placeholder="e.g., Bus to Tanay, Jeep to Jump-off">{{ old('transport_details', optional($trail->package)->transport_details ?? $trail->transport_details ?? '') }}</textarea>
+
+                            <!-- Always-submitted canonical field -->
+                            <input type="hidden" id="transportation_details" name="transportation_details" value="{{ old('transportation_details', optional($trail->package)->transportation_details ?? $trail->transportation_details ?? '') }}">
+                            <!-- Hidden canonical vehicle field for pickup mode when transport included -->
+                            <input type="hidden" id="transportation_vehicle" name="transportation_vehicle" value="{{ old('transportation_vehicle', optional($trail->package)->transportation_vehicle ?? $trail->transportation_vehicle ?? '') }}">
+                            <!-- Optional: store pickup place metadata when transport included (place_id, name, lat/lng) -->
+                            <input type="hidden" id="transportation_pickup_place" name="transportation_pickup_place" value="{{ old('transportation_pickup_place', optional($trail->package)->transportation_pickup_place ?? $trail->transportation_pickup_place ?? '') }}">
+
+                            <x-input-error for="transportation_details" class="mt-2" />
                         </div>
 
                         <!-- Difficulty & Duration -->
@@ -101,6 +214,7 @@
 
                         <div>
                             <x-label for="best_season" value="Best Season *" />
+
                             <div class="mt-1 grid grid-cols-2 gap-2" id="best-season-selects-edit" data-old="@json(old('best_season', $trail->best_season))">
                                 <select id="best_season_from" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]">
                                     <option value="">From (month)</option>
@@ -171,27 +285,18 @@
                             <x-input-error for="permit_process" class="mt-2" />
                         </div>
 
-                        <!-- Transportation -->
+                        <!-- Additional Trail Details -->
                         <div class="md:col-span-2">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">Transportation & Access</h3>
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Additional Trail Details</h3>
                         </div>
 
-                        <div>
-                            <x-label for="departure_point" value="Departure Point *" />
-                            <x-input id="departure_point" type="text" name="departure_point" class="mt-1 block w-full" value="{{ old('departure_point', $trail->departure_point) }}" placeholder="e.g., Cubao Terminal" required />
-                            <x-input-error for="departure_point" class="mt-2" />
-                        </div>
 
-                        <div>
-                            <x-label for="transport_options" value="Transport Options *" />
-                            <textarea id="transport_options" name="transport_options" rows="2" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#336d66] focus:border-[#336d66]" placeholder="e.g., Bus to Tanay, Jeep to Jump-off" required>{{ old('transport_options', $trail->transport_options) }}</textarea>
-                            <x-input-error for="transport_options" class="mt-2" />
-                        </div>
 
                         <div class="md:col-span-2">
                             <x-label for="side_trips" value="Side Trips" />
 
-                            <div id="side-trips-list" class="space-y-2 mt-1" data-old="@json(old('side_trips'))" data-stored="@json(optional($trail->package)->side_trips ?? $trail->side_trips ?? '')">
+
+                            <div id="side-trips-list" class="space-y-2 mt-1" data-old="@json(old('side_trips', []))" data-stored="@json(optional($trail->package)->side_trips ?? $trail->side_trips ?? null)">
                                 <!-- Template row (hidden) -->
                                 <div id="side-trip-row-template" class="hidden">
                                     <div class="flex items-center space-x-2">
@@ -325,95 +430,369 @@
         </div>
     </div>
 
-    <!-- Google Maps JavaScript API (Legacy Places Autocomplete) -->
+    <!-- Load Google Maps JavaScript API directly -->
     <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_api_key') }}&libraries=places&v=weekly"></script>
-    <script>
-    let autocomplete; // legacy autocomplete
-    document.addEventListener('DOMContentLoaded', () => initializeLocationSearch());
 
-    // Initialize legacy Google Places Autocomplete
+    <script>
+        // --- Transport / Commute UI Handling ---
+        function toggleTransportUI() {
+            const checkbox = document.getElementById('transport_included');
+            const pickupVisible = document.getElementById('transportation_details_visible');
+            const pickupVehicleVisible = document.getElementById('transportation_vehicle_visible');
+            const commuteUI = document.getElementById('commute_ui');
+            const transportDetailsTextarea = document.getElementById('transport_details');
+
+            if (!checkbox) return;
+
+            if (checkbox.checked) {
+                // When transport included, show pickup input and hide commute composer
+                if (pickupVisible) pickupVisible.classList.remove('hidden');
+                if (pickupVehicleVisible) pickupVehicleVisible.classList.remove('hidden');
+                if (commuteUI) commuteUI.classList.add('hidden');
+                // Show a readable notice in the transport_details textarea
+                if (transportDetailsTextarea) {
+                    transportDetailsTextarea.value = 'Transportation pickup will be arranged by the organization.';
+                }
+            } else {
+                // When not included, hide pickup input and show commute composer
+                if (pickupVisible) pickupVisible.classList.add('hidden');
+                if (pickupVehicleVisible) pickupVehicleVisible.classList.add('hidden');
+                if (commuteUI) commuteUI.classList.remove('hidden');
+                // Ensure at least one empty leg exists
+                ensureAtLeastOneCommuteLeg();
+                // Update preview (commute summary) into transport_details textarea
+                if (typeof updateTransportDetailsPreview === 'function') updateTransportDetailsPreview();
+            }
+        }
+
+        function ensureAtLeastOneCommuteLeg() {
+            const container = document.getElementById('commute_legs');
+            if (!container) return;
+            if (container.children.length === 0) {
+                addCommuteLeg();
+            }
+        }
+
+        function createCommuteLegRow(from = '', to = '') {
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 items-center';
+
+            const fromInput = document.createElement('input');
+            fromInput.type = 'text';
+            fromInput.placeholder = 'From (e.g., Cubao Terminal)';
+            fromInput.className = 'flex-1 text-sm border-gray-300 rounded px-2 py-1';
+            fromInput.value = from;
+            fromInput.dataset.place = '';
+
+            const arrow = document.createElement('span');
+            arrow.className = 'text-xs text-gray-500';
+            arrow.textContent = '→';
+
+            const toInput = document.createElement('input');
+            toInput.type = 'text';
+            toInput.placeholder = 'To (e.g., Baguio Bus Terminal)';
+            toInput.className = 'flex-1 text-sm border-gray-300 rounded px-2 py-1';
+            toInput.value = to;
+            toInput.dataset.place = '';
+
+            // Vehicle select per leg
+            const vehicleSelect = document.createElement('select');
+            vehicleSelect.className = 'text-xs border-gray-300 rounded px-2 py-1';
+            try {
+                const pickupSelect = document.getElementById('transportation_vehicle_visible');
+                if (pickupSelect && pickupSelect.options && pickupSelect.options.length > 0) {
+                    Array.from(pickupSelect.options).forEach(option => {
+                        const newOption = new Option(option.textContent, option.value);
+                        if (option.disabled) newOption.disabled = true;
+                        vehicleSelect.appendChild(newOption);
+                    });
+                } else {
+                    const placeholder = new Option('Vehicle (optional)', '');
+                    placeholder.disabled = true;
+                    placeholder.selected = true;
+                    vehicleSelect.appendChild(placeholder);
+                    vehicleSelect.appendChild(new Option('Van', 'van'));
+                    vehicleSelect.appendChild(new Option('Jeep', 'jeep'));
+                    vehicleSelect.appendChild(new Option('Bus', 'bus'));
+                    vehicleSelect.appendChild(new Option('Car', 'car'));
+                    vehicleSelect.appendChild(new Option('Motorbike', 'motorbike'));
+                }
+            } catch(e) {
+                const placeholder = new Option('Vehicle (optional)', '');
+                placeholder.disabled = true;
+                placeholder.selected = true;
+                vehicleSelect.appendChild(placeholder);
+                vehicleSelect.appendChild(new Option('Van', 'van'));
+                vehicleSelect.appendChild(new Option('Jeep', 'jeep'));
+                vehicleSelect.appendChild(new Option('Bus', 'bus'));
+                vehicleSelect.appendChild(new Option('Car', 'car'));
+                vehicleSelect.appendChild(new Option('Motorbike', 'motorbike'));
+            }
+
+            // When 'to' changes, try to auto-populate the next leg's 'from'
+            toInput.addEventListener('input', () => {
+                const nextRow = row.nextElementSibling;
+                if (nextRow && toInput.value.trim()) {
+                    const nextFromInput = nextRow.querySelector('input[placeholder*="From"]');
+                    if (nextFromInput && !nextFromInput.value.trim()) {
+                        nextFromInput.value = toInput.value.trim();
+                    }
+                }
+                if (typeof updateTransportDetailsPreview === 'function') updateTransportDetailsPreview();
+            });
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'text-xs text-red-600 px-2 py-1';
+            removeBtn.textContent = 'Remove';
+            removeBtn.addEventListener('click', () => {
+                row.remove();
+                if (typeof updateTransportDetailsPreview === 'function') updateTransportDetailsPreview();
+            });
+
+            // Update preview when inputs or vehicle change
+            fromInput.addEventListener('input', () => { if (typeof updateTransportDetailsPreview === 'function') updateTransportDetailsPreview(); });
+            toInput.addEventListener('input', () => { if (typeof updateTransportDetailsPreview === 'function') updateTransportDetailsPreview(); });
+            vehicleSelect.addEventListener('change', () => { if (typeof updateTransportDetailsPreview === 'function') updateTransportDetailsPreview(); });
+
+            // Initialize Google Places autocomplete for the new inputs
+            setTimeout(() => {
+                initializeAutocompleteForInput(fromInput);
+                initializeAutocompleteForInput(toInput);
+            }, 100);
+
+            row.appendChild(fromInput);
+            row.appendChild(arrow);
+            row.appendChild(toInput);
+            row.appendChild(vehicleSelect);
+            row.appendChild(removeBtn);
+
+            return row;
+        }
+
+        function addCommuteLeg(from = '', to = '') {
+            const container = document.getElementById('commute_legs');
+            if (!container) return;
+            // If no explicit from supplied, try to use previous leg's to
+            if (!from) {
+                const rows = container.children;
+                if (rows.length > 0) {
+                    const lastRow = rows[rows.length - 1];
+                    const lastToInput = lastRow.querySelector('input[placeholder*="To"]');
+                    if (lastToInput && lastToInput.value.trim()) {
+                        from = lastToInput.value.trim();
+                    }
+                }
+            }
+            const row = createCommuteLegRow(from, to);
+            container.appendChild(row);
+            // Focus the 'to' input for immediate editing
+            try{
+                const toInput = row.querySelector('input[placeholder*="To"]');
+                if (toInput) toInput.focus();
+            }catch(e){}
+            if (typeof updateTransportDetailsPreview === 'function') updateTransportDetailsPreview();
+        }
+
+        function clearCommuteLegs() {
+            const container = document.getElementById('commute_legs');
+            if (!container) return;
+            container.innerHTML = '';
+            if (typeof updateTransportDetailsPreview === 'function') updateTransportDetailsPreview();
+        }
+
+        // Update the transport_details textarea live when commute legs change
+        function updateTransportDetailsPreview() {
+            const container = document.getElementById('commute_legs');
+            const transportDetailsTextarea = document.getElementById('transport_details');
+            if (!container || !transportDetailsTextarea) return;
+            const legs = [];
+            Array.from(container.children).forEach(row => {
+                const fromInput = row.querySelector('input[placeholder*="From"]');
+                const toInput = row.querySelector('input[placeholder*="To"]');
+                const vehicleSelect = row.querySelector('select');
+                const f = fromInput ? fromInput.value.trim() : '';
+                const t = toInput ? toInput.value.trim() : '';
+                const v = vehicleSelect && vehicleSelect.value ? ` (${vehicleSelect.options[vehicleSelect.selectedIndex].text})` : '';
+                if (f && t) legs.push({ from: f, to: t, vehicle: v });
+                else if (t) legs.push({ from: '(unknown)', to: t, vehicle: v });
+            });
+
+            // Build map of vehicle key -> label from pickup select
+            const vehicleLabelMap = {};
+            const pickupSelect = document.getElementById('transportation_vehicle_visible');
+            if (pickupSelect) {
+                Array.from(pickupSelect.options).forEach(option => {
+                    if (option.value) vehicleLabelMap[option.value] = option.textContent;
+                });
+            }
+
+            const summaryParts = [];
+            legs.forEach(leg => {
+                if (leg.from && leg.to) summaryParts.push(leg.from + ' → ' + leg.to + leg.vehicle);
+                else if (leg.to) summaryParts.push('(unknown) → ' + leg.to + leg.vehicle);
+            });
+            transportDetailsTextarea.value = summaryParts.length ? summaryParts.join('; ') : '';
+        }
+
+        function loadMapsScript(cb) {
+            if (typeof google !== 'undefined' && google.maps) {
+                cb();
+                return;
+            }
+            const key = document.querySelector('meta[name="google-maps-api-key"]');
+            if (!key || !key.content) {
+                console.error('Google Maps API key not found');
+                return;
+            }
+            const s = document.createElement('script');
+            s.src = `https://maps.googleapis.com/maps/api/js?key=${key.content}&libraries=geometry,places&v=weekly`;
+            s.async = true;
+            s.defer = true;
+            s.onload = cb;
+            document.head.appendChild(s);
+        }
+
+        // Location search functionality using Google Places
         function initializeLocationSearch() {
-            console.log('Initializing Google Places Autocomplete for edit form...');
-            
+            console.log('Initializing Google Places location search...');
+
             const searchInput = document.getElementById('location_search');
             const hiddenInput = document.getElementById('location_id');
-            const locationNameInput = document.getElementById('location_name');
-            const locationLatInput = document.getElementById('location_lat');
-            const locationLngInput = document.getElementById('location_lng');
+            const latInput = document.getElementById('location_latitude');
+            const lngInput = document.getElementById('location_longitude');
 
             if (!searchInput || !hiddenInput) {
-                console.error('Location search elements not found in edit form');
+                console.error('Location search elements not found');
                 return;
             }
 
-            console.log('Location search elements found, setting up legacy widget...');
+            // Check if Google Maps is loaded
+            if (typeof google === 'undefined' || !google.maps || !google.maps.places) {
+                console.error('Google Maps API not loaded');
+                return;
+            }
+
+            console.log('Setting up Google Places Autocomplete...');
+
             try {
-                // Use geocode-only types to avoid mixing 'establishment' with other types
-                // which causes the Places API error: "establishment cannot be mixed with other types." 
-                autocomplete = new google.maps.places.Autocomplete(searchInput, {
+                const autocomplete = new google.maps.places.Autocomplete(searchInput, {
                     types: ['geocode'],
                     componentRestrictions: { country: 'PH' },
-                    fields: ['place_id','formatted_address','geometry','name']
+                    fields: ['place_id', 'formatted_address', 'geometry', 'name']
                 });
-            } catch(e) {
-                console.error('Legacy Autocomplete init failed (edit):', e);
-            }
-            if (autocomplete) {
+
                 autocomplete.addListener('place_changed', () => {
                     const place = autocomplete.getPlace();
-                    if (!place || !place.geometry) return;
-                    processSelectedPlaceEdit(place, searchInput, hiddenInput, locationNameInput, locationLatInput, locationLngInput);
+                    console.log('Place selected:', place);
+                    if (!place || !place.geometry) {
+                        console.log('Invalid place selected');
+                        return;
+                    }
+                    handleGooglePlaceSelection(place);
                 });
+
+                // Clear selection when user edits
+                searchInput.addEventListener('input', () => {
+                    if (hiddenInput.value) clearLocationSelection();
+                });
+
+                console.log('Google Places Autocomplete initialized successfully');
+
+                // Show existing location checkmark if already selected
+                if (hiddenInput.value) {
+                    addLocationCheckmark();
+                    searchInput.classList.add('border-green-500', 'bg-green-50');
+                    searchInput.classList.remove('border-gray-300');
+                }
+
+            } catch (e) {
+                console.error('Google Places Autocomplete initialization failed:', e);
             }
-            searchInput.addEventListener('input', () => { if (hiddenInput.value) clearLocationSelection(); });
-            console.log('Legacy Places Autocomplete initialized (edit)');
         }
 
-        function processSelectedPlaceEdit(place, searchInput, hiddenInput, locationNameInput, locationLatInput, locationLngInput) {
+        function handleGooglePlaceSelection(place) {
+            const searchInput = document.getElementById('location_search');
+            const hiddenInput = document.getElementById('location_id');
+            const latInput = document.getElementById('location_latitude');
+            const lngInput = document.getElementById('location_longitude');
+            const loadingDiv = document.getElementById('location_loading');
+
+            // Show loading
+            loadingDiv.classList.remove('hidden');
+
+            // Prepare data for backend processing
+            const locationData = {
+                place_id: place.place_id,
+                formatted_address: place.formatted_address,
+                latitude: place.geometry.location.lat(),
+                longitude: place.geometry.location.lng(),
+                name: place.name
+            };
+
+            console.log('Processing Google Places location:', locationData);
+
             fetch('/api/locations/google-places', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json','X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') },
-                body: JSON.stringify({
-                    place_id: place.place_id,
-                    formatted_address: place.formatted_address,
-                    latitude: place.geometry.location.lat(),
-                    longitude: place.geometry.location.lng(),
-                    name: place.name
-                })
-            }).then(r=>r.json()).then(data=>{
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify(locationData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingDiv.classList.add('hidden');
+
                 if (data.success) {
-                    locationNameInput.value = place.formatted_address || place.name;
-                    locationLatInput.value = place.geometry.location.lat();
-                    locationLngInput.value = place.geometry.location.lng();
+                    // Update form fields
+                    searchInput.value = place.formatted_address || place.name;
                     hiddenInput.value = data.location.id;
-                    searchInput.classList.add('border-green-500','bg-green-50');
+                    latInput.value = place.geometry.location.lat();
+                    lngInput.value = place.geometry.location.lng();
+
+                    // Visual feedback
+                    searchInput.classList.add('border-green-500', 'bg-green-50');
                     searchInput.classList.remove('border-gray-300');
-                    if (!searchInput.parentNode.querySelector('.location-selected-checkmark')) {
-                        const check = document.createElement('div');
-                        check.className='location-selected-checkmark absolute right-10 top-1/2 transform -translate-y-1/2 text-green-500';
-                        check.innerHTML='<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>';
-                        searchInput.parentNode.appendChild(check);
-                    }
+                    addLocationCheckmark();
+
+                    console.log('Location processed successfully:', data.location);
                 } else {
-                    alert('Failed to process location.');
+                    console.error('Location processing failed:', data.message);
+                    alert('Failed to process location: ' + (data.message || 'Unknown error'));
                 }
-            }).catch(err=>console.error('Process place (edit) error', err));
+            })
+            .catch(error => {
+                loadingDiv.classList.add('hidden');
+                console.error('Location processing error:', error);
+                alert('Error processing location. Please try again.');
+            });
+        }
+
+        function addLocationCheckmark() {
+            const searchInput = document.getElementById('location_search');
+            const existingCheckmark = searchInput.parentNode.querySelector('.location-selected-checkmark');
+
+            if (!existingCheckmark) {
+                const checkmark = document.createElement('div');
+                checkmark.className = 'location-selected-checkmark absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500';
+                checkmark.innerHTML = '<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>';
+                searchInput.parentNode.appendChild(checkmark);
+            }
         }
 
         function clearLocationSelection() {
             const searchInput = document.getElementById('location_search');
             const hiddenInput = document.getElementById('location_id');
-            const locationNameInput = document.getElementById('location_name');
-            const locationLatInput = document.getElementById('location_lat');
-            const locationLngInput = document.getElementById('location_lng');
-            
+            const latInput = document.getElementById('location_latitude');
+            const lngInput = document.getElementById('location_longitude');
+
             hiddenInput.value = '';
-            locationNameInput.value = '';
-            locationLatInput.value = '';
-            locationLngInput.value = '';
+            latInput.value = '';
+            lngInput.value = '';
             searchInput.classList.remove('border-green-500', 'bg-green-50');
             searchInput.classList.add('border-gray-300');
-            
+
             // Remove checkmark
             const checkmark = searchInput.parentNode.querySelector('.location-selected-checkmark');
             if (checkmark) {
@@ -421,7 +800,111 @@
             }
         }
 
-    // DOMContentLoaded handled above
+        // Initialize Google Places autocomplete on input elements
+        function initializeAutocompleteForInput(input) {
+            if (!input || typeof google === 'undefined' || !google.maps || !google.maps.places) {
+                return;
+            }
+
+            try {
+                const autocomplete = new google.maps.places.Autocomplete(input, {
+                    types: ['geocode'],
+                    componentRestrictions: { country: 'PH' },
+                    fields: ['place_id', 'formatted_address', 'geometry', 'name']
+                });
+
+                autocomplete.addListener('place_changed', () => {
+                    const place = autocomplete.getPlace();
+                    if (place && place.formatted_address) {
+                        input.value = place.formatted_address;
+                    } else if (place && place.name) {
+                        input.value = place.name;
+                    }
+                });
+
+                console.log('Autocomplete initialized for:', input.id || input.placeholder);
+            } catch (e) {
+                console.error('Failed to initialize autocomplete for input:', e);
+            }
+        }
+
+        // Initialize autocomplete for all transport-related inputs
+        function initializeAllTransportAutocomplete() {
+            console.log('Initializing transport autocomplete...');
+            
+            // Transport Details (pickup location)
+            const transportDetailsInput = document.getElementById('transportation_details_visible');
+            if (transportDetailsInput) {
+                initializeAutocompleteForInput(transportDetailsInput);
+            }
+
+
+
+            // Initialize autocomplete for existing commute legs
+            document.querySelectorAll('#commute_legs input[type="text"]').forEach(input => {
+                initializeAutocompleteForInput(input);
+            });
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded - Edit Form');
+            
+            const checkbox = document.getElementById('transport_included');
+            const addBtn = document.getElementById('add_commute_leg_btn');
+            const clearBtn = document.getElementById('clear_commute_legs_btn');
+
+            if (checkbox) {
+                checkbox.addEventListener('change', toggleTransportUI);
+                toggleTransportUI(); // Initialize on page load
+            }
+            if (addBtn) addBtn.addEventListener('click', () => addCommuteLeg());
+            if (clearBtn) clearBtn.addEventListener('click', () => clearCommuteLegs());
+
+            // Initialize existing commute legs if any
+            if (!checkbox || !checkbox.checked) {
+                // Try to parse existing transport_details into commute legs
+                const transportDetails = document.getElementById('transport_details');
+                if (transportDetails && transportDetails.value && transportDetails.value.trim()) {
+                    const existingDetails = transportDetails.value.trim();
+                    console.log('Existing transport details:', existingDetails);
+                    
+                    // Try to parse "From → To (Vehicle); From2 → To2 (Vehicle2)" format
+                    const legs = existingDetails.split(';').map(leg => leg.trim()).filter(leg => leg.length > 0);
+                    
+                    if (legs.length > 0) {
+                        legs.forEach(leg => {
+                            const arrowMatch = leg.match(/^(.+?)\s*→\s*(.+?)(?:\s*\((.+?)\))?$/);
+                            if (arrowMatch) {
+                                const from = arrowMatch[1].trim();
+                                const to = arrowMatch[2].trim();
+                                const vehicle = arrowMatch[3] ? arrowMatch[3].trim() : '';
+                                addCommuteLeg(from, to);
+                            }
+                        });
+                        // Initialize autocomplete for the populated legs after they are added
+                        setTimeout(() => {
+                            document.querySelectorAll('#commute_legs input[type="text"]').forEach(input => {
+                                initializeAutocompleteForInput(input);
+                            });
+                        }, 200);
+                    } else {
+                        ensureAtLeastOneCommuteLeg();
+                    }
+                } else {
+                    ensureAtLeastOneCommuteLeg();
+                }
+            }
+        });
+
+        // Initialize Google Maps after everything loads
+        window.addEventListener('load', function() {
+            console.log('Window loaded - initializing Google Maps');
+            setTimeout(() => {
+                initializeLocationSearch();
+                initializeAllTransportAutocomplete();
+            }, 500);
+        });
     </script>
 
     <script>
@@ -434,6 +917,27 @@
             row.classList.remove('hidden');
             const input = row.querySelector('.side-trip-input');
             input.value = value;
+            
+            // Add Google Places autocomplete to side trip input
+            try {
+                if (window.google && window.google.maps && window.google.maps.places) {
+                    const autocomplete = new google.maps.places.Autocomplete(input, {
+                        componentRestrictions: { country: 'ph' },
+                        fields: ['place_id', 'name', 'formatted_address', 'geometry'],
+                        types: ['establishment', 'geocode']
+                    });
+                    
+                    autocomplete.addListener('place_changed', function() {
+                        const place = autocomplete.getPlace();
+                        if (place && place.name) {
+                            input.value = place.name;
+                        }
+                    });
+                }
+            } catch (e) {
+                console.log('Google Maps not ready for side trip autocomplete');
+            }
+            
             const removeBtn = row.querySelector('.remove-side-trip');
             removeBtn.addEventListener('click', function(){
                 row.remove();
@@ -469,23 +973,50 @@
                 try {
                     const container = document.getElementById('side-trips-list');
                     const rawOld = container.getAttribute('data-old');
-                    if (rawOld) {
-                        const parsed = JSON.parse(rawOld);
-                        if (Array.isArray(parsed)) oldValues = parsed;
-                    }
-                    if (!Array.isArray(oldValues) || oldValues.length === 0) {
-                        const storedRaw = container.getAttribute('data-stored') || '';
-                        if (storedRaw && storedRaw.trim().length) {
-                            oldValues = storedRaw.split(',').map(s => s.trim()).filter(s => s.length);
+                    const storedRaw = container.getAttribute('data-stored');
+                    console.log('Side Trips Debug - Edit Form:', { rawOld, storedRaw });
+                    
+                    // Handle old form data first (from validation errors)
+                    if (rawOld && rawOld !== 'null' && rawOld !== '[]') {
+                        try {
+                            const parsed = JSON.parse(rawOld);
+                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                oldValues = parsed;
+                            }
+                        } catch (e) {
+                            // Error parsing rawOld, continue
                         }
                     }
+                    
+                    // If no old form data, try stored database data
+                    if (!Array.isArray(oldValues) || oldValues.length === 0) {
+                        if (storedRaw && storedRaw !== 'null' && storedRaw !== '' && storedRaw.trim().length > 0) {
+                            try {
+                                // First try to parse as JSON
+                                const parsedStored = JSON.parse(storedRaw);
+                                if (Array.isArray(parsedStored)) {
+                                    oldValues = parsedStored.filter(v => v && v.trim().length > 0);
+                                } else if (typeof parsedStored === 'string' && parsedStored.trim().length > 0) {
+                                    // Parse comma-separated string
+                                    oldValues = parsedStored.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                                }
+                            } catch (jsonError) {
+                                // Fall back to treating as comma-separated string
+                                oldValues = storedRaw.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                            }
+                        }
+                    }
+                    console.log('Side Trips Final Values:', oldValues);
                 } catch(e){
+                    console.error('Side Trips Parse Error:', e);
                     oldValues = [];
                 }
 
                 if(Array.isArray(oldValues) && oldValues.length){
+                    console.log('Populating side trips:', oldValues);
                     oldValues.forEach(v => addSideTrip(v));
                 } else {
+                    console.log('No side trips data, adding empty row');
                     // if no values, add a single empty row so users can start typing
                     addSideTrip('');
                 }

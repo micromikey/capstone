@@ -10,28 +10,37 @@
     $baseDateForNight = $dateInfo['start_date']->copy()->addDays($night - 1);
 @endphp
 
-<div class="bg-white border border-gray-200 rounded-lg shadow-sm">
-    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
+<div class="bg-slate-800/90 backdrop-blur-sm border-2 border-indigo-300/60 rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-300">
+    <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-slate-700 px-8 py-6 border-b border-indigo-300 rounded-t-2xl">
         <div class="flex items-center justify-between">
-            <h2 class="text-xl font-bold text-gray-800">🌙 Night {{ $night }}</h2>
-            <p class="text-sm font-medium text-gray-600">{{ $baseDateForNight->toFormattedDateString() }}</p>
+            <div class="flex items-center">
+                <div class="bg-white/20 backdrop-blur-sm rounded-xl p-3 mr-4 shadow-lg">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-white drop-shadow-lg">Night {{ $night }}</h2>
+            </div>
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
+                <p class="text-sm font-bold text-white">{{ $baseDateForNight->toFormattedDateString() }}</p>
+            </div>
         </div>
     </div>
 
-    <div class="overflow-x-auto">
-        <table class="min-w-full table-fixed divide-y divide-gray-200 border border-gray-300">
-            <thead class="bg-gray-100">
+    <div class="overflow-x-auto rounded-b-2xl">
+        <table class="min-w-full table-fixed divide-y-2 divide-indigo-200">
+            <thead class="bg-gradient-to-r from-indigo-900 to-purple-900">
                 <tr>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300 w-20">Time</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300 w-1/4">Activity</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300 w-16">Elapsed</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300 w-16">Distance</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300 w-24">Weather</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700 border-r border-gray-300 w-20">Transport</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Notes</th>
+                    <th class="px-6 py-4 text-left text-sm font-bold text-white border-r-2 border-indigo-700 w-20">Time</th>
+                    <th class="px-6 py-4 text-left text-sm font-bold text-white border-r-2 border-indigo-700 w-1/4">Activity</th>
+                    <th class="px-6 py-4 text-left text-sm font-bold text-white border-r-2 border-indigo-700 w-16">Elapsed</th>
+                    <th class="px-6 py-4 text-left text-sm font-bold text-white border-r-2 border-indigo-700 w-16">Distance</th>
+                    <th class="px-6 py-4 text-left text-sm font-bold text-white border-r-2 border-indigo-700 w-24">Weather</th>
+                    <th class="px-6 py-4 text-left text-sm font-bold text-white border-r-2 border-indigo-700 w-20">Transport</th>
+                    <th class="px-6 py-4 text-left text-sm font-bold text-white">Notes</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="bg-slate-50/90 backdrop-blur-sm divide-y-2 divide-indigo-100">
                 @foreach ($activities as $activity)
                     @php
                         $activity = (array) $activity;
@@ -59,44 +68,54 @@
                         $elapsedForRow = isset($activity['cum_minutes']) ? $activity['cum_minutes'] : $minutes;
                         $distanceForRow = $activity['cum_distance_km'] ?? null;
                     @endphp
-                    <tr class="hover:bg-gray-50 border-b border-gray-200">
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900 border-r border-gray-300">
-                            {{ $timeLabel }}
+                    <tr class="hover:bg-gradient-to-r hover:from-indigo-25 hover:to-purple-25 transition-all duration-200 border-b-2 border-indigo-100">
+                        <td class="px-6 py-4 text-sm font-bold text-indigo-900 border-r-2 border-indigo-200 bg-indigo-100/50">
+                            <span class="bg-indigo-700 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">{{ $timeLabel }}</span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-800 border-r border-gray-300">
-                            <div class="font-semibold text-gray-900">{{ $activity['title'] ?? 'Night Activity' }}</div>
+                        <td class="px-6 py-4 text-sm text-slate-800 border-r-2 border-indigo-200">
+                            <div class="font-bold text-slate-900 mb-1">{{ $activity['title'] ?? 'Night Activity' }}</div>
                             @if(!empty($activity['location']))
-                                <div class="text-xs text-gray-600 mt-1">🏕️ {{ $activity['location'] }}</div>
+                                <div class="text-xs text-purple-700 font-medium bg-purple-100 px-2 py-1 rounded-full inline-block mb-1">🏕️ {{ $activity['location'] }}</div>
                             @endif
                             @if(!empty($activity['description']))
-                                <div class="text-xs text-gray-500 mt-1">{{ $activity['description'] }}</div>
+                                <div class="text-xs text-slate-600 bg-slate-100 p-2 rounded-lg mt-1">{{ $activity['description'] }}</div>
                             @endif
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-300">
-                            {{ isset($elapsedForRow) ? $trailCalculator->formatElapsed($elapsedForRow) : '-' }}
+                        <td class="px-6 py-4 text-sm font-semibold text-blue-800 border-r-2 border-indigo-200">
+                            <span class="text-blue-800">{{ isset($elapsedForRow) ? $trailCalculator->formatElapsed($elapsedForRow) : '-' }}</span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-300">
-                            {{ isset($distanceForRow) ? $trailCalculator->formatDistanceKm($distanceForRow) : '-' }}
+                        <td class="px-6 py-4 text-sm font-semibold text-indigo-800 border-r-2 border-indigo-200">
+                            <span class="text-indigo-800">{{ isset($distanceForRow) ? $trailCalculator->formatDistanceKm($distanceForRow) : '-' }}</span>
                         </td>
-                        <td class="px-6 py-4 text-sm border-r border-gray-300">
-                            <div class="flex items-center space-x-2">
+                        <td class="px-6 py-4 text-sm border-r-2 border-indigo-200 bg-purple-50/30">
+                            <div class="bg-slate-700/60 backdrop-blur-sm p-3 rounded-lg border border-slate-600">
                                 @php
                                     $weatherParts = explode(' / ', $weatherLabel);
                                     $condition = $weatherParts[0] ?? $weatherLabel;
                                     $temperature = $weatherParts[1] ?? '';
+                                    
+                                    // Night weather color coding (darker theme)
+                                    $nightWeatherBgColor = match(strtolower($condition)) {
+                                        'clear', 'starry' => 'bg-yellow-600',
+                                        'cloudy', 'overcast' => 'bg-slate-600',
+                                        'rainy', 'rain' => 'bg-blue-700',
+                                        'cold' => 'bg-cyan-700',
+                                        'cool' => 'bg-indigo-600',
+                                        default => 'bg-purple-600'
+                                    };
                                 @endphp
-                                <div class="text-sm text-gray-700">
-                                    <div class="font-medium">{{ $condition }}</div>
+                                <div class="text-center">
+                                    <div class="{{ $nightWeatherBgColor }} text-white px-3 py-1 rounded-full text-xs font-bold mb-1">{{ $condition }}</div>
                                     @if($temperature)
-                                        <div class="text-xs text-gray-500">{{ $temperature }}</div>
+                                        <div class="text-xs text-slate-200 font-medium">{{ $temperature }}</div>
                                     @endif
                                 </div>
                             </div>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-300">
-                            {{ $transportLabel }}
+                        <td class="px-6 py-4 text-sm font-medium text-purple-800 border-r-2 border-indigo-200 bg-purple-50/30">
+                            <span class="bg-purple-700 text-white px-2 py-1 rounded-md text-xs font-bold">{{ $transportLabel }}</span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-700">
+                        <td class="px-6 py-4 text-sm text-slate-700 bg-slate-100/30">
                             <div class="space-y-1">
                                 @php
                                     // Use intelligent weather service for consolidated, non-redundant notes
@@ -107,12 +126,37 @@
                                         $trail ?? null, 
                                         $night - 1  // Convert night number to 0-based index
                                     );
+                                    
+                                    // Split notes into bullet points if they contain multiple sentences or key phrases
+                                    $notesBullets = [];
+                                    if($smartNote) {
+                                        // Split by common separators and clean up
+                                        $sentences = preg_split('/[.!?]\s*/', $smartNote, -1, PREG_SPLIT_NO_EMPTY);
+                                        foreach($sentences as $sentence) {
+                                            $sentence = trim($sentence);
+                                            if(strlen($sentence) > 0) {
+                                                $notesBullets[] = $sentence;
+                                            }
+                                        }
+                                    }
                                 @endphp
                                 
-                                @if($smartNote)
-                                    <div class="text-xs text-gray-600 leading-relaxed">{{ $smartNote }}</div>
+                                @if(!empty($notesBullets))
+                                    <div class="text-xs text-slate-700 leading-relaxed bg-white/60 p-3 rounded-lg border border-slate-200">
+                                        <ul class="space-y-1">
+                                            @foreach($notesBullets as $bullet)
+                                                <li class="flex items-start">
+                                                    <span class="text-slate-400 mr-2">•</span>
+                                                    <span>{{ $bullet }}</span>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
                                 @else
-                                    <div class="text-xs text-gray-400">Standard camping conditions - no special preparations needed.</div>
+                                    <div class="text-xs text-slate-500 italic bg-slate-200/60 p-2 rounded-lg">
+                                        <span class="text-slate-400 mr-2">•</span>
+                                        Standard camping conditions - no special preparations needed
+                                    </div>
                                 @endif
                             </div>
                         </td>

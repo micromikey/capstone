@@ -18,14 +18,14 @@
 @endphp
 
 <div class="relative bg-gradient-to-br from-green-50 via-white to-blue-50 min-h-screen">
-    <div wire:ignore x-data="trailExplorer()" x-init="init()" x-cloak class="flex flex-col min-h-screen">
+    <div x-data="trailExplorer()" class="flex flex-col min-h-screen">
         
         <!-- Hero Section -->
         <div id="hero-section" class="relative bg-gradient-to-r from-yellow-400 via-yellow-200 to-teal-400 text-white overflow-hidden hero-container">
             <div class="absolute inset-0 bg-black bg-opacity-20"></div>
             
-            <!-- Enhanced Trail Elements Background -->
-            <div class="absolute inset-0 opacity-30">
+            <!-- Enhanced Trail Elements Background (Hidden on mobile) -->
+            <div class="absolute inset-0 opacity-30 hidden md:block">
                 <!-- Elegant curved trail lines with visible animation -->
                 <svg class="absolute inset-0 w-full h-full animate-pulse-slow" viewBox="0 0 1200 400" fill="none" preserveAspectRatio="none">
                     <path d="M0 200 Q300 100 600 200 T1200 200" stroke="white" stroke-width="3" fill="none" class="connection-line"/>
@@ -73,21 +73,20 @@
                 </div>
             </div>
             
-            <div class="relative max-w-7xl mx-auto px-6 py-16">
+            <div class="relative max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
                 <div class="text-center">
-                    <h1 class="text-4xl md:text-6xl font-bold mb-4">Your Followed Trails</h1>
-                    <p class="text-xl md:text-2xl text-green-100 mb-8">Explore trails from organizations you follow</p>
+                    <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-4 px-2">Your Followed Trails</h1>
+                    <p class="text-lg sm:text-xl md:text-2xl text-green-100 mb-6 sm:mb-8 px-4">Explore trails from organizations you follow</p>
                     
                     <!-- Search Bar -->
-                    <div class="max-w-2xl mx-auto">
+                    <div class="max-w-2xl mx-auto px-4">
                         <div class="relative">
-                            <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                 <input id="explore-search-input" type="text" 
                     placeholder="Search trails, mountains, or locations..."
-                    x-model.debounce="searchQuery"
-                    class="w-full pl-12 pr-4 py-4 text-lg border-0 rounded-2xl focus:ring-4 focus:ring-white focus:ring-opacity-50 transition-all duration-200 text-gray-900 placeholder-gray-500">
+                    class="w-full pl-11 sm:pl-12 pr-4 py-3 sm:py-4 text-base sm:text-lg border-0 rounded-2xl focus:ring-4 focus:ring-white focus:ring-opacity-50 transition-all duration-200 text-gray-900 placeholder-gray-500">
                         </div>
                     </div>
                 </div>
@@ -95,19 +94,45 @@
         </div>
 
         <!-- Filters Section -->
-        <div id="filter-section" class="bg-white shadow-sm border-b border-gray-200 px-6 py-6">
+        <div id="filter-section" class="bg-white shadow-sm border-b border-gray-200 px-4 sm:px-6 py-4 sm:py-6">
             <div class="max-w-7xl mx-auto">
-                <div class="flex flex-col lg:flex-row gap-4 items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <h2 class="text-lg font-semibold text-gray-900">Filter Trails:</h2>
-                        
+                <div class="flex flex-col gap-4">
+                    <!-- Mobile: Title, Results Count, and Filter Toggle Button -->
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-base sm:text-lg font-semibold text-gray-900">Filter Trails</h2>
+                        <div class="flex items-center gap-3">
+                            <div class="text-gray-700 text-sm sm:text-base">
+                                @if(isset($followedTrails))
+                                    <span class="font-semibold">{{ $followedTrails->count() }}</span> trails
+                                @else
+                                    <span class="font-semibold">0</span> trails
+                                @endif
+                            </div>
+                            <!-- Toggle Button (Mobile Only) -->
+                            <button 
+                                onclick="toggleFilters()" 
+                                id="filter-toggle-btn"
+                                class="lg:hidden inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 transition-colors duration-200">
+                                <svg id="filter-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"></path>
+                                </svg>
+                                <span id="filter-btn-text">Show Filters</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Filters Grid - Responsive (Hidden on mobile by default) -->
+                    <div id="filters-container" class="hidden lg:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         <!-- Mountain/Location Filter -->
                         <div class="relative">
-                            <select id="explore-location-select" x-model="selectedLocation" class="appearance-none px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white min-w-[180px]">
+                            <select id="explore-location-select" class="appearance-none w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-sm sm:text-base">
                                 <option value="">All Mountains</option>
                                 @if(isset($followedTrails) && $followedTrails->count() > 0)
                                     @php
-                                        $uniqueLocations = $followedTrails->pluck('location.name')->unique()->filter();
+                                        // Get unique locations from both location.name and mountain_name
+                                        $locations = $followedTrails->pluck('location.name')->filter();
+                                        $mountains = $followedTrails->pluck('mountain_name')->filter();
+                                        $uniqueLocations = $locations->merge($mountains)->unique()->sort();
                                     @endphp
                                     @foreach($uniqueLocations as $locationName)
                                         <option value="{{ $locationName }}">{{ $locationName }}</option>
@@ -115,7 +140,7 @@
                                 @endif
                             </select>
                             <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </div>
@@ -123,14 +148,14 @@
 
                         <!-- Difficulty Filter -->
                         <div class="relative">
-                            <select id="explore-difficulty-select" x-model="filters.difficulty" class="appearance-none px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white min-w-[160px]">
+                            <select id="explore-difficulty-select" class="appearance-none w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-sm sm:text-base">
                                 <option value="">All Difficulties</option>
                                 <option value="beginner">Beginner</option>
                                 <option value="intermediate">Intermediate</option>
                                 <option value="advanced">Advanced</option>
                             </select>
                             <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </div>
@@ -138,7 +163,7 @@
 
                         <!-- Season Filter -->
                         <div class="relative">
-                            <select id="explore-season-select" x-model="filters.season" class="appearance-none px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white min-w-[140px]">
+                            <select id="explore-season-select" class="appearance-none w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-sm sm:text-base">
                                 <option value="">All Seasons</option>
                                 <!-- Philippine seasons mapping: Dry (Amihan), Wet (Habagat), Transition (both/typhoon) -->
                                 <option value="amihan">Amihan (Dry Season)</option>
@@ -146,25 +171,15 @@
                                 <option value="year-round">Year Round / All Seasons</option>
                             </select>
                             <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Results Count & Sort -->
-                    <div class="flex items-center gap-4">
-                        <div class="text-gray-700">
-                            @if(isset($followedTrails))
-                                <span class="font-semibold">{{ $followedTrails->count() }}</span> trails found
-                            @else
-                                <span class="font-semibold">0</span> trails found
-                            @endif
-                        </div>
-                        
+                        <!-- Sort -->
                         <div class="relative">
-                            <select id="explore-sort-select" x-model="sortBy" class="appearance-none px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white min-w-[160px]">
+                            <select id="explore-sort-select" class="appearance-none w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-sm sm:text-base">
                                 <option value="popularity">Sort by Popularity</option>
                                 <option value="rating">Sort by Rating</option>
                                 <option value="length">Sort by Length</option>
@@ -172,7 +187,7 @@
                                 <option value="price_high_low">Price: High to Low</option>
                             </select>
                             <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </div>
@@ -182,8 +197,32 @@
             </div>
         </div>
 
+        <script>
+            function toggleFilters() {
+                const container = document.getElementById('filters-container');
+                const btnText = document.getElementById('filter-btn-text');
+                const filterIcon = document.getElementById('filter-icon');
+                
+                if (container.classList.contains('hidden')) {
+                    // Show filters
+                    container.classList.remove('hidden');
+                    container.classList.add('grid');
+                    btnText.textContent = 'Hide Filters';
+                    // Change icon to close/up arrow
+                    filterIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>';
+                } else {
+                    // Hide filters
+                    container.classList.add('hidden');
+                    container.classList.remove('grid');
+                    btnText.textContent = 'Show Filters';
+                    // Change icon back to filter
+                    filterIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"></path>';
+                }
+            }
+        </script>
+
         <!-- Main Content -->
-        <main id="trails-grid" class="flex-1 px-6 py-8">
+        <main id="trails-grid" class="flex-1 px-4 sm:px-6 py-6 sm:py-8">
             <div class="max-w-7xl mx-auto">
                 
                 <!-- Trail Grid -->
@@ -205,7 +244,10 @@
                                  data-organization="{{ strtolower($trail->user->display_name) }}"
                                  data-location="{{ strtolower(optional($trail->location)->name ?? $trail->mountain_name) }}"
                                  data-difficulty="{{ strtolower($trail->difficulty) }}"
-                                 data-season="{{ $seasonKey }}">
+                                 data-season="{{ $seasonKey }}"
+                                 data-rating="{{ $trail->average_rating ?? 0 }}"
+                                 data-length="{{ $trail->length ?? 0 }}"
+                                 data-price="{{ optional($trail->package)->price ?? $trail->price ?? 0 }}">
                                 
                                 <!-- Trail Image -->
                                 <div class="relative h-64 overflow-hidden">
@@ -348,6 +390,195 @@
     </div>
 
     <script>
+        // Trail Explorer functionality using vanilla JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[TrailExplorer] Initializing vanilla JS version...');
+            
+            const searchInput = document.getElementById('explore-search-input');
+            const locationSelect = document.getElementById('explore-location-select');
+            const difficultySelect = document.getElementById('explore-difficulty-select');
+            const seasonSelect = document.getElementById('explore-season-select');
+            const sortSelect = document.getElementById('explore-sort-select');
+            const trailsList = document.getElementById('trails-list');
+            const countElement = document.querySelector('.text-gray-700 .font-semibold');
+            
+            let searchTimer = null;
+            
+            function applyFilters() {
+                console.log('[TrailExplorer] Applying filters...');
+                
+                if (!trailsList) {
+                    console.error('[TrailExplorer] trails-list not found');
+                    return;
+                }
+                
+                const cards = trailsList.querySelectorAll('[data-trail-name]');
+                console.log('[TrailExplorer] Found', cards.length, 'trail cards');
+                
+                if (cards.length === 0) {
+                    console.warn('[TrailExplorer] No trail cards found');
+                    return;
+                }
+                
+                // Get filter values
+                const search = (searchInput?.value || '').toLowerCase().trim();
+                const location = (locationSelect?.value || '').toLowerCase().trim();
+                const difficulty = (difficultySelect?.value || '').toLowerCase().trim();
+                const season = (seasonSelect?.value || '').toLowerCase().trim();
+                const sort = sortSelect?.value || 'popularity';
+                
+                console.log('[TrailExplorer] Filter values:', { search, location, difficulty, season, sort });
+                
+                let visibleCount = 0;
+                const visibleCards = [];
+                
+                // Filter cards
+                cards.forEach((card, index) => {
+                    let visible = true;
+                    
+                    // Search filter
+                    if (search) {
+                        const trailName = (card.getAttribute('data-trail-name') || '').toLowerCase();
+                        const mountainName = (card.getAttribute('data-mountain-name') || '').toLowerCase();
+                        const organization = (card.getAttribute('data-organization') || '').toLowerCase();
+                        const cardLocation = (card.getAttribute('data-location') || '').toLowerCase();
+                        
+                        const searchText = `${trailName} ${mountainName} ${organization} ${cardLocation}`;
+                        if (!searchText.includes(search)) {
+                            visible = false;
+                        }
+                    }
+                    
+                    // Location filter
+                    if (visible && location) {
+                        const cardLocation = (card.getAttribute('data-location') || '').toLowerCase();
+                        const mountainName = (card.getAttribute('data-mountain-name') || '').toLowerCase();
+                        
+                        if (!cardLocation.includes(location) && !mountainName.includes(location)) {
+                            visible = false;
+                        }
+                    }
+                    
+                    // Difficulty filter
+                    if (visible && difficulty) {
+                        const cardDifficulty = (card.getAttribute('data-difficulty') || '').toLowerCase();
+                        if (cardDifficulty !== difficulty) {
+                            visible = false;
+                        }
+                    }
+                    
+                    // Season filter
+                    if (visible && season && season !== 'year-round') {
+                        const cardSeason = (card.getAttribute('data-season') || '').toLowerCase();
+                        if (cardSeason !== season && cardSeason !== 'year-round') {
+                            visible = false;
+                        }
+                    }
+                    
+                    // Show/hide card
+                    if (visible) {
+                        card.style.display = '';
+                        card.classList.remove('hidden');
+                        visibleCards.push(card);
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                        card.classList.add('hidden');
+                    }
+                    
+                    // Debug first few cards
+                    if (index < 2) {
+                        console.log('[TrailExplorer] Card', index, ':', {
+                            trail: card.getAttribute('data-trail-name'),
+                            visible,
+                            attributes: {
+                                location: card.getAttribute('data-location'),
+                                difficulty: card.getAttribute('data-difficulty'),
+                                season: card.getAttribute('data-season')
+                            }
+                        });
+                    }
+                });
+                
+                // Sort visible cards
+                sortCards(visibleCards, sort);
+                
+                // Update count
+                if (countElement) {
+                    countElement.textContent = visibleCount;
+                }
+                
+                console.log('[TrailExplorer] Filtering complete. Visible:', visibleCount);
+            }
+            
+            function sortCards(cards, sortBy) {
+                if (cards.length === 0) return;
+                
+                const sortedCards = [...cards].sort((a, b) => {
+                    const getValue = (card, attr, defaultVal = 0) => {
+                        return parseFloat(card.getAttribute(attr) || defaultVal) || defaultVal;
+                    };
+                    
+                    switch (sortBy) {
+                        case 'rating':
+                            return getValue(b, 'data-rating') - getValue(a, 'data-rating');
+                        case 'length':
+                            return getValue(a, 'data-length') - getValue(b, 'data-length');
+                        case 'price_low_high':
+                            return getValue(a, 'data-price') - getValue(b, 'data-price');
+                        case 'price_high_low':
+                            return getValue(b, 'data-price') - getValue(a, 'data-price');
+                        case 'popularity':
+                        default:
+                            return getValue(b, 'data-rating') - getValue(a, 'data-rating');
+                    }
+                });
+                
+                // Reorder DOM elements
+                sortedCards.forEach(card => {
+                    trailsList.appendChild(card);
+                });
+                
+                console.log('[TrailExplorer] Sorted by:', sortBy);
+            }
+            
+            // Debounced search
+            function debounceFilter() {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(applyFilters, 300);
+            }
+            
+            // Event listeners
+            if (searchInput) {
+                searchInput.addEventListener('input', debounceFilter);
+                console.log('[TrailExplorer] Search input listener attached');
+            }
+            
+            if (locationSelect) {
+                locationSelect.addEventListener('change', applyFilters);
+                console.log('[TrailExplorer] Location select listener attached');
+            }
+            
+            if (difficultySelect) {
+                difficultySelect.addEventListener('change', applyFilters);
+                console.log('[TrailExplorer] Difficulty select listener attached');
+            }
+            
+            if (seasonSelect) {
+                seasonSelect.addEventListener('change', applyFilters);
+                console.log('[TrailExplorer] Season select listener attached');
+            }
+            
+            if (sortSelect) {
+                sortSelect.addEventListener('change', applyFilters);
+                console.log('[TrailExplorer] Sort select listener attached');
+            }
+            
+            // Initial filter application
+            setTimeout(applyFilters, 100);
+        });
+        
+        // Alpine.js component for compatibility
         function trailExplorer() {
             return {
                 searchQuery: '',
@@ -356,195 +587,10 @@
                 filters: {
                     difficulty: '',
                     season: ''
-                },
-                _searchTimer: null,
-
-                init() {
-                    console.debug('[trailExplorer] init');
-
-                    // Run initial filter to apply any defaults
-                    this.filterTrails();
-
-                    // Watchers: use Alpine's $watch so Livewire doesn't try to evaluate inline handlers
-                    this.$watch('searchQuery', (val) => {
-                        console.debug('[trailExplorer] searchQuery changed', val);
-                        // debounce handled by debounceSearch
-                        this.debounceSearch();
-                    });
-
-                    this.$watch('selectedLocation', (val) => {
-                        console.debug('[trailExplorer] selectedLocation changed', val);
-                        this.filterTrails();
-                    });
-
-                    this.$watch('filters.difficulty', (val) => {
-                        console.debug('[trailExplorer] difficulty changed', val);
-                        this.filterTrails();
-                    });
-
-                    this.$watch('filters.season', (val) => {
-                        console.debug('[trailExplorer] season changed', val);
-                        this.filterTrails();
-                    });
-
-                    this.$watch('sortBy', (val) => {
-                        console.debug('[trailExplorer] sortBy changed', val);
-                        this.sortTrails();
-                    });
-                },
-
-                filterTrails() {
-                    // get list container and children
-                    const list = document.getElementById('trails-list');
-                    if (!list) return;
-
-                    const cards = Array.from(list.querySelectorAll('[data-trail-name]'));
-
-                    const q = (this.searchQuery || '').toString().trim().toLowerCase();
-                    const loc = (this.selectedLocation || '').toString().trim().toLowerCase();
-                    const diff = (this.filters.difficulty || '').toString().trim().toLowerCase();
-                    const season = (this.filters.season || '').toString().trim().toLowerCase();
-
-                    cards.forEach(card => {
-                        const name = (card.getAttribute('data-trail-name') || '').toLowerCase();
-                        const mountain = (card.getAttribute('data-mountain-name') || '').toLowerCase();
-                        const org = (card.getAttribute('data-organization') || '').toLowerCase();
-                        const location = (card.getAttribute('data-location') || '').toLowerCase();
-                        const difficulty = (card.getAttribute('data-difficulty') || '').toLowerCase();
-                        const cardSeason = (card.getAttribute('data-season') || '').toLowerCase();
-
-                        let visible = true;
-
-                        // Search query: match trail name, mountain, organization, or location
-                        if (q) {
-                            const searchable = `${name} ${mountain} ${org} ${location}`;
-                            if (!searchable.includes(q)) visible = false;
-                        }
-
-                        // Location filter
-                        if (loc) {
-                            if (!location.includes(loc) && !mountain.includes(loc)) visible = false;
-                        }
-
-                        // Difficulty filter
-                        if (diff) {
-                            if (difficulty !== diff) visible = false;
-                        }
-
-                        // Season filter (Philippine seasons)
-                        if (season) {
-                            // season values: 'amihan', 'habagat', 'year-round'
-                            if (season === 'year-round') {
-                                // year-round matches everything
-                            } else {
-                                if (cardSeason !== season) visible = false;
-                            }
-                        }
-
-                        // Toggle display via hidden attribute/class
-                        if (visible) {
-                            card.classList.remove('hidden');
-                            card.style.display = '';
-                        } else {
-                            card.classList.add('hidden');
-                            card.style.display = 'none';
-                        }
-                    });
-                    console.debug('[trailExplorer] filterTrails applied', {q, loc, diff, season});
-                },
-
-                sortTrails() {
-                    // Simple client-side stub: currently doesn't reorder cards because
-                    // reordering would require extracting sort keys from DOM. We'll
-                    // keep the UI responsive and log the selected sort.
-                    console.log('Sorting by', this.sortBy);
-                    // Future improvement: implement DOM reordering based on data attributes
-                },
-
-                debounceSearch() {
-                    clearTimeout(this._searchTimer);
-                    // debounce 300ms
-                    this._searchTimer = setTimeout(() => {
-                        this.filterTrails();
-                    }, 300);
                 }
             }
         }
     </script>
-    <script>
-        // Global filter function (vanilla JS) that mirrors Alpine filter behavior.
-        (function(){
-            const searchInput = document.getElementById('explore-search-input');
-            const locSelect = document.getElementById('explore-location-select');
-            const diffSelect = document.getElementById('explore-difficulty-select');
-            const seasonSelect = document.getElementById('explore-season-select');
-            const sortSelect = document.getElementById('explore-sort-select');
-            const list = document.getElementById('trails-list');
-            let timer = null;
 
-            function applyFilters() {
-                if (!list) return;
-                const cards = Array.from(list.querySelectorAll('[data-trail-name]'));
-
-                const q = (searchInput ? searchInput.value : '').toString().trim().toLowerCase();
-                const loc = (locSelect ? locSelect.value : '').toString().trim().toLowerCase();
-                const diff = (diffSelect ? diffSelect.value : '').toString().trim().toLowerCase();
-                const season = (seasonSelect ? seasonSelect.value : '').toString().trim().toLowerCase();
-
-                cards.forEach(card => {
-                    const name = (card.getAttribute('data-trail-name') || '').toLowerCase();
-                    const mountain = (card.getAttribute('data-mountain-name') || '').toLowerCase();
-                    const org = (card.getAttribute('data-organization') || '').toLowerCase();
-                    const location = (card.getAttribute('data-location') || '').toLowerCase();
-                    const difficulty = (card.getAttribute('data-difficulty') || '').toLowerCase();
-                    const cardSeason = (card.getAttribute('data-season') || '').toLowerCase();
-
-                    let visible = true;
-
-                    if (q) {
-                        const searchable = `${name} ${mountain} ${org} ${location}`;
-                        if (!searchable.includes(q)) visible = false;
-                    }
-                    if (loc) {
-                        if (!location.includes(loc) && !mountain.includes(loc)) visible = false;
-                    }
-                    if (diff) {
-                        if (difficulty !== diff) visible = false;
-                    }
-                    if (season) {
-                        if (season === 'year-round') {
-                            // match all
-                        } else {
-                            if (cardSeason !== season) visible = false;
-                        }
-                    }
-
-                    if (visible) {
-                        card.classList.remove('hidden');
-                        card.style.display = '';
-                    } else {
-                        card.classList.add('hidden');
-                        card.style.display = 'none';
-                    }
-                });
-            }
-
-            // Attach listeners
-            document.addEventListener('DOMContentLoaded', function(){
-                if (searchInput) {
-                    searchInput.addEventListener('input', function(){
-                        clearTimeout(timer);
-                        timer = setTimeout(applyFilters, 250);
-                    });
-                }
-                [locSelect, diffSelect, seasonSelect, sortSelect].forEach(el => {
-                    if (!el) return;
-                    el.addEventListener('change', function(){
-                        applyFilters();
-                    });
-                });
-            });
-        })();
-    </script>
 </div>
 

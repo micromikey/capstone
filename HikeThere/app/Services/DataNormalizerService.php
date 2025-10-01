@@ -125,7 +125,8 @@ class DataNormalizerService
         }
 
         // Normalize trail fields for consistent access
-        return array_merge([
+        // Use array_merge with $trail first to preserve original data, then add normalized fields
+        return array_merge($trail, [
             'name' => $itinerary['trail_name'] ?? $itinerary['trail'] ?? ($trail['name'] ?? null),
             'region' => $itinerary['region'] ?? $trail['region'] ?? ($trail['location'] ?? null),
             'distance_km' => $itinerary['distance_km'] ?? $itinerary['distance'] ?? 
@@ -141,7 +142,7 @@ class DataNormalizerService
                                  $trail['description'] ?? null,
             'estimated_time' => $itinerary['estimated_time'] ?? $itinerary['estimated_duration'] ?? 
                               $trail['estimated_time'] ?? $trail['estimated_duration'] ?? null,
-        ], $trail);
+        ]);
     }
 
     /**

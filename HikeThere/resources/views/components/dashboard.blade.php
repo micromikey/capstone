@@ -1,4 +1,4 @@
-@props(['weather', 'forecast', 'user', 'latestAssessment', 'latestItinerary', 'followedTrails' => collect(), 'followingCount' => 0])
+@props(['weather', 'forecast', 'user', 'latestAssessment', 'latestItinerary', 'followedTrails' => collect(), 'followingCount' => 0, 'upcomingEvents' => collect()])
 
 @push('floating-navigation')
 @php
@@ -14,6 +14,11 @@ $sections[] = ['id' => 'weather-section', 'title' => 'Weather', 'icon' => '<path
 
 if(isset($user) && $user && $user->user_type === 'hiker') {
 $sections[] = ['id' => 'hiking-tools', 'title' => 'Hiking Tools', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>'];
+
+// Add Events section if there are upcoming events
+if(isset($upcomingEvents) && $upcomingEvents->count() > 0) {
+$sections[] = ['id' => 'events-section', 'title' => 'Events', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>'];
+}
 
 if((isset($followedTrails) && $followedTrails->count() > 0)) {
 $sections[] = ['id' => 'community-section', 'title' => 'Community', 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>'];
@@ -54,6 +59,11 @@ $imageService = app('App\Services\TrailImageService');
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: rgba(255, 255, 255, 0.4);
     }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
 </style>
 
 {{-- Header --}}
@@ -84,10 +94,10 @@ $imageService = app('App\Services\TrailImageService');
 
     {{-- Main Content --}}
     <div class="relative z-10">
-        <div class="flex items-center space-x-4">
-            <x-application-logo class="h-14 w-auto" />
-            <div>
-                <h1 class="text-3xl font-bold text-green-800 tracking-tight">
+        <div class="flex items-center space-x-3 md:space-x-4">
+            <x-application-logo class="h-10 w-10 md:h-14 md:w-14 flex-shrink-0 object-contain" />
+            <div class="flex-1 min-w-0">
+                <h1 class="text-2xl md:text-3xl font-bold text-green-800 tracking-tight">
                     HikeThere
                 </h1>
                 <p class="text-sm text-gray-600 font-medium leading-tight">
@@ -818,128 +828,139 @@ $imageService = app('App\Services\TrailImageService');
     let weatherUpdateInterval;
     let lastRequestedCoords = null;
     let lastWeatherFetchAt = 0;
-    let weatherStarted = false; // Ensure startUpdates runs only once (or explicitly switches)
-    const WEATHER_FETCH_COOLDOWN_MS = 5000; // 5s cooldown to avoid duplicate calls
+    let weatherStarted = false;
+    let activeWeatherRequest = null; // Track active fetch to cancel duplicates
+    const WEATHER_FETCH_COOLDOWN_MS = 3000; // Reduced to 3s for better responsiveness
+    const WEATHER_CACHE_DURATION_MS = 2 * 60 * 1000; // 2 minutes cache
 
-    function updateWeatherData(coords) {
-        // coords optional: { lat, lon }
-        // Cooldown: avoid making multiple near-simultaneous requests
+    // Helper: Get cached weather data if still valid
+    function getCachedWeather() {
         try {
-            const now = Date.now();
-            if (lastWeatherFetchAt && (now - lastWeatherFetchAt) < WEATHER_FETCH_COOLDOWN_MS) {
-                console.debug('Skipping weather fetch due to cooldown');
-                return;
+            const cached = localStorage.getItem('weatherCache');
+            if (!cached) return null;
+            
+            const data = JSON.parse(cached);
+            const age = Date.now() - (data.timestamp || 0);
+            
+            if (age < WEATHER_CACHE_DURATION_MS) {
+                console.debug('Using cached weather data (age: ' + Math.round(age / 1000) + 's)');
+                return data.weather;
             }
-            lastWeatherFetchAt = now;
-        } catch (e) {}
+        } catch (e) {
+            console.warn('Failed to read weather cache:', e);
+        }
+        return null;
+    }
+
+    // Helper: Save weather data to cache
+    function cacheWeather(weatherData) {
+        try {
+            localStorage.setItem('weatherCache', JSON.stringify({
+                weather: weatherData,
+                timestamp: Date.now()
+            }));
+        } catch (e) {
+            console.warn('Failed to cache weather:', e);
+        }
+    }
+
+    function updateWeatherData(coords, skipCache = false) {
+        // Cancel any active request to avoid duplicates
+        if (activeWeatherRequest) {
+            try {
+                activeWeatherRequest.abort();
+            } catch (e) {}
+            activeWeatherRequest = null;
+        }
+
+        // Cooldown check
+        const now = Date.now();
+        if (lastWeatherFetchAt && (now - lastWeatherFetchAt) < WEATHER_FETCH_COOLDOWN_MS) {
+            console.debug('Skipping weather fetch due to cooldown');
+            return;
+        }
+        lastWeatherFetchAt = now;
+
+        // Show cached data immediately if available (unless explicitly skipping)
+        if (!skipCache) {
+            const cached = getCachedWeather();
+            if (cached) {
+                updateWeatherDisplay(cached.weather, cached.forecast, cached.hourly || []);
+            }
+        }
+
+        // Build URL
         let url = '/api/weather/current';
         if (coords && coords.lat && coords.lon) {
             url += `?lat=${encodeURIComponent(coords.lat)}&lon=${encodeURIComponent(coords.lon)}`;
             lastRequestedCoords = coords;
-            console.info('Requesting weather for coords:', coords);
-            // Update small UI indicator if present
-            try {
-                const el = document.getElementById('weather-requested-loc');
-                if (el) el.textContent = `Requested location: ${coords.lat.toFixed(4)}, ${coords.lon.toFixed(4)}`;
-            } catch (e) {}
         }
 
-        console.debug('Fetching weather URL:', url);
-        // Update debug fetch URL UI
-        try {
-            const f = document.getElementById('weather-fetch-url');
-            if (f) f.textContent = `Fetch URL: ${url}`;
-        } catch (e) {}
+        // Use AbortController for cancellable fetch
+        activeWeatherRequest = new AbortController();
+        const signal = activeWeatherRequest.signal;
 
-        // Use fetch when available, else fallback to XHR ajaxGet
-        const useFetch = typeof fetch === 'function';
         const handleSuccess = function(data) {
-            console.info('Weather API response:', data, 'requestedCoords:', lastRequestedCoords);
+            activeWeatherRequest = null;
+            
             if (data.success && data.weather) {
-                // Pass hourly data if present so hourly forecast uses current location
+                // Cache the response
+                cacheWeather({
+                    weather: data.weather,
+                    forecast: data.forecast,
+                    hourly: data.hourly || []
+                });
+                
                 updateWeatherDisplay(data.weather, data.forecast, data.hourly || []);
-                // Update server debug info
-                try {
-                    const s = document.getElementById('weather-server-info');
-                    if (s) {
-                        const name = data.location?.name || data.weather.city || 'Unknown';
-                        const temp = (data.weather && typeof data.weather.temp !== 'undefined') ? data.weather.temp : (data.temp || 'N/A');
-                        const lat = data.location && (data.location.lat || data.location.lat === 0) ? data.location.lat : null;
-                        const lng = data.location && (data.location.lng || data.location.lng === 0) ? data.location.lng : null;
-                        s.textContent = lat && lng ? `Server: ${name} (${lat.toFixed(6)}, ${lng.toFixed(6)}) — ${temp}°` : `Server: ${name} — ${temp}°`;
-                    }
-                } catch (e) {}
-                // After successful fetch, optionally show which coords were requested (if none, show Manila default)
-                try {
-                    const el = document.getElementById('weather-requested-loc');
-                    if (el) {
-                        if (lastRequestedCoords) {
-                            el.textContent = `Showing weather for: ${lastRequestedCoords.lat.toFixed(4)}, ${lastRequestedCoords.lon.toFixed(4)}`;
-                        } else {
-                            el.textContent = `Showing weather for: current location (no default)`;
-                        }
-                    }
-                } catch (e) {}
+                
+                // Hide loading indicator if shown
+                const alertEl = document.getElementById('weather-location-alert');
+                if (alertEl && alertEl.textContent.includes('Updating')) {
+                    alertEl.classList.add('hidden');
+                }
             }
         };
 
         const handleError = function(error) {
+            activeWeatherRequest = null;
+            
+            // Don't show error if request was cancelled
+            if (error.name === 'AbortError') {
+                console.debug('Weather fetch cancelled');
+                return;
+            }
+            
             console.error('Error updating weather:', error);
-            // On error, set city to Unknown and show alert prompting user action
-            try {
-                const cityElement = document.querySelector('.weather-city');
+            
+            const cityElement = document.querySelector('.weather-city');
+            const alertEl = document.getElementById('weather-location-alert');
+            
+            // Only show error if we don't have cached data
+            if (!getCachedWeather()) {
                 if (cityElement) cityElement.textContent = 'Unknown';
-                const alertEl = document.getElementById('weather-location-alert');
                 if (alertEl) {
                     alertEl.className = 'mt-3 p-2 rounded text-sm font-medium bg-yellow-100 text-yellow-800';
-                    alertEl.textContent = 'Unable to fetch weather data. Try "Use my location" or enter coordinates manually.';
+                    alertEl.textContent = 'Unable to fetch weather data. Try "Use my location" or wait for retry.';
                     alertEl.classList.remove('hidden');
                 }
-            } catch (e) {}
+            }
         };
 
-        if (useFetch) {
-            fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                }
-            })
-            .then(response => response.json())
-            .then(handleSuccess)
-            .catch(handleError);
-        } else {
-            ajaxGet(url, handleSuccess, handleError);
-        }
-
-        // XHR helper (used as fallback)
-        function ajaxGet(url, onSuccess, onError) {
-            try {
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', url, true);
-                xhr.setRequestHeader('Content-Type', 'application/json');
-                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                if (token) xhr.setRequestHeader('X-CSRF-TOKEN', token);
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4) {
-                        if (xhr.status >= 200 && xhr.status < 300) {
-                            try {
-                                const data = JSON.parse(xhr.responseText || '{}');
-                                onSuccess(data);
-                            } catch (e) {
-                                onError(e);
-                            }
-                        } else {
-                            onError(new Error('HTTP ' + xhr.status));
-                        }
-                    }
-                };
-                xhr.send();
-            } catch (e) {
-                onError(e);
+        // Modern fetch with AbortController
+        fetch(url, {
+            method: 'GET',
+            signal: signal,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
             }
-        }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        })
+        .then(handleSuccess)
+        .catch(handleError);
     }
 
     function updateWeatherDisplay(weather, forecast) {
@@ -1130,15 +1151,17 @@ $imageService = app('App\Services\TrailImageService');
             if (weatherStarted) return;
             weatherStarted = true;
 
-            // Initial immediate fetch
+            // Initial fetch (will use cache if available)
             updateWeatherData(coords);
-            // Clear any existing interval to avoid duplicates (e.g. stored coords + geolocation both starting)
+            
+            // Clear any existing interval to avoid duplicates
             if (weatherUpdateInterval) {
                 try { clearInterval(weatherUpdateInterval); } catch (e) {}
                 weatherUpdateInterval = null;
             }
-            // Start periodic updates every 5 minutes
-            weatherUpdateInterval = setInterval(() => updateWeatherData(coords), 300000);
+            
+            // Start periodic updates every 3 minutes (reduced from 5 for fresher data)
+            weatherUpdateInterval = setInterval(() => updateWeatherData(coords, true), 180000);
 
             // Add manual refresh button
             const refreshButton = document.createElement('button');
@@ -1149,7 +1172,13 @@ $imageService = app('App\Services\TrailImageService');
         `;
             refreshButton.className = 'weather-refresh-btn absolute top-4 right-20 text-white/60 hover:text-white/90 transition-colors p-1 rounded';
             refreshButton.title = 'Refresh Weather Data';
-            refreshButton.onclick = () => updateWeatherData(coords);
+            refreshButton.onclick = () => {
+                // Force fresh fetch by skipping cache
+                updateWeatherData(coords, true);
+                // Add spinning animation
+                refreshButton.style.animation = 'spin 0.5s ease-in-out';
+                setTimeout(() => refreshButton.style.animation = '', 500);
+            };
 
             const weatherContainer = document.querySelector('.weather-container');
             if (weatherContainer && !document.querySelector('.weather-refresh-btn')) {
@@ -1221,18 +1250,25 @@ $imageService = app('App\Services\TrailImageService');
             stored = null;
         }
 
-        const GEO_WAIT_MS = 7000; // Wait this long for geolocation before falling back
+        const GEO_WAIT_MS = 4000; // Reduced to 4s for faster page load
         const alertEl = document.getElementById('weather-location-alert');
         const cityElement = document.querySelector('.weather-city');
 
-        // Show 'Updating...' in the city label and a subtle updating indicator while we wait for geolocation
-        if (cityElement) {
-            cityElement.textContent = 'Updating...';
-        }
-        if (alertEl) {
-            alertEl.className = 'mt-3 p-2 rounded text-sm font-medium bg-white/10 text-white';
-            alertEl.textContent = 'Updating location...';
-            alertEl.classList.remove('hidden');
+        // Show cached data immediately for better UX
+        const cached = getCachedWeather();
+        if (cached && cached.weather) {
+            updateWeatherDisplay(cached.weather, cached.forecast || [], cached.hourly || []);
+            if (cityElement) cityElement.textContent = cached.weather.city || 'Loading...';
+        } else {
+            // Only show 'Updating...' if no cache available
+            if (cityElement) {
+                cityElement.textContent = 'Updating...';
+            }
+            if (alertEl) {
+                alertEl.className = 'mt-3 p-2 rounded text-sm font-medium bg-white/10 text-white';
+                alertEl.textContent = 'Loading weather...';
+                alertEl.classList.remove('hidden');
+            }
         }
 
         // Wait up to GEO_WAIT_MS for geolocation. If it doesn't arrive, use stored/default coords.
@@ -1266,16 +1302,14 @@ $imageService = app('App\Services\TrailImageService');
                 const coords = { lat: position.coords.latitude, lon: position.coords.longitude };
                 try { localStorage.setItem('lastCoords', JSON.stringify(coords)); } catch (e) {}
                 if (alertEl) {
-                    alertEl.className = 'mt-3 p-2 rounded text-sm font-medium bg-white/10 text-green-200';
-                    alertEl.textContent = 'Using your current location.';
-                    alertEl.classList.remove('hidden');
+                    alertEl.classList.add('hidden');
                 }
                 // If we haven't started weather updates yet, start with geolocation.
                 if (!weatherStarted) {
                     startUpdates(coords);
                 } else {
-                    // If updates already started (we used stored/default), refresh to new coords
-                    updateWeatherData(coords);
+                    // Refresh to new coords
+                    updateWeatherData(coords, true); // Skip cache for fresh geolocation data
                 }
             }, function(err) {
                 clearTimeout(geoWait);
@@ -1285,23 +1319,27 @@ $imageService = app('App\Services\TrailImageService');
                         startUpdates(stored);
                     } else {
                         // No stored coords: set Unknown and show helpful alert
-                        if (cityElement) {
+                        if (cityElement && !cached) {
                             cityElement.textContent = 'Unknown';
                         }
-                        if (alertEl) {
+                        if (alertEl && !cached) {
                             alertEl.className = 'mt-3 p-2 rounded text-sm font-medium bg-yellow-100 text-yellow-800';
                             if (err && err.code === 1) {
-                                alertEl.textContent = 'Location permission denied. Unable to determine location.';
+                                alertEl.textContent = 'Location permission denied.';
                             } else if (err && err.code === 3) {
-                                alertEl.textContent = 'Location request timed out. Unable to determine location.';
+                                alertEl.textContent = 'Location request timed out.';
                             } else {
-                                alertEl.textContent = 'Unable to retrieve your location.';
+                                alertEl.textContent = 'Unable to retrieve location.';
                             }
                             alertEl.classList.remove('hidden');
                         }
                     }
                 }
-            }, { enableHighAccuracy: false, timeout: GEO_WAIT_MS, maximumAge: 600000 });
+            }, { 
+                enableHighAccuracy: false, 
+                timeout: GEO_WAIT_MS, 
+                maximumAge: 300000 // Use 5-minute old position to speed up
+            });
         } else {
             // Geolocation not supported - if stored coords available use them, otherwise show Unknown
             console.warn('Browser does not support geolocation');
@@ -1575,6 +1613,153 @@ $imageService = app('App\Services\TrailImageService');
         </div>
     </div>
 </div>
+@endif
+
+{{-- Events Section for Hikers --}}
+@if(isset($user) && $user && $user->user_type === 'hiker')
+<div id="events-section" class="px-6 lg:px-8 py-12 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-5">
+        <div class="absolute top-10 left-10 w-32 h-32 bg-orange-400 rounded-full"></div>
+        <div class="absolute top-32 right-20 w-24 h-24 bg-amber-400 rounded-full"></div>
+        <div class="absolute bottom-20 left-1/4 w-20 h-20 bg-yellow-400 rounded-full"></div>
+    </div>
+
+    <div class="relative z-10">
+        <!-- Section Header -->
+        <div class="text-center mb-12">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-orange-500 to-amber-600 rounded-full mb-4">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+            </div>
+            <h2 class="text-4xl font-bold text-gray-800 mb-4">Upcoming Hiking Events</h2>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                Join organized hikes, workshops, and community gatherings from organizations you follow
+            </p>
+        </div>
+
+        @if(isset($upcomingEvents) && $upcomingEvents->count() > 0)
+        <!-- Events Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            @foreach($upcomingEvents as $event)
+            @php
+                $now = \Carbon\Carbon::now();
+                if (!empty($event->always_available)) {
+                    $dateLabel = 'Always';
+                    $dayLabel = 'Open';
+                } else {
+                    $dateLabel = $event->start_at ? $event->start_at->format('M') : 'TBA';
+                    $dayLabel = $event->start_at ? $event->start_at->format('d') : '';
+                }
+            @endphp
+            <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 overflow-hidden group">
+                <div class="relative h-48 bg-gradient-to-br from-orange-400 to-amber-500 group-hover:from-orange-500 group-hover:to-amber-600 transition-all duration-300">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <svg class="w-20 h-20 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg text-center min-w-[4rem]">
+                        <div class="text-xs font-semibold text-orange-600">{{ $dateLabel }}</div>
+                        <div class="text-lg font-bold text-orange-800">{{ $dayLabel }}</div>
+                    </div>
+                    @if($event->is_free ?? false)
+                    <div class="absolute top-4 left-4 bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                        Free
+                    </div>
+                    @elseif(isset($event->price) && $event->price > 0)
+                    <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-gray-800 px-3 py-1 rounded-full text-xs font-semibold">
+                        ₱{{ number_format($event->price, 0) }}
+                    </div>
+                    @endif
+                </div>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 line-clamp-2">{{ $event->title }}</h3>
+                    <p class="text-sm text-gray-500 mb-3">
+                        <span class="font-medium">{{ optional($event->user)->display_name ?? 'Organization' }}</span>
+                        @if(!empty($event->always_available))
+                        <span class="text-emerald-600"> • Always Open</span>
+                        @else
+                        <span> • {{ $event->start_at ? $event->start_at->format('M d, Y g:ia') : 'TBA' }}</span>
+                        @endif
+                    </p>
+                    
+                    @if($event->location_name ?? false)
+                    <div class="flex items-center text-sm text-gray-600 mb-3">
+                        <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        </svg>
+                        <span class="line-clamp-1">{{ $event->location_name }}</span>
+                    </div>
+                    @endif
+                    
+                    @if($event->description)
+                    <p class="text-sm text-gray-600 mb-4 line-clamp-2">{{ Str::limit($event->description, 100) }}</p>
+                    @endif
+
+                    @if(isset($event->end_at) && $event->end_at->greaterThan($now))
+                    @php
+                        $diffInDays = (int) max(0, round($event->end_at->diffInDays($now, true)));
+                        $diffInHours = (int) max(0, round($event->end_at->diffInHours($now, true)));
+                        $diffInMinutes = (int) max(0, round($event->end_at->diffInMinutes($now, true)));
+
+                        if ($diffInDays >= 1) {
+                            $short = $diffInDays . 'd';
+                        } elseif ($diffInHours >= 1) {
+                            $short = $diffInHours . 'h';
+                        } else {
+                            $short = max(0, $diffInMinutes) . 'm';
+                        }
+                    @endphp
+                    <p class="text-xs text-red-600 font-semibold mb-4">⏰ Ends in {{ $short }}</p>
+                    @endif
+                    
+                    <a href="{{ route('hiker.events.show', $event->slug) }}" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl font-semibold hover:from-orange-700 hover:to-amber-700 transition-all duration-300 transform hover:scale-105 shadow">
+                        View Event
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            @endforeach
+        </div>
+        @else
+        <!-- No Events State -->
+        <div class="text-center py-12 bg-white rounded-2xl shadow-lg border border-gray-100 max-w-2xl mx-auto mb-8">
+            <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">No Upcoming Events</h3>
+            <p class="text-gray-600 mb-6">
+                @if(isset($followingCount) && $followingCount > 0)
+                    The organizations you follow don't have upcoming events at the moment.
+                @else
+                    Follow some organizations to see their events here.
+                @endif
+            </p>
+            <a href="{{ route('community.index') }}" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl font-semibold hover:from-orange-700 hover:to-amber-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"></path>
+                </svg>
+                Discover Organizations
+            </a>
+        </div>
+        @endif
+
+        <!-- View All Events Button -->
+        <div class="text-center">
+            <a href="{{ route('community.index') }}#events" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl font-semibold hover:from-orange-700 hover:to-amber-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                View All Events
+            </a>
+        </div>
+    </div>
+</div>
+@endif
 
 {{-- Community Section for Hikers --}}
 @if(isset($user) && $user && $user->user_type === 'hiker' && (isset($followedTrails) && $followedTrails->count() > 0))
@@ -1875,4 +2060,3 @@ $imageService = app('App\Services\TrailImageService');
         });
     });
 </script>
-@endif

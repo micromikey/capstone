@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -84,6 +85,7 @@ class DashboardController extends Controller
         $latestItinerary = null;
         $followedTrails = collect();
         $followingCount = 0;
+        $upcomingEvents = collect();
 
         if (Auth::check() && Auth::user()->user_type === 'hiker') {
             $user = Auth::user();
@@ -97,7 +99,24 @@ class DashboardController extends Controller
                 ->get();
             
             // Get count of organizations being followed
-            $followingCount = $user->following()->count();
+            $followingCount = $user->following->count();
+            
+            // Get upcoming events from followed organizations
+            $followingIds = $user->following->pluck('id')->toArray();
+            if (!empty($followingIds)) {
+                $upcomingEvents = \App\Models\Event::whereIn('user_id', $followingIds)
+                    ->where(function($q) {
+                        $q->where('always_available', true)
+                          ->orWhere('start_at', '>=', now())
+                          ->orWhere(function($q2) {
+                              $q2->whereNotNull('end_at')->where('end_at', '>', now());
+                          });
+                    })
+                    ->with(['user'])
+                    ->orderBy('start_at', 'asc')
+                    ->limit(3)
+                    ->get();
+            }
         }
 
         return view('dashboard', [
@@ -108,6 +127,7 @@ class DashboardController extends Controller
             'latestItinerary' => $latestItinerary,
             'followedTrails' => $followedTrails,
             'followingCount' => $followingCount,
+            'upcomingEvents' => $upcomingEvents,
         ]);
     }
 

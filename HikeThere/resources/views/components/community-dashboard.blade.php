@@ -18,8 +18,8 @@ $imageService = app('App\\Services\\TrailImageService');
 <div id="community-hero" class="relative bg-gradient-to-r from-purple-500 via-purple-300 to-pink-500 text-white overflow-hidden hero-container">
     <div class="absolute inset-0 bg-black bg-opacity-20"></div>
     
-    <!-- Enhanced Community Elements Background -->
-    <div class="absolute inset-0 opacity-15">
+    <!-- Enhanced Community Elements Background (Hidden on mobile) -->
+    <div class="absolute inset-0 opacity-15 hidden md:block">
         <!-- Elegant curved connection lines with visible animation -->
         <svg class="absolute inset-0 w-full h-full animate-pulse-slow" viewBox="0 0 1200 400" fill="none" preserveAspectRatio="none">
             <path d="M0 200 Q300 100 600 200 T1200 200" stroke="white" stroke-width="3" fill="none" class="connection-line"/>
@@ -67,20 +67,20 @@ $imageService = app('App\\Services\\TrailImageService');
         </div>
     </div>
     
-    <div class="relative max-w-7xl mx-auto px-6 py-16">
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <div class="text-center">
-            <h1 class="text-4xl md:text-6xl font-bold mb-4">Trail Connections</h1>
-            <p class="text-xl md:text-2xl text-purple-100 mb-8">Discover hiking organizations that match your interests</p>
+            <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-4 px-2">Trail Connections</h1>
+            <p class="text-lg sm:text-xl md:text-2xl text-purple-100 mb-6 sm:mb-8 px-4">Discover hiking organizations that match your interests</p>
 
             <!-- Search Bar -->
-            <div class="max-w-2xl mx-auto">
+            <div class="max-w-2xl mx-auto px-4">
                 <div class="relative">
-                    <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
-                    <input type="text"
-                        placeholder="Search trails, mountains, or locations..."
-                        class="w-full pl-12 pr-4 py-4 text-lg border-0 rounded-2xl focus:ring-4 focus:ring-white focus:ring-opacity-50 transition-all duration-200 text-gray-900 placeholder-gray-500">
+                    <input id="community-search-input" type="text"
+                        placeholder="Search organizations, trails, or locations..."
+                        class="w-full pl-11 sm:pl-12 pr-4 py-3 sm:py-4 text-base sm:text-lg border-0 rounded-2xl focus:ring-4 focus:ring-white focus:ring-opacity-50 transition-all duration-200 text-gray-900 placeholder-gray-500">
                 </div>
             </div>
         </div>
@@ -425,6 +425,147 @@ $imageService = app('App\\Services\\TrailImageService');
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality
+        const searchInput = document.getElementById('community-search-input');
+        let searchTimer = null;
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(() => {
+                    performSearch(this.value.toLowerCase().trim());
+                }, 300);
+            });
+        }
+
+        function performSearch(query) {
+            // Get the current active tab
+            const activeTab = document.querySelector('.tab-button[aria-selected="true"]');
+            const activeTabId = activeTab ? activeTab.id.replace('tab-', '') : 'featured-organizations';
+
+            if (activeTabId === 'featured-organizations' || activeTabId === 'community-stats') {
+                // Search organizations
+                searchOrganizations(query);
+            } else if (activeTabId === 'trail-reviews') {
+                // Search trails
+                searchTrails(query);
+            } else if (activeTabId === 'events') {
+                // Search events
+                searchEvents(query);
+            }
+        }
+
+        function searchOrganizations(query) {
+            const cards = document.querySelectorAll('#featured-organizations .organization-card, #following-organizations .organization-card');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const name = card.querySelector('h3')?.textContent.toLowerCase() || '';
+                const bio = card.querySelector('.text-gray-600')?.textContent.toLowerCase() || '';
+                const location = card.querySelector('.flex.items-center span')?.textContent.toLowerCase() || '';
+                
+                const searchText = `${name} ${bio} ${location}`;
+                const isVisible = !query || searchText.includes(query);
+
+                if (isVisible) {
+                    card.style.display = '';
+                    card.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                    card.classList.add('hidden');
+                }
+            });
+
+            // Show "no results" message if needed
+            updateNoResultsMessage('featured-organizations', visibleCount, 'organizations');
+            if (document.getElementById('following-organizations').dataset.loaded) {
+                updateNoResultsMessage('following-organizations', visibleCount, 'organizations');
+            }
+        }
+
+        function searchTrails(query) {
+            const cards = document.querySelectorAll('#followed-trails > div');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const trailName = card.querySelector('h3')?.textContent.toLowerCase() || '';
+                const orgName = card.querySelector('.text-sm.text-gray-600')?.textContent.toLowerCase() || '';
+                const location = card.querySelector('.flex.items-center.text-sm')?.textContent.toLowerCase() || '';
+                
+                const searchText = `${trailName} ${orgName} ${location}`;
+                const isVisible = !query || searchText.includes(query);
+
+                if (isVisible) {
+                    card.style.display = '';
+                    card.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                    card.classList.add('hidden');
+                }
+            });
+
+            updateNoResultsMessage('trail-reviews', visibleCount, 'trails');
+        }
+
+        function searchEvents(query) {
+            const cards = document.querySelectorAll('#events .bg-white.rounded-xl');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const title = card.querySelector('h3')?.textContent.toLowerCase() || '';
+                const orgName = card.querySelector('.text-gray-500')?.textContent.toLowerCase() || '';
+                const location = card.querySelector('.text-gray-600')?.textContent.toLowerCase() || '';
+                const description = card.querySelector('.line-clamp-3')?.textContent.toLowerCase() || '';
+                
+                const searchText = `${title} ${orgName} ${location} ${description}`;
+                const isVisible = !query || searchText.includes(query);
+
+                if (isVisible) {
+                    card.style.display = '';
+                    card.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                    card.classList.add('hidden');
+                }
+            });
+
+            updateNoResultsMessage('events', visibleCount, 'events');
+        }
+
+        function updateNoResultsMessage(containerId, count, itemType) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            let noResultsDiv = container.querySelector('.no-search-results');
+
+            if (count === 0 && searchInput.value.trim()) {
+                // Show no results message
+                if (!noResultsDiv) {
+                    noResultsDiv = document.createElement('div');
+                    noResultsDiv.className = 'no-search-results text-center py-12 col-span-full';
+                    noResultsDiv.innerHTML = `
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">No ${itemType} found</h3>
+                        <p class="mt-1 text-sm text-gray-500">Try adjusting your search terms.</p>
+                    `;
+                    const grid = container.querySelector('.grid');
+                    if (grid) {
+                        grid.appendChild(noResultsDiv);
+                    } else {
+                        container.appendChild(noResultsDiv);
+                    }
+                }
+            } else if (noResultsDiv) {
+                // Remove no results message
+                noResultsDiv.remove();
+            }
+        }
+
         // Hero section interactive effects
         const heroContainer = document.querySelector('.hero-container');
         const floatingNodes = document.querySelectorAll('.floating-node');

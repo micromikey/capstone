@@ -368,3 +368,87 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 //  SOL START
 // Assessment routes have been moved to the protected hiker section
 // SOL END
+
+// Test route for debugging Google Maps integration
+Route::get('/debug-itinerary', function () {
+    $service = app(\App\Services\ItineraryGeneratorService::class);
+    
+    $itineraryData = [
+        (object) [
+            'duration_days' => 2,
+            'duration_nights' => 1
+        ]
+    ];
+
+    $trail = [
+        'name' => 'Mt. Pulag via Ambangeg Trail',
+        'location' => 'Benguet, Philippines',
+        'latitude' => 16.5966,
+        'longitude' => 120.9060,
+        'transport_included' => 1,
+        'transport_details' => 'Van transportation from Shaw Boulevard Manila to Ambangeg Trail',
+        'departure_point' => 'Shaw Boulevard Manila'
+    ];
+
+    $buildData = [
+        'user_lat' => 14.6417,
+        'user_lng' => 120.4736,
+        'user_location' => 'Bataan, Philippines',
+        'start_date' => now()->addDays(7)->format('Y-m-d')
+    ];
+    
+    $generatedData = $service->generateItinerary($itineraryData, $trail, $buildData);
+    
+    return response()->json([
+        'preHikeActivities' => $generatedData['preHikeActivities'] ?? [],
+        'totalActivities' => count($generatedData['preHikeActivities'] ?? []),
+        'totalHours' => isset($generatedData['preHikeActivities']) && !empty($generatedData['preHikeActivities']) 
+            ? round(end($generatedData['preHikeActivities'])['minutes'] / 60, 1) 
+            : 0,
+        'debugInfo' => [
+            'trail_passed' => $trail,
+            'build_passed' => $buildData,
+            'activities_detail' => $generatedData['preHikeActivities'] ?? []
+        ]
+    ]);
+});
+
+// Test route without transport_included to see if that's the issue
+Route::get('/debug-itinerary-no-transport', function () {
+    $service = app(\App\Services\ItineraryGeneratorService::class);
+    
+    $itineraryData = [
+        (object) [
+            'duration_days' => 2,
+            'duration_nights' => 1
+        ]
+    ];
+
+    // This mimics what might come from database/web interface - NO transport_included
+    $trail = [
+        'name' => 'Mt. Pulag via Ambangeg Trail',
+        'location' => 'Benguet, Philippines',
+        'latitude' => 16.5966,
+        'longitude' => 120.9060,
+        'transport_details' => 'Van transportation from Shaw Boulevard Manila to Ambangeg Trail',
+        'departure_point' => 'Shaw Boulevard Manila'
+    ];
+
+    $buildData = [
+        'user_lat' => 14.6417,
+        'user_lng' => 120.4736,
+        'user_location' => 'Bataan, Philippines',
+        'start_date' => now()->addDays(7)->format('Y-m-d')
+    ];
+    
+    $generatedData = $service->generateItinerary($itineraryData, $trail, $buildData);
+    
+    return response()->json([
+        'scenario' => 'WITHOUT transport_included',
+        'preHikeActivities' => $generatedData['preHikeActivities'] ?? [],
+        'totalHours' => isset($generatedData['preHikeActivities']) && !empty($generatedData['preHikeActivities']) 
+            ? round(end($generatedData['preHikeActivities'])['minutes'] / 60, 1) 
+            : 0,
+        'activities_detail' => $generatedData['preHikeActivities'] ?? []
+    ]);
+});

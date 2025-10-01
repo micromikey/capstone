@@ -9,6 +9,7 @@ use App\Services\WeatherHelperService;
 use App\Services\DataNormalizerService;
 use App\Services\IntelligentItineraryService;
 use App\Services\DurationParserService;
+use App\Services\GoogleMapsService;
 
 class ItineraryServiceProvider extends ServiceProvider
 {
@@ -46,7 +47,8 @@ class ItineraryServiceProvider extends ServiceProvider
                 $app->make(WeatherHelperService::class),
                 $app->make(DataNormalizerService::class),
                 $app->make(IntelligentItineraryService::class),
-                $app->make(DurationParserService::class)
+                $app->make(DurationParserService::class),
+                $app->make(GoogleMapsService::class)
             );
         });
     }

@@ -12,7 +12,7 @@ class Event extends Model
 
     protected $fillable = [
         'user_id','title','slug','description','start_at','end_at','trail_id','capacity','is_public',
-        'duration','always_available','batch_count'
+        'duration','always_available','batch_count','location_name','price','is_free'
     ];
 
     protected $casts = [
@@ -21,6 +21,8 @@ class Event extends Model
         'is_public' => 'boolean',
         'always_available' => 'boolean',
         'batch_count' => 'integer',
+        'is_free' => 'boolean',
+        'price' => 'decimal:2',
     ];
 
     public static function booted()

@@ -224,38 +224,11 @@
         50% { opacity: 0.7; }
     }
 
-    /* Responsive design for weather card */
+    /* Hide floating weather on mobile devices for better responsiveness */
     @media (max-width: 1024px) {
         #floating-weather,
         #floating-weather-minimized {
-            right: 6px;
-            transform: scale(0.95);
-        }
-    }
-
-    @media (max-width: 768px) {
-        #floating-weather,
-        #floating-weather-minimized {
-            right: 4px;
-            top: 40px;
-            transform: scale(0.9);
-        }
-    }
-
-    @media (max-width: 640px) {
-        #floating-weather {
-            min-width: 200px;
-            max-width: 220px;
-        }
-        #floating-weather .grid-cols-2 {
-            gap: 2px;
-        }
-        #floating-weather .text-2xl {
-            font-size: 1.5rem;
-        }
-        #floating-weather .w-12 {
-            width: 2.5rem;
-            height: 2.5rem;
+            display: none !important;
         }
     }
 
@@ -301,23 +274,87 @@ document.addEventListener('DOMContentLoaded', function() {
         weatherCard.classList.remove('hidden');
     });
 
-    // Auto-refresh weather data every 10 minutes
+    // Weather update system with caching
     let weatherUpdateInterval;
+    let activeWeatherRequest = null;
+    let lastWeatherFetchAt = 0;
+    const WEATHER_FETCH_COOLDOWN_MS = 3000; // 3s cooldown
+    const WEATHER_CACHE_DURATION_MS = 2 * 60 * 1000; // 2 minutes cache
+
+    // Helper: Get cached weather data if still valid
+    function getCachedWeather() {
+        try {
+            const cached = localStorage.getItem('floatingWeatherCache');
+            if (!cached) return null;
+            
+            const data = JSON.parse(cached);
+            const age = Date.now() - (data.timestamp || 0);
+            
+            if (age < WEATHER_CACHE_DURATION_MS) {
+                console.debug('Using cached floating weather (age: ' + Math.round(age / 1000) + 's)');
+                return data.weather;
+            }
+        } catch (e) {
+            console.warn('Failed to read floating weather cache:', e);
+        }
+        return null;
+    }
+
+    // Helper: Save weather data to cache
+    function cacheWeather(weatherData) {
+        try {
+            localStorage.setItem('floatingWeatherCache', JSON.stringify({
+                weather: weatherData,
+                timestamp: Date.now()
+            }));
+        } catch (e) {
+            console.warn('Failed to cache floating weather:', e);
+        }
+    }
     
-    function updateWeatherData(coords) {
+    function updateWeatherData(coords, skipCache = false) {
+        // Cancel any active request to avoid duplicates
+        if (activeWeatherRequest) {
+            try {
+                activeWeatherRequest.abort();
+            } catch (e) {}
+            activeWeatherRequest = null;
+        }
+
+        // Cooldown check
+        const now = Date.now();
+        if (lastWeatherFetchAt && (now - lastWeatherFetchAt) < WEATHER_FETCH_COOLDOWN_MS) {
+            console.debug('Skipping floating weather fetch due to cooldown');
+            return;
+        }
+        lastWeatherFetchAt = now;
+
+        // Show cached data immediately if available (unless explicitly skipping)
+        if (!skipCache) {
+            const cached = getCachedWeather();
+            if (cached) {
+                updateWeatherDisplay(cached.weather, cached.forecast);
+            }
+        }
+
         // coords: { lat, lon } optional
         let url = '/api/weather/current';
         if (coords && coords.lat && coords.lon) {
             url += `?lat=${encodeURIComponent(coords.lat)}&lon=${encodeURIComponent(coords.lon)}`;
         }
 
-        // Try fetch, fallback to XHR ajaxGet
-        const useFetch = typeof fetch === 'function';
+        // Use AbortController for cancellable fetch
+        activeWeatherRequest = new AbortController();
+        const signal = activeWeatherRequest.signal;
+        // Use AbortController for cancellable fetch
+        activeWeatherRequest = new AbortController();
+        const signal = activeWeatherRequest.signal;
+
         const handleSuccess = function(data) {
-            console.info('Floating weather API response:', data);
-            // Accept responses that either include a weather object or at least temp/location info.
+            activeWeatherRequest = null;
+            
             if (data && (data.weather || data.temp || data.city || data.location)) {
-                // Ensure we have a weather object for the display function
+                // Ensure we have a weather object
                 const weatherObj = data.weather || {
                     temp: (typeof data.temp !== 'undefined') ? data.temp : (data.main && data.main.temp ? data.main.temp : null),
                     feels_like: data.feels_like || (data.main && data.main.feels_like) || null,
@@ -328,116 +365,51 @@ document.addEventListener('DOMContentLoaded', function() {
                     description: (data.weather && data.weather.description) || (data.description) || '',
                     main: (data.weather && data.weather.main) || (data.main && data.main.weather && data.main.weather[0] && data.main.weather[0].main) || (data.description && data.description.split(' ')[0]) || 'Unknown'
                 };
+                
+                // Cache the response
+                cacheWeather({
+                    weather: weatherObj,
+                    forecast: data.forecast
+                });
+                
                 updateWeatherDisplay(weatherObj, data.forecast);
-                try {
-                    const s = document.getElementById('floating-weather-server-info');
-                    if (s) {
-                        const name = data.location?.name || data.city || (data.weather && data.weather.city) || 'Unknown';
-                        const temp = (weatherObj && typeof weatherObj.temp !== 'undefined' && weatherObj.temp !== null) ? weatherObj.temp : (data.temp || 'N/A');
-                        const lat = data.location && (data.location.lat || data.location.lat === 0) ? data.location.lat : null;
-                        const lng = data.location && (data.location.lng || data.location.lng === 0) ? data.location.lng : null;
-                        s.textContent = lat && lng ? `Server: ${name} (${lat.toFixed(6)}, ${lng.toFixed(6)}) — ${temp}°` : `Server: ${name} — ${temp}°`;
-                        // Defensive: also update the visible temperature element immediately
-                        try {
-                            const tempNode = document.getElementById('floating-weather-temp');
-                            if (tempNode && temp !== 'N/A') tempNode.textContent = `${Math.round(temp * 100) / 100}°`;
-                        } catch (e) {}
-                    }
-                } catch (e) {}
             } else {
-                // No usable data returned — set Unknown and surface a helpful alert
-                try {
-                    const tempEl = document.querySelector('#floating-weather .weather-text-main');
-                    if (tempEl) tempEl.textContent = 'Unknown';
-                    let alertEl = document.querySelector('#floating-weather .floating-weather-alert');
-                    if (!alertEl) {
-                        alertEl = document.createElement('div');
-                        alertEl.className = 'floating-weather-alert mt-2 text-xs rounded p-2 bg-yellow-100 text-yellow-800';
-                        const inner = document.querySelector('#floating-weather div');
-                        if (inner) inner.appendChild(alertEl);
-                    }
-                    alertEl.textContent = 'No weather data returned for this location.';
-                    // Also populate server-info if available
-                    const s = document.getElementById('floating-weather-server-info');
-                    if (s) {
-                        const name = data && data.location && (data.location.name || data.location.city) ? (data.location.name || data.location.city) : 'Unknown';
-                        const lat = data && data.location && (data.location.lat || data.location.lat === 0) ? data.location.lat : null;
-                        const lng = data && data.location && (data.location.lng || data.location.lng === 0) ? data.location.lng : null;
-                        s.textContent = lat && lng ? `Server: ${name} (${lat.toFixed(6)}, ${lng.toFixed(6)})` : `Server: ${name}`;
-                        try {
-                            const tempNode = document.getElementById('floating-weather-temp');
-                            if (tempNode && data.temp) tempNode.textContent = `${Math.round(data.temp * 100) / 100}°`;
-                        } catch (e) {}
-                    }
-                } catch (e) {}
+                console.warn('No usable weather data returned');
             }
         };
 
         const handleError = function(error) {
-            console.error('Error updating weather:', error);
-            // On error, set visible state to Unknown and show a small alert in the floating card
-            try {
+            activeWeatherRequest = null;
+            
+            // Don't show error if request was cancelled
+            if (error.name === 'AbortError') {
+                console.debug('Floating weather fetch cancelled');
+                return;
+            }
+            
+            console.error('Error updating floating weather:', error);
+            
+            // Only show error if we don't have cached data
+            if (!getCachedWeather()) {
                 const tempEl = document.querySelector('#floating-weather .weather-text-main');
                 if (tempEl) tempEl.textContent = 'Unknown';
-                // Add or update alert
-                let alertEl = document.querySelector('#floating-weather .floating-weather-alert');
-                if (!alertEl) {
-                    alertEl = document.createElement('div');
-                    alertEl.className = 'floating-weather-alert mt-2 text-xs rounded p-2 bg-yellow-100 text-yellow-800';
-                    const inner = document.querySelector('#floating-weather div');
-                    if (inner) inner.appendChild(alertEl);
-                }
-                alertEl.textContent = 'Unable to fetch weather. Use "Use my location" or enter coordinates.';
-            } catch (e) {}
+            }
         };
 
-        if (useFetch) {
-            fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                }
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('HTTP ' + response.status);
-                return response.json();
-            })
-            .then(handleSuccess)
-            .catch(handleError);
-            return;
-        }
-
-        // XHR fallback
-        ajaxGet(url, handleSuccess, handleError);
-    }
-
-    // Simple XHR GET helper (fallback for environments without fetch)
-    function ajaxGet(url, onSuccess, onError) {
-        try {
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', url, true);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            if (token) xhr.setRequestHeader('X-CSRF-TOKEN', token);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        try {
-                            const data = JSON.parse(xhr.responseText || '{}');
-                            onSuccess(data);
-                        } catch (e) {
-                            onError(e);
-                        }
-                    } else {
-                        onError(new Error('HTTP ' + xhr.status));
-                    }
-                }
-            };
-            xhr.send();
-        } catch (e) {
-            onError(e);
-        }
+        fetch(url, {
+            method: 'GET',
+            signal: signal,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        })
+        .then(handleSuccess)
+        .catch(handleError);
     }
 
     function updateWeatherDisplay(weather, forecast) {
@@ -570,24 +542,30 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (e) {}
     }
 
-    // Start auto-refresh (geolocation-first). Do not fall back to Manila by default; show Updating... then Unknown.
+    // Start auto-refresh with optimized settings
     let floatingWeatherStarted = false;
-    const GEO_WAIT_MS = 7000;
+    const GEO_WAIT_MS = 4000; // Reduced to 4s for faster load
 
     function startFloatingUpdates(coords) {
         if (floatingWeatherStarted) return;
         floatingWeatherStarted = true;
-        // Immediate fetch
+        // Initial fetch (will use cache if available)
         updateWeatherData(coords);
-        // Periodic updates every 10 minutes
-        weatherUpdateInterval = setInterval(() => updateWeatherData(coords), 600000);
+        // Periodic updates every 3 minutes (with cache, fresher data)
+        weatherUpdateInterval = setInterval(() => updateWeatherData(coords, true), 180000);
     }
 
-    // Show Updating... in the floating card temperature area while waiting
-    try {
-        const tempEl = document.getElementById('floating-weather-temp');
-        if (tempEl) tempEl.textContent = 'Updating...';
-    } catch (e) {}
+    // Show cached data immediately for better UX
+    const cached = getCachedWeather();
+    if (cached && cached.weather) {
+        updateWeatherDisplay(cached.weather, cached.forecast);
+    } else {
+        // Only show 'Updating...' if no cache available
+        try {
+            const tempEl = document.getElementById('floating-weather-temp');
+            if (tempEl) tempEl.textContent = 'Updating...';
+        } catch (e) {}
+    }
 
     // Check for saved coords
     let storedCoords = null;
@@ -598,30 +576,11 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn('Floating weather geolocation wait timed out');
         if (storedCoords && storedCoords.lat && storedCoords.lon) {
             startFloatingUpdates(storedCoords);
-            // show a subtle note
+        } else if (!cached) {
+            // No saved coords and no cache: show Unknown
             try {
-                let alertEl = document.querySelector('#floating-weather .floating-weather-alert');
-                if (!alertEl) {
-                    alertEl = document.createElement('div');
-                    alertEl.className = 'floating-weather-alert mt-2 text-xs rounded p-2 bg-white/10 text-white';
-                    const inner = document.querySelector('#floating-weather div');
-                    if (inner) inner.appendChild(alertEl);
-                }
-                alertEl.textContent = 'Using saved location (will update if geolocation becomes available)';
-            } catch (e) {}
-        } else {
-            // No saved coords: show Unknown and an instruction
-                    try {
-                    const tempEl = document.getElementById('floating-weather-temp');
-                    if (tempEl) tempEl.textContent = 'Unknown';
-                let alertEl = document.querySelector('#floating-weather .floating-weather-alert');
-                if (!alertEl) {
-                    alertEl = document.createElement('div');
-                    alertEl.className = 'floating-weather-alert mt-2 text-xs rounded p-2 bg-yellow-100 text-yellow-800';
-                    const inner = document.querySelector('#floating-weather div');
-                    if (inner) inner.appendChild(alertEl);
-                }
-                alertEl.textContent = 'Unable to determine your location. Click "Use my location".';
+                const tempEl = document.getElementById('floating-weather-temp');
+                if (tempEl) tempEl.textContent = 'Unknown';
             } catch (e) {}
         }
     }, GEO_WAIT_MS);
@@ -632,48 +591,32 @@ document.addEventListener('DOMContentLoaded', function() {
             const coords = { lat: position.coords.latitude, lon: position.coords.longitude };
             try { localStorage.setItem('lastCoords', JSON.stringify(coords)); } catch (e) {}
             if (!floatingWeatherStarted) startFloatingUpdates(coords);
-            else updateWeatherData(coords);
-            // remove alert if present
-            try { const a = document.querySelector('#floating-weather .floating-weather-alert'); if (a) a.remove(); } catch (e) {}
+            else updateWeatherData(coords, true); // Skip cache for fresh geolocation data
         }, function(err) {
             clearTimeout(geoWait);
             console.warn('Floating weather geolocation failed or denied:', err && err.message);
             if (!floatingWeatherStarted) {
                 if (storedCoords && storedCoords.lat && storedCoords.lon) startFloatingUpdates(storedCoords);
-                else {
+                else if (!cached) {
                     try {
                     const tempEl = document.getElementById('floating-weather-temp');
                     if (tempEl) tempEl.textContent = 'Unknown';
-                        let alertEl = document.querySelector('#floating-weather .floating-weather-alert');
-                        if (!alertEl) {
-                            alertEl = document.createElement('div');
-                            alertEl.className = 'floating-weather-alert mt-2 text-xs rounded p-2 bg-yellow-100 text-yellow-800';
-                            const inner = document.querySelector('#floating-weather div');
-                            if (inner) inner.appendChild(alertEl);
-                        }
-                        if (err && err.code === 1) alertEl.textContent = 'Location permission denied. Unable to determine location.';
-                        else if (err && err.code === 3) alertEl.textContent = 'Location request timed out. Unable to determine location.';
-                        else alertEl.textContent = 'Unable to retrieve your location.';
                     } catch (e) {}
                 }
             }
-        }, { enableHighAccuracy: false, timeout: GEO_WAIT_MS, maximumAge: 600000 });
+        }, { 
+            enableHighAccuracy: false, 
+            timeout: GEO_WAIT_MS, 
+            maximumAge: 300000 // Use 5-minute old position to speed up
+        });
     } else {
         clearTimeout(geoWait);
         if (!floatingWeatherStarted) {
             if (storedCoords && storedCoords.lat && storedCoords.lon) startFloatingUpdates(storedCoords);
-            else {
-                    try {
-                        const tempEl = document.getElementById('floating-weather-temp');
-                        if (tempEl) tempEl.textContent = 'Unknown';
-                    let alertEl = document.querySelector('#floating-weather .floating-weather-alert');
-                    if (!alertEl) {
-                        alertEl = document.createElement('div');
-                        alertEl.className = 'floating-weather-alert mt-2 text-xs rounded p-2 bg-yellow-100 text-yellow-800';
-                        const inner = document.querySelector('#floating-weather div');
-                        if (inner) inner.appendChild(alertEl);
-                    }
-                    alertEl.textContent = 'Geolocation not supported. Enter coordinates or click "Use my location".';
+            else if (!cached) {
+                try {
+                    const tempEl = document.getElementById('floating-weather-temp');
+                    if (tempEl) tempEl.textContent = 'Unknown';
                 } catch (e) {}
             }
         }
@@ -719,7 +662,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 clearTimeout(t);
                 const coords = { lat: position.coords.latitude, lon: position.coords.longitude };
                 try { localStorage.setItem('lastCoords', JSON.stringify(coords)); } catch (e) {}
-                updateWeatherData(coords);
+                updateWeatherData(coords, true); // Skip cache for manual location request
             }, function(err) {
                 clearTimeout(t);
                 console.warn('Floating weather geolocation denied/failed', err);

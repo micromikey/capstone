@@ -90,9 +90,9 @@ class HikeThereMap {
             // hide the default map type control since we'll provide a compact custom toggle
             mapTypeControl: false,
             streetViewControl: false,
-            fullscreenControl: true,
-            // Disable native camera controls so we can replace them with our compact quick actions
-            zoomControl: false,
+            fullscreenControl: false, // Disabled - using custom circular button instead
+            // Enable zoom controls (will be hidden on desktop via CSS)
+            zoomControl: true,
             zoomControlOptions: {
                 position: google.maps.ControlPosition.RIGHT_BOTTOM
             },
@@ -137,6 +137,8 @@ class HikeThereMap {
     this.addEnhancedControls();
         // Add compact circular map-type toggle (satellite <-> terrain)
         this.addMapTypeToggleControl();
+        // Add compact circular fullscreen toggle
+        this.addFullscreenControl();
         // Add quick action circular buttons (current location + reset)
         // Add quick action circular buttons (current location + reset) in place of camera controls
         this.addQuickActionControls();
@@ -171,21 +173,18 @@ class HikeThereMap {
             container.style.margin = '8px';
             container.style.alignItems = 'flex-end';
 
-            // Current location button (top) - larger with target icon
+            // Current location button (top) - consistent size with location icon
             const locBtn = document.createElement('button');
-            locBtn.className = 'bg-white rounded-full shadow-md border border-gray-200 w-12 h-12 flex items-center justify-center';
+            locBtn.className = 'bg-white rounded-full shadow-md border border-gray-200 w-12 h-12 flex items-center justify-center hover:bg-green-50 transition-colors duration-200';
             locBtn.title = 'My location';
             locBtn.innerHTML = `
-                <svg class="w-6 h-6 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="w-5 h-5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3" />
-                    <path d="M12 2v2" />
-                    <path d="M12 20v2" />
-                    <path d="M2 12h2" />
-                    <path d="M20 12h2" />
-                    <path d="M4.93 4.93l1.41 1.41" />
-                    <path d="M17.66 17.66l1.41 1.41" />
-                    <path d="M4.93 19.07l1.41-1.41" />
-                    <path d="M17.66 6.34l1.41-1.41" />
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="2" x2="12" y2="4" />
+                    <line x1="12" y1="20" x2="12" y2="22" />
+                    <line x1="2" y1="12" x2="4" y2="12" />
+                    <line x1="20" y1="12" x2="22" y2="12" />
                 </svg>
             `;
             locBtn.addEventListener('click', (e) => {
@@ -195,14 +194,98 @@ class HikeThereMap {
                 }
             });
 
-            // Reset map view button (below) with reset/refresh icon
+            // Street View button (below location button) - draggable eye icon
+            const streetViewBtn = document.createElement('button');
+            streetViewBtn.className = 'bg-white rounded-full shadow-md border border-gray-200 w-12 h-12 flex items-center justify-center hover:bg-orange-50 transition-colors duration-200 cursor-grab';
+            streetViewBtn.title = 'Drag to map to view Street View';
+            streetViewBtn.innerHTML = `
+                <svg class="w-5 h-5 text-orange-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                </svg>
+            `;
+            
+            // Track if we're dragging the street view button
+            let isDraggingStreetView = false;
+            let dragMarker = null;
+            
+            streetViewBtn.addEventListener('mousedown', (e) => {
+                console.log('Street View button mousedown');
+                e.preventDefault(); // Prevent default drag behavior
+                isDraggingStreetView = true;
+                streetViewBtn.style.opacity = '0.5';
+                streetViewBtn.style.cursor = 'grabbing';
+                
+                // Disable map dragging while we're dragging the street view button
+                this.map.setOptions({ draggable: false });
+                
+                // Create a temporary marker to show where street view will open
+                dragMarker = new google.maps.Marker({
+                    map: this.map,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 8,
+                        fillColor: '#FF6B35',
+                        fillOpacity: 0.8,
+                        strokeColor: '#FFFFFF',
+                        strokeWeight: 2
+                    },
+                    visible: false,
+                    zIndex: 1000
+                });
+                
+                console.log('Drag marker created, waiting for mouse movement...');
+            });
+            
+            // Store the last position for when we drop
+            let lastPosition = null;
+            
+            // Track mouse movement over map
+            const mouseMoveListener = this.map.addListener('mousemove', (e) => {
+                if (isDraggingStreetView && dragMarker) {
+                    console.log('Moving marker to:', e.latLng.toString());
+                    lastPosition = e.latLng;
+                    dragMarker.setPosition(e.latLng);
+                    dragMarker.setVisible(true);
+                }
+            });
+            
+            // Handle mouse up globally (works whether on map or off)
+            document.addEventListener('mouseup', (e) => {
+                console.log('Document mouseup, isDragging:', isDraggingStreetView, 'lastPosition:', lastPosition);
+                if (isDraggingStreetView) {
+                    isDraggingStreetView = false;
+                    streetViewBtn.style.opacity = '1';
+                    streetViewBtn.style.cursor = 'grab';
+                    
+                    // Re-enable map dragging
+                    this.map.setOptions({ draggable: true });
+                    
+                    // If we have a last position (mouse was over map), open street view there
+                    if (lastPosition && dragMarker && dragMarker.getVisible()) {
+                        console.log('Opening Street View at dropped location:', lastPosition.toString());
+                        this.openStreetViewAt(lastPosition);
+                    } else {
+                        console.log('Cancelling Street View drag - no valid position');
+                    }
+                    
+                    // Remove the drag marker
+                    if (dragMarker) {
+                        dragMarker.setMap(null);
+                        dragMarker = null;
+                    }
+                    
+                    lastPosition = null;
+                }
+            });
+
+            // Reset map view button (bottom) with reset icon - same size
             const resetBtn = document.createElement('button');
-            resetBtn.className = 'bg-white rounded-full shadow-md border border-gray-200 w-10 h-10 flex items-center justify-center';
+            resetBtn.className = 'bg-white rounded-full shadow-md border border-gray-200 w-12 h-12 flex items-center justify-center hover:bg-gray-50 transition-colors duration-200';
             resetBtn.title = 'Reset map view';
             resetBtn.innerHTML = `
-                <svg class="w-5 h-5 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 12a9 9 0 11-3.9-7.2" />
-                    <polyline points="21 3 21 9 15 9" />
+                <svg class="w-5 h-5 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
             `;
             resetBtn.addEventListener('click', (e) => {
@@ -211,6 +294,7 @@ class HikeThereMap {
             });
 
             container.appendChild(locBtn);
+            container.appendChild(streetViewBtn);
             container.appendChild(resetBtn);
 
             // Push into the map controls at RIGHT_BOTTOM to replace the native camera controls
@@ -222,20 +306,20 @@ class HikeThereMap {
 
     addMapTypeToggleControl() {
         try {
-            // Create a compact circular toggle button
+            // Create a compact circular toggle button - same size as other controls
             const btn = document.createElement('button');
-            btn.className = 'bg-white rounded-full shadow-md border border-gray-200 w-10 h-10 flex items-center justify-center';
+            btn.className = 'bg-white rounded-full shadow-md border border-gray-200 w-12 h-12 flex items-center justify-center hover:bg-blue-50 transition-colors duration-200';
             btn.title = 'Toggle map type';
 
             const updateIcon = () => {
                 const isSatellite = this.map.getMapTypeId() === google.maps.MapTypeId.SATELLITE;
                 btn.innerHTML = isSatellite ? `
-                    <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7z" />
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 ` : `
-                    <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h4l3 9 4-18 3 9h4" />
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                 `;
             };
@@ -265,6 +349,80 @@ class HikeThereMap {
         }
     }
 
+    addFullscreenControl() {
+        try {
+            // Create a compact circular fullscreen button - same size as other controls
+            const btn = document.createElement('button');
+            btn.className = 'bg-white rounded-full shadow-md border border-gray-200 w-12 h-12 flex items-center justify-center hover:bg-gray-50 transition-colors duration-200';
+            btn.id = 'custom-fullscreen-btn';
+            btn.title = 'Toggle fullscreen';
+
+            const updateIcon = () => {
+                const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+                btn.innerHTML = isFullscreen ? `
+                    <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                ` : `
+                    <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    </svg>
+                `;
+            };
+
+            // Initial icon
+            updateIcon();
+
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                try {
+                    const mapElement = document.getElementById(this.config.mapElementId);
+                    const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+                    
+                    if (!isFullscreen) {
+                        // Enter fullscreen
+                        if (mapElement.requestFullscreen) {
+                            mapElement.requestFullscreen();
+                        } else if (mapElement.webkitRequestFullscreen) {
+                            mapElement.webkitRequestFullscreen();
+                        } else if (mapElement.mozRequestFullScreen) {
+                            mapElement.mozRequestFullScreen();
+                        } else if (mapElement.msRequestFullscreen) {
+                            mapElement.msRequestFullscreen();
+                        }
+                    } else {
+                        // Exit fullscreen
+                        if (document.exitFullscreen) {
+                            document.exitFullscreen();
+                        } else if (document.webkitExitFullscreen) {
+                            document.webkitExitFullscreen();
+                        } else if (document.mozCancelFullScreen) {
+                            document.mozCancelFullScreen();
+                        } else if (document.msExitFullscreen) {
+                            document.msExitFullscreen();
+                        }
+                    }
+                } catch (err) {
+                    console.error('Failed to toggle fullscreen', err);
+                }
+            });
+
+            // Update icon when fullscreen state changes
+            document.addEventListener('fullscreenchange', updateIcon);
+            document.addEventListener('webkitfullscreenchange', updateIcon);
+            document.addEventListener('mozfullscreenchange', updateIcon);
+            document.addEventListener('msfullscreenchange', updateIcon);
+
+            // Place the button in the TOP_RIGHT corner
+            const wrapper = document.createElement('div');
+            wrapper.style.margin = '8px';
+            wrapper.appendChild(btn);
+            this.map.controls[google.maps.ControlPosition.TOP_RIGHT].push(wrapper);
+        } catch (e) {
+            console.error('Failed to add fullscreen control', e);
+        }
+    }
+
     resetMapView() {
         try {
             if (!this.map) return;
@@ -274,6 +432,55 @@ class HikeThereMap {
             this.map.setZoom(zoom);
         } catch (e) {
             console.error('Failed to reset map view', e);
+        }
+    }
+
+    openStreetViewAt(latLng) {
+        try {
+            if (!this.map) {
+                console.error('Map not initialized');
+                return;
+            }
+            
+            console.log('Opening Street View at:', latLng.lat(), latLng.lng());
+            
+            const lat = latLng.lat();
+            const lng = latLng.lng();
+            
+            // Initialize Street View Service
+            const streetViewService = new google.maps.StreetViewService();
+            const RADIUS = 100; // Increased search radius to 100 meters
+            
+            console.log('Searching for Street View panorama...');
+            
+            // Check if street view is available at this location
+            streetViewService.getPanorama({
+                location: { lat, lng },
+                radius: RADIUS,
+                source: google.maps.StreetViewSource.OUTDOOR
+            }, (data, status) => {
+                console.log('Street View status:', status);
+                
+                if (status === google.maps.StreetViewStatus.OK) {
+                    console.log('Street View available, opening panorama...');
+                    // Street view available - create and show it
+                    const panorama = this.map.getStreetView();
+                    panorama.setPosition(data.location.latLng);
+                    panorama.setPov({
+                        heading: 0,
+                        pitch: 0
+                    });
+                    panorama.setVisible(true);
+                    console.log('Street View opened successfully');
+                } else {
+                    console.warn('Street View not available:', status);
+                    // Street view not available at this location
+                    alert('Street View is not available at this location. Try a different area closer to roads.');
+                }
+            });
+        } catch (e) {
+            console.error('Failed to open street view:', e);
+            alert('Failed to open Street View. Please try again.');
         }
     }
 
@@ -658,8 +865,8 @@ class HikeThereMap {
         const imageSrc = this.getValidImageUrl(candidateImage);
 
         return `
-            <div class="enhanced-trail-info-window max-w-sm bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
-                <div class="relative h-40 overflow-hidden">
+            <div class="enhanced-trail-info-window w-[360px] sm:w-[480px] bg-white rounded-lg sm:rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
+                <div class="relative h-32 sm:h-40 overflow-hidden">
                     <img src="${imageSrc}" 
                          alt="${trail.name}" 
                          class="w-full h-full object-cover relative z-10"
@@ -667,35 +874,35 @@ class HikeThereMap {
                     <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-0 pointer-events-none"></div>
                 </div>
                 
-                <div class="p-3">
+                <div class="p-2.5 sm:p-3">
                     <!-- Trail Header -->
-                    <div class="mb-3">
-                        <h3 class="text-base font-bold text-gray-900 mb-1 leading-tight">${trail.name}</h3>
+                    <div class="mb-2 sm:mb-3">
+                        <h3 class="text-xs sm:text-sm font-bold text-gray-900 mb-1 leading-tight">${trail.name}</h3>
                         <div class="flex items-center text-xs text-gray-600">
                             <svg class="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1 1 11.314 0z"></path>
                         </svg>
-                            <span class="truncate">${trail.location_name || 'Location not specified'}</span>
+                            <span class="truncate text-[9px] sm:text-[10px]">${trail.location_name || 'Location not specified'}</span>
                     </div>
                     </div>
 
                     <!-- Trail Metadata -->
-                    <div class="flex flex-wrap gap-1.5 mb-3">
-                        <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${difficultyStyles[trail.difficulty] || difficultyStyles['intermediate']}">
-                            <span class="mr-1">${difficultyIcons[trail.difficulty] || '🟡'}</span>
+                    <div class="flex flex-wrap gap-1 sm:gap-1.5 mb-2 sm:mb-3">
+                        <span class="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-medium border ${difficultyStyles[trail.difficulty] || difficultyStyles['intermediate']}">
+                            <span class="mr-0.5 sm:mr-1">${difficultyIcons[trail.difficulty] || '🟡'}</span>
                             ${trail.difficulty ? trail.difficulty.charAt(0).toUpperCase() + trail.difficulty.slice(1) : 'Intermediate'}
                         </span>
                         ${trail.length ? `
-                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <span class="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                                <svg class="w-2.5 sm:w-3 h-2.5 sm:h-3 mr-0.5 sm:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"></path>
                                 </svg>
                                 ${trail.length} km
                             </span>
                         ` : ''}
                         ${trail.elevation_gain ? `
-                            <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
-                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <span class="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                                <svg class="w-2.5 sm:w-3 h-2.5 sm:h-3 mr-0.5 sm:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
                                 </svg>
                                 +${trail.elevation_gain}m
@@ -705,30 +912,30 @@ class HikeThereMap {
 
                     <!-- Trail Description (if available) -->
                     ${trail.description ? `
-                        <div class="mb-3">
-                            <p class="text-xs text-gray-700 line-clamp-2 leading-relaxed">${trail.description}</p>
+                        <div class="mb-2 sm:mb-3 hidden sm:block">
+                            <p class="text-[10px] text-gray-700 line-clamp-2 leading-relaxed">${trail.description}</p>
                         </div>
                     ` : ''}
 
                     <!-- Action Buttons -->
                                             <div class="space-y-2">
-                            <button onclick="window.hikeThereMap.getDirections('${trail.coordinates.lat},${trail.coordinates.lng}')" 
-                                    class="w-full inline-flex items-center justify-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 transition-colors shadow-sm">
+                            <button onclick="window.hikeThereMap.buildItinerary('${trail.slug}', ${trail.id})" 
+                                    class="w-full inline-flex items-center justify-center px-3 py-2.5 sm:py-2 bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors shadow-sm touch-manipulation">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
                                 </svg>
-                            Get Directions
+                            Build Itinerary
                         </button>
                             <div class="grid grid-cols-2 gap-2">
                                 <button onclick="window.hikeThereMap.showElevationProfile(${trail.id})" 
-                                        class="inline-flex items-center justify-center px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1 transition-colors shadow-sm">
+                                        class="inline-flex items-center justify-center px-2 sm:px-3 py-2.5 sm:py-2 bg-purple-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1 transition-colors shadow-sm touch-manipulation">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
                                     </svg>
                                     Elevation
                                 </button>
-                                <button onclick="window.hikeThereMap.showTrailDetails(${trail.id})" 
-                                        class="inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors shadow-sm">
+                                <button onclick="window.location.href='/trails/${trail.slug}'" 
+                                        class="inline-flex items-center justify-center px-2 sm:px-3 py-2.5 sm:py-2 bg-green-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 transition-colors shadow-sm touch-manipulation">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
@@ -1291,30 +1498,28 @@ class HikeThereMap {
             
             <!-- Compact Action Buttons -->
             <div class="space-y-2">
-                <div class="space-y-2">
-                    <button onclick="window.hikeThereMap.getDirections('${trail.coordinates.lat},${trail.coordinates.lng}')" 
-                            class="w-full inline-flex items-center justify-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 transition-colors shadow-sm">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"></path>
+                <button onclick="window.hikeThereMap.buildItinerary('${trail.slug}', ${trail.id})" 
+                        class="w-full inline-flex items-center justify-center px-3 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors shadow-sm touch-manipulation">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                    </svg>
+                    Build Itinerary
+                </button>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="window.hikeThereMap.showElevationProfile(${trail.id})" 
+                            class="inline-flex items-center justify-center px-3 py-2.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1 transition-colors shadow-sm touch-manipulation">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
                         </svg>
-                        Get Directions
+                        Elevation
                     </button>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="window.hikeThereMap.showElevationProfile(${trail.id})" 
-                                class="inline-flex items-center justify-center px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1 transition-colors shadow-sm">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
-                            </svg>
-                            Elevation
-                        </button>
-                        <button onclick="window.hikeThereMap.showTrailDetails(${trail.id})" 
-                                class="inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors shadow-sm">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Details
-                        </button>
-                    </div>
+                    <button onclick="window.location.href='/trails/${trail.slug}'" 
+                            class="inline-flex items-center justify-center px-3 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 transition-colors shadow-sm touch-manipulation">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Details
+                    </button>
                 </div>
             </div>
         `;
@@ -1822,6 +2027,38 @@ class HikeThereMap {
         });
     }
 
+    async buildItinerary(slug, trailId) {
+        try {
+            // Check if user has completed their assessment
+            const response = await fetch('/api/user/assessment-status', {
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            if (data.success && data.has_assessment) {
+                // User has completed assessment, proceed to itinerary builder
+                window.location.href = `/itinerary/build/${slug}`;
+            } else {
+                // User needs to complete assessment first
+                if (confirm('You need to complete your hiking assessment before building an itinerary. Would you like to start the assessment now?')) {
+                    window.location.href = '/assessment/start';
+                }
+            }
+        } catch (error) {
+            console.error('Error checking assessment status:', error);
+            this.showError('Unable to check assessment status. Please try again.');
+        }
+    }
+
     showTrailDetails(trailId) {
         // Navigate to trail details page
         window.open(`/trails/${trailId}`, '_blank');
@@ -1862,28 +2099,31 @@ class HikeThereMap {
             const weatherData = await response.json();
             
             weatherElement.innerHTML = `
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="weather-item">
-                        <span class="text-sm font-medium text-gray-600">Temperature:</span>
-                        <span class="text-lg font-bold text-blue-600">${weatherData.temperature}°C</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="weather-item flex flex-col">
+                        <span class="text-xs sm:text-sm font-medium text-gray-600">Temperature:</span>
+                        <span class="text-base sm:text-lg font-bold text-blue-600">${weatherData.temperature}°C</span>
                     </div>
-                    <div class="weather-item">
-                        <span class="text-sm font-medium text-gray-600">Conditions:</span>
-                        <span class="text-sm font-medium text-gray-800">${weatherData.conditions}</span>
+                    <div class="weather-item flex flex-col">
+                        <span class="text-xs sm:text-sm font-medium text-gray-600">Conditions:</span>
+                        <span class="text-xs sm:text-sm font-medium text-gray-800">${weatherData.conditions}</span>
                     </div>
-                    <div class="weather-item">
-                        <span class="text-sm font-medium text-gray-600">Wind:</span>
-                        <span class="text-sm font-medium text-gray-800">${weatherData.wind_speed} km/h</span>
+                    <div class="weather-item flex flex-col">
+                        <span class="text-xs sm:text-sm font-medium text-gray-600">Wind:</span>
+                        <span class="text-xs sm:text-sm font-medium text-gray-800">${weatherData.wind_speed} km/h</span>
                     </div>
-                    <div class="weather-item">
-                        <span class="text-sm font-medium text-gray-600">Humidity:</span>
-                        <span class="text-sm font-medium text-gray-800">${weatherData.humidity}%</span>
+                    <div class="weather-item flex flex-col">
+                        <span class="text-xs sm:text-sm font-medium text-gray-600">Humidity:</span>
+                        <span class="text-xs sm:text-sm font-medium text-gray-800">${weatherData.humidity}%</span>
                     </div>
                 </div>
                 <div class="mt-3 pt-3 border-t border-blue-200">
                     <button onclick="hikeThereMap.loadWeatherForTrail(${trailId}, ${lat}, ${lng})" 
-                            class="px-3 py-1 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors">
-                        🔄 Refresh
+                            class="w-full sm:w-auto px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors inline-flex items-center justify-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Refresh
                     </button>
                 </div>
             `;
@@ -1894,10 +2134,13 @@ class HikeThereMap {
             if (weatherElement) {
                 weatherElement.innerHTML = `
                     <div class="text-center py-4">
-                        <div class="text-red-500 text-sm mb-2">Failed to load weather data</div>
+                        <div class="text-red-500 text-xs sm:text-sm mb-2">Failed to load weather data</div>
                         <button onclick="hikeThereMap.loadWeatherForTrail(${trailId}, ${lat}, ${lng})" 
-                                class="px-3 py-1 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors">
-                            🔄 Retry
+                                class="w-full sm:w-auto px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors inline-flex items-center justify-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Retry
                         </button>
                     </div>
                 `;
@@ -2518,45 +2761,22 @@ class HikeThereMap {
      */
     createWeatherControl() {
         const weatherControl = document.createElement('div');
-        weatherControl.className = 'bg-white rounded-lg shadow-lg border border-gray-200 p-4';
+        weatherControl.id = 'weather-control-widget';
+        
+        // Circular button on both mobile and desktop (same size as other controls)
+        weatherControl.className = 'bg-white shadow-md border border-gray-200 rounded-full w-12 h-12 flex items-center justify-center hover:bg-blue-50 transition-colors duration-200';
         weatherControl.innerHTML = `
-            <div class="text-center mb-4">
-                <div class="flex items-center justify-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                    <span>🌤️</span>
-                    <span>Weather</span>
-                </div>
-            </div>
-            <div class="space-y-3">
-                <div class="text-center">
-                    <div id="current-weather" class="text-lg font-bold text-blue-600 mb-2">--</div>
-                    <div id="weather-location" class="text-xs text-gray-500 mb-3">Click on map</div>
-                </div>
-                <div class="grid grid-cols-2 gap-4 text-xs">
-                    <div class="text-center">
-                        <div class="text-gray-500 mb-1">Temp:</div>
-                        <div id="weather-temp" class="font-medium">--</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-gray-500 mb-1">Humidity:</div>
-                        <div id="weather-humidity" class="font-medium">--</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-gray-500 mb-1">Wind:</div>
-                        <div id="weather-wind" class="font-medium">--</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-gray-500 mb-1">UV:</div>
-                        <div id="weather-uv" class="font-medium">--</div>
-                    </div>
-                </div>
+            <div class="flex flex-col items-center justify-center p-1">
+                <div id="current-weather-mobile" class="text-base leading-none">🌤️</div>
+                <div id="weather-temp-mobile" class="text-[9px] font-semibold text-gray-700 mt-0.5">--</div>
             </div>
         `;
         
         // Weather will load automatically when map is ready
         
-        // Create container with same spacing as left panels
+        // Create container with margin for consistent spacing
         const weatherContainer = document.createElement('div');
-        weatherContainer.className = 'p-3';
+        weatherContainer.style.margin = '8px';
         weatherContainer.appendChild(weatherControl);
         
         // Add to map controls - positioned on the right side below full-screen button
@@ -2605,23 +2825,36 @@ class HikeThereMap {
      * Update weather display
      */
     updateWeatherDisplay(weatherData, latLng) {
-        const currentWeather = document.getElementById('current-weather');
-        const weatherLocation = document.getElementById('weather-location');
-        const weatherTemp = document.getElementById('weather-temp');
-        const weatherHumidity = document.getElementById('weather-humidity');
-        const weatherWind = document.getElementById('weather-wind');
-        const weatherUV = document.getElementById('weather-uv');
+        // Compact circular display elements
+        const currentWeatherMobile = document.getElementById('current-weather-mobile');
+        const weatherTempMobile = document.getElementById('weather-temp-mobile');
         
-        if (currentWeather) currentWeather.textContent = weatherData.condition || '--';
-        if (weatherLocation) weatherLocation.textContent = `${latLng.lat().toFixed(2)}, ${latLng.lng().toFixed(2)}`;
-        if (weatherTemp) weatherTemp.textContent = `${weatherData.temperature}°C`;
-        if (weatherHumidity) weatherHumidity.textContent = `${weatherData.humidity}%`;
-        if (weatherWind) weatherWind.textContent = `${weatherData.windSpeed} km/h`;
-        if (weatherUV) weatherUV.textContent = weatherData.uvIndex || '--';
+        // Update compact circular display
+        if (currentWeatherMobile) {
+            // Show icon or emoji based on condition
+            const weatherIcon = this.getWeatherIcon(weatherData.condition);
+            currentWeatherMobile.textContent = weatherIcon;
+        }
+        if (weatherTempMobile) weatherTempMobile.textContent = `${weatherData.temperature}°`;
         
         // Add last updated timestamp
         const timestamp = new Date(weatherData.timestamp).toLocaleTimeString();
         console.log(`Weather updated at ${timestamp}`);
+    }
+    
+    /**
+     * Get weather icon/emoji based on condition
+     */
+    getWeatherIcon(condition) {
+        if (!condition) return '🌤️';
+        const lower = condition.toLowerCase();
+        if (lower.includes('clear') || lower.includes('sunny')) return '☀️';
+        if (lower.includes('cloud')) return '☁️';
+        if (lower.includes('rain')) return '🌧️';
+        if (lower.includes('storm') || lower.includes('thunder')) return '⛈️';
+        if (lower.includes('snow')) return '❄️';
+        if (lower.includes('fog') || lower.includes('mist')) return '🌫️';
+        return '🌤️';
     }
 
     /**
@@ -2629,7 +2862,12 @@ class HikeThereMap {
      */
     showWeatherError() {
         const currentWeather = document.getElementById('current-weather');
+        const currentWeatherMobile = document.getElementById('current-weather-mobile');
+        const weatherTempMobile = document.getElementById('weather-temp-mobile');
+        
         if (currentWeather) currentWeather.textContent = 'Error';
+        if (currentWeatherMobile) currentWeatherMobile.textContent = '❌';
+        if (weatherTempMobile) weatherTempMobile.textContent = '--';
     }
 
 

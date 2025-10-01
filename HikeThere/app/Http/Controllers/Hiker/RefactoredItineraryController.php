@@ -57,7 +57,8 @@ class RefactoredItineraryController extends Controller
             'routeData',
             'dateInfo',
             'dayActivities',
-            'nightActivities'
+            'nightActivities',
+            'preHikeActivities'
         ));
     }
 
@@ -152,7 +153,8 @@ class RefactoredItineraryController extends Controller
             'routeData',
             'dateInfo',
             'dayActivities',
-            'nightActivities'
+            'nightActivities',
+            'preHikeActivities'
         ));
     }
 }

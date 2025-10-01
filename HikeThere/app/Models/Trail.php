@@ -217,8 +217,13 @@ class Trail extends Model
 
     public function getTransportIncludedAttribute($value)
     {
+        // Prefer package value when available (package data is authoritative)
+        if ($this->package && isset($this->package->transport_included)) {
+            return (bool)$this->package->transport_included;
+        }
+        // Fallback to trail's direct value
         if (!is_null($value)) return (bool)$value;
-        return (bool)($this->package?->transport_included ?? false);
+        return false;
     }
 
     public function getTransportDetailsAttribute($value)

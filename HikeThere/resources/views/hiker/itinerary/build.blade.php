@@ -569,6 +569,8 @@
                         <p class="text-sm text-gray-800" id="userLocationDisplay">{{ Auth::user()->location ?? 'Click "Current" to get your location' }}</p>
                         <p class="text-xs text-gray-500 mt-1" id="locationHelper">{{ Auth::user()->location ? '' : 'No location set yet. Use the Current button to get your location automatically.' }}</p>
                         <input type="hidden" name="user_location" id="userLocationInput" value="{{ Auth::user()->location ?? '' }}" />
+                        <input type="hidden" name="user_lat" id="userLatInput" value="" />
+                        <input type="hidden" name="user_lng" id="userLngInput" value="" />
                       </div>
                                               <div class="border-t border-dashed pt-2">
                           <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Destination</p>
@@ -2430,6 +2432,8 @@
       const locationDisplay = document.getElementById('userLocationDisplay');
       const locationInput = document.getElementById('userLocationInput');
       const locationHelper = document.getElementById('locationHelper');
+      const userLatInput = document.getElementById('userLatInput');
+      const userLngInput = document.getElementById('userLngInput');
       
       if (locationDisplay) {
         locationDisplay.textContent = address;
@@ -2438,6 +2442,15 @@
       
       if (locationInput) {
         locationInput.value = address;
+      }
+
+      // Update coordinate inputs
+      if (userLatInput) {
+        userLatInput.value = lat;
+      }
+      
+      if (userLngInput) {
+        userLngInput.value = lng;
       }
       
       if (locationHelper) {
@@ -2469,6 +2482,18 @@
           
           if (locationInput && locationData.address) {
             locationInput.value = locationData.address;
+          }
+          
+          // Update coordinate inputs
+          const userLatInput = document.getElementById('userLatInput');
+          const userLngInput = document.getElementById('userLngInput');
+          
+          if (userLatInput && locationData.lat) {
+            userLatInput.value = locationData.lat;
+          }
+          
+          if (userLngInput && locationData.lng) {
+            userLngInput.value = locationData.lng;
           }
           
           // Update helper text

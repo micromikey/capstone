@@ -81,19 +81,10 @@
         scroll-behavior: smooth;
     }
 
-    /* Hide on very small screens */
-    @media (max-width: 768px) {
+    /* Hide on mobile devices for better responsiveness */
+    @media (max-width: 1024px) {
         #floating-navigation {
-            transform: scale(0.9);
-            top: 40px; /* Adjust for smaller screens */
-        }
-    }
-
-    @media (max-width: 640px) {
-        #floating-navigation {
-            min-width: 180px;
-            max-width: 200px;
-            left: 8px; /* Closer to edge on mobile */
+            display: none !important;
         }
     }
 </style>

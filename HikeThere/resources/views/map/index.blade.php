@@ -11,21 +11,23 @@
                     <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                         {{ __('Interactive Trail Map') }}
                     </h2>
-                    <p class="text-sm text-gray-600">Discover and explore hiking trails across the Philippines</p>
+                    <p class="text-sm text-gray-600 hidden sm:block">Discover and explore hiking trails across the Philippines</p>
                 </div>
             </div>
-            <div class="flex items-center gap-3">
-                <a href="{{ route('explore') }}" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center gap-2 sm:gap-3">
+                <a href="{{ route('explore') }}" class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-green-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150 min-w-[120px]">
+                    <svg class="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
-                    Explore Trails
+                    <span class="hidden sm:inline">Explore Trails</span>
+                    <span class="sm:hidden">Explore</span>
                 </a>
-                <a href="{{ route('hiking-tools') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <a href="{{ route('hiking-tools') }}" class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150 min-w-[120px]">
+                    <svg class="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                     </svg>
-                    Hiking Tools
+                    <span class="hidden sm:inline">Hiking Tools</span>
+                    <span class="sm:hidden">Tools</span>
                 </a>
             </div>
         </div>
@@ -78,21 +80,21 @@
 
                     <!-- Compact Statistics -->
                     <div class="mt-4 p-3 bg-gray-50 rounded-lg">
-                        <div class="flex items-center justify-between text-sm">
-                            <div class="flex items-center space-x-6">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 text-sm">
+                            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 w-full sm:w-auto">
                                 <div class="flex items-center space-x-2">
-                                    <span class="text-gray-600">Showing:</span>
+                                    <span class="text-gray-600 text-xs sm:text-sm">Showing:</span>
                                     <span class="font-semibold text-green-600" id="filtered-trails-count">0</span>
                                     <span class="text-gray-400">of</span>
                                     <span class="font-semibold text-gray-700" id="total-trails-count">0</span>
                                     <span class="text-gray-600">trails</span>
                                 </div>
                                 <div class="flex items-center space-x-2">
-                                    <span class="text-gray-600">Zoom:</span>
+                                    <span class="text-gray-600 text-xs sm:text-sm">Zoom:</span>
                                     <span class="font-semibold text-purple-600" id="map-zoom-level">6</span>
                                 </div>
                             </div>
-                            <div class="text-right">
+                            <div class="text-left sm:text-right w-full sm:w-auto">
                                 <span class="text-xs text-gray-500" id="last-updated">Just now</span>
                             </div>
                         </div>
@@ -140,15 +142,15 @@
             </div>
 
             <!-- Simplified Quick Actions -->
-            <div class="fixed bottom-6 right-6 z-40 space-y-3">
-                <button id="fullscreen-toggle" class="w-12 h-12 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500">
+            <div class="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
+                <button id="fullscreen-toggle" class="w-12 h-12 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500" title="Toggle Fullscreen">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
                     </svg>
                 </button>
-                <button id="help-toggle" class="w-12 h-12 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button id="help-toggle" class="w-12 h-12 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500" title="Help & Info">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                 </button>
             </div>
@@ -564,5 +566,14 @@
             }, 2000);
         });
     </script>
+    
+    <style>
+        /* Hide Google Maps zoom controls on desktop, show only on mobile */
+        @media (min-width: 640px) {
+            .gm-bundled-control {
+                display: none !important;
+            }
+        }
+    </style>
     @endpush
 </x-app-layout>
