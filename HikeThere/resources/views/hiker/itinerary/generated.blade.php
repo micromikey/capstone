@@ -177,12 +177,12 @@ $preHikeActivities = $generatedData['preHikeActivities'] ?? [];
         <div id="itinerary-actions" class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             <div class="bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl border border-emerald-100 p-6">
                 <div class="flex flex-col sm:flex-row gap-4">
-                    <button id="print-pdf-btn" data-trail-id="{{ $trail->id ?? '' }}" data-trail-slug="{{ $trail->slug ?? '' }}" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
-                        <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    <a href="{{ route('itinerary.print', is_object($itinerary) ? $itinerary->id : ($itinerary['id'] ?? 0)) }}" target="_blank" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors text-center inline-flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                         </svg>
-                        Print PDF
-                    </button>
+                        Print Itinerary
+                    </a>
                     <button id="book-trail-btn" data-trail-id="{{ $trail->id ?? '' }}" data-trail-slug="{{ $trail->slug ?? '' }}" data-organization-id="{{ $trail->user_id ?? '' }}" data-organization-name="{{ $trail->user->display_name ?? '' }}" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
                         <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -198,12 +198,12 @@ $preHikeActivities = $generatedData['preHikeActivities'] ?? [];
     <div id="floating-itinerary-actions" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg transform translate-y-full transition-transform duration-300 z-40">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="flex flex-col sm:flex-row gap-4 p-4">
-                <button id="floating-print-pdf-btn" data-trail-id="{{ $trail->id ?? '' }}" data-trail-slug="{{ $trail->slug ?? '' }}" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
-                    <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                <a href="{{ route('itinerary.print', is_object($itinerary) ? $itinerary->id : ($itinerary['id'] ?? 0)) }}" target="_blank" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors text-center inline-flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                     </svg>
-                    Print PDF
-                </button>
+                    Print Itinerary
+                </a>
                 <button id="floating-book-trail-btn" data-trail-id="{{ $trail->id ?? '' }}" data-trail-slug="{{ $trail->slug ?? '' }}" data-organization-id="{{ $trail->user_id ?? '' }}" data-organization-name="{{ $trail->user->display_name ?? '' }}" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
                     <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -243,46 +243,82 @@ $preHikeActivities = $generatedData['preHikeActivities'] ?? [];
             // Initial check
             checkButtonsVisibility();
             
-            // Sync button functionality between original and floating versions
-            function syncButtonEvents() {
-                // Print PDF buttons
-                const printBtns = [document.getElementById('print-pdf-btn'), document.getElementById('floating-print-pdf-btn')];
-                printBtns.forEach(btn => {
-                    if (btn) {
-                        btn.addEventListener('click', function() {
-                            // Add your print PDF functionality here
-                            console.log('Print PDF clicked');
-                            // Example: window.print() or redirect to PDF generation route
-                        });
-                    }
-                });
-                
-                // Book Trail buttons
-                const bookBtns = [document.getElementById('book-trail-btn'), document.getElementById('floating-book-trail-btn')];
-                bookBtns.forEach(btn => {
-                    if (btn) {
-                        btn.addEventListener('click', function() {
-                            // Add your book trail functionality here
-                            const trailId = btn.getAttribute('data-trail-id');
-                            const trailSlug = btn.getAttribute('data-trail-slug');
-                            const orgId = btn.getAttribute('data-organization-id');
-                            const orgName = btn.getAttribute('data-organization-name');
-                            
-                            console.log('Book Trail clicked', {trailId, trailSlug, orgId, orgName});
-                            // Add your booking logic here
-                        });
-                    }
-                });
-            }
-            
-            syncButtonEvents();
+            // Book Trail buttons
+            const bookBtns = [document.getElementById('book-trail-btn'), document.getElementById('floating-book-trail-btn')];
+            bookBtns.forEach(btn => {
+                if (btn) {
+                    btn.addEventListener('click', function() {
+                        // Add your book trail functionality here
+                        const trailId = btn.getAttribute('data-trail-id');
+                        const trailSlug = btn.getAttribute('data-trail-slug');
+                        const orgId = btn.getAttribute('data-organization-id');
+                        const orgName = btn.getAttribute('data-organization-name');
+                        
+                        console.log('Book Trail clicked', {trailId, trailSlug, orgId, orgName});
+                        // Add your booking logic here
+                    });
+                }
+            });
         });
     </script>
 
     <!-- Hide floating navigation when printing -->
     <style media="print">
-        #floating-navigation {
+        /* Hide UI elements that shouldn't be printed */
+        #floating-navigation,
+        #floating-itinerary-actions,
+        #itinerary-actions {
             display: none !important;
+        }
+        
+        /* Optimize page layout for printing */
+        body {
+            background: white !important;
+        }
+        
+        .min-h-screen {
+            background: white !important;
+        }
+        
+        /* Ensure content fits nicely on pages */
+        .max-w-7xl {
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 10px !important;
+        }
+        
+        /* Keep content together when possible */
+        .bg-white,
+        .shadow-xl,
+        .rounded-2xl {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        
+        /* Print backgrounds and colors */
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }
+        
+        /* Adjust font sizes for print */
+        body {
+            font-size: 11pt;
+        }
+        
+        h1 { font-size: 20pt; }
+        h2 { font-size: 16pt; }
+        h3 { font-size: 14pt; }
+        h4 { font-size: 12pt; }
+        
+        /* Ensure tables don't break awkwardly */
+        table {
+            page-break-inside: avoid;
+        }
+        
+        tr {
+            page-break-inside: avoid;
         }
     </style>
 </x-app-layout>

@@ -402,25 +402,109 @@ $imageService = app('App\\Services\\TrailImageService');
     </div>
 </div>
 
-<!-- Success Toast -->
-<div id="success-toast" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 z-50">
-    <div class="flex items-center">
-        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-        </svg>
-        <span id="success-message"></span>
-    </div>
+<!-- Toast Container -->
+<div id="toast-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none">
+    <!-- Toasts will be dynamically inserted here -->
 </div>
 
-<!-- Error Toast -->
-<div id="error-toast" class="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 z-50">
-    <div class="flex items-center">
-        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-        </svg>
-        <span id="error-message"></span>
+<!-- Toast Templates (Hidden) -->
+<template id="toast-template">
+    <div class="toast-item bg-white rounded-xl shadow-2xl overflow-hidden min-w-[320px] max-w-[420px] pointer-events-auto transform translate-x-[500px] opacity-0 transition-all duration-300 ease-out border-l-4">
+        <div class="relative">
+            <!-- Progress Bar -->
+            <div class="toast-progress absolute top-0 left-0 h-1 bg-current opacity-30 transition-all ease-linear" style="width: 100%;"></div>
+            
+            <div class="p-4 pr-12">
+                <div class="flex items-start gap-3">
+                    <!-- Icon -->
+                    <div class="toast-icon flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path class="toast-icon-path" fill-rule="evenodd" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="flex-1 min-w-0 pt-0.5">
+                        <div class="toast-title font-semibold text-gray-900 mb-1"></div>
+                        <div class="toast-message text-sm text-gray-600"></div>
+                        <div class="toast-details text-xs text-gray-500 mt-1 hidden"></div>
+                        <a class="toast-link text-xs font-medium mt-2 gap-1 hover:gap-2 transition-all" style="display: none;">
+                            <span class="link-text"></span>
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Close Button -->
+            <button class="toast-close absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
     </div>
-</div>
+</template>
+
+@push('styles')
+<style>
+    /* Toast Animations */
+    @keyframes slideInRight {
+        from {
+            transform: translateX(500px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(500px);
+            opacity: 0;
+        }
+    }
+
+    .toast-item {
+        animation: slideInRight 0.3s ease-out forwards;
+        backdrop-filter: blur(10px);
+    }
+
+    .toast-item.hiding {
+        animation: slideOutRight 0.3s ease-in forwards;
+    }
+
+    /* Toast hover effects */
+    .toast-item:hover {
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    .toast-close:hover {
+        transform: scale(1.1);
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 640px) {
+        #toast-container {
+            left: 1rem;
+            right: 1rem;
+        }
+
+        .toast-item {
+            min-width: auto;
+            max-width: 100%;
+        }
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script>
@@ -885,16 +969,157 @@ $imageService = app('App\\Services\\TrailImageService');
             }
         }
 
-        function showToast(type, message) {
-            const toast = document.getElementById(type + '-toast');
-            const messageSpan = document.getElementById(type + '-message');
+        // Enhanced Toast System
+        function showToast(type, message, opts = {}) {
+            try {
+                const container = document.getElementById('toast-container');
+                const template = document.getElementById('toast-template');
+                
+                if (!container || !template) {
+                    console.error('Toast container or template not found');
+                    return;
+                }
 
-            messageSpan.textContent = message;
-            toast.classList.remove('translate-x-full');
+                // Clone template
+                const toast = template.content.cloneNode(true).querySelector('.toast-item');
+                
+                // Toast configuration based on type
+                const config = {
+                    success: {
+                        title: opts.title || 'Success!',
+                        borderColor: 'border-emerald-500',
+                        iconBg: 'bg-emerald-100 text-emerald-600',
+                        iconPath: 'M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z',
+                        progressColor: 'text-emerald-500'
+                    },
+                    error: {
+                        title: opts.title || 'Error',
+                        borderColor: 'border-red-500',
+                        iconBg: 'bg-red-100 text-red-600',
+                        iconPath: 'M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z',
+                        progressColor: 'text-red-500'
+                    },
+                    warning: {
+                        title: opts.title || 'Warning',
+                        borderColor: 'border-amber-500',
+                        iconBg: 'bg-amber-100 text-amber-600',
+                        iconPath: 'M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z',
+                        progressColor: 'text-amber-500'
+                    },
+                    info: {
+                        title: opts.title || 'Info',
+                        borderColor: 'border-blue-500',
+                        iconBg: 'bg-blue-100 text-blue-600',
+                        iconPath: 'M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z',
+                        progressColor: 'text-blue-500'
+                    }
+                };
 
+                const typeConfig = config[type] || config.info;
+                
+                // Apply styling
+                toast.classList.add(typeConfig.borderColor);
+                const iconContainer = toast.querySelector('.toast-icon');
+                iconContainer.className += ' ' + typeConfig.iconBg;
+                const iconPath = toast.querySelector('.toast-icon-path');
+                iconPath.setAttribute('d', typeConfig.iconPath);
+                
+                // Set content
+                toast.querySelector('.toast-title').textContent = typeConfig.title;
+                toast.querySelector('.toast-message').textContent = message;
+                
+                // Optional details
+                if (opts.details) {
+                    const detailsEl = toast.querySelector('.toast-details');
+                    detailsEl.textContent = opts.details;
+                    detailsEl.classList.remove('hidden');
+                }
+                
+                // Optional link
+                const linkHref = opts.link || opts.viewLink;
+                const linkText = opts.linkText || (opts.viewLink ? 'View More' : null);
+                if (linkHref && linkText) {
+                    const linkEl = toast.querySelector('.toast-link');
+                    linkEl.href = linkHref;
+                    linkEl.querySelector('.link-text').textContent = linkText;
+                    linkEl.style.display = 'inline-flex';
+                    linkEl.classList.add('items-center');
+                    linkEl.classList.add(typeConfig.progressColor);
+                }
+                
+                // Progress bar
+                const progressBar = toast.querySelector('.toast-progress');
+                progressBar.classList.add(typeConfig.progressColor);
+                
+                // Close button
+                const closeBtn = toast.querySelector('.toast-close');
+                closeBtn.addEventListener('click', () => hideToast(toast));
+                
+                // Add to container
+                container.appendChild(toast);
+                
+                // Animate in
+                requestAnimationFrame(() => {
+                    toast.style.transform = 'translateX(0)';
+                    toast.style.opacity = '1';
+                });
+                
+                // Auto-hide with progress bar animation
+                const duration = opts.duration || 5000;
+                progressBar.style.transition = `width ${duration}ms linear`;
+                
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        progressBar.style.width = '0%';
+                    });
+                });
+                
+                // Auto-hide timer
+                const hideTimer = setTimeout(() => {
+                    hideToast(toast);
+                }, duration);
+                
+                // Store timer for manual close
+                toast._hideTimer = hideTimer;
+                
+                // Pause on hover
+                toast.addEventListener('mouseenter', () => {
+                    clearTimeout(toast._hideTimer);
+                    progressBar.style.transition = 'none';
+                    const currentWidth = progressBar.offsetWidth;
+                    progressBar.style.width = currentWidth + 'px';
+                });
+                
+                toast.addEventListener('mouseleave', () => {
+                    const remainingWidth = parseFloat(progressBar.style.width);
+                    const remainingTime = (remainingWidth / toast.offsetWidth) * duration;
+                    
+                    progressBar.style.transition = `width ${remainingTime}ms linear`;
+                    progressBar.style.width = '0%';
+                    
+                    toast._hideTimer = setTimeout(() => {
+                        hideToast(toast);
+                    }, remainingTime);
+                });
+                
+            } catch (err) {
+                console.error('showToast error', err);
+            }
+        }
+
+        function hideToast(toast) {
+            if (toast._hideTimer) {
+                clearTimeout(toast._hideTimer);
+            }
+            
+            toast.style.transform = 'translateX(500px)';
+            toast.style.opacity = '0';
+            
             setTimeout(() => {
-                toast.classList.add('translate-x-full');
-            }, 3000);
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
         }
     
         // Add lightweight styles for tabs and event cards when Tailwind utilities aren't sufficient

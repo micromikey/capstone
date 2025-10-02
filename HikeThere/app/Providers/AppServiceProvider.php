@@ -5,12 +5,15 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Event;
 use App\Models\Trail;
 use App\Observers\TrailObserver;
 use App\Models\TrailPackage;
 use App\Observers\TrailPackageObserver;
-use App\Models\Event;
+use App\Models\Event as EventModel;
 use App\Observers\EventObserver;
+use Illuminate\Auth\Events\Login;
+use App\Listeners\SendWeatherNotificationOnLogin;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,14 +30,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-    Trail::observe(TrailObserver::class);
-    TrailPackage::observe(TrailPackageObserver::class);
-    Event::observe(EventObserver::class);
+        Trail::observe(TrailObserver::class);
+        TrailPackage::observe(TrailPackageObserver::class);
+        EventModel::observe(EventObserver::class);
 
-    // Ensure DB session timezone is set to Asia/Manila (+08:00) so time-only values
-    // stored in the database are interpreted consistently when parsed by Carbon.
-    // Only attempt this for MySQL connections and swallow any exceptions so it
-    // doesn't break booting in other environments.
+        // Register event listeners
+        Event::listen(
+            Login::class,
+            SendWeatherNotificationOnLogin::class
+        );
+
+        // Ensure DB session timezone is set to Asia/Manila (+08:00) so time-only values
+        // stored in the database are interpreted consistently when parsed by Carbon.
+        // Only attempt this for MySQL connections and swallow any exceptions so it
+        // doesn't break booting in other environments.
         try {
             // Use DB_SESSION_TIMEZONE env var to control whether the app sets a session
             // timezone on MySQL connections. If left empty, the app will not issue a

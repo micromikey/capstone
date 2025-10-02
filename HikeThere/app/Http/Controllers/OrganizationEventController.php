@@ -14,11 +14,15 @@ class OrganizationEventController extends Controller
         return view('org.events.index', compact('events'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         // Provide a list of this organization's trails for selection
         $trails = \App\Models\Trail::where('user_id', Auth::id())->orderBy('trail_name')->get();
-        return view('org.events.create', compact('trails'));
+        
+        // Get pre-selected trail ID from query parameter (e.g., from trail creation flow)
+        $preselectedTrailId = $request->query('trail_id');
+        
+        return view('org.events.create', compact('trails', 'preselectedTrailId'));
     }
 
     public function store(Request $request)

@@ -264,12 +264,12 @@
             <div class="mb-8">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                                  <!-- Enhanced Assessment Results -->
-                         <div class="bg-gradient-to-br from-white via-green-50 to-emerald-50 overflow-hidden shadow-2xl sm:rounded-2xl border border-green-200 relative">
+                         <div class="bg-gradient-to-br from-white via-green-50 to-emerald-50 overflow-hidden shadow-2xl sm:rounded-2xl border border-green-200 relative flex flex-col">
                              <!-- Decorative background elements -->
                              <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-400 to-emerald-400 rounded-full -translate-y-16 translate-x-16 opacity-10"></div>
                              <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-green-300 to-emerald-300 rounded-full translate-y-12 -translate-x-12 opacity-10"></div>
                              
-                             <div class="p-8 relative z-10">
+                             <div class="p-8 relative z-10 flex flex-col flex-grow">
                                  <!-- Header with Icon and Title -->
                                  <div class="flex items-center mb-6">
                                      <div class="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mr-4 shadow-lg">
@@ -282,9 +282,10 @@
                                  </div>
 
                                 @if($user->latestAssessmentResult)
-                                <div class="space-y-6">
+                                <div class="space-y-6 flex-grow flex flex-col">
+                                    <div class="flex-grow">
                                                                          <!-- Main Score Display -->
-                                     <div class="relative p-6 bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 rounded-2xl text-white overflow-hidden shadow-xl">
+                                     <div class="relative p-6 bg-gradient-to-r from-green-600 via-emerald-600 to-green-700 rounded-2xl text-white overflow-hidden shadow-xl mb-6">
                                          <div class="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full -translate-y-16 translate-x-16"></div>
                                          <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-12 -translate-x-12"></div>
                                          <div class="relative z-10">
@@ -350,12 +351,13 @@
                                                 </div>
                                          </div>
                                      </div>
+                                    </div>
 
                                                                          <!-- Action Buttons -->
-                                     <div class="space-y-3">
+                                     <div class="space-y-3 mt-auto">
                                          <a href="{{ route('assessment.saved-results') }}" class="block w-full text-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg">
                                              <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                              </svg>
                                              View Detailed Results
                                          </a>
@@ -383,8 +385,8 @@
                         </div>
 
                         <!-- Enhanced Itineraries -->
-                        <div class="bg-gradient-to-br from-white to-blue-50 overflow-hidden shadow-2xl sm:rounded-2xl border border-blue-100">
-                            <div class="p-8">
+                        <div class="bg-gradient-to-br from-white to-blue-50 overflow-hidden shadow-2xl sm:rounded-2xl border border-blue-100 flex flex-col">
+                            <div class="p-8 flex flex-col flex-grow">
                                 <!-- Header with Icon and Title -->
                                 <div class="flex items-center mb-6">
                                     <div class="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mr-4">
@@ -397,9 +399,10 @@
                                 </div>
 
                                 @if($user->latestItinerary)
-                                <div class="space-y-6">
+                                <div class="space-y-6 flex-grow flex flex-col">
+                                    <div class="flex-grow">
                                     <!-- Main Itinerary Display -->
-                                    <div class="relative p-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl text-white overflow-hidden">
+                                    <div class="relative p-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl text-white overflow-hidden mb-6">
                                         <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
                                         <div class="relative z-10">
                                             <div class="flex items-center justify-between mb-3">
@@ -421,9 +424,13 @@
                                                     </span>
                                                     <span class="flex items-center">
                                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                         </svg>
-                                                        {{ $user->latestItinerary->estimated_duration }}
+                                                        @if($user->latestItinerary->start_date)
+                                                            {{ \Carbon\Carbon::parse($user->latestItinerary->start_date)->format('M d, Y') }}
+                                                        @else
+                                                            N/A
+                                                        @endif
                                                     </span>
                                                 </div>
                                             </div>
@@ -432,27 +439,42 @@
 
                                     <!-- Quick Stats -->
                                     <div class="grid grid-cols-3 gap-4">
-                                        <div class="text-center p-3 bg-white rounded-lg border border-blue-200">
-                                            <div class="text-lg font-bold text-blue-600">{{ $user->latestItinerary->difficulty_level }}</div>
-                                            <div class="text-xs text-gray-600">Difficulty</div>
+                                        <div class="text-center p-5 bg-white rounded-xl border border-blue-200 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105">
+                                            <div class="text-2xl font-bold text-blue-600 mb-1">{{ $user->latestItinerary->difficulty_level ?? 'N/A' }}</div>
+                                            <div class="text-sm font-medium text-gray-600">Difficulty</div>
                                         </div>
-                                        <div class="text-center p-3 bg-white rounded-lg border border-blue-200">
-                                            <div class="text-lg font-bold text-blue-600">{{ $user->latestItinerary->distance }}</div>
-                                            <div class="text-xs text-gray-600">Distance</div>
+                                        <div class="text-center p-5 bg-white rounded-xl border border-blue-200 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105">
+                                            <div class="text-2xl font-bold text-blue-600 mb-1">{{ $user->latestItinerary->distance ?? 'N/A' }}</div>
+                                            <div class="text-sm font-medium text-gray-600">Distance</div>
                                         </div>
-                                        <div class="text-center p-3 bg-white rounded-lg border border-blue-200">
-                                            <div class="text-lg font-bold text-blue-600">{{ $user->latestItinerary->estimated_duration }}</div>
-                                            <div class="text-xs text-gray-600">Duration</div>
+                                        <div class="text-center p-5 bg-white rounded-xl border border-blue-200 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105">
+                                            <div class="text-2xl font-bold text-blue-600 mb-1">
+                                                @if($user->latestItinerary->start_date)
+                                                    {{ \Carbon\Carbon::parse($user->latestItinerary->start_date)->format('M d') }}
+                                                @else
+                                                    N/A
+                                                @endif
+                                            </div>
+                                            <div class="text-sm font-medium text-gray-600">Start Date</div>
                                         </div>
                                     </div>
+                                    </div>
 
-                                    <!-- Action Button -->
-                                    <a href="{{ route('itinerary.build') }}" class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg">
-                                        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                        </svg>
-                                        Create New Itinerary
-                                    </a>
+                                    <!-- Action Buttons -->
+                                    <div class="space-y-3 mt-auto">
+                                        <a href="{{ route('itinerary.index') }}" class="block w-full text-center bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg">
+                                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                                            </svg>
+                                            View All Itineraries
+                                        </a>
+                                        <a href="{{ route('itinerary.build') }}" class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg">
+                                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                            Create New Itinerary
+                                        </a>
+                                    </div>
                                 </div>
                                 @else
                                 <div class="text-center py-12">

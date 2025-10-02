@@ -60,6 +60,11 @@ class Itinerary extends Model
     {
         return $this->belongsTo(User::class);
     }
+    
+    public function trail()
+    {
+        return $this->belongsTo(Trail::class, 'trail_id');
+    }
 
     public function days()
     {

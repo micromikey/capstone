@@ -23,7 +23,7 @@ return new class extends Migration
             $table->boolean('newsletter')->default(false);
             
             // Privacy settings (non-sensitive)
-            $table->enum('profile_visibility', ['public', 'friends', 'private'])->default('public');
+            $table->enum('profile_visibility', ['public', 'private'])->default('public');
             $table->boolean('show_email')->default(false);
             $table->boolean('show_phone')->default(false);
             $table->boolean('show_location')->default(true);
@@ -32,7 +32,7 @@ return new class extends Migration
             
             // Account settings
             $table->boolean('two_factor_required')->default(false);
-            $table->string('timezone', 50)->default('UTC');
+            $table->string('timezone', 50)->default('Asia/Manila');
             $table->string('language', 10)->default('en');
             
             $table->timestamps();

@@ -63,7 +63,7 @@ class UserPreference extends Model
             'show_birth_date' => false,
             'show_hiking_preferences' => true,
             'two_factor_required' => false,
-            'timezone' => 'UTC',
+            'timezone' => 'Asia/Manila',
             'language' => 'en',
         ];
     }

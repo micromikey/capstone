@@ -1653,7 +1653,7 @@ $imageService = app('App\Services\TrailImageService');
                     $dayLabel = $event->start_at ? $event->start_at->format('d') : '';
                 }
             @endphp
-            <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 overflow-hidden group">
+            <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 overflow-hidden group flex flex-col">
                 <div class="relative h-48 bg-gradient-to-br from-orange-400 to-amber-500 group-hover:from-orange-500 group-hover:to-amber-600 transition-all duration-300">
                     <div class="absolute inset-0 flex items-center justify-center">
                         <svg class="w-20 h-20 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1674,48 +1674,56 @@ $imageService = app('App\Services\TrailImageService');
                     </div>
                     @endif
                 </div>
-                <div class="p-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-2 line-clamp-2">{{ $event->title }}</h3>
-                    <p class="text-sm text-gray-500 mb-3">
-                        <span class="font-medium">{{ optional($event->user)->display_name ?? 'Organization' }}</span>
-                        @if(!empty($event->always_available))
-                        <span class="text-emerald-600"> • Always Open</span>
-                        @else
-                        <span> • {{ $event->start_at ? $event->start_at->format('M d, Y g:ia') : 'TBA' }}</span>
-                        @endif
-                    </p>
-                    
-                    @if($event->location_name ?? false)
-                    <div class="flex items-center text-sm text-gray-600 mb-3">
-                        <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                        </svg>
-                        <span class="line-clamp-1">{{ $event->location_name }}</span>
+                <div class="p-6 flex flex-col flex-grow">
+                    <div class="flex-grow">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2 line-clamp-2 min-h-[3.5rem]">{{ $event->title }}</h3>
+                        <p class="text-sm text-gray-500 mb-3">
+                            <span class="font-medium">{{ optional($event->user)->display_name ?? 'Organization' }}</span>
+                            @if(!empty($event->always_available))
+                            <span class="text-emerald-600"> • Always Open</span>
+                            @else
+                            <span> • {{ $event->start_at ? $event->start_at->format('M d, Y g:ia') : 'TBA' }}</span>
+                            @endif
+                        </p>
+                        
+                        <div class="min-h-[1.25rem] mb-3">
+                            @if($event->location_name ?? false)
+                            <div class="flex items-center text-sm text-gray-600">
+                                <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                </svg>
+                                <span class="line-clamp-1">{{ $event->location_name }}</span>
+                            </div>
+                            @endif
+                        </div>
+                        
+                        <div class="min-h-[2.5rem] mb-4">
+                            @if($event->description)
+                            <p class="text-sm text-gray-600 line-clamp-2">{{ Str::limit($event->description, 100) }}</p>
+                            @endif
+                        </div>
+
+                        <div class="min-h-[1.5rem] mb-4">
+                            @if(isset($event->end_at) && $event->end_at->greaterThan($now))
+                            @php
+                                $diffInDays = (int) max(0, round($event->end_at->diffInDays($now, true)));
+                                $diffInHours = (int) max(0, round($event->end_at->diffInHours($now, true)));
+                                $diffInMinutes = (int) max(0, round($event->end_at->diffInMinutes($now, true)));
+
+                                if ($diffInDays >= 1) {
+                                    $short = $diffInDays . 'd';
+                                } elseif ($diffInHours >= 1) {
+                                    $short = $diffInHours . 'h';
+                                } else {
+                                    $short = max(0, $diffInMinutes) . 'm';
+                                }
+                            @endphp
+                            <p class="text-xs text-red-600 font-semibold">⏰ Ends in {{ $short }}</p>
+                            @endif
+                        </div>
                     </div>
-                    @endif
                     
-                    @if($event->description)
-                    <p class="text-sm text-gray-600 mb-4 line-clamp-2">{{ Str::limit($event->description, 100) }}</p>
-                    @endif
-
-                    @if(isset($event->end_at) && $event->end_at->greaterThan($now))
-                    @php
-                        $diffInDays = (int) max(0, round($event->end_at->diffInDays($now, true)));
-                        $diffInHours = (int) max(0, round($event->end_at->diffInHours($now, true)));
-                        $diffInMinutes = (int) max(0, round($event->end_at->diffInMinutes($now, true)));
-
-                        if ($diffInDays >= 1) {
-                            $short = $diffInDays . 'd';
-                        } elseif ($diffInHours >= 1) {
-                            $short = $diffInHours . 'h';
-                        } else {
-                            $short = max(0, $diffInMinutes) . 'm';
-                        }
-                    @endphp
-                    <p class="text-xs text-red-600 font-semibold mb-4">⏰ Ends in {{ $short }}</p>
-                    @endif
-                    
-                    <a href="{{ route('hiker.events.show', $event->slug) }}" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl font-semibold hover:from-orange-700 hover:to-amber-700 transition-all duration-300 transform hover:scale-105 shadow">
+                    <a href="{{ route('hiker.events.show', $event->slug) }}" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl font-semibold hover:from-orange-700 hover:to-amber-700 transition-all duration-300 transform hover:scale-105 shadow mt-auto">
                         View Event
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>

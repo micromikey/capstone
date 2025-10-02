@@ -40,49 +40,90 @@
                     <div class="px-6 py-4 border-b border-gray-200">
                         <h3 class="text-lg font-medium text-gray-900">
                             <svg class="inline-block w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM4.19 4.19A4 4 0 004 6v6a4 4 0 004 4h6a4 4 0 004-4V6a4 4 0 00-4-4H8a4 4 0 00-2.81 1.19z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                             </svg>
                             {{ __('Notification Preferences') }}
                         </h3>
-                        <p class="mt-1 text-sm text-gray-600">{{ __('Choose how and when you want to be notified.') }}</p>
+                        <p class="mt-1 text-sm text-gray-600">{{ __('Choose how and when you want to be notified. Unchecking these will stop notifications of that type.') }}</p>
                     </div>
                     
                     <div class="px-6 py-4 space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="email_notifications" value="1" 
-                                    {{ $preferences['email_notifications'] ?? true ? 'checked' : '' }}
-                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                                <span class="ml-2 text-sm text-gray-700">{{ __('Email Notifications') }}</span>
-                            </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="flex items-start">
+                                <label class="flex items-start cursor-pointer group">
+                                    <input type="checkbox" name="email_notifications" value="1" 
+                                        {{ $preferences['email_notifications'] ?? true ? 'checked' : '' }}
+                                        class="mt-1 rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                                    <div class="ml-3">
+                                        <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">{{ __('Email Notifications') }}</span>
+                                        <p class="text-xs text-gray-500">Receive important updates via email</p>
+                                    </div>
+                                </label>
+                            </div>
                             
-                            <label class="flex items-center">
-                                <input type="checkbox" name="push_notifications" value="1" 
-                                    {{ $preferences['push_notifications'] ?? true ? 'checked' : '' }}
-                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                                <span class="ml-2 text-sm text-gray-700">{{ __('Push Notifications') }}</span>
-                            </label>
+                            <div class="flex items-start">
+                                <label class="flex items-start cursor-pointer group">
+                                    <input type="checkbox" name="push_notifications" value="1" 
+                                        {{ $preferences['push_notifications'] ?? true ? 'checked' : '' }}
+                                        class="mt-1 rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                                    <div class="ml-3">
+                                        <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">{{ __('Push Notifications') }}</span>
+                                        <p class="text-xs text-gray-500">Get real-time alerts in-app</p>
+                                    </div>
+                                </label>
+                            </div>
                             
-                            <label class="flex items-center">
-                                <input type="checkbox" name="trail_updates" value="1" 
-                                    {{ $preferences['trail_updates'] ?? true ? 'checked' : '' }}
-                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                                <span class="ml-2 text-sm text-gray-700">{{ __('Trail Updates') }}</span>
-                            </label>
+                            <div class="flex items-start">
+                                <label class="flex items-start cursor-pointer group">
+                                    <input type="checkbox" name="trail_updates" value="1" 
+                                        {{ $preferences['trail_updates'] ?? true ? 'checked' : '' }}
+                                        class="mt-1 rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                                    <div class="ml-3">
+                                        <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">{{ __('Trail Updates') }}</span>
+                                        <p class="text-xs text-gray-500">Alerts about trail conditions & closures</p>
+                                    </div>
+                                </label>
+                            </div>
                             
-                            <label class="flex items-center">
-                                <input type="checkbox" name="security_alerts" value="1" 
-                                    {{ $preferences['security_alerts'] ?? true ? 'checked' : '' }}
-                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                                <span class="ml-2 text-sm text-gray-700">{{ __('Security Alerts') }}</span>
-                            </label>
+                            <div class="flex items-start">
+                                <label class="flex items-start cursor-pointer group">
+                                    <input type="checkbox" name="security_alerts" value="1" 
+                                        {{ $preferences['security_alerts'] ?? true ? 'checked' : '' }}
+                                        class="mt-1 rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                                    <div class="ml-3">
+                                        <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">{{ __('Security Alerts') }}</span>
+                                        <p class="text-xs text-gray-500">Important account security notices</p>
+                                    </div>
+                                </label>
+                            </div>
                             
-                            <label class="flex items-center">
-                                <input type="checkbox" name="newsletter" value="1" 
-                                    {{ $preferences['newsletter'] ?? false ? 'checked' : '' }}
-                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                                <span class="ml-2 text-sm text-gray-700">{{ __('Newsletter') }}</span>
-                            </label>
+                            <div class="flex items-start">
+                                <label class="flex items-start cursor-pointer group">
+                                    <input type="checkbox" name="newsletter" value="1" 
+                                        {{ $preferences['newsletter'] ?? false ? 'checked' : '' }}
+                                        class="mt-1 rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                                    <div class="ml-3">
+                                        <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">{{ __('Newsletter') }}</span>
+                                        <p class="text-xs text-gray-500">Tips, news, and featured trails</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-4 bg-blue-50 border-l-4 border-blue-400 rounded">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-blue-700">
+                                        <strong>Note:</strong> Push notifications include events, weather updates, bookings, and system messages. 
+                                        Disabling this will stop all in-app notifications except those you specifically enable above.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -108,50 +149,90 @@
                                 <option value="public" {{ ($preferences['profile_visibility'] ?? 'public') === 'public' ? 'selected' : '' }}>
                                     {{ __('Public - Anyone can see your profile') }}
                                 </option>
-                                <option value="friends" {{ ($preferences['profile_visibility'] ?? 'public') === 'friends' ? 'selected' : '' }}>
-                                    {{ __('Friends Only - Only friends can see your profile') }}
-                                </option>
                                 <option value="private" {{ ($preferences['profile_visibility'] ?? 'public') === 'private' ? 'selected' : '' }}>
                                     {{ __('Private - Only you can see your profile') }}
                                 </option>
                             </select>
+                            <p class="mt-2 text-xs text-gray-500">
+                                {{ __('When set to Private, your profile will only be visible to you. Public profiles are visible to all users.') }}
+                            </p>
+                        </div>
+                        
+                        <div class="mt-4 p-4 bg-purple-50 border-l-4 border-purple-400 rounded">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-purple-700">
+                                        <strong>Profile Visibility Controls:</strong> Use the options below to fine-tune what information is shown on your public profile.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="show_email" value="1" 
-                                    {{ $preferences['show_email'] ?? false ? 'checked' : '' }}
-                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                                <span class="ml-2 text-sm text-gray-700">{{ __('Show Email Address') }}</span>
-                            </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="flex items-start">
+                                <label class="flex items-start cursor-pointer group">
+                                    <input type="checkbox" name="show_email" value="1" 
+                                        {{ $preferences['show_email'] ?? false ? 'checked' : '' }}
+                                        class="mt-1 rounded border-gray-300 text-purple-600 shadow-sm focus:border-purple-300 focus:ring focus:ring-purple-200 focus:ring-opacity-50">
+                                    <div class="ml-3">
+                                        <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">{{ __('Show Email Address') }}</span>
+                                        <p class="text-xs text-gray-500">Display your email on your profile</p>
+                                    </div>
+                                </label>
+                            </div>
                             
-                            <label class="flex items-center">
-                                <input type="checkbox" name="show_phone" value="1" 
-                                    {{ $preferences['show_phone'] ?? false ? 'checked' : '' }}
-                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                                <span class="ml-2 text-sm text-gray-700">{{ __('Show Phone Number') }}</span>
-                            </label>
+                            <div class="flex items-start">
+                                <label class="flex items-start cursor-pointer group">
+                                    <input type="checkbox" name="show_phone" value="1" 
+                                        {{ $preferences['show_phone'] ?? false ? 'checked' : '' }}
+                                        class="mt-1 rounded border-gray-300 text-purple-600 shadow-sm focus:border-purple-300 focus:ring focus:ring-purple-200 focus:ring-opacity-50">
+                                    <div class="ml-3">
+                                        <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">{{ __('Show Phone Number') }}</span>
+                                        <p class="text-xs text-gray-500">Display your phone number on your profile</p>
+                                    </div>
+                                </label>
+                            </div>
                             
-                            <label class="flex items-center">
-                                <input type="checkbox" name="show_location" value="1" 
-                                    {{ $preferences['show_location'] ?? true ? 'checked' : '' }}
-                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                                <span class="ml-2 text-sm text-gray-700">{{ __('Show Location') }}</span>
-                            </label>
+                            <div class="flex items-start">
+                                <label class="flex items-start cursor-pointer group">
+                                    <input type="checkbox" name="show_location" value="1" 
+                                        {{ $preferences['show_location'] ?? true ? 'checked' : '' }}
+                                        class="mt-1 rounded border-gray-300 text-purple-600 shadow-sm focus:border-purple-300 focus:ring focus:ring-purple-200 focus:ring-opacity-50">
+                                    <div class="ml-3">
+                                        <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">{{ __('Show Location') }}</span>
+                                        <p class="text-xs text-gray-500">Display your city/region on your profile</p>
+                                    </div>
+                                </label>
+                            </div>
                             
-                            <label class="flex items-center">
-                                <input type="checkbox" name="show_birth_date" value="1" 
-                                    {{ $preferences['show_birth_date'] ?? false ? 'checked' : '' }}
-                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                                <span class="ml-2 text-sm text-gray-700">{{ __('Show Birth Date') }}</span>
-                            </label>
+                            <div class="flex items-start">
+                                <label class="flex items-start cursor-pointer group">
+                                    <input type="checkbox" name="show_birth_date" value="1" 
+                                        {{ $preferences['show_birth_date'] ?? false ? 'checked' : '' }}
+                                        class="mt-1 rounded border-gray-300 text-purple-600 shadow-sm focus:border-purple-300 focus:ring focus:ring-purple-200 focus:ring-opacity-50">
+                                    <div class="ml-3">
+                                        <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">{{ __('Show Birth Date') }}</span>
+                                        <p class="text-xs text-gray-500">Display your birthday on your profile</p>
+                                    </div>
+                                </label>
+                            </div>
                             
-                            <label class="flex items-center">
-                                <input type="checkbox" name="show_hiking_preferences" value="1" 
-                                    {{ $preferences['show_hiking_preferences'] ?? true ? 'checked' : '' }}
-                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                                <span class="ml-2 text-sm text-gray-700">{{ __('Show Hiking Preferences') }}</span>
-                            </label>
+                            <div class="flex items-start">
+                                <label class="flex items-start cursor-pointer group">
+                                    <input type="checkbox" name="show_hiking_preferences" value="1" 
+                                        {{ $preferences['show_hiking_preferences'] ?? true ? 'checked' : '' }}
+                                        class="mt-1 rounded border-gray-300 text-purple-600 shadow-sm focus:border-purple-300 focus:ring focus:ring-purple-200 focus:ring-opacity-50">
+                                    <div class="ml-3">
+                                        <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">{{ __('Show Hiking Preferences') }}</span>
+                                        <p class="text-xs text-gray-500">Display your hiking difficulty & terrain preferences</p>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -166,48 +247,41 @@
                             </svg>
                             {{ __('Account Settings') }}
                         </h3>
-                        <p class="mt-1 text-sm text-gray-600">{{ __('Additional account configuration options.') }}</p>
+                        <p class="mt-1 text-sm text-gray-600">{{ __('Configure your security preferences.') }}</p>
                     </div>
                     
-                    <div class="px-6 py-4 space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="timezone" class="block text-sm font-medium text-gray-700 mb-2">
-                                    {{ __('Timezone') }}
-                                </label>
-                                <select name="timezone" id="timezone" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                                    <option value="UTC" {{ ($preferences['timezone'] ?? 'UTC') === 'UTC' ? 'selected' : '' }}>UTC</option>
-                                    <option value="America/New_York" {{ ($preferences['timezone'] ?? 'UTC') === 'America/New_York' ? 'selected' : '' }}>Eastern Time</option>
-                                    <option value="America/Chicago" {{ ($preferences['timezone'] ?? 'UTC') === 'America/Chicago' ? 'selected' : '' }}>Central Time</option>
-                                    <option value="America/Denver" {{ ($preferences['timezone'] ?? 'UTC') === 'America/Denver' ? 'selected' : '' }}>Mountain Time</option>
-                                    <option value="America/Los_Angeles" {{ ($preferences['timezone'] ?? 'UTC') === 'America/Los_Angeles' ? 'selected' : '' }}>Pacific Time</option>
-                                    <option value="Europe/London" {{ ($preferences['timezone'] ?? 'UTC') === 'Europe/London' ? 'selected' : '' }}>London</option>
-                                    <option value="Europe/Paris" {{ ($preferences['timezone'] ?? 'UTC') === 'Europe/Paris' ? 'selected' : '' }}>Paris</option>
-                                    <option value="Asia/Tokyo" {{ ($preferences['timezone'] ?? 'UTC') === 'Asia/Tokyo' ? 'selected' : '' }}>Tokyo</option>
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label for="language" class="block text-sm font-medium text-gray-700 mb-2">
-                                    {{ __('Language') }}
-                                </label>
-                                <select name="language" id="language" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                                    <option value="en" {{ ($preferences['language'] ?? 'en') === 'en' ? 'selected' : '' }}>English</option>
-                                    <option value="es" {{ ($preferences['language'] ?? 'en') === 'es' ? 'selected' : '' }}>Español</option>
-                                    <option value="fr" {{ ($preferences['language'] ?? 'en') === 'fr' ? 'selected' : '' }}>Français</option>
-                                    <option value="de" {{ ($preferences['language'] ?? 'en') === 'de' ? 'selected' : '' }}>Deutsch</option>
-                                    <option value="it" {{ ($preferences['language'] ?? 'en') === 'it' ? 'selected' : '' }}>Italiano</option>
-                                    <option value="pt" {{ ($preferences['language'] ?? 'en') === 'pt' ? 'selected' : '' }}>Português</option>
-                                </select>
+                    <div class="px-6 py-4 space-y-6">
+                        <div class="flex items-start">
+                            <label class="flex items-start cursor-pointer group">
+                                <input type="checkbox" name="two_factor_required" value="1" 
+                                    {{ $preferences['two_factor_required'] ?? false ? 'checked' : '' }}
+                                    class="mt-1 rounded border-gray-300 text-orange-600 shadow-sm focus:border-orange-300 focus:ring focus:ring-orange-200 focus:ring-opacity-50">
+                                <div class="ml-3">
+                                    <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900">
+                                        <svg class="inline-block w-4 h-4 mr-1 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                        </svg>
+                                        {{ __('Enable Two-Factor Authentication') }}
+                                    </span>
+                                    <p class="text-xs text-gray-500">Require 2FA verification for enhanced account security</p>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div class="mt-4 p-4 bg-orange-50 border-l-4 border-orange-400 rounded">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-orange-700">
+                                        <strong>Note:</strong> Two-factor authentication adds an extra layer of security to your account by requiring a verification code in addition to your password.
+                                    </p>
+                                </div>
                             </div>
                         </div>
-
-                        <label class="flex items-center">
-                            <input type="checkbox" name="two_factor_required" value="1" 
-                                {{ $preferences['two_factor_required'] ?? false ? 'checked' : '' }}
-                                class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                            <span class="ml-2 text-sm text-gray-700">{{ __('Require Two-Factor Authentication for all logins') }}</span>
-                        </label>
                     </div>
                 </div>
 

@@ -22,6 +22,16 @@ class ItineraryController extends Controller
         $this->routingService = $routingService;
     }
 
+    public function index()
+    {
+        // Get all itineraries for the authenticated user, ordered by most recent
+        $itineraries = Itinerary::where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->paginate(12);
+
+        return view('hiker.itinerary.index', compact('itineraries'));
+    }
+
     public function build()
     {
         // Check if user has completed assessment
@@ -177,6 +187,58 @@ class ItineraryController extends Controller
 
         // Return the main generated itinerary view with all necessary data
         return view('hiker.itinerary.generated', compact('itinerary', 'days', 'pacing', 'presenter', 'weatherData', 'trail', 'build'));
+    }
+
+    /**
+     * Show print-optimized view of the itinerary
+     */
+    public function printView(Itinerary $itinerary)
+    {
+        // Check if user owns this itinerary
+        if ($itinerary->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized access to itinerary.');
+        }
+
+        // Extract stored data from the itinerary
+        $weatherData = $itinerary->weather_conditions ?? [];
+        $trail = null;
+        $build = $itinerary->transport_details ?? [];
+
+        // If we have a trail_id, try to load the trail and fetch fresh weather
+        if ($itinerary->trail_id) {
+            $trail = \App\Models\Trail::with('location')->find($itinerary->trail_id);
+            
+            // Fetch fresh weather data if trail has coordinates
+            if ($trail && $trail->latitude && $trail->longitude) {
+                try {
+                    $weatherController = new \App\Http\Controllers\Api\WeatherController();
+                    $weatherRequest = new \Illuminate\Http\Request([
+                        'lat' => $trail->latitude,
+                        'lng' => $trail->longitude
+                    ]);
+                    
+                    $weatherResponse = $weatherController->getForecast($weatherRequest);
+                    $freshWeatherData = $weatherResponse->getData(true);
+                    
+                    if (!isset($freshWeatherData['error'])) {
+                        // Keep the original API data for dynamic weather AND add formatted data for backward compatibility
+                        $formattedWeatherData = $this->formatWeatherDataForItinerary($freshWeatherData, $itinerary->start_date, $itinerary->duration_days ?? 1);
+                        
+                        // Start with original API data, then add formatted day data
+                        $weatherData = $freshWeatherData;
+                        foreach ($formattedWeatherData as $dayKey => $dayData) {
+                            $weatherData[$dayKey] = $dayData;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Failed to fetch fresh weather data for trail: ' . $e->getMessage());
+                    // Keep existing weather data as fallback
+                }
+            }
+        }
+
+        // Return the print-optimized view
+        return view('hiker.itinerary.print', compact('itinerary', 'weatherData', 'trail', 'build'));
     }
 
     public function pdf(Itinerary $itinerary)
@@ -2105,5 +2167,194 @@ class ItineraryController extends Controller
         $temp = $dailyData['temp_midday'] ?? $dailyData['temp_max'] ?? 25;
         
         return $condition . ' / ' . round($temp) . '°C';
+    }
+
+    /**
+     * Generate PDF from captured PNG image (base64)
+     */
+    public function generatePdf(Request $request)
+    {
+        try {
+            // Log the incoming request details
+            Log::info('PDF generation request received', [
+                'has_base64' => $request->has('image_base64'),
+                'base64_length' => $request->has('image_base64') ? strlen($request->input('image_base64')) : 0,
+                'all_keys' => array_keys($request->all()),
+            ]);
+
+            $validator = Validator::make($request->all(), [
+                'image_base64' => 'required|string', // Base64 encoded image
+                'trail_id' => 'nullable|string',
+                'trail_slug' => 'required|string'
+            ]);
+
+            if ($validator->fails()) {
+                Log::error('PDF generation validation failed', [
+                    'errors' => $validator->errors()->toArray(),
+                    'input_keys' => array_keys($request->all())
+                ]);
+                return response()->json([
+                    'error' => 'Invalid request', 
+                    'details' => $validator->errors()
+                ], 422);
+            }
+
+            $imageBase64 = $request->input('image_base64');
+            $trailSlug = $request->input('trail_slug', 'itinerary');
+
+            // Decode base64 image
+            // Remove data:image/png;base64, prefix if present
+            if (preg_match('/^data:image\/(\w+);base64,/', $imageBase64, $matches)) {
+                $imageBase64 = substr($imageBase64, strpos($imageBase64, ',') + 1);
+            }
+
+            $imageData = base64_decode($imageBase64);
+            
+            if ($imageData === false) {
+                Log::error('Failed to decode base64 image');
+                return response()->json([
+                    'error' => 'Invalid image data'
+                ], 400);
+            }
+
+            // Save to temporary file
+            $tempFile = tempnam(sys_get_temp_dir(), 'itinerary_');
+            file_put_contents($tempFile, $imageData);
+
+            Log::info('PDF generation started', [
+                'trail_slug' => $trailSlug,
+                'image_size' => strlen($imageData),
+                'temp_file' => $tempFile
+            ]);
+
+            // Create PDF using TCPDF
+            $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8');
+            
+            // Set document information
+            $pdf->SetCreator('HikeThere');
+            $pdf->SetAuthor('HikeThere');
+            $pdf->SetTitle('Hiking Itinerary - ' . $trailSlug);
+            $pdf->SetSubject('Hiking Itinerary');
+
+            // Remove default header/footer
+            $pdf->setPrintHeader(false);
+            $pdf->setPrintFooter(false);
+
+            // Set margins to 0 for full-page image
+            $pdf->SetMargins(0, 0, 0);
+            $pdf->SetAutoPageBreak(false, 0);
+
+            // Add a page
+            $pdf->AddPage();
+
+            // Use the temporary file path
+            $imagePath = $tempFile;
+            
+            if (!file_exists($imagePath)) {
+                throw new \Exception('Temporary image file not found');
+            }
+            
+            $imageSize = @getimagesize($imagePath);
+            
+            if ($imageSize === false) {
+                throw new \Exception('Unable to read image dimensions');
+            }
+            
+            $imageWidth = $imageSize[0];
+            $imageHeight = $imageSize[1];
+
+            Log::info('Image dimensions', [
+                'width' => $imageWidth,
+                'height' => $imageHeight
+            ]);
+
+            // Calculate how many pages we need based on image height
+            // A4 dimensions at 72 DPI: 595px x 842px
+            // At scale 2 (from html2canvas): 1190px x 1684px per page
+            $pageHeightPx = 1684;
+            $numPages = ceil($imageHeight / $pageHeightPx);
+
+            Log::info('PDF pages calculated', ['pages' => $numPages]);
+
+            // For simplicity, let's just fit the entire image on pages
+            // TCPDF will handle scaling automatically
+            if ($numPages > 1) {
+                // Multiple pages needed
+                for ($i = 0; $i < $numPages; $i++) {
+                    if ($i > 0) {
+                        $pdf->AddPage();
+                    }
+                    
+                    // Add the full image - TCPDF will scale it
+                    $pdf->Image(
+                        $imagePath,
+                        0, 0, // x, y position
+                        210, // width (A4 width in mm)
+                        0, // height (0 = auto calculate to maintain aspect ratio)
+                        '', // image type (auto-detect)
+                        '', // link
+                        '', // align
+                        false, // resize
+                        300, // dpi
+                        '', // palign
+                        false, // ismask
+                        false, // imgmask
+                        0, // border
+                        false, // fitbox
+                        false, // hidden
+                        true // fitonpage
+                    );
+                }
+            } else {
+                // Single page - fit the entire image
+                $pdf->Image(
+                    $imagePath,
+                    0, 0, // x, y position
+                    210, // width (A4 width in mm)  
+                    0, // height (0 = auto, maintains aspect ratio)
+                    '', // image type
+                    '', // link
+                    '', // align
+                    false, // resize
+                    300, // dpi
+                    '', // palign
+                    false, // ismask
+                    false, // imgmask
+                    0, // border
+                    false, // fitbox
+                    false, // hidden
+                    true // fitonpage
+                );
+            }
+
+            // Output PDF as download
+            $pdfContent = $pdf->Output('', 'S'); // Get as string
+
+            Log::info('PDF generated successfully', ['size' => strlen($pdfContent)]);
+
+            // Clean up temporary file
+            if (isset($tempFile) && file_exists($tempFile)) {
+                @unlink($tempFile);
+            }
+
+            return response($pdfContent)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="' . $trailSlug . '-itinerary.pdf"');
+
+        } catch (\Exception $e) {
+            Log::error('PDF generation error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Clean up temporary file on error
+            if (isset($tempFile) && file_exists($tempFile)) {
+                @unlink($tempFile);
+            }
+            
+            return response()->json([
+                'error' => 'Failed to generate PDF',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

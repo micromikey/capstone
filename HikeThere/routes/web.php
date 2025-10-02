@@ -141,10 +141,13 @@ Route::middleware([
     Route::post('/assessment/environment', [AssessmentController::class, 'storeEnvironment'])->name('assessment.environment.store');
 
     // Itinerary routes
+    Route::get('/itinerary', [ItineraryController::class, 'index'])->name('itinerary.index');
     Route::get('/itinerary/build', [ItineraryController::class, 'build'])->name('itinerary.build');
     Route::get('/itinerary/build/{trail}', [ItineraryController::class, 'buildWithTrail'])->name('itinerary.build.trail');
     // Submission: handle itinerary payloads via ItineraryController@store
     Route::post('/itinerary/generate', [ItineraryController::class, 'store'])->name('itinerary.generate');
+    Route::post('/hiker/itinerary/generate-pdf', [ItineraryController::class, 'generatePdf'])->name('itinerary.generate.pdf');
+    Route::get('/itinerary/{itinerary}/print', [ItineraryController::class, 'printView'])->name('itinerary.print');
     Route::get('/itinerary/{itinerary}/pdf', [ItineraryController::class, 'pdf'])->name('itinerary.pdf');
     Route::get('/itinerary/{itinerary}', [ItineraryController::class, 'show'])->name('itinerary.show');
 
@@ -168,6 +171,71 @@ Route::middleware([
     Route::post('/api/trails/reviews', [TrailReviewController::class, 'store'])->name('api.trails.reviews.store');
     Route::put('/api/trails/reviews/{review}', [TrailReviewController::class, 'update'])->name('api.trails.reviews.update');
     Route::delete('/api/trails/reviews/{review}', [TrailReviewController::class, 'destroy'])->name('api.trails.reviews.destroy');
+
+    // Notifications routes
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [App\Http\Controllers\NotificationController::class, 'index'])->name('index');
+        Route::get('/api/get', [App\Http\Controllers\NotificationController::class, 'getNotifications'])->name('get');
+        Route::get('/api/latest', [App\Http\Controllers\NotificationController::class, 'getLatest'])->name('latest');
+        Route::post('/{id}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('read');
+        Route::post('/{id}/unread', [App\Http\Controllers\NotificationController::class, 'markAsUnread'])->name('unread');
+        Route::post('/read-all', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('read-all');
+        Route::delete('/{id}', [App\Http\Controllers\NotificationController::class, 'destroy'])->name('destroy');
+        Route::delete('/read/clear', [App\Http\Controllers\NotificationController::class, 'destroyRead'])->name('destroy-read');
+    });
+    
+    // Debug route to manually test toast notification
+    Route::get('/test-toast-notification', function () {
+        $user = Auth::user();
+        $notificationService = new App\Services\NotificationService();
+        
+        // Create a test notification
+        $notification = $notificationService->create(
+            $user,
+            'system',
+            'Test Toast Notification',
+            'This is a test toast notification! If you see this, the system is working correctly. 🎉',
+            [
+                'test' => true,
+                'timestamp' => now()->toDateTimeString()
+            ]
+        );
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Test notification created! Check your notifications.',
+            'notification' => $notification
+        ]);
+    })->middleware('auth');
+    
+    // Debug route to manually test weather notification
+    Route::get('/test-weather-notification', function () {
+        $user = Auth::user();
+        $weatherService = new App\Services\WeatherNotificationService(
+            new App\Services\NotificationService()
+        );
+        
+        try {
+            $notification = $weatherService->sendLoginWeatherNotification($user);
+            if ($notification) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Weather notification sent!',
+                    'notification' => $notification
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to send weather notification - check logs'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    })->name('test.weather.notification');
 })->middleware(['user.type:hiker', 'ensure.hiking.preferences']);
 
 // Onboarding routes for hikers to set preferences (shown after email verification)
@@ -180,7 +248,14 @@ Route::middleware(['auth:sanctum', 'verified', 'user.type:hiker'])->group(functi
 Route::middleware(['auth:sanctum', 'check.approval'])->group(function () {
     // Organization dashboard
     Route::get('/org/dashboard', function () {
-        return view('org.dashboard');
+        $totalTrails = \App\Models\Trail::where('user_id', auth()->id())->count();
+        $activeEvents = \App\Models\Event::where('user_id', auth()->id())
+            ->where(function($query) {
+                $query->where('end_at', '>=', now())
+                    ->orWhere('always_available', true);
+            })
+            ->count();
+        return view('org.dashboard', compact('totalTrails', 'activeEvents'));
     })->name('org.dashboard');
 
     // Organization trails management

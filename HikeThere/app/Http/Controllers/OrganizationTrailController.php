@@ -348,7 +348,10 @@ class OrganizationTrailController extends Controller
             }
 
             return redirect()->route('org.trails.index')
-                ->with('success', 'Trail created successfully!');
+                ->with('success', 'Trail created successfully!')
+                ->with('new_trail_id', $trail->id)
+                ->with('new_trail_name', $trail->trail_name)
+                ->with('show_event_prompt', true);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Trail creation failed', [

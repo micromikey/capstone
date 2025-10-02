@@ -147,6 +147,30 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the user's notifications
+     */
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get the user's unread notifications
+     */
+    public function unreadNotifications()
+    {
+        return $this->hasMany(Notification::class)->unread()->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Get the count of unread notifications
+     */
+    public function unreadNotificationsCount()
+    {
+        return $this->notifications()->unread()->count();
+    }
+
+    /**
      * Get the user's assessment results
      */
     public function assessmentResults()
@@ -221,6 +245,88 @@ class User extends Authenticatable implements MustVerifyEmail
             'rejected' => 'Rejected',
             default => 'Unknown'
         };
+    }
+
+    /**
+     * Check if profile should be visible to a viewer
+     * 
+     * @param User|null $viewer The user viewing the profile (null for guests)
+     * @return bool
+     */
+    public function isProfileVisibleTo($viewer = null)
+    {
+        $preferences = $this->preferences;
+        
+        // If no preferences set, default to public
+        if (!$preferences) {
+            return true;
+        }
+        
+        $visibility = $preferences->profile_visibility ?? 'public';
+        
+        // Public profiles are visible to everyone
+        if ($visibility === 'public') {
+            return true;
+        }
+        
+        // Private profiles are only visible to the owner
+        if ($visibility === 'private') {
+            return $viewer && $viewer->id === $this->id;
+        }
+        
+        // Default to public
+        return true;
+    }
+
+    /**
+     * Check if a specific field should be shown on profile
+     * 
+     * @param string $field The field name (email, phone, location, birth_date, hiking_preferences)
+     * @param User|null $viewer The user viewing the profile (null for guests)
+     * @return bool
+     */
+    public function shouldShowField($field, $viewer = null)
+    {
+        // Owner can always see their own fields
+        if ($viewer && $viewer->id === $this->id) {
+            return true;
+        }
+        
+        // If profile is not visible, hide all fields
+        if (!$this->isProfileVisibleTo($viewer)) {
+            return false;
+        }
+        
+        $preferences = $this->preferences;
+        
+        // If no preferences, use defaults
+        if (!$preferences) {
+            $defaults = [
+                'email' => false,
+                'phone' => false,
+                'location' => true,
+                'birth_date' => false,
+                'hiking_preferences' => true,
+            ];
+            return $defaults[$field] ?? false;
+        }
+        
+        // Check the specific field preference
+        $fieldMap = [
+            'email' => 'show_email',
+            'phone' => 'show_phone',
+            'location' => 'show_location',
+            'birth_date' => 'show_birth_date',
+            'hiking_preferences' => 'show_hiking_preferences',
+        ];
+        
+        $preferenceKey = $fieldMap[$field] ?? null;
+        
+        if (!$preferenceKey) {
+            return false;
+        }
+        
+        return $preferences->{$preferenceKey} ?? false;
     }
 
     /**

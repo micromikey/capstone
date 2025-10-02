@@ -23,9 +23,13 @@
                     <div class="mb-4 md:col-span-1">
                         <label class="block text-sm font-medium text-gray-700">Trail</label>
                         <select name="trail_id" id="trail_select" class="mt-1 block w-full border border-gray-200 rounded-md shadow-sm p-2">
-                            <option value="" disabled selected>Select Trail</option>
+                            <option value="" disabled {{ !old('trail_id') && !isset($preselectedTrailId) ? 'selected' : '' }}>Select Trail</option>
                             @foreach($trails as $trail)
-                            <option value="{{ $trail->id }}" data-duration="{{ optional($trail->package)->duration }}" @if(old('trail_id')==$trail->id) selected @endif>{{ $trail->trail_name }}</option>
+                            <option value="{{ $trail->id }}" 
+                                data-duration="{{ optional($trail->package)->duration }}" 
+                                @if(old('trail_id') == $trail->id || (isset($preselectedTrailId) && $preselectedTrailId == $trail->id)) selected @endif>
+                                {{ $trail->trail_name }}
+                            </option>
                             @endforeach
                         </select>
                     </div>
@@ -318,3 +322,22 @@
             });
         })();
     </script>
+@if(isset($preselectedTrailId))
+<script>
+    // Trigger trail selection events when a trail is pre-selected
+    document.addEventListener('DOMContentLoaded', function() {
+        const trailSelect = document.getElementById('trail_select');
+        if (trailSelect && trailSelect.value) {
+            // Trigger change event to update duration preview and other dependent fields
+            trailSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            
+            // Also trigger the trail preview initialization
+            setTimeout(function() {
+                if (typeof window.initializeTrailPreview === 'function') {
+                    window.initializeTrailPreview('trail_select');
+                }
+            }, 200);
+        }
+    });
+</script>
+@endif
