@@ -254,7 +254,9 @@ git check-ignore .env
 $secretKey = env('PAYMONGO_SECRET_KEY');
 
 // ❌ BAD - Never hardcode
-$secretKey = 'sk_test_ok5EFh3sAbFbSeaBWZeJdpKM';
+```php
+$secretKey = env('PAYMONGO_SECRET_KEY');
+```
 ```
 
 ### ⚠️ Production Checklist

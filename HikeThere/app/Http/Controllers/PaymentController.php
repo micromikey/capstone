@@ -91,7 +91,11 @@ class PaymentController extends Controller
         $amountInCentavos = $validated['amount'] * 100;
 
         // ✅ Get PayMongo secret key from environment
-        $secretKey = env('PAYMONGO_SECRET_KEY', 'sk_test_ok5EFh3sAbFbSeaBWZeJdpKM');
+        $secretKey = env('PAYMONGO_SECRET_KEY');
+        
+        if (!$secretKey) {
+            return back()->with('error', 'PayMongo secret key is not configured. Please contact support.');
+        }
 
         // ✅ Call PayMongo API
         $curl = curl_init();
