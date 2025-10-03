@@ -9,7 +9,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Create Event</h2>
                 <form method="POST" action="{{ route('org.events.store') }}" class="grid grid-cols-1 md:grid-cols-2 gap-6">

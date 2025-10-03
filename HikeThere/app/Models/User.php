@@ -136,7 +136,13 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(OrganizationProfile::class);
     }
 
-
+    /**
+     * Get the organization's payment credentials
+     */
+    public function paymentCredentials()
+    {
+        return $this->hasOne(OrganizationPaymentCredential::class);
+    }
 
     /**
      * Get the user's preferences

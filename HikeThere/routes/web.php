@@ -25,6 +25,9 @@ use Illuminate\Support\Facades\Route;
 // Include Jetstream routes
 require __DIR__ . '/jetstream.php';
 
+// Local testing helper (remove in production) - MUST be outside auth middleware
+Route::get('/test/confirm-payment/{paymentId}', [App\Http\Controllers\PaymentController::class, 'testConfirmPayment'])->name('payment.test.confirm');
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -99,6 +102,9 @@ Route::middleware([
     Route::get('/hiker/booking/create', [App\Http\Controllers\Hiker\BookingController::class, 'create'])->name('booking.create');
     Route::post('/hiker/booking', [App\Http\Controllers\Hiker\BookingController::class, 'store'])->name('booking.store');
     Route::get('/hiker/booking/{booking}', [App\Http\Controllers\Hiker\BookingController::class, 'show'])->name('booking.show');
+    Route::get('/hiker/booking/{booking}/edit', [App\Http\Controllers\Hiker\BookingController::class, 'edit'])->name('booking.edit');
+    Route::patch('/hiker/booking/{booking}', [App\Http\Controllers\Hiker\BookingController::class, 'update'])->name('booking.update');
+    Route::delete('/hiker/booking/{booking}', [App\Http\Controllers\Hiker\BookingController::class, 'destroy'])->name('booking.destroy');
     Route::get('/hiker/booking/package-details', [App\Http\Controllers\Hiker\BookingController::class, 'packageDetails'])->name('package.details');
 
     // AJAX endpoint to fetch trails for an organization (only for followed orgs)
@@ -110,6 +116,16 @@ Route::middleware([
 
     // Batches API for booking form
     Route::get('/hiker/api/trail/{trail:id}/batches', [App\Http\Controllers\Hiker\BookingController::class, 'trailBatches'])->name('api.hiker.trail.batches');
+
+    // Slot availability API
+    Route::get('/api/slots/batch/{batchId}', [App\Http\Controllers\Api\SlotAvailabilityController::class, 'checkBatch'])->name('api.slots.check');
+    Route::get('/api/slots/trail/{trailId}/alternatives', [App\Http\Controllers\Api\SlotAvailabilityController::class, 'getAlternatives'])->name('api.slots.alternatives');
+
+    // Payment routes
+    Route::get('/payment/create', [App\Http\Controllers\PaymentController::class, 'create'])->name('payment.create');
+    Route::post('/payment/process', [App\Http\Controllers\PaymentController::class, 'processPayment'])->name('payment.process');
+    Route::get('/payment/success', [App\Http\Controllers\PaymentController::class, 'success'])->name('payment.success');
+    Route::post('/payment/webhook', [App\Http\Controllers\PaymentController::class, 'webhook'])->name('payment.webhook');
 
     Route::get('/hiker/itinerary/itinerary-instructions', function () {
         return view('hiker.itinerary.itinerary-instructions');
@@ -290,6 +306,14 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
     Route::get('/org/bookings', [App\Http\Controllers\OrganizationBookingController::class, 'index'])->name('org.bookings.index');
     Route::get('/org/bookings/{booking}', [App\Http\Controllers\OrganizationBookingController::class, 'show'])->name('org.bookings.show');
     Route::patch('/org/bookings/{booking}/status', [App\Http\Controllers\OrganizationBookingController::class, 'updateStatus'])->name('org.bookings.update-status');
+});
+
+// Organization Payment Setup - accessible to approved organizations
+Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])->group(function () {
+    Route::get('/org/payment', [App\Http\Controllers\OrganizationPaymentController::class, 'index'])->name('org.payment.index');
+    Route::put('/org/payment', [App\Http\Controllers\OrganizationPaymentController::class, 'update'])->name('org.payment.update');
+    Route::post('/org/payment/test', [App\Http\Controllers\OrganizationPaymentController::class, 'test'])->name('org.payment.test');
+    Route::delete('/org/payment/clear', [App\Http\Controllers\OrganizationPaymentController::class, 'clear'])->name('org.payment.clear');
 });
 
 // Organization Events management

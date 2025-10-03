@@ -51,4 +51,12 @@ class Event extends Model
     {
         return $this->hasMany(Batch::class);
     }
+
+    /**
+     * Get all bookings for this event's trail
+     */
+    public function bookings()
+    {
+        return $this->hasManyThrough(Booking::class, Trail::class, 'id', 'trail_id', 'trail_id', 'id');
+    }
 }

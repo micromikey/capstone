@@ -96,6 +96,11 @@
                             <x-dropdown-link href="{{ route('account.settings') }}">
                                 {{ __('Account Settings') }}
                             </x-dropdown-link>
+                            @if(Auth::user()->user_type === 'organization')
+                            <x-dropdown-link href="{{ route('org.payment.index') }}">
+                                {{ __('Payment Setup') }}
+                            </x-dropdown-link>
+                            @endif
 
 
 
@@ -200,6 +205,11 @@
                 <x-responsive-nav-link href="{{ route('account.settings') }}" :active="request()->routeIs('account.settings')">
                     {{ __('Account Settings') }}
                 </x-responsive-nav-link>
+                @if(Auth::user()->user_type === 'organization')
+                <x-responsive-nav-link href="{{ route('org.payment.index') }}" :active="request()->routeIs('org.payment.*')">
+                    {{ __('Payment Setup') }}
+                </x-responsive-nav-link>
+                @endif
 
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}" x-data>

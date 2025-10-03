@@ -24,6 +24,98 @@
                 </div>
             @endif
 
+            <!-- Floating Filters Sidebar -->
+            <div id="floating-filters" class="fixed top-56 left-10 z-40 transition-all duration-300 transform hidden lg:block">
+                <div class="bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/50 p-4 w-64 max-h-[calc(100vh-14rem)] overflow-y-auto">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-semibold text-gray-800 flex items-center">
+                            <svg class="w-4 h-4 mr-1.5 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                            </svg>
+                            Filters
+                        </h3>
+                        @if(request()->hasAny(['mountain', 'difficulty', 'price_min', 'price_max', 'sort_by', 'sort_order']))
+                            <a href="{{ route('org.trails.index') }}" class="text-xs text-red-600 hover:text-red-800 font-medium">Clear</a>
+                        @endif
+                    </div>
+
+                    <form method="GET" action="{{ route('org.trails.index') }}" id="trailFilterForm" class="space-y-3">
+                        <!-- Mountain Filter -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Mountain</label>
+                            <select name="mountain" onchange="this.form.submit()" class="w-full border-gray-300 rounded-md shadow-sm focus:border-[#336d66] focus:ring focus:ring-[#336d66] focus:ring-opacity-50 text-xs py-1.5">
+                                <option value="">All Mountains</option>
+                                @foreach($mountains as $mountain)
+                                    <option value="{{ $mountain }}" {{ request('mountain') == $mountain ? 'selected' : '' }}>{{ $mountain }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Difficulty Filter -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Difficulty</label>
+                            <select name="difficulty" onchange="this.form.submit()" class="w-full border-gray-300 rounded-md shadow-sm focus:border-[#336d66] focus:ring focus:ring-[#336d66] focus:ring-opacity-50 text-xs py-1.5">
+                                <option value="">All Difficulties</option>
+                                <option value="beginner" {{ request('difficulty') == 'beginner' ? 'selected' : '' }}>Beginner</option>
+                                <option value="intermediate" {{ request('difficulty') == 'intermediate' ? 'selected' : '' }}>Intermediate</option>
+                                <option value="advanced" {{ request('difficulty') == 'advanced' ? 'selected' : '' }}>Advanced</option>
+                            </select>
+                        </div>
+
+                        <!-- Price Range -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Price (₱)</label>
+                            <div class="space-y-1.5">
+                                <input type="number" name="price_min" placeholder="Min" value="{{ request('price_min') }}" onchange="this.form.submit()" class="w-full border-gray-300 rounded-md shadow-sm focus:border-[#336d66] focus:ring focus:ring-[#336d66] focus:ring-opacity-50 text-xs py-1.5">
+                                <input type="number" name="price_max" placeholder="Max" value="{{ request('price_max') }}" onchange="this.form.submit()" class="w-full border-gray-300 rounded-md shadow-sm focus:border-[#336d66] focus:ring focus:ring-[#336d66] focus:ring-opacity-50 text-xs py-1.5">
+                            </div>
+                        </div>
+
+                        <hr class="my-3 border-gray-200">
+
+                        <!-- Sort By -->
+                        <div>
+                            <label class="flex items-center text-xs font-medium text-gray-700 mb-1">
+                                <svg class="w-3 h-3 mr-1 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                                </svg>
+                                Sort By
+                            </label>
+                            <select name="sort_by" onchange="this.form.submit()" class="w-full border-gray-300 rounded-md shadow-sm focus:border-[#336d66] focus:ring focus:ring-[#336d66] focus:ring-opacity-50 text-xs py-1.5">
+                                <option value="created_at" {{ request('sort_by') == 'created_at' ? 'selected' : '' }}>Date Added</option>
+                                <option value="updated_at" {{ request('sort_by') == 'updated_at' ? 'selected' : '' }}>Date Modified</option>
+                                <option value="popularity" {{ request('sort_by') == 'popularity' ? 'selected' : '' }}>Popularity</option>
+                                <option value="price" {{ request('sort_by') == 'price' ? 'selected' : '' }}>Price</option>
+                                <option value="length" {{ request('sort_by') == 'length' ? 'selected' : '' }}>Length</option>
+                                <option value="name" {{ request('sort_by') == 'name' ? 'selected' : '' }}>Name</option>
+                            </select>
+                        </div>
+
+                        <!-- Sort Direction -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Order</label>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <button type="submit" name="sort_order" value="asc" class="flex items-center justify-center px-2 py-1.5 text-xs font-medium rounded-md transition-colors {{ request('sort_order') == 'asc' ? 'bg-[#336d66] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                    <svg class="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                    </svg>
+                                    Asc
+                                </button>
+                                <button type="submit" name="sort_order" value="desc" class="flex items-center justify-center px-2 py-1.5 text-xs font-medium rounded-md transition-colors {{ request('sort_order', 'desc') == 'desc' ? 'bg-[#336d66] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                    <svg class="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                    Desc
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Hidden inputs to preserve other sort parameters -->
+                        <input type="hidden" name="sort_by" value="{{ request('sort_by', 'created_at') }}">
+                    </form>
+                </div>
+            </div>
+
             <!-- Trail Stats -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
@@ -248,6 +340,7 @@
             @endif
         </div>
     </div>
+</div>
 
     <!-- Create Event Modal -->
     @if(session('show_event_prompt'))

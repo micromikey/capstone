@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-5xl mx-auto py-8">
+<div class="max-w-7xl mx-auto py-8">
     <h1 class="text-2xl font-bold mb-6">Locations</h1>
     <div class="mb-4 flex justify-end">
         <a href="{{ route('org.trails.create') }}" class="text-sm text-[#336d66] hover:underline">Back to Create Trail</a>

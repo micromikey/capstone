@@ -10,7 +10,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             @if(session('success'))
                 <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">{{ session('success') }}</div>
             @endif
@@ -26,6 +26,37 @@
                             <div><strong>Date:</strong> {{ $booking->date }}</div>
                             <div><strong>Party Size:</strong> {{ $booking->party_size }}</div>
                             <div><strong>Notes:</strong> {{ $booking->notes ?? '-' }}</div>
+                        </div>
+
+                        <!-- Payment Information -->
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <h4 class="text-md font-semibold mb-3">Payment Information</h4>
+                            <div class="bg-gray-50 p-4 rounded">
+                                <div class="grid grid-cols-1 gap-2 text-sm">
+                                    <div><strong>Amount:</strong> ₱{{ number_format($booking->price_cents / 100, 2) }}</div>
+                                    @if($booking->payment)
+                                        <div><strong>Payment Status:</strong> 
+                                            @if($booking->payment->isPaid())
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Paid</span>
+                                            @elseif($booking->payment->isPending())
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                                            @else
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">{{ ucfirst($booking->payment->payment_status) }}</span>
+                                            @endif
+                                        </div>
+                                        @if($booking->payment->isPaid() && $booking->payment->paid_at)
+                                            <div><strong>Paid At:</strong> {{ $booking->payment->paid_at->format('M d, Y h:i A') }}</div>
+                                        @endif
+                                        @if($booking->payment->paymongo_payment_id)
+                                            <div><strong>Payment ID:</strong> <span class="text-xs font-mono">{{ $booking->payment->paymongo_payment_id }}</span></div>
+                                        @endif
+                                    @else
+                                        <div><strong>Payment Status:</strong> 
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">No Payment Record</span>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
                         </div>
                     </div>
 

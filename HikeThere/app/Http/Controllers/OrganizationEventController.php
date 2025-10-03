@@ -8,10 +8,50 @@ use Illuminate\Support\Facades\Auth;
 
 class OrganizationEventController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $events = Event::where('user_id', Auth::id())->orderBy('start_at','desc')->paginate(12);
-        return view('org.events.index', compact('events'));
+        $query = Event::where('user_id', Auth::id())->with(['trail']);
+
+        // Filter by mountain
+        if ($request->filled('mountain')) {
+            $query->whereHas('trail', function($q) use ($request) {
+                $q->where('mountain_name', 'like', '%' . $request->mountain . '%');
+            });
+        }
+
+        // Sorting
+        $sortBy = $request->get('sort_by', 'start_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+
+        switch ($sortBy) {
+            case 'date':
+                $query->orderBy('start_at', $sortOrder);
+                break;
+            case 'popularity':
+                $query->withCount('bookings')
+                    ->orderBy('bookings_count', $sortOrder);
+                break;
+            case 'created_at':
+                $query->orderBy('created_at', $sortOrder);
+                break;
+            case 'updated_at':
+                $query->orderBy('updated_at', $sortOrder);
+                break;
+            default:
+                $query->orderBy('start_at', $sortOrder);
+        }
+
+        $events = $query->paginate(12)->appends($request->query());
+
+        // Get unique mountains for filter dropdown
+        $mountains = Event::where('events.user_id', Auth::id())
+            ->join('trails', 'events.trail_id', '=', 'trails.id')
+            ->select('trails.mountain_name')
+            ->distinct()
+            ->whereNotNull('trails.mountain_name')
+            ->pluck('trails.mountain_name');
+
+        return view('org.events.index', compact('events', 'mountains'));
     }
 
     public function create(Request $request)

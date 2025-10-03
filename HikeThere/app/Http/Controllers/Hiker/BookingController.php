@@ -189,23 +189,46 @@ class BookingController extends Controller
                 return back()->withInput()->withErrors(['batch_id' => 'Selected batch no longer exists.']);
             }
 
-            // Sum existing confirmed bookings' party_size for accurate capacity usage
-            $currentSpots = Booking::where('batch_id', $lockedBatch->id)
-                ->where('status', '!=', 'cancelled')
-                ->sum('party_size');
-
             $requested = intval($data['party_size'] ?? 1);
-            $available = intval($lockedBatch->capacity ?? 0) - intval($currentSpots);
-
-            if ($requested > $available) {
+            
+            // Check if batch has enough available slots using the new slot management system
+            if (!$lockedBatch->hasAvailableSlots($requested)) {
                 DB::rollBack();
-                return back()->withInput()->withErrors(['batch_id' => 'Selected batch does not have enough available spots. Try a different slot or reduce party size.']);
+                
+                $availableSlots = $lockedBatch->getAvailableSlots();
+                
+                // Suggest alternative dates if this batch is full
+                $alternativeBatches = Batch::where('trail_id', $lockedBatch->trail_id)
+                    ->where('id', '!=', $lockedBatch->id)
+                    ->where('starts_at', '>', now())
+                    ->get()
+                    ->filter(function($batch) use ($requested) {
+                        return $batch->hasAvailableSlots($requested);
+                    })
+                    ->take(3);
+                
+                $errorMessage = $availableSlots > 0 
+                    ? "Only {$availableSlots} slot(s) available. You requested {$requested}."
+                    : "This date is fully booked (0 slots available).";
+                
+                if ($alternativeBatches->isNotEmpty()) {
+                    $dates = $alternativeBatches->map(fn($b) => $b->starts_at->format('M d, Y'))->implode(', ');
+                    $errorMessage .= " Try these dates with available slots: {$dates}";
+                }
+                
+                return back()->withInput()->withErrors(['batch_id' => $errorMessage]);
             }
 
             // create the booking while still in the transaction
             $data['batch_id'] = $lockedBatch->id;
             $data['user_id'] = Auth::id();
-            $data['status'] = 'confirmed';
+            $data['status'] = 'pending'; // Changed from 'confirmed' - only confirm after payment
+            
+            // Calculate price_cents: trail price × party size (converted to cents)
+            $trail = Trail::with('package')->find($data['trail_id']);
+            if ($trail && $trail->price) {
+                $data['price_cents'] = (int) ($trail->price * $data['party_size'] * 100);
+            }
 
             // If an event_id was supplied, ensure the event exists and matches the trail_id
             if (!empty($data['event_id'])) {
@@ -224,6 +247,9 @@ class BookingController extends Controller
 
             $booking = Booking::create($data);
 
+            // NOTE: Slots are NOT reserved yet - only reserved after successful payment
+            // This prevents holding slots for unpaid bookings
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
@@ -231,7 +257,10 @@ class BookingController extends Controller
             return back()->withInput()->withErrors(['batch_id' => 'Unable to create booking at this time. Please try again.']);
         }
 
-        return redirect()->route('booking.show', $booking)->with('success', 'Booking created.');
+        // Redirect to payment page with booking details pre-filled
+        return redirect()->route('payment.create', [
+            'booking_id' => $booking->id,
+        ])->with('success', 'Booking created! Please complete payment to confirm your reservation.');
     }
 
     public function show(Booking $booking)
@@ -241,6 +270,78 @@ class BookingController extends Controller
         $booking->load('trail', 'user');
 
         return view('hiker.booking.show', compact('booking'));
+    }
+
+    /**
+     * Show the form for editing a booking
+     */
+    public function edit(Booking $booking)
+    {
+        $this->authorize('update', $booking);
+
+        // Only allow editing if booking is not confirmed and payment is not made
+        if ($booking->status === 'confirmed' && $booking->isPaid()) {
+            return redirect()->route('booking.show', $booking)
+                ->with('error', 'Cannot edit a confirmed and paid booking. Please contact support if you need to make changes.');
+        }
+
+        // Only allow editing if the event hasn't started yet
+        if ($booking->batch && $booking->batch->starts_at <= now()) {
+            return redirect()->route('booking.show', $booking)
+                ->with('error', 'Cannot edit a booking for an event that has already started.');
+        }
+
+        $booking->load(['trail.package', 'batch']);
+
+        return view('hiker.booking.edit', compact('booking'));
+    }
+
+    /**
+     * Update the specified booking
+     */
+    public function update(Request $request, Booking $booking)
+    {
+        $this->authorize('update', $booking);
+
+        // Only allow updating if booking is not confirmed and paid
+        if ($booking->status === 'confirmed' && $booking->isPaid()) {
+            return back()->with('error', 'Cannot update a confirmed and paid booking.');
+        }
+
+        // Only allow updating if the event hasn't started yet
+        if ($booking->batch && $booking->batch->starts_at <= now()) {
+            return back()->with('error', 'Cannot update a booking for an event that has already started.');
+        }
+
+        $validated = $request->validate([
+            'date' => 'required|date|after:today',
+            'party_size' => 'required|integer|min:1|max:50',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $booking->update($validated);
+
+        return redirect()->route('booking.show', $booking)
+            ->with('success', 'Booking updated successfully!');
+    }
+
+    /**
+     * Cancel/delete a booking
+     */
+    public function destroy(Booking $booking)
+    {
+        $this->authorize('delete', $booking);
+
+        // Check if booking can be cancelled
+        if (!$booking->canBeCancelled()) {
+            return back()->with('error', 'This booking cannot be cancelled.');
+        }
+
+        // Cancel the booking (this will also release slots if confirmed)
+        $booking->cancel();
+
+        return redirect()->route('booking.index')
+            ->with('success', 'Booking cancelled successfully. Slots have been released.');
     }
 
     public function packageDetails()
@@ -471,7 +572,6 @@ class BookingController extends Controller
         $datedEventIds = $datedEvents->pluck('id')->toArray();
         $query = Batch::where('trail_id', $trail->id)->whereNotNull('event_id')
             ->with('event')
-            ->withCount(['bookings as booked_count' => function($q){ $q->where('status','!=','cancelled'); }])
             ->whereIn('event_id', $datedEventIds);
 
         if (!empty($target)) {
@@ -491,7 +591,8 @@ class BookingController extends Controller
     Log::info('trailBatches: batches fetched', ['trail_id' => $trail->id, 'batches_count' => $batchesRaw->count(), 'dated_event_ids' => $datedEventIds ?? []]);
 
         $batches = $batchesRaw->map(function($b){
-            $remaining = max(0, ($b->capacity ?? 0) - ($b->booked_count ?? 0));
+            // Use the slots_taken field from the Batch model for accurate slot tracking
+            $remaining = $b->getAvailableSlots(); // This uses: capacity - slots_taken
 
             $starts = $b->starts_at ? Carbon::parse($b->starts_at)->setTimezone('Asia/Manila') : null;
             $ends = $b->ends_at ? Carbon::parse($b->ends_at)->setTimezone('Asia/Manila') : null;

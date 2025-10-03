@@ -19,14 +19,71 @@ use App\Models\TrailPackage;
 
 class OrganizationTrailController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $trails = Trail::where('user_id', Auth::id())
-            ->with(['location'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $query = Trail::where('user_id', Auth::id())
+            ->with(['location', 'package']);
 
-        return view('org.trails.index', compact('trails'));
+        // Filters
+        if ($request->filled('mountain')) {
+            $query->where('mountain_name', 'like', '%' . $request->mountain . '%');
+        }
+
+        if ($request->filled('difficulty')) {
+            $query->where('difficulty', $request->difficulty);
+        }
+
+        if ($request->filled('price_min') || $request->filled('price_max')) {
+            $query->whereHas('package', function($q) use ($request) {
+                if ($request->filled('price_min')) {
+                    $q->where('price', '>=', $request->price_min);
+                }
+                if ($request->filled('price_max')) {
+                    $q->where('price', '<=', $request->price_max);
+                }
+            });
+        }
+
+        // Sorting
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+
+        switch ($sortBy) {
+            case 'popularity':
+                $query->withCount('reviews')
+                    ->orderBy('reviews_count', $sortOrder);
+                break;
+            case 'price':
+                $query->leftJoin('trail_packages', 'trails.id', '=', 'trail_packages.trail_id')
+                    ->orderBy('trail_packages.price', $sortOrder)
+                    ->select('trails.*');
+                break;
+            case 'length':
+                $query->orderBy('length', $sortOrder);
+                break;
+            case 'name':
+                $query->orderBy('trail_name', $sortOrder);
+                break;
+            case 'created_at':
+                $query->orderBy('created_at', $sortOrder);
+                break;
+            case 'updated_at':
+                $query->orderBy('updated_at', $sortOrder);
+                break;
+            default:
+                $query->orderBy('created_at', $sortOrder);
+        }
+
+        $trails = $query->paginate(10)->appends($request->query());
+
+        // Get unique mountains for filter dropdown
+        $mountains = Trail::where('user_id', Auth::id())
+            ->select('mountain_name')
+            ->distinct()
+            ->whereNotNull('mountain_name')
+            ->pluck('mountain_name');
+
+        return view('org.trails.index', compact('trails', 'mountains'));
     }
 
     public function create()

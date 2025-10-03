@@ -86,7 +86,10 @@
                             </label>
                             @php $today = \Carbon\Carbon::now()->toDateString(); @endphp
                             <div class="relative">
-                                <input type="date" name="date" min="{{ $today }}" value="{{ old('date') }}" class="block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-gray-900 font-medium" />
+                                <input type="date" id="date_input" name="date" min="{{ $today }}" value="{{ old('date') }}" class="block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-gray-900 font-medium" />
+                            </div>
+                            <div id="date_status_indicator" class="mt-2 hidden">
+                                <!-- Will be populated dynamically -->
                             </div>
                         </div>
                         <div>
@@ -125,7 +128,7 @@
                                 </svg>
                             </div>
                         </div>
-                        <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div id="slot_selection_info" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg transition-all duration-300">
                             <div class="flex items-start">
                                 <div class="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mr-2">
                                     <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -492,21 +495,99 @@
                             
                             // Populate batch dropdown with dated slots
                             batchSelect.innerHTML = '<option value="" disabled selected>Select time slot</option>';
-                            datedSlots.forEach(slot => {
-                                if ((slot.remaining ?? 0) > 0) {
-                                    const opt = document.createElement('option');
-                                    opt.value = slot.type === 'batch' ? slot.id : ''; // Only batches have IDs we can use
-                                    opt.textContent = slot.slot_label || `${slot.name} (${slot.remaining} spots left)`;
-                                    opt.dataset.remaining = slot.remaining || 0;
-                                    
-                                    // If this is an event slot, we need to handle it differently
-                                    if (slot.type === 'event') {
-                                        opt.dataset.eventId = slot.event_id;
-                                    }
-                                    
-                                    batchSelect.appendChild(opt);
+                            
+                            // Check if all slots are full
+                            const hasAvailableSlots = datedSlots.some(slot => (slot.remaining ?? 0) > 0);
+                            const dateStatusIndicator = document.getElementById('date_status_indicator');
+                            
+                            if (!hasAvailableSlots && datedSlots.length > 0) {
+                                // All slots are fully booked for this date
+                                batchSelect.innerHTML = '<option value="" disabled selected>⛔ All slots fully booked for this date</option>';
+                                batchSelect.disabled = true;
+                                batchSelect.classList.add('bg-red-50', 'border-red-300', 'text-red-700');
+                                
+                                // Show date unavailable indicator
+                                if (dateStatusIndicator) {
+                                    dateStatusIndicator.classList.remove('hidden');
+                                    dateStatusIndicator.innerHTML = `
+                                        <div class="flex items-center p-3 bg-red-50 border border-red-300 rounded-lg">
+                                            <svg class="w-5 h-5 text-red-600 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            <span class="text-sm font-semibold text-red-800">Fully Booked (0 spots remaining)</span>
+                                        </div>
+                                    `;
                                 }
-                            });
+                                
+                                // Show unavailable notice
+                                const slotInfoEl = document.getElementById('slot_selection_info');
+                                if (slotInfoEl) {
+                                    slotInfoEl.classList.remove('hidden', 'bg-blue-50', 'border-blue-200');
+                                    slotInfoEl.classList.add('bg-red-50', 'border-red-300');
+                                    const helpText = slotInfoEl.querySelector('p');
+                                    if (helpText) {
+                                        helpText.innerHTML = `
+                                            <span class="text-red-800 font-semibold">⛔ This date is fully booked!</span><br/>
+                                            <span class="text-red-700">All slots have reached maximum capacity (0 spots remaining). Please select a different date to see available options.</span>
+                                        `;
+                                    }
+                                }
+                            } else {
+                                // Reset styles
+                                batchSelect.disabled = false;
+                                batchSelect.classList.remove('bg-red-50', 'border-red-300', 'text-red-700');
+                                
+                                // Show date available indicator
+                                if (dateStatusIndicator && hasAvailableSlots) {
+                                    dateStatusIndicator.classList.remove('hidden');
+                                    const totalAvailable = datedSlots.reduce((sum, slot) => sum + (slot.remaining ?? 0), 0);
+                                    dateStatusIndicator.innerHTML = `
+                                        <div class="flex items-center p-3 bg-green-50 border border-green-300 rounded-lg">
+                                            <svg class="w-5 h-5 text-green-600 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            <span class="text-sm font-semibold text-green-800">Available (${totalAvailable} spots remaining)</span>
+                                        </div>
+                                    `;
+                                } else if (dateStatusIndicator) {
+                                    dateStatusIndicator.classList.add('hidden');
+                                }
+                                
+                                // Re-enable the info box
+                                const slotInfoEl = document.getElementById('slot_selection_info');
+                                if (slotInfoEl) {
+                                    slotInfoEl.classList.remove('bg-red-50', 'border-red-300');
+                                    slotInfoEl.classList.add('bg-blue-50', 'border-blue-200');
+                                    const helpText = slotInfoEl.querySelector('p');
+                                    if (helpText) {
+                                        helpText.innerHTML = 'Remaining spots will be shown per slot. If a slot is full it will be listed as unavailable.';
+                                    }
+                                }
+                                
+                                // Add available slots to dropdown
+                                datedSlots.forEach(slot => {
+                                    const remaining = slot.remaining ?? 0;
+                                    
+                                    if (remaining > 0) {
+                                        // Available slot - show normally
+                                        const opt = document.createElement('option');
+                                        opt.value = slot.type === 'batch' ? slot.id : '';
+                                        opt.textContent = slot.slot_label || `${slot.name} (${remaining} spots left)`;
+                                        opt.dataset.remaining = remaining;
+                                        
+                                        if (slot.type === 'event') {
+                                            opt.dataset.eventId = slot.event_id;
+                                        }
+                                        
+                                        batchSelect.appendChild(opt);
+                                    }
+                                });
+                                
+                                // If no available slots were added, show message
+                                if (batchSelect.options.length === 1) {
+                                    batchSelect.innerHTML += '<option value="" disabled>No available slots for this date</option>';
+                                }
+                            }
                         }
                         
                         batchSelect.dispatchEvent(new Event('change'));
