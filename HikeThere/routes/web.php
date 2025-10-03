@@ -102,6 +102,8 @@ Route::middleware([
     Route::get('/hiker/booking/create', [App\Http\Controllers\Hiker\BookingController::class, 'create'])->name('booking.create');
     Route::post('/hiker/booking', [App\Http\Controllers\Hiker\BookingController::class, 'store'])->name('booking.store');
     Route::get('/hiker/booking/{booking}', [App\Http\Controllers\Hiker\BookingController::class, 'show'])->name('booking.show');
+    Route::get('/hiker/booking/{booking}/payment', [App\Http\Controllers\Hiker\BookingController::class, 'showPayment'])->name('booking.payment');
+    Route::post('/hiker/booking/{booking}/payment', [App\Http\Controllers\Hiker\BookingController::class, 'submitPayment'])->name('booking.payment.submit');
     Route::get('/hiker/booking/{booking}/edit', [App\Http\Controllers\Hiker\BookingController::class, 'edit'])->name('booking.edit');
     Route::patch('/hiker/booking/{booking}', [App\Http\Controllers\Hiker\BookingController::class, 'update'])->name('booking.update');
     Route::delete('/hiker/booking/{booking}', [App\Http\Controllers\Hiker\BookingController::class, 'destroy'])->name('booking.destroy');
@@ -306,12 +308,18 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
     Route::get('/org/bookings', [App\Http\Controllers\OrganizationBookingController::class, 'index'])->name('org.bookings.index');
     Route::get('/org/bookings/{booking}', [App\Http\Controllers\OrganizationBookingController::class, 'show'])->name('org.bookings.show');
     Route::patch('/org/bookings/{booking}/status', [App\Http\Controllers\OrganizationBookingController::class, 'updateStatus'])->name('org.bookings.update-status');
+    
+    // Manual payment verification
+    Route::post('/org/bookings/{booking}/verify-payment', [App\Http\Controllers\OrganizationBookingController::class, 'verifyPayment'])->name('org.bookings.verify-payment');
+    Route::post('/org/bookings/{booking}/reject-payment', [App\Http\Controllers\OrganizationBookingController::class, 'rejectPayment'])->name('org.bookings.reject-payment');
 });
 
 // Organization Payment Setup - accessible to approved organizations
 Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])->group(function () {
     Route::get('/org/payment', [App\Http\Controllers\OrganizationPaymentController::class, 'index'])->name('org.payment.index');
     Route::put('/org/payment', [App\Http\Controllers\OrganizationPaymentController::class, 'update'])->name('org.payment.update');
+    Route::put('/org/payment/manual', [App\Http\Controllers\OrganizationPaymentController::class, 'updateManual'])->name('org.payment.update-manual');
+    Route::put('/org/payment/toggle-method', [App\Http\Controllers\OrganizationPaymentController::class, 'togglePaymentMethod'])->name('org.payment.toggle-method');
     Route::post('/org/payment/test', [App\Http\Controllers\OrganizationPaymentController::class, 'test'])->name('org.payment.test');
     Route::delete('/org/payment/clear', [App\Http\Controllers\OrganizationPaymentController::class, 'clear'])->name('org.payment.clear');
 });
@@ -368,6 +376,7 @@ Route::get('/trails/{trail}/is-favorited', [App\Http\Controllers\Api\TrailFavori
 
 // Public AJAX routes for trail information
 Route::get('/api/trails/{trail}', [App\Http\Controllers\Api\TrailController::class, 'show'])->name('api.trails.show');
+Route::get('/api/trail/{trail}/payment-method', [App\Http\Controllers\Api\TrailController::class, 'getPaymentMethod'])->name('api.trail.payment-method');
 
 // Enhanced Map routes (temporarily public for testing)
 Route::get('/map', [MapController::class, 'index'])->name('map.index');

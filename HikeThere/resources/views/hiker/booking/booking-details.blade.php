@@ -9,7 +9,26 @@
             <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-8 max-w-7xl mx-auto transform hover:shadow-2xl transition-all duration-300">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                     <div class="md:col-span-1">
-                        <form id="booking-form" action="{{ route('booking.store') }}" method="POST" class="space-y-4">
+                        {{-- Display general errors at the top --}}
+                        @if($errors->any())
+                            <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg">
+                                <div class="flex items-start">
+                                    <svg class="w-5 h-5 text-red-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <div class="flex-1">
+                                        <h3 class="text-red-800 font-semibold mb-2">There were some errors with your booking:</h3>
+                                        <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
+                                            @foreach($errors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
+                        <form id="booking-form" action="{{ route('booking.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                     @csrf
                     {{-- Prefill event association (optional) --}}
                     @if(!empty($prefill['event_id'] ?? null))
@@ -232,6 +251,8 @@
                         </div>
                     </div>
 
+                    <!-- Removed Payment Section - Now handled after booking creation -->
+
                     <div class="flex items-center justify-start pt-6 border-t border-gray-200">
                         <a href="{{ route('booking.index') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors duration-200">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,7 +323,7 @@
         </div>
     </div>
     <script>
-        (function(){
+        document.addEventListener('DOMContentLoaded', function() {
             const defaultTrailImage = '{{ asset("img/default-trail.jpg") }}';
             const orgSelect = document.getElementById('organization_select');
             const trailSelect = document.getElementById('trail_select');
@@ -317,17 +338,57 @@
             const slotInfoEl = document.getElementById('slot_selection_info');
             if (slotInfoEl) slotInfoEl.classList.add('hidden');
 
-                    orgSelect?.addEventListener('change', async function(){
-                        const orgId = this.value;
-                // clear previous trails; insert a disabled placeholder so users must pick a trail
-                trailSelect.innerHTML = '<option value="" disabled selected>Select trail</option>';
+            // Set up organization change handler
+            if (orgSelect) {
+                orgSelect.addEventListener('change', async function(){
+                    const orgId = this.value;
+                    console.log('Organization changed:', orgId);
+                    
+                    // clear previous trails; insert a disabled placeholder so users must pick a trail
+                    trailSelect.innerHTML = '<option value="" disabled selected>Select trail</option>';
 
-                if (!orgId) return;
+                    if (!orgId) return;
 
-                try {
-                    const res = await fetch(`{{ url('/') }}/hiker/api/organization/${orgId}/trails`, {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
-                    });
+                    try {
+                        const res = await fetch(`{{ url('/') }}/hiker/api/organization/${orgId}/trails`, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                        });
+
+                        if (!res.ok) {
+                            console.error('Failed to fetch trails');
+                            return;
+                        }
+
+                        const trails = await res.json();
+                        console.log('Trails fetched:', trails.length);
+                        
+                        // Populate trail select with fetched trails
+                        trails.forEach(trail => {
+                            const option = document.createElement('option');
+                            option.value = trail.id;
+                            option.textContent = trail.trail_name;
+                            trailSelect.appendChild(option);
+                        });
+
+                        // Trigger prefill trail selection if needed
+                        const pre = window.BOOKING_PREFILL || null;
+                        if (pre && pre.trail_id) {
+                            console.log('Looking for trail:', pre.trail_id);
+                            const opt = Array.from(trailSelect.options).find(o => o.value == pre.trail_id);
+                            if (opt) {
+                                console.log('Trail found, selecting:', opt.textContent);
+                                trailSelect.value = opt.value;
+                                trailSelect.dispatchEvent(new Event('change'));
+                            } else {
+                                console.warn('Trail not found in options:', pre.trail_id);
+                            }
+                        }
+
+                    } catch (error) {
+                        console.error('Error fetching trails:', error);
+                    }
+                });
+            }
 
                     // When trail selection changes, fetch package preview
             const packagePreview = document.getElementById('trail_package_preview');
@@ -622,19 +683,32 @@
                         }
                     }
                 });
-                    if (!res.ok) throw new Error('Failed to load');
-                    const trails = await res.json();
-                    trails.forEach(t => {
-                        const opt = document.createElement('option');
-                        opt.value = t.id;
-                        opt.textContent = t.trail_name || t.name || 'Trail';
-                        trailSelect.appendChild(opt);
-                    });
-                } catch (err) {
-                    console.error(err);
+
+            // Apply prefill if provided
+            const pre = window.BOOKING_PREFILL || null;
+            if (pre) {
+                console.log('Applying prefill:', pre);
+                
+                // If organization_id provided, select it and trigger change to load trails
+                if (pre.organization_id && orgSelect) {
+                    const opt = Array.from(orgSelect.options).find(o => o.value == pre.organization_id);
+                    if (opt) {
+                        console.log('Setting organization to:', pre.organization_id);
+                        orgSelect.value = opt.value;
+                        // Trigger change - this will also handle trail selection
+                        orgSelect.dispatchEvent(new Event('change'));
+                    }
                 }
-            });
-        })();
+
+                // Set date if provided
+                if (pre.date && dateInput) {
+                    setTimeout(() => {
+                        dateInput.value = pre.date;
+                        dateInput.dispatchEvent(new Event('change'));
+                    }, 500);
+                }
+            }
+        });
     </script>
             <script>
                 // Initialize shared preview (if the compiled assets expose it). Use safe call to handle attach timing.
@@ -651,56 +725,32 @@
                     }
                 })();
 
-                // Auto-apply prefill when provided
-                (function(){
-                    const pre = window.BOOKING_PREFILL || null;
-                    if (!pre) return;
-
-                    document.addEventListener('DOMContentLoaded', async function(){
-                        try {
-                            const orgSelect = document.getElementById('organization_select');
-                            const trailSelect = document.getElementById('trail_select');
-                            const dateInput = document.querySelector('input[name="date"]');
-
-                            // If organization_id provided, select it and trigger change to load trails
-                            if (pre.organization_id && orgSelect) {
-                                const opt = Array.from(orgSelect.options).find(o => o.value == pre.organization_id);
-                                if (opt) {
-                                    orgSelect.value = opt.value;
-                                    orgSelect.dispatchEvent(new Event('change'));
-                                }
+                // Form validation before submission
+                (function() {
+                    const form = document.getElementById('booking-form');
+                    if (form) {
+                        form.addEventListener('submit', function(e) {
+                            const trailId = document.getElementById('trail_select')?.value;
+                            const partySize = document.querySelector('input[name="party_size"]')?.value;
+                            const date = document.querySelector('input[name="date"]')?.value;
+                            const batchId = document.getElementById('batch_select')?.value;
+                            const eventId = document.querySelector('input[name="event_id"]')?.value;
+                            
+                            console.log('Form submission data:', {
+                                trail_id: trailId,
+                                party_size: partySize,
+                                date: date,
+                                batch_id: batchId,
+                                event_id: eventId
+                            });
+                            
+                            if (!trailId) {
+                                e.preventDefault();
+                                alert('Please select a trail before creating a booking.');
+                                return false;
                             }
-
-                            // Wait a short time for trails to load
-                            if (pre.trail_id && trailSelect) {
-                                // poll for trail option
-                                const pickOption = () => {
-                                    const opt = Array.from(trailSelect.options).find(o => o.value == pre.trail_id);
-                                    if (opt) {
-                                        trailSelect.value = opt.value;
-                                        trailSelect.dispatchEvent(new Event('change'));
-                                        return true;
-                                    }
-                                    return false;
-                                };
-
-                                // try for up to ~2s
-                                let attempts = 0;
-                                while(attempts < 40) {
-                                    if (pickOption()) break;
-                                    await new Promise(r => setTimeout(r, 50));
-                                    attempts++;
-                                }
-                            }
-
-                            if (pre.date && dateInput) {
-                                dateInput.value = pre.date;
-                                dateInput.dispatchEvent(new Event('change'));
-                            }
-                        } catch (err) {
-                            console.error('Failed to apply booking prefill', err);
-                        }
-                    });
+                        });
+                    }
                 })();
             </script>
 </x-app-layout>

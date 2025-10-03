@@ -19,6 +19,13 @@ class Booking extends Model
         'status',
         'notes',
         'price_cents',
+        'payment_proof_path',
+        'transaction_number',
+        'payment_notes',
+        'payment_status',
+        'payment_method_used',
+        'payment_verified_at',
+        'payment_verified_by',
     ];
 
     public function user()
@@ -125,5 +132,73 @@ class Booking extends Model
         }
         
         return true;
+    }
+
+    /**
+     * Check if booking uses manual payment
+     */
+    public function usesManualPayment(): bool
+    {
+        return $this->payment_method_used === 'manual';
+    }
+
+    /**
+     * Check if payment is pending verification
+     */
+    public function isPaymentPendingVerification(): bool
+    {
+        return $this->usesManualPayment() && $this->payment_status === 'pending';
+    }
+
+    /**
+     * Check if payment has been verified
+     */
+    public function isPaymentVerified(): bool
+    {
+        return $this->usesManualPayment() && $this->payment_status === 'verified';
+    }
+
+    /**
+     * Check if payment was rejected
+     */
+    public function isPaymentRejected(): bool
+    {
+        return $this->usesManualPayment() && $this->payment_status === 'rejected';
+    }
+
+    /**
+     * Get the organization that owns this booking's trail
+     */
+    public function organization()
+    {
+        return $this->trail ? $this->trail->organization() : null;
+    }
+
+    /**
+     * Verify payment (mark as verified by organization)
+     */
+    public function verifyPayment($verifiedBy): void
+    {
+        $this->update([
+            'payment_status' => 'verified',
+            'payment_verified_at' => now(),
+            'payment_verified_by' => $verifiedBy,
+            'status' => 'confirmed', // Confirm the booking
+        ]);
+
+        // Reserve slots now that payment is verified
+        if ($this->batch) {
+            $this->batch->reserveSlots($this->party_size);
+        }
+    }
+
+    /**
+     * Reject payment (mark as rejected by organization)
+     */
+    public function rejectPayment(): void
+    {
+        $this->update([
+            'payment_status' => 'rejected',
+        ]);
     }
 }

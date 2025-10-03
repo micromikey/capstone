@@ -57,13 +57,21 @@
                                 $isCancelled = $booking->status === 'cancelled';
                                 $bookingDate = $booking->date ? \Carbon\Carbon::parse($booking->date) : null;
                                 $isCompleted = $isConfirmed && $bookingDate && $bookingDate->isPast();
-                                $paymentStatus = $booking->payment?->payment_status ?? 'unpaid';
-                                $isPaid = $paymentStatus === 'paid';
+                                
+                                // Check payment status
+                                $paymentStatus = $booking->payment_status ?? 'pending';
+                                $isPaymentVerified = $paymentStatus === 'verified';
+                                $isPaymentPending = $paymentStatus === 'pending';
+                                $isPaymentRejected = $paymentStatus === 'rejected';
+                                
+                                // Check if manual payment proof was uploaded (means under verification)
+                                $hasPaymentProof = !empty($booking->payment_proof_path);
+                                $isUnderVerification = $isPaymentPending && $hasPaymentProof;
                             @endphp
 
-                            <div class="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 group">
+                            <div class="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 group flex flex-col h-full">
                                 <!-- Trail Image Header -->
-                                <div class="relative h-48 overflow-hidden bg-gradient-to-br from-emerald-400 to-blue-500">
+                                <div class="relative h-48 overflow-hidden bg-gradient-to-br from-emerald-400 to-blue-500 flex-shrink-0">
                                     @if($booking->trail?->image_url)
                                         <img src="{{ $booking->trail->image_url }}" alt="{{ $booking->trail->trail_name }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
                                     @else
@@ -110,13 +118,27 @@
                                     <!-- Payment Status Badge -->
                                     @if(!$isCancelled)
                                         <div class="absolute top-3 left-3">
-                                            @if($isPaid)
+                                            @if($isPaymentVerified)
                                                 <span class="px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-full shadow-lg flex items-center gap-1">
                                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                                         <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"></path>
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"></path>
                                                     </svg>
-                                                    Paid
+                                                    Payment Verified
+                                                </span>
+                                            @elseif($isUnderVerification)
+                                                <span class="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-full shadow-lg flex items-center gap-1">
+                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                    Under Verification
+                                                </span>
+                                            @elseif($isPaymentRejected)
+                                                <span class="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-full shadow-lg flex items-center gap-1">
+                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                    Payment Rejected
                                                 </span>
                                             @else
                                                 <span class="px-3 py-1.5 bg-orange-500 text-white text-xs font-semibold rounded-full shadow-lg flex items-center gap-1">
@@ -131,7 +153,7 @@
                                 </div>
 
                                 <!-- Booking Details -->
-                                <div class="p-5">
+                                <div class="p-5 flex flex-col flex-grow">
                                     <h3 class="text-xl font-bold text-gray-800 mb-3 truncate">
                                         {{ $booking->trail?->trail_name ?? 'Trail Booking' }}
                                     </h3>
@@ -182,16 +204,34 @@
                                     @endif
 
                                     <!-- Action Buttons -->
-                                    <div class="pt-4 border-t border-gray-100 space-y-2">
-                                        @if($isPending && !$isPaid)
-                                            <!-- Pay Now Button for Pending Bookings -->
-                                            <a href="{{ route('payment.create', ['booking_id' => $booking->id]) }}" class="w-full inline-flex items-center justify-center px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg shadow-md hover:from-amber-600 hover:to-orange-600 transition-all transform hover:-translate-y-0.5 font-semibold">
-                                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                                </svg>
-                                                Pay Now
-                                            </a>
-                                        @elseif($isConfirmed && $isPaid)
+                                    <div class="pt-4 border-t border-gray-100 space-y-2 mt-auto">
+                                        @if($isPending && !$isPaymentVerified)
+                                            @if($isUnderVerification)
+                                                <!-- Under Verification Status -->
+                                                <div class="w-full inline-flex items-center justify-center px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow-md font-semibold">
+                                                    <svg class="w-5 h-5 mr-2 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    Under Verification
+                                                </div>
+                                            @elseif($isPaymentRejected)
+                                                <!-- Retry Payment Button for Rejected -->
+                                                <a href="{{ route('booking.payment', $booking->id) }}" class="w-full inline-flex items-center justify-center px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg shadow-md hover:from-red-600 hover:to-red-700 transition-all transform hover:-translate-y-0.5 font-semibold">
+                                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                                    </svg>
+                                                    Retry Payment
+                                                </a>
+                                            @else
+                                                <!-- Pay Now Button for Pending Bookings -->
+                                                <a href="{{ route('booking.payment', $booking->id) }}" class="w-full inline-flex items-center justify-center px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg shadow-md hover:from-amber-600 hover:to-orange-600 transition-all transform hover:-translate-y-0.5 font-semibold">
+                                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                                    </svg>
+                                                    Pay Now
+                                                </a>
+                                            @endif
+                                        @elseif($isConfirmed && $isPaymentVerified)
                                             <!-- View Receipt & Reservation Slip for Confirmed Bookings -->
                                             <div class="grid grid-cols-2 gap-2">
                                                 <a href="{{ route('booking.show', $booking) }}" class="inline-flex items-center justify-center px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all text-sm font-medium">

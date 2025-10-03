@@ -110,7 +110,7 @@
             </div>
 
             <!-- Revenue Dashboard -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                     <div class="p-6">
                         <div class="flex items-center">
@@ -174,6 +174,22 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg border-2 border-orange-200">
+                    <a href="{{ route('org.bookings.index', ['payment_status' => 'pending_verification']) }}" class="block p-6 hover:bg-orange-50 transition-colors">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-8 w-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-500">Awaiting Verification</p>
+                                <p class="text-2xl font-semibold text-orange-600">{{ $pendingVerificationCount }}</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
             </div>
 
             <!-- Bookings Table -->
@@ -196,7 +212,7 @@
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach($bookings as $booking)
-                                    <tr class="hover:bg-gray-50">
+                                    <tr class="hover:bg-gray-50 {{ $booking->isPaymentPendingVerification() ? 'bg-orange-50' : '' }}">
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ $booking->id }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             <div class="font-medium">{{ $booking->user->name ?? 'N/A' }}</div>
@@ -211,7 +227,22 @@
                                             ₱{{ number_format($booking->price_cents / 100, 2) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                            @if($booking->payment)
+                                            @if($booking->usesManualPayment())
+                                                @if($booking->payment_status === 'pending')
+                                                    <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
+                                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                        Verify Payment
+                                                    </span>
+                                                @elseif($booking->payment_status === 'verified')
+                                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Verified</span>
+                                                @elseif($booking->payment_status === 'rejected')
+                                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rejected</span>
+                                                @else
+                                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{{ ucfirst($booking->payment_status ?? 'N/A') }}</span>
+                                                @endif
+                                            @elseif($booking->payment)
                                                 @if($booking->payment->isPaid())
                                                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Paid</span>
                                                 @elseif($booking->payment->isPending())
@@ -229,7 +260,24 @@
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <a href="{{ route('org.bookings.show', $booking) }}" class="text-[#336d66] hover:text-[#2a5a54]">View Details</a>
+                                            <div class="flex items-center gap-2">
+                                                <a href="{{ route('org.bookings.show', $booking) }}" class="text-[#336d66] hover:text-[#2a5a54]">View</a>
+                                                
+                                                @if($booking->isPaymentPendingVerification())
+                                                    <form method="POST" action="{{ route('org.bookings.verify-payment', $booking) }}" class="inline">
+                                                        @csrf
+                                                        <button type="submit" class="text-green-600 hover:text-green-800 font-medium" onclick="return confirm('Verify this payment?')">
+                                                            ✓
+                                                        </button>
+                                                    </form>
+                                                    <form method="POST" action="{{ route('org.bookings.reject-payment', $booking) }}" class="inline">
+                                                        @csrf
+                                                        <button type="submit" class="text-red-600 hover:text-red-800 font-medium" onclick="return confirm('Reject this payment?')">
+                                                            ✗
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach

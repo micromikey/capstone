@@ -35,73 +35,6 @@
                 </div>
             @endif
 
-            <!-- Payment Method Toggle -->
-            <div class="bg-gradient-to-r from-[#336d66] to-[#2a5a54] rounded-lg shadow-lg p-6 mb-6">
-                <div class="flex items-center justify-between">
-                    <div class="flex-1">
-                        <h3 class="text-lg font-semibold text-white mb-2 flex items-center">
-                            <svg class="h-6 w-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                            </svg>
-                            Active Payment Method
-                        </h3>
-                        <p class="text-sm text-white/90">
-                            Choose how hikers will pay for bookings. This determines what payment option they see during checkout.
-                        </p>
-                    </div>
-                    <div class="ml-8 flex items-center bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                        <form method="POST" action="{{ route('org.payment.toggle-method') }}" id="payment-method-toggle-form">
-                            @csrf
-                            @method('PUT')
-                            <label class="flex items-center cursor-pointer">
-                                <div class="relative">
-                                    <input type="checkbox" name="payment_method" value="automatic" class="sr-only" 
-                                           id="payment-method-toggle"
-                                           {{ $credentials->payment_method === 'automatic' ? 'checked' : '' }}
-                                           onchange="this.form.submit()">
-                                    <div class="block bg-gray-300 w-20 h-10 rounded-full transition-colors duration-300" id="toggle-bg"></div>
-                                    <div class="dot absolute left-1 top-1 bg-white w-8 h-8 rounded-full transition-transform duration-300 flex items-center justify-center shadow-md" id="toggle-dot">
-                                        <svg class="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="toggle-icon">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-                                        </svg>
-                                    </div>
-                                </div>
-                                <div class="ml-4 text-white">
-                                    <div class="text-sm font-semibold" id="toggle-label">
-                                        {{ $credentials->payment_method === 'automatic' ? 'Automatic Payment' : 'Manual Payment' }}
-                                    </div>
-                                    <div class="text-xs opacity-90" id="toggle-description">
-                                        {{ $credentials->payment_method === 'automatic' ? 'Using payment gateway' : 'Using QR code' }}
-                                    </div>
-                                </div>
-                            </label>
-                        </form>
-                    </div>
-                </div>
-                
-                <!-- Status Indicator -->
-                <div class="mt-4 pt-4 border-t border-white/20">
-                    <div class="flex items-center text-white/90 text-sm">
-                        <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-                        </svg>
-                        <span id="payment-status-message">
-                            @if($credentials->payment_method === 'manual')
-                                Hikers will see your QR code and upload payment proof during checkout.
-                                @if(!$credentials->hasManualPaymentConfigured())
-                                    <strong class="text-yellow-300">⚠️ Please upload your QR code below to complete setup.</strong>
-                                @endif
-                            @else
-                                Hikers will be directed to the payment gateway to complete their booking.
-                                @if(!$credentials->hasPaymongoConfigured() && !$credentials->hasXenditConfigured())
-                                    <strong class="text-yellow-300">⚠️ Please configure a payment gateway below to complete setup.</strong>
-                                @endif
-                            @endif
-                        </span>
-                    </div>
-                </div>
-            </div>
-
             <!-- Tabs Navigation -->
             <div class="bg-white rounded-t-lg shadow-lg">
                 <div class="border-b border-gray-200">
@@ -205,34 +138,21 @@
                                 </label>
                                 <p class="text-sm text-gray-600 mb-3">Upload the QR code for your GCash, PayMaya, or other e-wallet account</p>
                                 
-                                <!-- Preview Container -->
-                                <div id="qr-preview-container" class="hidden mb-4">
-                                    <div class="relative inline-block">
-                                        <img id="qr-preview" src="" alt="QR Code Preview" class="mx-auto h-64 w-64 object-contain border-2 border-[#336d66] rounded-lg shadow-lg">
-                                        <button type="button" onclick="clearQRPreview()" class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-colors">
-                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <p class="text-sm font-medium text-green-600 text-center mt-2">New QR Code Preview</p>
-                                </div>
-                                
-                                <div id="qr-upload-area" class="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-[#336d66] transition-colors">
+                                <div class="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-[#336d66] transition-colors">
                                     <div class="space-y-1 text-center">
                                         @if($credentials->qr_code_path)
-                                            <div class="mb-4" id="current-qr-display">
+                                            <div class="mb-4">
                                                 <p class="text-sm font-medium text-gray-700 mb-2">Current QR Code:</p>
                                                 <img src="{{ asset('storage/' . $credentials->qr_code_path) }}" alt="Current QR Code" class="mx-auto h-48 w-48 object-contain border rounded">
                                             </div>
                                         @endif
-                                        <svg id="upload-icon" class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
                                         <div class="flex text-sm text-gray-600">
                                             <label for="qr-code-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-[#336d66] hover:text-[#2a5a54] focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-[#336d66]">
                                                 <span>Upload a file</span>
-                                                <input id="qr-code-upload" name="qr_code" type="file" accept="image/*" class="sr-only" onchange="previewQRCode(event)">
+                                                <input id="qr-code-upload" name="qr_code" type="file" accept="image/*" class="sr-only">
                                             </label>
                                             <p class="pl-1">or drag and drop</p>
                                         </div>
@@ -328,113 +248,9 @@
             border-color: #336d66;
             color: #336d66;
         }
-        
-        /* Toggle Switch Styles */
-        #payment-method-toggle:checked ~ #toggle-bg {
-            background-color: #10b981;
-        }
-        #payment-method-toggle:checked ~ #toggle-dot {
-            transform: translateX(2.5rem);
-        }
-        #payment-method-toggle:not(:checked) ~ #toggle-bg {
-            background-color: #f59e0b;
-        }
     </style>
 
     <script>
-        // Toggle switch icon and label update
-        document.addEventListener('DOMContentLoaded', function() {
-            const toggle = document.getElementById('payment-method-toggle');
-            const toggleIcon = document.getElementById('toggle-icon');
-            const toggleLabel = document.getElementById('toggle-label');
-            const toggleDescription = document.getElementById('toggle-description');
-            
-            function updateToggleDisplay() {
-                if (toggle.checked) {
-                    // Automatic Payment
-                    toggleIcon.innerHTML = `
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                    `;
-                    toggleLabel.textContent = 'Automatic Payment';
-                    toggleDescription.textContent = 'Using payment gateway';
-                } else {
-                    // Manual Payment
-                    toggleIcon.innerHTML = `
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-                    `;
-                    toggleLabel.textContent = 'Manual Payment';
-                    toggleDescription.textContent = 'Using QR code';
-                }
-            }
-            
-            // Initialize display
-            updateToggleDisplay();
-            
-            // Update on change
-            toggle.addEventListener('change', updateToggleDisplay);
-        });
-
-        function previewQRCode(event) {
-            const file = event.target.files[0];
-            if (file) {
-                // Validate file type
-                if (!file.type.startsWith('image/')) {
-                    alert('Please upload an image file');
-                    event.target.value = '';
-                    return;
-                }
-
-                // Validate file size (10MB)
-                if (file.size > 10 * 1024 * 1024) {
-                    alert('File size must be less than 10MB');
-                    event.target.value = '';
-                    return;
-                }
-
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    // Show preview
-                    const previewContainer = document.getElementById('qr-preview-container');
-                    const previewImage = document.getElementById('qr-preview');
-                    const currentDisplay = document.getElementById('current-qr-display');
-                    const uploadIcon = document.getElementById('upload-icon');
-                    
-                    previewImage.src = e.target.result;
-                    previewContainer.classList.remove('hidden');
-                    
-                    // Hide current QR and upload icon
-                    if (currentDisplay) {
-                        currentDisplay.style.display = 'none';
-                    }
-                    if (uploadIcon) {
-                        uploadIcon.style.display = 'none';
-                    }
-                }
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function clearQRPreview() {
-            const previewContainer = document.getElementById('qr-preview-container');
-            const fileInput = document.getElementById('qr-code-upload');
-            const currentDisplay = document.getElementById('current-qr-display');
-            const uploadIcon = document.getElementById('upload-icon');
-            
-            // Clear the file input
-            fileInput.value = '';
-            
-            // Hide preview
-            previewContainer.classList.add('hidden');
-            
-            // Show current QR and upload icon again
-            if (currentDisplay) {
-                currentDisplay.style.display = 'block';
-            }
-            if (uploadIcon) {
-                uploadIcon.style.display = 'block';
-            }
-        }
-
         function switchTab(tab) {
             // Update tab buttons
             const manualTab = document.getElementById('manual-tab');

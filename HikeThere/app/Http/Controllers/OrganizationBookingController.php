@@ -20,6 +20,12 @@ class OrganizationBookingController extends Controller
             $q->where('user_id', $orgId);
         })->with(['trail', 'user', 'payment']);
 
+        // Filter for pending payment verification
+        if ($request->filled('payment_status') && $request->payment_status === 'pending_verification') {
+            $query->where('payment_method_used', 'manual')
+                  ->where('payment_status', 'pending');
+        }
+
         // Filters
         if ($request->filled('mountain')) {
             $query->whereHas('trail', function($q) use ($request) {
@@ -84,6 +90,13 @@ class OrganizationBookingController extends Controller
             $q->where('payment_status', 'paid');
         })->count();
 
+        // Count bookings pending payment verification
+        $pendingVerificationCount = Booking::whereHas('trail', function($q) use ($orgId) {
+            $q->where('user_id', $orgId);
+        })->where('payment_method_used', 'manual')
+          ->where('payment_status', 'pending')
+          ->count();
+
         // Get unique mountains for filter dropdown
         $mountains = Booking::whereHas('trail', function($q) use ($orgId) {
             $q->where('user_id', $orgId);
@@ -93,7 +106,7 @@ class OrganizationBookingController extends Controller
             ->whereNotNull('trails.mountain_name')
             ->pluck('trails.mountain_name');
 
-        return view('org.bookings.index', compact('bookings', 'totalRevenue', 'paidBookings', 'mountains'));
+        return view('org.bookings.index', compact('bookings', 'totalRevenue', 'paidBookings', 'pendingVerificationCount', 'mountains'));
     }
 
     /**
@@ -134,4 +147,65 @@ class OrganizationBookingController extends Controller
 
         return redirect()->route('org.bookings.show', $booking)->with('success', 'Booking status updated.');
     }
+
+    /**
+     * Verify manual payment proof.
+     */
+    public function verifyPayment(Booking $booking)
+    {
+        $orgId = Auth::id();
+
+        if (!$booking->trail || $booking->trail->user_id !== $orgId) {
+            abort(403);
+        }
+
+        if (!$booking->usesManualPayment()) {
+            return redirect()->back()->with('error', 'This booking does not use manual payment.');
+        }
+
+        if ($booking->payment_status !== 'pending') {
+            return redirect()->back()->with('error', 'Payment is not pending verification.');
+        }
+
+        $booking->verifyPayment($orgId);
+
+        Log::info('Organization verified manual payment', [
+            'organization_id' => $orgId, 
+            'booking_id' => $booking->id,
+            'transaction_number' => $booking->transaction_number
+        ]);
+
+        return redirect()->back()->with('success', 'Payment verified successfully!');
+    }
+
+    /**
+     * Reject manual payment proof.
+     */
+    public function rejectPayment(Booking $booking)
+    {
+        $orgId = Auth::id();
+
+        if (!$booking->trail || $booking->trail->user_id !== $orgId) {
+            abort(403);
+        }
+
+        if (!$booking->usesManualPayment()) {
+            return redirect()->back()->with('error', 'This booking does not use manual payment.');
+        }
+
+        if ($booking->payment_status !== 'pending') {
+            return redirect()->back()->with('error', 'Payment is not pending verification.');
+        }
+
+        $booking->rejectPayment();
+
+        Log::info('Organization rejected manual payment', [
+            'organization_id' => $orgId, 
+            'booking_id' => $booking->id,
+            'transaction_number' => $booking->transaction_number
+        ]);
+
+        return redirect()->back()->with('success', 'Payment rejected. Hiker will be notified to resubmit.');
+    }
 }
+

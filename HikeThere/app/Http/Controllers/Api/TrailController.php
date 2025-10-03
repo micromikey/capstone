@@ -1096,4 +1096,52 @@ class TrailController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get payment method for a trail's organization
+     */
+    public function getPaymentMethod($trailId)
+    {
+        try {
+            $trail = Trail::with('user')->find($trailId);
+            
+            if (!$trail) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Trail not found'
+                ], 404);
+            }
+
+            // Get the organization's payment credentials
+            $credentials = \App\Models\OrganizationPaymentCredential::where('user_id', $trail->user_id)->first();
+
+            if (!$credentials) {
+                // Default to automatic payment if not configured
+                return response()->json([
+                    'success' => true,
+                    'payment_method' => 'automatic',
+                    'has_qr_code' => false,
+                ]);
+            }
+
+            $response = [
+                'success' => true,
+                'payment_method' => $credentials->payment_method ?? 'automatic',
+                'has_qr_code' => !empty($credentials->qr_code_path),
+            ];
+
+            // Include QR code URL if manual payment and QR code exists
+            if ($credentials->payment_method === 'manual' && $credentials->qr_code_path) {
+                $response['qr_code_url'] = asset('storage/' . $credentials->qr_code_path);
+                $response['payment_instructions'] = $credentials->manual_payment_instructions;
+            }
+
+            return response()->json($response);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

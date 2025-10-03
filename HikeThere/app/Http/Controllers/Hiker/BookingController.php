@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Trail;
 use App\Models\Batch;
+use App\Models\OrganizationPaymentCredential;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -46,6 +47,12 @@ class BookingController extends Controller
 
     public function store(Request $request)
     {
+        // Log all incoming request data for debugging
+        Log::info('Booking store called', [
+            'all_data' => $request->all(),
+            'user_id' => Auth::id(),
+        ]);
+
         $data = $request->validate([
             'trail_id' => 'required|exists:trails,id',
             'batch_id' => 'nullable|exists:batches,id',
@@ -55,14 +62,21 @@ class BookingController extends Controller
             'notes' => 'nullable|string|max:2000',
         ]);
 
+        Log::info('Validation passed', ['validated_data' => $data]);
+
+        // Remove payment-related validation - payment handled after booking creation
+
         // If batch_id provided, ensure it belongs to the chosen trail
         $batch = null;
         if (!empty($data['batch_id'])) {
+            Log::info('Batch ID provided', ['batch_id' => $data['batch_id']]);
             $batch = Batch::find($data['batch_id']);
             if (! $batch || $batch->trail_id != $data['trail_id']) {
+                Log::warning('Batch validation failed', ['batch' => $batch, 'trail_id' => $data['trail_id']]);
                 return back()->withInput()->withErrors(['batch_id' => 'Selected batch is invalid for the chosen trail.']);
             }
         } else {
+            Log::info('No batch_id provided, attempting to find or create one');
             // Check if we're dealing with an undated event
             if (!empty($data['event_id'])) {
                 $event = \App\Models\Event::find($data['event_id']);
@@ -169,19 +183,46 @@ class BookingController extends Controller
 
                     if ($candidate) {
                         $batch = $candidate;
+                        Log::info('Found candidate batch', ['batch_id' => $batch->id]);
+                    } else {
+                        Log::warning('No candidate batch found');
                     }
                 }
             }
         }
 
         if (! $batch) {
-            return back()->withInput()->withErrors(['batch_id' => 'No available batch found for the selected trail/date.']);
+            Log::error('No batch found', ['trail_id' => $data['trail_id'], 'date' => $data['date'] ?? null]);
+            
+            // Check if trail has ANY batches at all
+            $trailBatchCount = Batch::where('trail_id', $data['trail_id'])->count();
+            Log::info('Trail batch count', ['count' => $trailBatchCount]);
+            
+            if ($trailBatchCount === 0) {
+                // No batches exist for this trail - create a default one
+                Log::info('Creating default batch for trail', ['trail_id' => $data['trail_id']]);
+                $trail = Trail::find($data['trail_id']);
+                
+                $batch = Batch::create([
+                    'trail_id' => $data['trail_id'],
+                    'name' => 'Default Batch - ' . ($trail->trail_name ?? 'Trail'),
+                    'capacity' => 50, // Default capacity
+                    'starts_at' => null, // Always available
+                    'ends_at' => null,
+                ]);
+                Log::info('Default batch created', ['batch_id' => $batch->id]);
+            } else {
+                return back()->withInput()->withErrors(['batch_id' => 'No available batch found for the selected trail/date.']);
+            }
         }
+
+        Log::info('Proceeding with batch', ['batch_id' => $batch->id]);
 
     // Use a database transaction and lock the batch row to prevent race conditions
         $booking = null;
         DB::beginTransaction();
         try {
+            Log::info('Starting transaction');
             // reload and lock the batch row
             $lockedBatch = Batch::where('id', $batch->id)->lockForUpdate()->first();
             if (! $lockedBatch) {
@@ -222,30 +263,44 @@ class BookingController extends Controller
             // create the booking while still in the transaction
             $data['batch_id'] = $lockedBatch->id;
             $data['user_id'] = Auth::id();
-            $data['status'] = 'pending'; // Changed from 'confirmed' - only confirm after payment
+            $data['status'] = 'pending'; // Pending until payment is completed
+            
+            Log::info('Preparing booking data', ['batch_id' => $lockedBatch->id, 'user_id' => Auth::id()]);
             
             // Calculate price_cents: trail price × party size (converted to cents)
             $trail = Trail::with('package')->find($data['trail_id']);
             if ($trail && $trail->price) {
                 $data['price_cents'] = (int) ($trail->price * $data['party_size'] * 100);
+            } else {
+                // Set default price if trail has no price
+                $data['price_cents'] = 0;
             }
+
+            // Don't set payment method yet - will be determined on payment page
+            $data['payment_status'] = 'pending'; // Initial status (pending, verified, or rejected)
+            $data['payment_method_used'] = null; // Will be set when payment is made
 
             // If an event_id was supplied, ensure the event exists and matches the trail_id
             if (!empty($data['event_id'])) {
+                Log::info('Event ID provided', ['event_id' => $data['event_id']]);
                 $event = \App\Models\Event::find($data['event_id']);
                 if (! $event) {
+                    Log::error('Event not found', ['event_id' => $data['event_id']]);
                     DB::rollBack();
                     return back()->withInput()->withErrors(['event_id' => 'Selected event does not exist.']);
                 }
 
                 // If the event is linked to a trail, ensure it matches the booking trail
                 if ($event->trail_id && $event->trail_id != $data['trail_id']) {
+                    Log::error('Event trail mismatch', ['event_trail_id' => $event->trail_id, 'booking_trail_id' => $data['trail_id']]);
                     DB::rollBack();
                     return back()->withInput()->withErrors(['event_id' => 'Selected event is not associated with the chosen trail.']);
                 }
             }
 
+            Log::info('Creating booking', ['data' => $data]);
             $booking = Booking::create($data);
+            Log::info('Booking created successfully', ['booking_id' => $booking->id]);
 
             // NOTE: Slots are NOT reserved yet - only reserved after successful payment
             // This prevents holding slots for unpaid bookings
@@ -253,14 +308,18 @@ class BookingController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
+            // Log the actual error for debugging
+            Log::error('Booking creation failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'data' => $data
+            ]);
             // fall back to safe error
             return back()->withInput()->withErrors(['batch_id' => 'Unable to create booking at this time. Please try again.']);
         }
 
-        // Redirect to payment page with booking details pre-filled
-        return redirect()->route('payment.create', [
-            'booking_id' => $booking->id,
-        ])->with('success', 'Booking created! Please complete payment to confirm your reservation.');
+        // Redirect to payment page for all bookings
+        return redirect()->route('booking.payment', $booking->id)
+            ->with('success', 'Booking created! Please complete your payment to confirm your reservation.');
     }
 
     public function show(Booking $booking)
@@ -270,6 +329,85 @@ class BookingController extends Controller
         $booking->load('trail', 'user');
 
         return view('hiker.booking.show', compact('booking'));
+    }
+
+    /**
+     * Show payment page for a booking
+     */
+    public function showPayment(Booking $booking)
+    {
+        $this->authorize('view', $booking);
+
+        // Check if booking is already paid
+        if ($booking->payment_status === 'verified' || $booking->payment_status === 'paid') {
+            return redirect()->route('booking.show', $booking->id)
+                ->with('info', 'This booking has already been paid.');
+        }
+
+        // Get organization's payment credentials
+        $trail = $booking->trail;
+        $credentials = OrganizationPaymentCredential::where('user_id', $trail->user_id)->first();
+
+        // If no credentials, default to manual payment
+        if (!$credentials) {
+            $credentials = new OrganizationPaymentCredential([
+                'payment_method' => 'manual',
+                'user_id' => $trail->user_id
+            ]);
+        }
+
+        $booking->load('trail', 'user');
+
+        return view('hiker.booking.payment', compact('booking', 'credentials'));
+    }
+
+    /**
+     * Process payment submission
+     */
+    public function submitPayment(Request $request, Booking $booking)
+    {
+        $this->authorize('view', $booking);
+
+        // Validate payment method is provided
+        $request->validate([
+            'payment_method' => 'required|in:manual,automatic',
+            'payment_proof' => 'nullable|required_if:payment_method,manual|image|mimes:jpeg,png,jpg|max:10240',
+            'transaction_number' => 'nullable|required_if:payment_method,manual|string|max:255',
+            'payment_notes' => 'nullable|string|max:1000',
+        ]);
+
+        // Handle manual payment
+        if ($request->input('payment_method') === 'manual') {
+            $booking->payment_method_used = 'manual';
+            $booking->payment_status = 'pending'; // Pending verification by org
+            
+            // Handle payment proof upload
+            if ($request->hasFile('payment_proof')) {
+                $path = $request->file('payment_proof')->store('payment_proofs', 'public');
+                $booking->payment_proof_path = $path;
+            }
+
+            if ($request->filled('transaction_number')) {
+                $booking->transaction_number = $request->input('transaction_number');
+            }
+
+            if ($request->filled('payment_notes')) {
+                $booking->payment_notes = $request->input('payment_notes');
+            }
+
+            $booking->save();
+
+            return redirect()->route('booking.show', $booking->id)
+                ->with('success', 'Payment proof submitted! The organization will verify your payment and confirm your booking.');
+        } else {
+            // For automatic payments, redirect to payment gateway
+            $booking->payment_method_used = 'automatic';
+            $booking->save();
+
+            return redirect()->route('payment.create', [
+                'booking_id' => $booking->id,
+            ])->with('success', 'Redirecting to payment gateway...');
+        }
     }
 
     /**

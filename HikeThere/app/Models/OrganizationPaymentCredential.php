@@ -17,6 +17,9 @@ class OrganizationPaymentCredential extends Model
         'xendit_api_key',
         'active_gateway',
         'is_active',
+        'qr_code_path',
+        'payment_method',
+        'manual_payment_instructions',
     ];
 
     protected $casts = [
@@ -101,5 +104,21 @@ class OrganizationPaymentCredential extends Model
     public function hasAnyGatewayConfigured(): bool
     {
         return $this->hasPaymongoConfigured() || $this->hasXenditConfigured();
+    }
+
+    /**
+     * Check if manual payment is configured
+     */
+    public function hasManualPaymentConfigured(): bool
+    {
+        return !empty($this->qr_code_path);
+    }
+
+    /**
+     * Check if organization is using manual payment
+     */
+    public function isManualPayment(): bool
+    {
+        return $this->payment_method === 'manual';
     }
 }
