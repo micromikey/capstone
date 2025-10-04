@@ -121,8 +121,84 @@ $imageService = app('App\\Services\\TrailImageService');
             <div class="organization-card bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                 <a href="{{ route('community.organization.show', $organization->id) }}" class="block">
                     <div class="relative">
-                        <img src="{{ $organization->profile_picture_url }}" alt="{{ $organization->display_name }}"
-                            class="w-full h-48 object-cover rounded-t-xl">
+                        @if($organization->profile_picture)
+                            <img src="{{ $organization->profile_picture_url }}" alt="{{ $organization->display_name }}"
+                                class="w-full h-48 object-cover rounded-t-xl">
+                        @else
+                            <!-- Mountain + Community SVG Placeholder -->
+                            <div class="w-full h-48 bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600 rounded-t-xl flex items-center justify-center relative overflow-hidden">
+                                <!-- Mountain Background -->
+                                <svg class="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice">
+                                    <path d="M0,200 L0,100 L100,40 L200,120 L300,20 L400,80 L400,200 Z" fill="white" opacity="0.3"/>
+                                    <path d="M0,200 L0,120 L80,80 L160,140 L240,60 L320,100 L400,60 L400,200 Z" fill="white" opacity="0.2"/>
+                                </svg>
+                                
+                                <!-- Community Icon with Mountain -->
+                                <div class="relative z-10 text-white">
+                                    <svg class="w-28 h-28 mx-auto drop-shadow-2xl" viewBox="0 0 120 120" fill="none">
+                                        <!-- Mountain Base (larger, more prominent) -->
+                                        <path d="M20 85 L45 45 L60 65 L75 35 L100 70 L100 85 Z" 
+                                              fill="white" opacity="0.25"/>
+                                        <path d="M30 85 L50 55 L60 65 L70 45 L90 75 L90 85 Z" 
+                                              fill="white" opacity="0.20"/>
+                                        
+                                        <!-- Mountain Peak (center focal point) -->
+                                        <path d="M60 20 L75 45 L45 45 Z" 
+                                              fill="white" opacity="0.35" stroke="white" stroke-width="1.5"/>
+                                        
+                                        <!-- Community Circle of People -->
+                                        <!-- Person 1 (top center - leader) -->
+                                        <g transform="translate(60, 52)">
+                                            <circle cx="0" cy="0" r="5" fill="white" opacity="0.95"/>
+                                            <path d="M-4 6 Q-4 10 0 12 Q4 10 4 6" fill="white" opacity="0.95"/>
+                                        </g>
+                                        
+                                        <!-- Person 2 (left) -->
+                                        <g transform="translate(42, 62)">
+                                            <circle cx="0" cy="0" r="4.5" fill="white" opacity="0.90"/>
+                                            <path d="M-3.5 5 Q-3.5 8 0 10 Q3.5 8 3.5 5" fill="white" opacity="0.90"/>
+                                        </g>
+                                        
+                                        <!-- Person 3 (right) -->
+                                        <g transform="translate(78, 62)">
+                                            <circle cx="0" cy="0" r="4.5" fill="white" opacity="0.90"/>
+                                            <path d="M-3.5 5 Q-3.5 8 0 10 Q3.5 8 3.5 5" fill="white" opacity="0.90"/>
+                                        </g>
+                                        
+                                        <!-- Person 4 (bottom left) -->
+                                        <g transform="translate(48, 75)">
+                                            <circle cx="0" cy="0" r="4" fill="white" opacity="0.85"/>
+                                            <path d="M-3 4 Q-3 7 0 9 Q3 7 3 4" fill="white" opacity="0.85"/>
+                                        </g>
+                                        
+                                        <!-- Person 5 (bottom right) -->
+                                        <g transform="translate(72, 75)">
+                                            <circle cx="0" cy="0" r="4" fill="white" opacity="0.85"/>
+                                            <path d="M-3 4 Q-3 7 0 9 Q3 7 3 4" fill="white" opacity="0.85"/>
+                                        </g>
+                                        
+                                        <!-- Connection Circle/Network -->
+                                        <circle cx="60" cy="65" r="22" stroke="white" stroke-width="1.5" 
+                                                fill="none" opacity="0.4" stroke-dasharray="3 3"/>
+                                        
+                                        <!-- Connecting Lines between people -->
+                                        <path d="M60 60 L42 68 M60 60 L78 68 M42 68 L48 80 M78 68 L72 80 M48 80 L72 80" 
+                                              stroke="white" stroke-width="1.2" opacity="0.35" stroke-linecap="round"/>
+                                        
+                                        <!-- Flag on mountain peak -->
+                                        <line x1="60" y1="20" x2="60" y2="32" stroke="white" stroke-width="1.5" opacity="0.5"/>
+                                        <path d="M60 22 L68 25 L60 28 Z" fill="white" opacity="0.5"/>
+                                    </svg>
+                                    <p class="text-center text-sm font-semibold mt-2 drop-shadow-lg tracking-wide">{{ Str::limit($organization->display_name, 20) }}</p>
+                                </div>
+                                
+                                <!-- Decorative dots -->
+                                <div class="absolute top-4 left-4 w-2 h-2 bg-white rounded-full opacity-60"></div>
+                                <div class="absolute top-8 right-8 w-1.5 h-1.5 bg-white rounded-full opacity-50"></div>
+                                <div class="absolute bottom-6 left-8 w-2 h-2 bg-white rounded-full opacity-40"></div>
+                                <div class="absolute bottom-10 right-6 w-1 h-1 bg-white rounded-full opacity-60"></div>
+                            </div>
+                        @endif
                         <div class="absolute top-4 right-4">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                 Verified
@@ -145,6 +221,16 @@ $imageService = app('App\\Services\\TrailImageService');
                                     <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
                                 </svg>
                                 {{ $organization->location ?? 'Location not set' }}
+                            </span>
+                        </div>
+
+                        <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                            <span class="inline-flex items-center">
+                                <svg class="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                <span class="text-yellow-600 font-medium">{{ $organization->average_rating ?? 0 }}</span>
+                                <span class="text-gray-400 ml-1">({{ $organization->total_ratings ?? 0 }})</span>
                             </span>
                         </div>
 
@@ -233,6 +319,9 @@ $imageService = app('App\\Services\\TrailImageService');
                     <div class="flex-1">
                         <h3 class="text-lg font-semibold text-gray-900 leading-tight">{{ $event->title }}</h3>
                         <p class="text-sm text-gray-500 mt-1">{{ optional($event->user)->display_name ?? 'Organization' }} • @if(!empty($event->always_available)) Always Open @else {{ $event->start_at ? $event->start_at->format('M d, Y g:ia') : 'TBA' }} @endif</p>
+                        @if($event->hiking_start_time)
+                            <p class="text-sm text-emerald-700 font-medium mt-1">🥾 Hike starts at {{ \Carbon\Carbon::parse($event->hiking_start_time)->format('g:i A') }}</p>
+                        @endif
                         @if($event->location_name ?? false)
                             <p class="text-sm text-gray-600 mt-1">📍 {{ $event->location_name }}</p>
                         @endif

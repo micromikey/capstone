@@ -80,6 +80,12 @@
                                                 </div>
                     </div>
 
+                    <div class="mb-4 md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">Hiking Start Time</label>
+                        <input type="time" name="hiking_start_time" value="{{ old('hiking_start_time', $event->hiking_start_time) }}" class="mt-1 block w-full border border-gray-200 rounded-md shadow-sm p-2" placeholder="e.g. 08:00">
+                        <p class="text-xs text-gray-500 mt-1">What time should the hike start? This helps participants know when to arrive at the trail.</p>
+                    </div>
+
                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700">Start</label>

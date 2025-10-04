@@ -292,6 +292,15 @@
                                     </div>
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm font-medium text-gray-700 flex items-center">
+                                            <svg class="w-4 h-4 text-purple-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            Hiking start time:
+                                        </span>
+                                        <span id="selected_slot_start_time" class="text-sm font-semibold text-gray-900">—</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-700 flex items-center">
                                             <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                                             </svg>
@@ -635,6 +644,7 @@
                                         opt.value = slot.type === 'batch' ? slot.id : '';
                                         opt.textContent = slot.slot_label || `${slot.name} (${remaining} spots left)`;
                                         opt.dataset.remaining = remaining;
+                                        opt.dataset.startTime = slot.starts_at_formatted || '—';
                                         
                                         if (slot.type === 'event') {
                                             opt.dataset.eventId = slot.event_id;
@@ -665,15 +675,18 @@
                     const sel = batchSelect.selectedOptions[0];
                     const labelEl = document.getElementById('selected_slot_label');
                     const remEl = document.getElementById('selected_slot_remaining');
+                    const startTimeEl = document.getElementById('selected_slot_start_time');
                     if (!sel) {
                         if (labelEl) labelEl.textContent = '—';
                         if (remEl) remEl.textContent = '—';
+                        if (startTimeEl) startTimeEl.textContent = '—';
                         return;
                     }
                     
                     // prefer option text for label
                     if (labelEl) labelEl.textContent = sel.textContent || '—';
                     if (remEl) remEl.textContent = (sel.dataset.remaining !== undefined) ? sel.dataset.remaining : '—';
+                    if (startTimeEl) startTimeEl.textContent = sel.dataset.startTime || '—';
                     
                     // If this is an event slot, set the event_id in hidden field
                     if (sel.dataset.eventId) {
@@ -725,11 +738,13 @@
                     }
                 })();
 
-                // Form validation before submission
+                // Form validation and AJAX submission
                 (function() {
                     const form = document.getElementById('booking-form');
                     if (form) {
                         form.addEventListener('submit', function(e) {
+                            e.preventDefault(); // Always prevent default to handle via AJAX
+                            
                             const trailId = document.getElementById('trail_select')?.value;
                             const partySize = document.querySelector('input[name="party_size"]')?.value;
                             const date = document.querySelector('input[name="date"]')?.value;
@@ -745,10 +760,83 @@
                             });
                             
                             if (!trailId) {
-                                e.preventDefault();
                                 alert('Please select a trail before creating a booking.');
                                 return false;
                             }
+
+                            // Show loading state
+                            const submitBtn = document.querySelector('button[type="submit"][form="booking-form"]');
+                            if (!submitBtn) {
+                                console.error('Submit button not found');
+                                return false;
+                            }
+                            const originalText = submitBtn.innerHTML;
+                            submitBtn.disabled = true;
+                            submitBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2 inline-block" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Creating...';
+
+                            // Prepare form data
+                            const formData = new FormData(form);
+
+                            // Submit via AJAX
+                            fetch(form.action, {
+                                method: 'POST',
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'Accept': 'application/json',
+                                },
+                                body: formData
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // Show success message
+                                    const successDiv = document.createElement('div');
+                                    successDiv.className = 'fixed top-4 right-4 z-50 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg shadow-lg';
+                                    successDiv.innerHTML = `
+                                        <div class="flex items-center">
+                                            <svg class="w-6 h-6 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            <div>
+                                                <p class="text-green-800 font-semibold">${data.message}</p>
+                                            </div>
+                                        </div>
+                                    `;
+                                    document.body.appendChild(successDiv);
+                                    
+                                    // Redirect after short delay
+                                    setTimeout(() => {
+                                        window.location.href = data.redirect_url;
+                                    }, 1500);
+                                } else {
+                                    throw new Error(data.message || 'Booking creation failed');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                
+                                // Show error message
+                                const errorDiv = document.createElement('div');
+                                errorDiv.className = 'fixed top-4 right-4 z-50 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg shadow-lg';
+                                errorDiv.innerHTML = `
+                                    <div class="flex items-center">
+                                        <svg class="w-6 h-6 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <div>
+                                            <p class="text-red-800 font-semibold">${error.message || 'Unable to create booking. Please try again.'}</p>
+                                        </div>
+                                    </div>
+                                `;
+                                document.body.appendChild(errorDiv);
+                                
+                                // Reset button
+                                submitBtn.disabled = false;
+                                submitBtn.innerHTML = originalText;
+                                
+                                // Auto-remove error after 5 seconds
+                                setTimeout(() => errorDiv.remove(), 5000);
+                            });
                         });
                     }
                 })();

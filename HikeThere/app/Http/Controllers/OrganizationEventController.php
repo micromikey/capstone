@@ -41,7 +41,7 @@ class OrganizationEventController extends Controller
                 $query->orderBy('start_at', $sortOrder);
         }
 
-        $events = $query->paginate(12)->appends($request->query());
+        $events = $query->paginate(10)->appends($request->query());
 
         // Get unique mountains for filter dropdown
         $mountains = Event::where('events.user_id', Auth::id())
@@ -78,6 +78,7 @@ class OrganizationEventController extends Controller
             'duration' => 'nullable|string',
             'always_available' => 'boolean',
             'batch_count' => 'nullable|integer|min:1',
+            'hiking_start_time' => 'nullable|date_format:H:i',
             // batches[] manual creation removed
             'is_public' => 'boolean',
         ]);
@@ -96,6 +97,12 @@ class OrganizationEventController extends Controller
         if (!empty($data['trail_id'])) {
             $trailOwner = \App\Models\Trail::where('id', $data['trail_id'])->value('user_id');
             if ($trailOwner !== Auth::id()) {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'message' => 'Validation failed',
+                        'errors' => ['trail_id' => ['Selected trail does not belong to your organization.']]
+                    ], 422);
+                }
                 return back()->withInput()->withErrors(['trail_id' => 'Selected trail does not belong to your organization.']);
             }
         }
@@ -109,9 +116,22 @@ class OrganizationEventController extends Controller
                 try {
                     $providedEnd = \Carbon\Carbon::parse($data['end_at']);
                     if (!$providedEnd->equalTo($expectedEnd)) {
-                        return back()->withInput()->withErrors(['end_at' => 'End date must equal start + (duration × batch_count). Expected: ' . $expectedEnd->format('Y-m-d H:i')]);
+                        $errorMessage = 'End date must equal start + (duration × batch_count). Expected: ' . $expectedEnd->format('Y-m-d H:i');
+                        if ($request->wantsJson() || $request->ajax()) {
+                            return response()->json([
+                                'message' => 'Validation failed',
+                                'errors' => ['end_at' => [$errorMessage]]
+                            ], 422);
+                        }
+                        return back()->withInput()->withErrors(['end_at' => $errorMessage]);
                     }
                 } catch (\Exception $e) {
+                    if ($request->wantsJson() || $request->ajax()) {
+                        return response()->json([
+                            'message' => 'Validation failed',
+                            'errors' => ['end_at' => ['Provided end date is invalid.']]
+                        ], 422);
+                    }
                     return back()->withInput()->withErrors(['end_at' => 'Provided end date is invalid.']);
                 }
             } else {
@@ -191,7 +211,19 @@ class OrganizationEventController extends Controller
 
         // manual batch creation removed; batches will be auto-generated from batch_count or created as a single undated batch by the EventBatchService when always_available is set
 
-
+        // Return JSON response for AJAX requests
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Event created successfully!',
+                'redirect' => route('org.events.index'),
+                'event' => [
+                    'id' => $event->id,
+                    'title' => $event->title,
+                    'slug' => $event->slug,
+                ]
+            ], 201);
+        }
 
         return redirect()->route('org.events.index')->with('success','Event created');
     }
@@ -218,6 +250,7 @@ class OrganizationEventController extends Controller
             'duration' => 'nullable|string',
             'always_available' => 'boolean',
             'batch_count' => 'nullable|integer|min:1',
+            'hiking_start_time' => 'nullable|date_format:H:i',
             // if manual_batches is true, expect batches json (array) – optional
             // manual batches removed
             'is_public' => 'boolean',

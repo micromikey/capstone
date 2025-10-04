@@ -113,6 +113,50 @@
                         <!-- Hidden inputs to preserve other sort parameters -->
                         <input type="hidden" name="sort_by" value="{{ request('sort_by', 'created_at') }}">
                     </form>
+
+                    <!-- Pagination Section -->
+                    @if($trails->hasPages())
+                        <hr class="my-3 border-gray-200">
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between text-xs text-gray-600">
+                                <span>Page {{ $trails->currentPage() }} of {{ $trails->lastPage() }}</span>
+                                <span class="font-medium">{{ $trails->total() }} total</span>
+                            </div>
+                            <div class="flex gap-2">
+                                @if($trails->onFirstPage())
+                                    <button disabled class="flex-1 px-3 py-2 text-xs font-medium bg-gray-100 text-gray-400 rounded-md cursor-not-allowed">
+                                        <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                        </svg>
+                                        Previous
+                                    </button>
+                                @else
+                                    <a href="{{ $trails->appends(request()->query())->previousPageUrl() }}" class="flex-1 px-3 py-2 text-xs font-medium bg-[#336d66] hover:bg-[#2a5a54] text-white rounded-md transition-colors text-center">
+                                        <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                        </svg>
+                                        Previous
+                                    </a>
+                                @endif
+
+                                @if($trails->hasMorePages())
+                                    <a href="{{ $trails->appends(request()->query())->nextPageUrl() }}" class="flex-1 px-3 py-2 text-xs font-medium bg-[#336d66] hover:bg-[#2a5a54] text-white rounded-md transition-colors text-center">
+                                        Next
+                                        <svg class="w-3 h-3 inline ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                @else
+                                    <button disabled class="flex-1 px-3 py-2 text-xs font-medium bg-gray-100 text-gray-400 rounded-md cursor-not-allowed">
+                                        Next
+                                        <svg class="w-3 h-3 inline ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
 

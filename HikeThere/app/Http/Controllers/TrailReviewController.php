@@ -104,7 +104,11 @@ class TrailReviewController extends Controller
                             continue;
                         }
                         
-                        $imagePath = $image->store('review-images', 'public');
+                        $imagePath = $image->storeAs(
+                            'review-images',
+                            $image->hashName(),
+                            ['disk' => 'public', 'quality' => 100]
+                        );
                         \Log::info("Image stored at: {$imagePath}");
                         
                         $uploadedImages[] = [

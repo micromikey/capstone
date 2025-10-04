@@ -86,6 +86,14 @@ class Trail extends Model
         return $this->hasOne(TrailImage::class)->where('image_type', 'map');
     }
 
+    /**
+     * Events associated with this trail
+     */
+    public function events()
+    {
+        return $this->hasMany(Event::class);
+    }
+
     // Accessors
     public function getDifficultyLabelAttribute()
     {

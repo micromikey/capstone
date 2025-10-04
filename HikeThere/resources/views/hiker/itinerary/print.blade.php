@@ -420,8 +420,11 @@ $weatherHelper = app(WeatherHelperService::class);
                         <td style="font-weight: 600; font-size: 7pt;">
                             @php
                                 $minutes = $activity['minutes'] ?? 0;
-                                $baseDateForNight = \Carbon\Carbon::parse($dateInfo['start_date'])->addDays($day - 1);
-                                $timeLabel = $weatherHelper->computeTimeForRow($baseDateForNight, $dateInfo['start_time'], $day, $minutes);
+                                // For night activities, minutes represent absolute time from midnight
+                                // Convert directly to HH:MM format (same as night-table component)
+                                $hours = floor($minutes / 60);
+                                $mins = $minutes % 60;
+                                $timeLabel = sprintf('%02d:%02d', $hours, $mins);
                                 
                                 // Get weather for night activity
                                 $weatherLabel = $weatherHelper->getWeatherFor($weatherData, $day, $timeLabel, $activity, $trail) ?? 'Clear / 20°C';
@@ -435,19 +438,10 @@ $weatherHelper = app(WeatherHelperService::class);
                                     $day - 1  // Convert day number to 0-based index
                                 );
                                 
-                                // Calculate transport
+                                // Calculate transport - Night transport: usually same as day's pickup/vehicle
                                 $trailCalculator = app(\App\Services\TrailCalculatorService::class);
-                                $transportLabel = 'N/A';
-                                $activityType = $activity['type'] ?? '';
-                                $activityLocation = strtolower($activity['location'] ?? '');
-                                
-                                if (in_array($activityType, ['meal', 'overnight', 'rest', 'photo', 'checkpoint'])) {
-                                    $transportLabel = 'N/A';
-                                } elseif (in_array($activityType, ['camp', 'sleep', 'overnight'])) {
-                                    $transportLabel = 'N/A';
-                                } else {
-                                    $transportLabel = 'On foot';
-                                }
+                                $buildArray = is_array($build) ? $build : (array)$build;
+                                $transportLabel = $buildArray['vehicle'] ?? ($buildArray['transport_mode'] ?? 'N/A');
                             @endphp
                             {{ $timeLabel }}
                         </td>
@@ -589,8 +583,19 @@ $weatherHelper = app(WeatherHelperService::class);
     </div>
 
     <script>
-        // Auto-print when opened (optional)
-        // window.onload = () => { window.print(); };
+        // Auto-print when page loads
+        window.addEventListener('load', function() {
+            // Small delay to ensure content is fully rendered
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        });
+        
+        // Close window after print dialog is closed (optional)
+        window.addEventListener('afterprint', function() {
+            // Uncomment the line below if you want to auto-close after printing
+            // window.close();
+        });
     </script>
 </body>
 </html>

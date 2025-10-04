@@ -266,11 +266,14 @@
                                     @endphp
                                     @php
                                       $isSelected = (old('trail') == $trail->trail_name) || (isset($preselectedTrail) && $preselectedTrail->id == $trail->id);
+                                      // Get hiking start time from the trail's most recent event
+                                      $hikingStartTime = $trail->events->first()?->hiking_start_time ?? null;
                                     @endphp
                                     <option value="{{ $trail->trail_name }}" data-trail-id="{{ $trail->id }}" {{ $isSelected ? 'selected' : '' }} data-side-trips='@json($sideTripsArray)' data-transport='@json($transportPayload)'
                                       @if($hours) data-hours='{{ htmlspecialchars(json_encode($hours), ENT_QUOTES, 'UTF-8') }}' @endif
                                       @if(!empty($trail->opening_time)) data-opening="{{ e($trail->opening_time) }}" @endif
                                       @if(!empty($trail->closing_time)) data-closing="{{ e($trail->closing_time) }}" @endif
+                                      @if($hikingStartTime) data-hiking-start-time="{{ e($hikingStartTime) }}" @endif
                                       @if(!empty($trail->pickup_time)) data-pickup-time="{{ e($trail->pickup_time) }}" @elseif(!empty($trail->pickup_time)) data-pickup-time="{{ e($trail->pickup_time) }}" @endif
                                       @if(!empty($trail->departure_time)) data-departure-time="{{ e($trail->departure_time) }}" @elseif(!empty($trail->departure_time)) data-departure-time="{{ e($trail->departure_time) }}" @endif
                                       @if(!empty($trail->pickup_time)) data-pickup-time-short="{{ e(\Carbon\Carbon::parse($trail->pickup_time)->format('H:i')) }}" @elseif(!empty($trail->pickup_time)) data-pickup-time-short="{{ e(\Carbon\Carbon::parse($trail->pickup_time)->format('H:i')) }}" @endif
@@ -341,11 +344,14 @@
                                   @endphp
                                   @php
                                     $isSelected = (old('trail') == $trail->trail_name) || (isset($preselectedTrail) && $preselectedTrail->id == $trail->id);
+                                    // Get hiking start time from the trail's most recent event
+                                    $hikingStartTime = $trail->events->first()?->hiking_start_time ?? null;
                                   @endphp
                                   <option value="{{ $trail->trail_name }}" data-trail-id="{{ $trail->id }}" {{ $isSelected ? 'selected' : '' }} data-side-trips='@json($sideTripsArray)' data-transport='@json($transportPayload)'
                                     @if($hours) data-hours='{{ htmlspecialchars(json_encode($hours), ENT_QUOTES, 'UTF-8') }}' @endif
                                     @if(!empty($trail->opening_time)) data-opening="{{ e($trail->opening_time) }}" @endif
                                     @if(!empty($trail->closing_time)) data-closing="{{ e($trail->closing_time) }}" @endif
+                                    @if($hikingStartTime) data-hiking-start-time="{{ e($hikingStartTime) }}" @endif
                                     @if(!empty($trail->pickup_time)) data-pickup-time="{{ e($trail->pickup_time) }}" @elseif(!empty($trail->pickup_time)) data-pickup-time="{{ e($trail->pickup_time) }}" @endif
                                     @if(!empty($trail->departure_time)) data-departure-time="{{ e($trail->departure_time) }}" @elseif(!empty($trail->departure_time)) data-departure-time="{{ e($trail->departure_time) }}" @endif
                                     @if(!empty($trail->pickup_time)) data-pickup-time-short="{{ e(\Carbon\Carbon::parse($trail->pickup_time)->format('H:i')) }}" @elseif(!empty($trail->pickup_time)) data-pickup-time-short="{{ e(\Carbon\Carbon::parse($trail->pickup_time)->format('H:i')) }}" @endif
@@ -480,14 +486,17 @@
                     </div>
                     <div class="flex flex-wrap items-center gap-3">
                       <label class="flex items-center gap-2">
-                        <span class="text-xs font-medium text-gray-600">Time</span>
-                        <input type="time" name="time" value="{{ old('time') }}" class="rounded-md border border-gray-300 px-2 py-1.5 text-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-emerald-200 w-28 transition" />
+                        <span class="text-xs font-medium text-gray-600">Hiking Start Time</span>
+                        <div id="hiking-start-time-display" class="rounded-md border border-gray-300 bg-gray-50 px-3 py-1.5 text-sm font-semibold text-gray-800 w-28">
+                          —
+                        </div>
                       </label>
                       <label class="flex items-center gap-2">
                         <span class="text-xs font-medium text-gray-600">Date</span>
                         <input type="date" name="date" value="{{ old('date') }}" class="rounded-md border border-gray-300 px-2 py-1.5 text-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-emerald-200 w-40 transition" />
                       </label>
                     </div>
+                    <p class="text-xs text-gray-500 mt-2">Hiking start time is set by the trail. Select a date for your hike.</p>
                   </div>
 
                   <!-- Weather Forecast -->
@@ -1426,6 +1435,46 @@
     // Hook into the trailSelect change to update transport preview as well
     document.getElementById('trailSelect')?.addEventListener('change', () => {
       try { renderTransportationPreview(); } catch (e) { /* silent */ }
+      try { updateHikingStartTime(); } catch (e) { /* silent */ }
+    });
+
+    // Update Hiking Start Time Display
+    function updateHikingStartTime() {
+      const display = document.getElementById('hiking-start-time-display');
+      const trailSelect = document.getElementById('trailSelect');
+      
+      if (!display || !trailSelect) return;
+      
+      const selectedOption = trailSelect.options[trailSelect.selectedIndex];
+      if (!selectedOption || !selectedOption.value) {
+        display.textContent = '—';
+        return;
+      }
+      
+      // Try to get hiking start time from the trail's event data
+      // First check if there's a data attribute for hiking start time
+      const hikingStartTime = selectedOption.getAttribute('data-hiking-start-time');
+      
+      if (hikingStartTime) {
+        // Format the time (assuming it's in HH:mm format)
+        try {
+          const [hours, minutes] = hikingStartTime.split(':');
+          const hour = parseInt(hours, 10);
+          const min = minutes || '00';
+          const ampm = hour >= 12 ? 'PM' : 'AM';
+          const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+          display.textContent = `${displayHour}:${min} ${ampm}`;
+        } catch (e) {
+          display.textContent = hikingStartTime;
+        }
+      } else {
+        display.textContent = '—';
+      }
+    }
+    
+    // Initialize hiking start time on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      updateHikingStartTime();
     });
 
     // Render Trail Opening / Closing times preview

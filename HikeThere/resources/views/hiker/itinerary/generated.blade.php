@@ -183,7 +183,18 @@ $preHikeActivities = $generatedData['preHikeActivities'] ?? [];
                         </svg>
                         Print Itinerary
                     </a>
-                    <button id="book-trail-btn" data-trail-id="{{ $trail->id ?? '' }}" data-trail-slug="{{ $trail->slug ?? '' }}" data-organization-id="{{ $trail->user_id ?? '' }}" data-organization-name="{{ $trail->user->display_name ?? '' }}" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
+                    <button id="share-itinerary-btn" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-lg font-medium transition-colors inline-flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                        </svg>
+                        Share Itinerary
+                    </button>
+                    <button id="book-trail-btn" 
+                        data-trail-id="{{ is_array($trail) ? ($trail['id'] ?? '') : ($trail->id ?? '') }}" 
+                        data-trail-slug="{{ is_array($trail) ? ($trail['slug'] ?? '') : ($trail->slug ?? '') }}" 
+                        data-organization-id="{{ is_array($trail) ? ($trail['user_id'] ?? '') : ($trail->user_id ?? '') }}" 
+                        data-organization-name="{{ is_array($trail) ? (($trail['user']['display_name'] ?? $trail['user']['name'] ?? '')) : (($trail->user->display_name ?? $trail->user->name ?? '')) }}" 
+                        class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
                         <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                         </svg>
@@ -204,7 +215,18 @@ $preHikeActivities = $generatedData['preHikeActivities'] ?? [];
                     </svg>
                     Print Itinerary
                 </a>
-                <button id="floating-book-trail-btn" data-trail-id="{{ $trail->id ?? '' }}" data-trail-slug="{{ $trail->slug ?? '' }}" data-organization-id="{{ $trail->user_id ?? '' }}" data-organization-name="{{ $trail->user->display_name ?? '' }}" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
+                <button id="floating-share-itinerary-btn" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-lg font-medium transition-colors inline-flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+                    </svg>
+                    Share Itinerary
+                </button>
+                <button id="floating-book-trail-btn" 
+                    data-trail-id="{{ is_array($trail) ? ($trail['id'] ?? '') : ($trail->id ?? '') }}" 
+                    data-trail-slug="{{ is_array($trail) ? ($trail['slug'] ?? '') : ($trail->slug ?? '') }}" 
+                    data-organization-id="{{ is_array($trail) ? ($trail['user_id'] ?? '') : ($trail->user_id ?? '') }}" 
+                    data-organization-name="{{ is_array($trail) ? (($trail['user']['display_name'] ?? $trail['user']['name'] ?? '')) : (($trail->user->display_name ?? $trail->user->name ?? '')) }}" 
+                    class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors">
                     <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
@@ -248,17 +270,118 @@ $preHikeActivities = $generatedData['preHikeActivities'] ?? [];
             bookBtns.forEach(btn => {
                 if (btn) {
                     btn.addEventListener('click', function() {
-                        // Add your book trail functionality here
                         const trailId = btn.getAttribute('data-trail-id');
                         const trailSlug = btn.getAttribute('data-trail-slug');
                         const orgId = btn.getAttribute('data-organization-id');
                         const orgName = btn.getAttribute('data-organization-name');
                         
-                        console.log('Book Trail clicked', {trailId, trailSlug, orgId, orgName});
-                        // Add your booking logic here
+                        if (!trailId || !orgId) {
+                            showNotification('Trail or organization information not found', 'error');
+                            return;
+                        }
+                        
+                        // Build the booking URL with pre-populated data
+                        const bookingUrl = new URL('{{ route("booking.details") }}', window.location.origin);
+                        bookingUrl.searchParams.set('trail_id', trailId);
+                        bookingUrl.searchParams.set('organization_id', orgId);
+                        
+                        // Redirect to booking page with populated data
+                        window.location.href = bookingUrl.toString();
                     });
                 }
             });
+
+            // Share Itinerary buttons
+            const shareBtns = [document.getElementById('share-itinerary-btn'), document.getElementById('floating-share-itinerary-btn')];
+            shareBtns.forEach(btn => {
+                if (btn) {
+                    btn.addEventListener('click', function() {
+                        const url = window.location.href;
+                        const trailName = '{{ $trail->name ?? "Trail" }}';
+                        const shareText = `Check out my hiking itinerary for ${trailName}!`;
+                        
+                        // Check if Web Share API is available
+                        if (navigator.share) {
+                            navigator.share({
+                                title: `${trailName} Itinerary`,
+                                text: shareText,
+                                url: url
+                            }).then(() => {
+                                console.log('Itinerary shared successfully');
+                            }).catch((error) => {
+                                console.log('Error sharing:', error);
+                                // Fallback to copy link
+                                copyToClipboard(url);
+                            });
+                        } else {
+                            // Fallback: Copy link to clipboard
+                            copyToClipboard(url);
+                        }
+                    });
+                }
+            });
+
+            // Helper function to copy to clipboard
+            function copyToClipboard(text) {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showNotification('Link copied to clipboard!');
+                    }).catch((err) => {
+                        console.error('Failed to copy: ', err);
+                        fallbackCopyToClipboard(text);
+                    });
+                } else {
+                    fallbackCopyToClipboard(text);
+                }
+            }
+
+            // Fallback copy method for older browsers
+            function fallbackCopyToClipboard(text) {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.top = '0';
+                textArea.style.left = '0';
+                textArea.style.width = '2em';
+                textArea.style.height = '2em';
+                textArea.style.padding = '0';
+                textArea.style.border = 'none';
+                textArea.style.outline = 'none';
+                textArea.style.boxShadow = 'none';
+                textArea.style.background = 'transparent';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showNotification('Link copied to clipboard!');
+                } catch (err) {
+                    console.error('Fallback: Could not copy text: ', err);
+                    showNotification('Failed to copy link', 'error');
+                }
+                document.body.removeChild(textArea);
+            }
+
+            // Show notification toast
+            function showNotification(message, type = 'success') {
+                const toast = document.createElement('div');
+                toast.className = `fixed top-4 right-4 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-x-full`;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                
+                // Animate in
+                setTimeout(() => {
+                    toast.classList.remove('translate-x-full');
+                }, 10);
+                
+                // Animate out and remove
+                setTimeout(() => {
+                    toast.classList.add('translate-x-full');
+                    setTimeout(() => {
+                        document.body.removeChild(toast);
+                    }, 300);
+                }, 3000);
+            }
         });
     </script>
 

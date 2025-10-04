@@ -11,7 +11,7 @@ class Event extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id','title','slug','description','start_at','end_at','trail_id','capacity','is_public',
+        'user_id','title','slug','description','start_at','end_at','hiking_start_time','trail_id','capacity','is_public',
         'duration','always_available','batch_count','location_name','price','is_free'
     ];
 

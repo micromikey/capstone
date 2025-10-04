@@ -13,12 +13,32 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Models\User as UserModel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class BookingController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $bookings = Booking::where('user_id', Auth::id())->with('trail')->latest()->get();
+        
+        // Return JSON for AJAX requests (for real-time polling)
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'bookings' => $bookings->map(function($booking) {
+                    return [
+                        'id' => $booking->id,
+                        'status' => $booking->status,
+                        'payment_status' => $booking->payment_status ?? 'pending',
+                        'has_payment_proof' => !empty($booking->payment_proof_path),
+                        'trail_name' => $booking->trail?->trail_name,
+                        'date' => $booking->date,
+                        'party_size' => $booking->party_size,
+                    ];
+                })
+            ]);
+        }
+        
         return view('hiker.booking.index', compact('bookings'));
     }
 
@@ -305,7 +325,40 @@ class BookingController extends Controller
             // NOTE: Slots are NOT reserved yet - only reserved after successful payment
             // This prevents holding slots for unpaid bookings
 
+            // Create notification for organization
+            $trail = Trail::find($data['trail_id']);
+            if ($trail && $trail->user_id) {
+                \App\Models\Notification::create([
+                    'user_id' => $trail->user_id,
+                    'type' => 'booking_created',
+                    'title' => 'New Booking Received',
+                    'message' => Auth::user()->display_name . ' has booked ' . $trail->trail_name . ' for ' . $data['party_size'] . ' person(s).',
+                    'data' => [
+                        'booking_id' => $booking->id,
+                        'trail_id' => $trail->id,
+                        'trail_name' => $trail->trail_name,
+                        'hiker_name' => Auth::user()->display_name,
+                        'party_size' => $data['party_size'],
+                        'date' => $data['date'] ?? null,
+                    ],
+                ]);
+            }
+
             DB::commit();
+
+            // Handle AJAX requests
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Booking created! Please complete your payment to confirm your reservation.',
+                    'booking' => [
+                        'id' => $booking->id,
+                        'status' => $booking->status,
+                        'payment_status' => $booking->payment_status,
+                    ],
+                    'redirect_url' => route('booking.payment', $booking->id),
+                ], 201);
+            }
         } catch (\Exception $e) {
             DB::rollBack();
             // Log the actual error for debugging
@@ -313,11 +366,21 @@ class BookingController extends Controller
                 'trace' => $e->getTraceAsString(),
                 'data' => $data
             ]);
+            
+            // Handle AJAX error responses
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unable to create booking at this time. Please try again.',
+                    'errors' => ['batch_id' => ['Unable to create booking at this time. Please try again.']],
+                ], 422);
+            }
+            
             // fall back to safe error
             return back()->withInput()->withErrors(['batch_id' => 'Unable to create booking at this time. Please try again.']);
         }
 
-        // Redirect to payment page for all bookings
+        // Redirect to payment page for all bookings (non-AJAX)
         return redirect()->route('booking.payment', $booking->id)
             ->with('success', 'Booking created! Please complete your payment to confirm your reservation.');
     }
@@ -443,11 +506,23 @@ class BookingController extends Controller
 
         // Only allow updating if booking is not confirmed and paid
         if ($booking->status === 'confirmed' && $booking->isPaid()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot update a confirmed and paid booking.',
+                ], 422);
+            }
             return back()->with('error', 'Cannot update a confirmed and paid booking.');
         }
 
         // Only allow updating if the event hasn't started yet
         if ($booking->batch && $booking->batch->starts_at <= now()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot update a booking for an event that has already started.',
+                ], 422);
+            }
             return back()->with('error', 'Cannot update a booking for an event that has already started.');
         }
 
@@ -458,6 +533,38 @@ class BookingController extends Controller
         ]);
 
         $booking->update($validated);
+
+        // Create notification for organization
+        $trail = $booking->trail;
+        if ($trail && $trail->user_id) {
+            \App\Models\Notification::create([
+                'user_id' => $trail->user_id,
+                'type' => 'booking_updated',
+                'title' => 'Booking Updated',
+                'message' => Auth::user()->display_name . ' has updated their booking for ' . $trail->trail_name . '.',
+                'data' => [
+                    'booking_id' => $booking->id,
+                    'trail_id' => $trail->id,
+                    'trail_name' => $trail->trail_name,
+                    'hiker_name' => Auth::user()->display_name,
+                    'party_size' => $validated['party_size'],
+                    'date' => $validated['date'] ?? null,
+                ],
+            ]);
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Booking updated successfully!',
+                'booking' => [
+                    'id' => $booking->id,
+                    'date' => $booking->date,
+                    'party_size' => $booking->party_size,
+                    'notes' => $booking->notes,
+                ],
+            ]);
+        }
 
         return redirect()->route('booking.show', $booking)
             ->with('success', 'Booking updated successfully!');
@@ -480,6 +587,31 @@ class BookingController extends Controller
 
         return redirect()->route('booking.index')
             ->with('success', 'Booking cancelled successfully. Slots have been released.');
+    }
+
+    public function downloadSlip(Booking $booking)
+    {
+        // Authorize that the user owns this booking
+        $this->authorize('view', $booking);
+
+        // Only allow download for confirmed bookings with verified payment
+        if ($booking->status !== 'confirmed' || $booking->payment_status !== 'verified') {
+            return back()->with('error', 'Reservation slip is only available for confirmed bookings with verified payment.');
+        }
+
+        // Load relationships including trail's organization
+        $booking->load(['trail.user', 'user', 'payment']);
+
+        // Generate PDF using DomPDF
+        $pdf = Pdf::loadView('hiker.booking.slip-pdf', compact('booking'));
+
+        // Set paper size and orientation
+        $pdf->setPaper('a4', 'portrait');
+
+        // Download the PDF with a filename
+        $fileName = 'Reservation-Slip-' . $booking->id . '-' . now()->format('Ymd') . '.pdf';
+        
+        return $pdf->download($fileName);
     }
 
     public function packageDetails()
@@ -728,7 +860,7 @@ class BookingController extends Controller
     // Debug log: batches found for matched events
     Log::info('trailBatches: batches fetched', ['trail_id' => $trail->id, 'batches_count' => $batchesRaw->count(), 'dated_event_ids' => $datedEventIds ?? []]);
 
-        $batches = $batchesRaw->map(function($b){
+        $batches = $batchesRaw->map(function($b) use ($target){
             // Use the slots_taken field from the Batch model for accurate slot tracking
             $remaining = $b->getAvailableSlots(); // This uses: capacity - slots_taken
 
@@ -741,37 +873,19 @@ class BookingController extends Controller
                 $labelBase = preg_replace('/^Event:\s*/i', '', $b->event->title);
             }
 
-            // compose a consistent slot label: prefer batch start, and include the
-            // parent event's start/end range when present so all slots show event dates.
+            // Compose slot label: Show trail name, selected date, and hiking start time only
             $slotLabel = trim($labelBase);
-            if ($starts) {
-                $slotLabel .= ' — ' . $starts->format('M j, g:i A');
+            
+            // Use the selected date (target) instead of event end_at
+            if ($target) {
+                $slotLabel .= ' — ' . $target->format('M j, Y');
+            } elseif ($starts) {
+                $slotLabel .= ' — ' . $starts->format('M j, Y');
             }
-
-            // include the event's overall date range when available, but avoid
-            // repeating the same start timestamp (e.g. when batch starts_at === event start_at).
-            $eventStarts = $b->event?->start_at ? Carbon::parse($b->event->start_at)->setTimezone('Asia/Manila') : null;
-            $eventEnds = $b->event?->end_at ? Carbon::parse($b->event->end_at)->setTimezone('Asia/Manila') : null;
-            if ($eventStarts) {
-                // Compare up to minute precision to avoid duplicating the same
-                // start time when seconds or timezone rounding differs.
-                $sameStart = false;
-                if ($starts && $eventStarts) {
-                    // treat starts within 1 minute as identical to avoid duplicate labels
-                    $sameStart = ($starts->diffInMinutes($eventStarts) <= 1);
-                }
-                $differentStart = ! $sameStart;
-                if ($differentStart) {
-                    $slotLabel .= ' — ' . $eventStarts->format('M j, g:i A');
-                }
-                if ($eventEnds) {
-                    // if the end date is the same day, show only the time for the end
-                    if ($eventStarts->toDateString() === $eventEnds->toDateString()) {
-                        $slotLabel .= ' to ' . $eventEnds->format('g:i A');
-                    } else {
-                        $slotLabel .= ' to ' . $eventEnds->format('M j, g:i A');
-                    }
-                }
+            
+            // Add hiking start time (from batch starts_at)
+            if ($starts) {
+                $slotLabel .= ' — ' . $starts->format('g:i A');
             }
 
             if (!is_null($remaining)) {
@@ -816,7 +930,7 @@ class BookingController extends Controller
             });
         }
 
-        $eventsMapped = $eventsToMap->map(function($e){
+        $eventsMapped = $eventsToMap->map(function($e) use ($target){
             $starts = $e->start_at ? Carbon::parse($e->start_at)->setTimezone('Asia/Manila') : null;
             $ends = $e->end_at ? Carbon::parse($e->end_at)->setTimezone('Asia/Manila') : null;
 
@@ -835,17 +949,19 @@ class BookingController extends Controller
             $labelBase = $e->title ?? $e->name ?? '';
             $labelBase = preg_replace('/^Event:\s*/i', '', $labelBase);
             $slotLabel = trim($labelBase);
-            if ($starts) {
-                $slotLabel .= ' — ' . $starts->format('M j, g:i A');
-                if ($ends) {
-                    // show end as time if same day, else include date
-                    if ($starts->toDateString() === $ends->toDateString()) {
-                        $slotLabel .= ' to ' . $ends->format('g:i A');
-                    } else {
-                        $slotLabel .= ' to ' . $ends->format('M j, g:i A');
-                    }
-                }
+            
+            // Use the selected date (target) instead of event end_at
+            if ($target) {
+                $slotLabel .= ' — ' . $target->format('M j, Y');
+            } elseif ($starts) {
+                $slotLabel .= ' — ' . $starts->format('M j, Y');
             }
+            
+            // Add hiking start time (from event starts_at)
+            if ($starts) {
+                $slotLabel .= ' — ' . $starts->format('g:i A');
+            }
+            
             if (!is_null($remaining)) {
                 $slotLabel .= ' (' . $remaining . ' spots left)';
             }

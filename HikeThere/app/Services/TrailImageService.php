@@ -17,22 +17,33 @@ class TrailImageService
 
     /**
      * Get trail images with organization images having priority
+     * Ensures no duplicate image URLs in the final result
      */
     public function getTrailImages($trail, $limit = 5)
     {
         $images = [];
+        $seenUrls = []; // Track URLs to prevent duplicates
 
         // 1. First priority: Organization uploaded images (but skip placeholders)
         if ($trail->images && $trail->images->count() > 0) {
             foreach ($trail->images as $orgImage) {
                 // Skip placeholder/demo images
                 if (! $this->isPlaceholderImage($orgImage->url)) {
+                    $imageUrl = $orgImage->url;
+                    
+                    // Skip if we've already added this exact URL
+                    if (in_array($imageUrl, $seenUrls)) {
+                        continue;
+                    }
+                    
                     $images[] = [
-                        'url' => $orgImage->url,
+                        'url' => $imageUrl,
                         'source' => 'organization',
                         'caption' => $orgImage->caption ?? $trail->trail_name,
                         'photographer' => $trail->user->display_name ?? 'Trail Organization',
                     ];
+                    
+                    $seenUrls[] = $imageUrl;
                 }
             }
         }
@@ -41,7 +52,23 @@ class TrailImageService
         $remainingSlots = $limit - count($images);
         if ($remainingSlots > 0) {
             $googleImages = $this->fetchGooglePlacesImagesForTrail($trail, $remainingSlots);
-            $images = array_merge($images, $googleImages);
+            
+            // Add Google images, checking for duplicates
+            foreach ($googleImages as $googleImage) {
+                if (count($images) >= $limit) {
+                    break;
+                }
+                
+                $imageUrl = $googleImage['url'];
+                
+                // Skip if we've already added this URL
+                if (in_array($imageUrl, $seenUrls)) {
+                    continue;
+                }
+                
+                $images[] = $googleImage;
+                $seenUrls[] = $imageUrl;
+            }
         }
 
         return array_slice($images, 0, $limit);
@@ -79,6 +106,7 @@ class TrailImageService
 
     /**
      * Enhanced Google Places API integration for trail-specific images
+     * Uses Google Places Photos API (the correct Google image service for locations)
      */
     protected function fetchGooglePlacesImagesForTrail($trail, $limit = 3)
     {
@@ -90,6 +118,7 @@ class TrailImageService
 
         return Cache::remember($cacheKey, 7200, function () use ($trail, $limit) {
             $images = [];
+            $seenPhotoReferences = []; // Track photo references to prevent duplicates
 
             try {
                 // Search queries for Google Places API
@@ -100,7 +129,7 @@ class TrailImageService
                         break;
                     }
 
-                    // Search for places
+                    // Search for places using Google Places Text Search API
                     $response = Http::get('https://maps.googleapis.com/maps/api/place/textsearch/json', [
                         'query' => $query,
                         'key' => $this->googleMapsKey,
@@ -120,15 +149,24 @@ class TrailImageService
 
                                 if (isset($place['photos']) && count($place['photos']) > 0) {
                                     foreach (array_slice($place['photos'], 0, 1) as $photo) {
+                                        $photoReference = $photo['photo_reference'];
+                                        
+                                        // Skip if we've already added this photo
+                                        if (in_array($photoReference, $seenPhotoReferences)) {
+                                            continue;
+                                        }
+
+                                        // Build Google Places Photo API URL with high quality settings
+                                        // Using maxwidth=1600 for high quality display (Google's max is 1600)
                                         $photoUrl = 'https://maps.googleapis.com/maps/api/place/photo?'.http_build_query([
-                                            'maxwidth' => 800,
-                                            'photo_reference' => $photo['photo_reference'],
+                                            'maxwidth' => 1600,
+                                            'photo_reference' => $photoReference,
                                             'key' => $this->googleMapsKey,
                                         ]);
 
                                         $images[] = [
                                             'url' => $photoUrl,
-                                            'thumb_url' => str_replace('maxwidth=800', 'maxwidth=400', $photoUrl),
+                                            'thumb_url' => str_replace('maxwidth=1600', 'maxwidth=600', $photoUrl),
                                             'source' => 'google_places',
                                             'caption' => $place['name'] ?? $trail->trail_name,
                                             'photographer' => 'Google Places',
@@ -136,6 +174,9 @@ class TrailImageService
                                             'place_id' => $place['place_id'] ?? null,
                                             'rating' => $place['rating'] ?? null,
                                         ];
+
+                                        // Mark this photo as seen
+                                        $seenPhotoReferences[] = $photoReference;
 
                                         if (count($images) >= $limit) {
                                             break 2;
@@ -147,7 +188,7 @@ class TrailImageService
                     }
                 }
 
-                Log::info('Google Places API fetched '.count($images).' images for trail: '.$trail->trail_name);
+                Log::info('Google Places Photos API fetched '.count($images).' unique images for trail: '.$trail->trail_name);
 
             } catch (\Exception $e) {
                 Log::error('Google Places API error for trail '.$trail->id.': '.$e->getMessage());

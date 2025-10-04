@@ -64,7 +64,7 @@
             @auth
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 <!-- Notification Dropdown -->
-                <x-notification-dropdown />
+                <x-notification-dropdown :userType="Auth::user()->user_type ?? 'hiker'" />
 
                 <!-- Settings Dropdown -->
                 <div class="ms-3 relative">
@@ -102,7 +102,18 @@
                             </x-dropdown-link>
                             @endif
 
+                            <div class="border-t border-gray-200"></div>
 
+                            <!-- About Section -->
+                            @if(Auth::user()->user_type === 'organization')
+                            <x-dropdown-link href="{{ route('org.about') }}">
+                                {{ __('About HikeThere') }}
+                            </x-dropdown-link>
+                            @else
+                            <x-dropdown-link href="{{ route('about') }}">
+                                {{ __('About HikeThere') }}
+                            </x-dropdown-link>
+                            @endif
 
                             <div class="border-t border-gray-200"></div>
 
@@ -208,6 +219,17 @@
                 @if(Auth::user()->user_type === 'organization')
                 <x-responsive-nav-link href="{{ route('org.payment.index') }}" :active="request()->routeIs('org.payment.*')">
                     {{ __('Payment Setup') }}
+                </x-responsive-nav-link>
+                @endif
+
+                <!-- About HikeThere -->
+                @if(Auth::user()->user_type === 'organization')
+                <x-responsive-nav-link href="{{ route('org.about') }}" :active="request()->routeIs('org.about')">
+                    {{ __('About HikeThere') }}
+                </x-responsive-nav-link>
+                @else
+                <x-responsive-nav-link href="{{ route('about') }}" :active="request()->routeIs('about')">
+                    {{ __('About HikeThere') }}
                 </x-responsive-nav-link>
                 @endif
 

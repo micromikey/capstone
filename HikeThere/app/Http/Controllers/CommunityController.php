@@ -25,9 +25,37 @@ class CommunityController extends Controller
         // Get approved organizations
         $organizations = User::where('user_type', 'organization')
             ->where('approval_status', 'approved')
-            ->with(['organizationProfile'])
+            ->with([
+                'organizationProfile',
+                'organizationTrails' => function($query) {
+                    $query->where('is_active', true);
+                }
+            ])
             ->withCount('followers')
             ->get();
+
+        // Load reviews data for each organization's trails and calculate ratings
+        foreach ($organizations as $organization) {
+            $totalRatings = 0;
+            $sumRatings = 0;
+            
+            // Get trails with review stats
+            $trails = \App\Models\Trail::where('user_id', $organization->id)
+                ->where('is_active', true)
+                ->withAvg('reviews', 'rating')
+                ->withCount('reviews')
+                ->get();
+            
+            foreach ($trails as $trail) {
+                if ($trail->reviews_count > 0) {
+                    $totalRatings += $trail->reviews_count;
+                    $sumRatings += $trail->reviews_avg_rating * $trail->reviews_count;
+                }
+            }
+            
+            $organization->total_ratings = $totalRatings;
+            $organization->average_rating = $totalRatings > 0 ? round($sumRatings / $totalRatings, 1) : 0;
+        }
 
         // Get organizations the hiker is following
         $followingIds = $user->following()->pluck('users.id')->toArray();
@@ -350,6 +378,14 @@ class CommunityController extends Controller
             $trail->total_reviews = $trail->reviews_count;
         }
 
-        return view('hiker.community.organization-profile', compact('organization', 'isFollowing', 'trails'));
+        // Get reviews for this organization's trails with pagination
+        $reviews = \App\Models\TrailReview::whereHas('trail', function($query) use ($organizationId) {
+                $query->where('user_id', $organizationId);
+            })
+            ->with(['user', 'trail'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(12, ['*'], 'reviews_page');
+
+        return view('hiker.community.organization-profile', compact('organization', 'isFollowing', 'trails', 'reviews'));
     }
 }

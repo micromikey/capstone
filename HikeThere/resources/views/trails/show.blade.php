@@ -1,4 +1,10 @@
 <x-app-layout>
+    @php
+        // Fetch trail images ONCE at the top to avoid duplicate calls and ensure consistency
+        $imageService = app(App\Services\TrailImageService::class);
+        $allImages = $imageService->getTrailImages($trail, 10);
+    @endphp
+
     <!-- Floating Navigation -->
     <x-floating-navigation :sections="[
         ['id' => 'trail-gallery', 'title' => 'Trail', 'icon' => '<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z\'/>'],
@@ -36,11 +42,22 @@
                 <!-- Trail Image Gallery -->
                 <div id="trail-gallery" class="relative h-96 bg-gray-200" x-data="trailGallery()" x-init="init()">
                     <!-- Main Image -->
-                    <div class="w-full h-full overflow-hidden">
+                    <div class="w-full h-full overflow-hidden cursor-pointer group" @click="openMainImage()">
                         <img x-show="currentImage" 
                              :src="currentImage" 
                              :alt="'{{ $trail->trail_name }} - Image ' + (currentIndex + 1)"
-                             class="w-full h-full object-cover transition-all duration-300">
+                             loading="eager"
+                             fetchpriority="high"
+                             class="w-full h-full object-cover transition-all duration-300 group-hover:scale-105">
+                        
+                        <!-- Click to expand hint -->
+                        <div x-show="currentImage" class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 flex items-center justify-center pointer-events-none">
+                            <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full p-3">
+                                <svg class="w-8 h-8 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+                                </svg>
+                            </div>
+                        </div>
                         
                         <!-- Fallback when no images -->
                         <div x-show="!currentImage" class="w-full h-full flex items-center justify-center text-gray-400">
@@ -173,10 +190,16 @@
                             <h3 class="text-lg font-semibold text-gray-900 mb-3">Organization</h3>
                             <div class="bg-gray-50 rounded-lg p-4">
                                 <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <img src="{{ $trail->user->profile_photo_url }}" alt="{{ $trail->user->display_name }}" class="w-12 h-12 rounded-full object-cover">
+                                    <a href="{{ route('community.organization.show', $trail->user_id) }}" class="flex items-center gap-3 hover:opacity-80 transition-opacity flex-1">
+                                        @if($trail->user->profile_photo_path)
+                                            <img src="{{ asset('storage/' . $trail->user->profile_photo_path) }}" alt="{{ $trail->user->display_name }}" class="w-12 h-12 rounded-full object-cover">
+                                        @else
+                                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-semibold">
+                                                {{ strtoupper(substr($trail->user->display_name, 0, 1)) }}{{ strtoupper(substr(explode(' ', $trail->user->display_name)[1] ?? '', 0, 1)) }}
+                                            </div>
+                                        @endif
                                         <div>
-                                            <p class="font-medium text-gray-900">{{ $trail->user->display_name }}</p>
+                                            <p class="font-medium text-gray-900 hover:text-green-600 transition-colors">{{ $trail->user->display_name }}</p>
                                             <p class="text-sm text-gray-600">Trail Organizer</p>
                                             @if($trail->user->user_type === 'organization')
                                                 <div class="flex items-center text-xs text-gray-500 mt-1">
@@ -187,7 +210,7 @@
                                                 </div>
                                             @endif
                                         </div>
-                                    </div>
+                                    </a>
                                     @auth
                                         @if(auth()->user()->user_type === 'hiker' && $trail->user->user_type === 'organization')
                                             <button id="follow-org-btn"
@@ -273,6 +296,9 @@
                                         <div class="flex-1">
                                             <h3 class="text-lg font-semibold text-gray-900 leading-tight">{{ $event->title }}</h3>
                                             <p class="text-sm text-gray-500 mt-1">{{ optional($event->user)->display_name ?? 'Organization' }} • @if(!empty($event->always_available)) Always Open @else {{ $event->start_at ? $event->start_at->format('M d, Y g:ia') : 'TBA' }} @endif</p>
+                                            @if($event->hiking_start_time)
+                                                <p class="text-sm text-emerald-700 font-medium mt-1">🥾 Hike starts at {{ \Carbon\Carbon::parse($event->hiking_start_time)->format('g:i A') }}</p>
+                                            @endif
                                             @if($event->trail && $event->trail->location)
                                                 <p class="text-sm text-gray-600 mt-1">📍 {{ $event->trail->location->name }}, {{ $event->trail->location->province }}</p>
                                             @endif
@@ -679,7 +705,13 @@
                                     @foreach($trail->reviews->take(5) as $review)
                                         <div class="border-b border-gray-200 pb-6 last:border-b-0">
                                             <div class="flex items-start space-x-4">
-                                                <img src="{{ $review->user->profile_photo_url }}" alt="{{ $review->user->name }}" class="w-10 h-10 rounded-full object-cover">
+                                                @if($review->user->profile_photo_path)
+                                                    <img src="{{ asset('storage/' . $review->user->profile_photo_path) }}" alt="{{ $review->user->name }}" class="w-10 h-10 rounded-full object-cover">
+                                                @else
+                                                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-semibold text-sm">
+                                                        {{ strtoupper(substr($review->user->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', $review->user->name)[1] ?? '', 0, 1)) }}
+                                                    </div>
+                                                @endif
                                                 <div class="flex-1">
                                                     <div class="flex items-center justify-between">
                                                         <div class="flex items-center space-x-2">
@@ -703,6 +735,8 @@
                                                                  <div class="relative group">
                                                         <img src="{{ asset('storage/' . $image['path']) }}" 
                                                             alt="Review photo" 
+                                                            loading="lazy"
+                                                            decoding="async"
                                                             class="w-full h-20 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity review-image"
                                                             data-image-src="{{ asset('storage/' . $image['path']) }}"
                                                             data-image-caption="{{ $review->user->name }}">
@@ -764,8 +798,11 @@
 
                 <!-- Additional Images Section -->
                 @php
-                    $imageService = app(App\Services\TrailImageService::class);
-                    $allImages = $imageService->getTrailImages($trail, 10);
+                    // Fetch trail images once and reuse (avoid duplicate calls)
+                    if (!isset($allImages)) {
+                        $imageService = app(App\Services\TrailImageService::class);
+                        $allImages = $imageService->getTrailImages($trail, 10);
+                    }
                 @endphp
                 
                 @if(count($allImages) > 1)
@@ -774,10 +811,19 @@
                         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                             @foreach($allImages as $index => $image)
                                 <button data-index="{{ $index }}"
-                                        class="aspect-square rounded-lg overflow-hidden hover:opacity-75 transition-opacity group gallery-thumb">
+                                        class="relative aspect-square rounded-lg overflow-hidden hover:opacity-75 transition-all transform hover:scale-105 group gallery-thumb cursor-pointer">
                                     <img src="{{ $image['url'] }}" 
                                          alt="{{ $image['caption'] }}"
+                                         loading="lazy"
+                                         decoding="async"
                                          class="w-full h-full object-cover">
+                                    
+                                    <!-- Expand icon overlay -->
+                                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+                                        </svg>
+                                    </div>
                                     
                                     <!-- Image source badge -->
                                     @if($image['source'] !== 'organization')
@@ -1208,9 +1254,9 @@
     </div>
  
      <!-- Image Modal -->
-     <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden">
+     <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden" onclick="closeImageModal()">
          <div class="flex items-center justify-center min-h-screen p-4">
-             <div class="relative max-w-4xl max-h-full">
+             <div class="relative max-w-4xl max-h-full" onclick="event.stopPropagation()">
                  <img id="modal-image" src="" alt="Review photo" class="max-w-full max-h-full object-contain rounded-lg">
                  <div class="absolute top-4 right-4">
                      <button onclick="closeImageModal()" class="bg-black bg-opacity-50 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-75 transition-all">
@@ -1227,9 +1273,7 @@
      </div>
 
     @php
-        // Prepare gallery image arrays for JS
-        $imageService = app(App\Services\TrailImageService::class);
-        $allImages = $imageService->getTrailImages($trail, 10);
+        // Prepare gallery image arrays for JS (using images fetched at top of file)
         $imageUrls = [];
         $imageCaptions = [];
         foreach ($allImages as $image) {
@@ -1374,6 +1418,13 @@
                         this.currentIndex = index;
                         this.currentImage = this.images[index];
                     }
+                },
+                
+                openMainImage() {
+                    if (this.currentImage) {
+                        const caption = this.captions[this.currentIndex] || '{{ $trail->trail_name }}';
+                        openImageModal(this.currentImage, caption);
+                    }
                 }
             }
         }
@@ -1394,12 +1445,19 @@
                 const ratingInput = document.getElementById('rating-input');
                 const reviewTextarea = document.getElementById('review');
                 const charCounter = document.getElementById('review-char-count');
+                const ratingStarsContainer = document.getElementById('rating-stars');
+
+                // Check if review form exists before initializing
+                if (!reviewForm) {
+                    console.debug('Review form not found on page');
+                    return;
+                }
 
                 // Rating stars functionality
                 ratingStars.forEach((star, index) => {
                     star.addEventListener('click', function() {
                         selectedRating = index + 1;
-                        ratingInput.value = selectedRating;
+                        if (ratingInput) ratingInput.value = selectedRating;
                         updateStarDisplay(selectedRating);
                     });
 
@@ -1409,9 +1467,11 @@
                 });
 
                 // Reset stars on mouse leave
-                document.getElementById('rating-stars').addEventListener('mouseleave', function() {
-                    updateStarDisplay(selectedRating);
-                });
+                if (ratingStarsContainer) {
+                    ratingStarsContainer.addEventListener('mouseleave', function() {
+                        updateStarDisplay(selectedRating);
+                    });
+                }
 
                 // Character counter
                 if (reviewTextarea && charCounter) {
@@ -1723,19 +1783,6 @@
                 }, 300);
             }
 
-            // Image Modal Functionality
-            function openImageModal(imageUrl, caption) {
-                const modalImage = document.getElementById('modal-image');
-                const modalCaption = document.getElementById('modal-caption');
-                modalImage.src = imageUrl;
-                modalCaption.textContent = caption;
-                document.getElementById('image-modal').classList.remove('hidden');
-            }
-
-            function closeImageModal() {
-                document.getElementById('image-modal').classList.add('hidden');
-            }
-
             // Image Upload Functionality
             function initializeImageUploads() {
                 const imageUploadSlots = document.querySelectorAll('.image-upload-slot');
@@ -1929,11 +1976,48 @@
             setTimeout(updateFloatingActions, 100);
         }
 
-        // Weather functionality
+        // Weather functionality with caching
+        const WEATHER_CACHE_DURATION_MS = 2 * 60 * 1000; // 2 minutes cache
+        let weatherFetchInProgress = false;
+
+        // Helper: Get cached weather data if still valid
+        function getCachedWeather(cacheKey) {
+            try {
+                const cached = localStorage.getItem(cacheKey);
+                if (!cached) return null;
+                
+                const data = JSON.parse(cached);
+                const age = Date.now() - (data.timestamp || 0);
+                
+                if (age < WEATHER_CACHE_DURATION_MS) {
+                    console.debug('Using cached weather data (age: ' + Math.round(age / 1000) + 's)');
+                    return data;
+                }
+            } catch (e) {
+                console.warn('Failed to read weather cache:', e);
+            }
+            return null;
+        }
+
+        // Helper: Save weather data to cache
+        function cacheWeather(cacheKey, weatherData) {
+            try {
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    ...weatherData,
+                    timestamp: Date.now()
+                }));
+            } catch (e) {
+                console.warn('Failed to cache weather:', e);
+            }
+        }
+
         function initializeWeatherData() {
             const trailCoords = JSON.parse(document.getElementById('trail-coordinates').textContent || '[]');
             
             if (!trailCoords || trailCoords.length === 0) {
+                console.warn('No trail coordinates available for weather');
+                displayWeatherError('current-weather', 'Location data unavailable');
+                displayWeatherError('forecast-weather', 'Location data unavailable');
                 return; // No coordinates available for weather
             }
 
@@ -1942,36 +2026,91 @@
             const lat = startCoord.lat;
             const lng = startCoord.lng;
 
-            // Fetch current weather and forecast
-            fetchCurrentWeather(lat, lng);
-            fetchForecast(lat, lng);
+            // Validate coordinates
+            if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+                console.error('Invalid coordinates:', { lat, lng });
+                displayWeatherError('current-weather', 'Invalid location data');
+                displayWeatherError('forecast-weather', 'Invalid location data');
+                return;
+            }
+
+            // Create cache keys based on coordinates
+            const currentWeatherCacheKey = `trail_weather_current_${lat.toFixed(4)}_${lng.toFixed(4)}`;
+            const forecastCacheKey = `trail_weather_forecast_${lat.toFixed(4)}_${lng.toFixed(4)}`;
+
+            // Try to load from cache first
+            const cachedCurrent = getCachedWeather(currentWeatherCacheKey);
+            const cachedForecast = getCachedWeather(forecastCacheKey);
+
+            if (cachedCurrent) {
+                console.log('Loading current weather from cache');
+                displayCurrentWeather(cachedCurrent.data);
+            }
+
+            if (cachedForecast) {
+                console.log('Loading forecast from cache');
+                displayForecast(cachedForecast.data);
+                displayHourlyForecast(cachedForecast.data.hourly || []);
+            }
+
+            // Fetch fresh data (will update the UI and cache)
+            if (!weatherFetchInProgress) {
+                fetchCurrentWeather(lat, lng, currentWeatherCacheKey);
+                fetchForecast(lat, lng, forecastCacheKey);
+            }
         }
 
-        function fetchCurrentWeather(lat, lng) {
+        function fetchCurrentWeather(lat, lng, cacheKey) {
+            if (weatherFetchInProgress) return;
+            weatherFetchInProgress = true;
+
             fetch(`/api/weather?lat=${lat}&lng=${lng}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.error) {
                         displayWeatherError('current-weather', 'Unable to load current weather');
                         return;
                     }
+                    
+                    // Cache the data
+                    cacheWeather(cacheKey, { data: data });
+                    
+                    // Display the data
                     displayCurrentWeather(data);
+                    
+                    weatherFetchInProgress = false;
                 })
                 .catch(error => {
                     console.error('Error fetching current weather:', error);
                     displayWeatherError('current-weather', 'Failed to load weather data');
+                    weatherFetchInProgress = false;
                 });
         }
 
-        function fetchForecast(lat, lng) {
+        function fetchForecast(lat, lng, cacheKey) {
             fetch(`/api/weather/forecast?lat=${lat}&lng=${lng}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.error) {
                         displayWeatherError('forecast-weather', 'Unable to load forecast');
                         displayHourlyError();
                         return;
                     }
+                    
+                    // Cache the data
+                    cacheWeather(cacheKey, { data: data });
+                    
+                    // Display the data
                     displayForecast(data);
                     displayHourlyForecast(data.hourly || []);
                 })
@@ -2169,6 +2308,33 @@
     const ELEVATION_PROFILE_ROUTE = _serverData.elevationProfileRoute || null;
     const BASE_URL = _serverData.baseUrl || '';
 
+        // Image Modal Functions (Global scope so they can be called from anywhere)
+        function openImageModal(imageUrl, caption) {
+            const modal = document.getElementById('image-modal');
+            const modalImage = document.getElementById('modal-image');
+            const modalCaption = document.getElementById('modal-caption');
+            
+            if (modal && modalImage) {
+                modalImage.src = imageUrl;
+                if (modalCaption) {
+                    modalCaption.textContent = caption || '';
+                }
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('image-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                // Clear image source to prevent it showing briefly on next open
+                const modalImage = document.getElementById('modal-image');
+                if (modalImage) {
+                    setTimeout(() => { modalImage.src = ''; }, 300);
+                }
+            }
+        }
+
         // Initialize Google Maps
         function initTrailMap() {
             if (!trailCoordinates || trailCoordinates.length === 0) return;
@@ -2245,10 +2411,22 @@
                 return;
             }
 
+            const trackingStatus = document.getElementById('tracking-status');
+            const startTrackingBtn = document.getElementById('start-tracking');
+            
+            if (!startTrackingBtn) {
+                console.error('Start tracking button not found');
+                return;
+            }
+
             isTracking = true;
-            document.getElementById('tracking-status').classList.remove('hidden');
-            document.getElementById('start-tracking').disabled = true;
-            document.getElementById('start-tracking').innerHTML = '<svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" class="opacity-75"></path></svg>Tracking...';
+            
+            if (trackingStatus) {
+                trackingStatus.classList.remove('hidden');
+            }
+            
+            startTrackingBtn.disabled = true;
+            startTrackingBtn.innerHTML = '<svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" class="opacity-75"></path></svg>Tracking...';
 
             watchId = navigator.geolocation.watchPosition(
                 updateUserLocation,
@@ -2310,8 +2488,16 @@
             
             const progress = Math.round((closestPointIndex / (trailCoordinates.length - 1)) * 100);
 
-            document.getElementById('distance-from-trail').textContent = `Distance from trail: ${distanceText}`;
-            document.getElementById('progress-percentage').textContent = `Progress: ${progress}%`;
+            const distanceElement = document.getElementById('distance-from-trail');
+            const progressElement = document.getElementById('progress-percentage');
+            
+            if (distanceElement) {
+                distanceElement.textContent = `Distance from trail: ${distanceText}`;
+            }
+            
+            if (progressElement) {
+                progressElement.textContent = `Progress: ${progress}%`;
+            }
         }
 
         // Calculate distance between two coordinates (Haversine formula)
@@ -2359,9 +2545,17 @@
                 watchId = null;
             }
             
-            document.getElementById('tracking-status').classList.add('hidden');
-            document.getElementById('start-tracking').disabled = false;
-            document.getElementById('start-tracking').innerHTML = '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Start Tracking';
+            const trackingStatus = document.getElementById('tracking-status');
+            const startTrackingBtn = document.getElementById('start-tracking');
+            
+            if (trackingStatus) {
+                trackingStatus.classList.add('hidden');
+            }
+            
+            if (startTrackingBtn) {
+                startTrackingBtn.disabled = false;
+                startTrackingBtn.innerHTML = '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Start Tracking';
+            }
         }
 
         // Event listeners
@@ -2374,27 +2568,48 @@
             // Load elevation profile
             loadElevationProfile();
 
-            // Tracking buttons
-            document.getElementById('start-tracking').addEventListener('click', startTracking);
-            document.getElementById('stop-tracking').addEventListener('click', stopTracking);
-        });
+            // Tracking buttons - check if they exist
+            const startTrackingBtn = document.getElementById('start-tracking');
+            const stopTrackingBtn = document.getElementById('stop-tracking');
+            
+            if (startTrackingBtn) {
+                startTrackingBtn.addEventListener('click', startTracking);
+            }
+            
+            if (stopTrackingBtn) {
+                stopTrackingBtn.addEventListener('click', stopTracking);
+            }
 
-        // gallery thumbnail click handling (avoid inline onclick with Blade)
-        document.querySelectorAll('.gallery-thumb').forEach(btn => {
-            btn.addEventListener('click', function(e){
-                const idx = this.getAttribute('data-index');
-                if (window.trailGalleryComponent && typeof window.trailGalleryComponent.setImage === 'function') {
-                    window.trailGalleryComponent.setImage(parseInt(idx, 10));
-                }
+            // Gallery thumbnail click handling - open modal with full image
+            document.querySelectorAll('.gallery-thumb').forEach(btn => {
+                btn.addEventListener('click', function(e){
+                    const idx = parseInt(this.getAttribute('data-index'), 10);
+                    const img = this.querySelector('img');
+                    if (img) {
+                        const imageUrl = img.src;
+                        const imageCaption = img.alt || '';
+                        openImageModal(imageUrl, imageCaption);
+                    }
+                });
             });
-        });
 
-        // review image modal handling
-        document.querySelectorAll('.review-image').forEach(img => {
-            img.addEventListener('click', function(){
-                const src = this.dataset.imageSrc;
-                const caption = this.dataset.imageCaption || '';
-                openImageModal(src, caption);
+            // Review image modal handling
+            document.querySelectorAll('.review-image').forEach(img => {
+                img.addEventListener('click', function(){
+                    const src = this.dataset.imageSrc;
+                    const caption = this.dataset.imageCaption || '';
+                    openImageModal(src, caption);
+                });
+            });
+
+            // ESC key to close modal
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('image-modal');
+                    if (modal && !modal.classList.contains('hidden')) {
+                        closeImageModal();
+                    }
+                }
             });
         });
 

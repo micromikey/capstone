@@ -607,7 +607,7 @@ class OrganizationTrailController extends Controller
     }
 
     /**
-     * Handle trail image uploads
+     * Handle trail image uploads with quality preservation
      */
     protected function handleTrailImages(Request $request, Trail $trail)
     {
@@ -615,7 +615,13 @@ class OrganizationTrailController extends Controller
             // Handle primary image
             if ($request->hasFile('primary_image')) {
                 $primaryFile = $request->file('primary_image');
-                $primaryPath = $primaryFile->store('trail-images/primary', 'public');
+                
+                // Store with high quality preservation (avoid compression)
+                $primaryPath = $primaryFile->storeAs(
+                    'trail-images/primary',
+                    $primaryFile->hashName(),
+                    ['disk' => 'public', 'quality' => 100]
+                );
                 
                 TrailImage::create([
                     'trail_id' => $trail->id,
@@ -634,7 +640,12 @@ class OrganizationTrailController extends Controller
                 $sortOrder = 2;
                 foreach ($request->file('additional_images') as $file) {
                     if ($file) {
-                        $path = $file->store('trail-images/additional', 'public');
+                        // Store with high quality preservation
+                        $path = $file->storeAs(
+                            'trail-images/additional',
+                            $file->hashName(),
+                            ['disk' => 'public', 'quality' => 100]
+                        );
                         
                         TrailImage::create([
                             'trail_id' => $trail->id,
@@ -654,7 +665,13 @@ class OrganizationTrailController extends Controller
             // Handle map image
             if ($request->hasFile('map_image')) {
                 $mapFile = $request->file('map_image');
-                $mapPath = $mapFile->store('trail-images/maps', 'public');
+                
+                // Store with high quality preservation
+                $mapPath = $mapFile->storeAs(
+                    'trail-images/maps',
+                    $mapFile->hashName(),
+                    ['disk' => 'public', 'quality' => 100]
+                );
                 
                 TrailImage::create([
                     'trail_id' => $trail->id,

@@ -1,4 +1,5 @@
-<div x-data="notificationDropdown()" @click.away="open = false" class="relative">
+@props(['userType' => 'hiker'])
+<div x-data="notificationDropdown('{{ $userType }}')" @click.away="open = false" class="relative">
     <!-- Notification Bell Button -->
     <button @click="open = !open; if(open) loadNotifications();" 
             class="relative p-2 text-gray-600 hover:text-gray-800 focus:outline-none rounded-lg transition-colors">
@@ -74,7 +75,7 @@
                                             </svg>
                                         </div>
                                     </template>
-                                    <template x-if="notification.type === 'booking'">
+                                    <template x-if="notification.type === 'booking' || notification.type === 'booking_created' || notification.type === 'booking_updated' || notification.type === 'booking_status_updated'">
                                         <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                                             <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
@@ -192,12 +193,13 @@
 </div>
 
 <script>
-function notificationDropdown() {
+function notificationDropdown(userType = 'hiker') {
     return {
         open: false,
         loading: false,
         notifications: [],
         unreadCount: 0,
+        userType: userType,
 
         init() {
             // Load initial unread count
@@ -272,7 +274,12 @@ function notificationDropdown() {
             if (notification.data?.trail_slug) {
                 window.location.href = `/trails/${notification.data.trail_slug}`;
             } else if (notification.data?.booking_id) {
-                window.location.href = `/hiker/booking`;
+                // Route based on user type
+                if (this.userType === 'organization') {
+                    window.location.href = `/org/bookings/${notification.data.booking_id}`;
+                } else {
+                    window.location.href = `/hiker/booking`;
+                }
             }
         },
 

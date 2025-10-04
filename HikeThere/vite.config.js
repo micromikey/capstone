@@ -11,7 +11,8 @@ export default defineConfig({
                 'resources/js/app.js', 
                 'resources/js/map.js', 
                 'resources/js/itinerary-map.js',
-                'resources/js/advanced-trail-map.js'
+                'resources/js/advanced-trail-map.js',
+                'resources/js/event-poller.js'
             ],
             refresh: true,
         }),

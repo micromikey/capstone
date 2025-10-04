@@ -120,10 +120,7 @@
                                         <div class="absolute top-3 left-3">
                                             @if($isPaymentVerified)
                                                 <span class="px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-full shadow-lg flex items-center gap-1">
-                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"></path>
-                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"></path>
-                                                    </svg>
+                                                    <span class="text-sm font-bold">₱</span>
                                                     Payment Verified
                                                 </span>
                                             @elseif($isUnderVerification)
@@ -159,13 +156,18 @@
                                     </h3>
 
                                     <div class="space-y-2.5 mb-4">
-                                        <!-- Date -->
+                                        <!-- Date & Time -->
                                         <div class="flex items-center text-sm text-gray-600">
                                             <svg class="w-5 h-5 mr-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                             </svg>
                                             <span class="font-medium text-gray-700">
                                                 {{ $bookingDate ? $bookingDate->format('F j, Y') : 'Date TBD' }}
+                                                @if($booking->batch && $booking->batch->starts_at)
+                                                    <span class="text-emerald-600 ml-2">
+                                                        • {{ $booking->batch->starts_at->format('g:i A') }}
+                                                    </span>
+                                                @endif
                                             </span>
                                         </div>
 
@@ -180,9 +182,9 @@
                                         <!-- Amount -->
                                         @if($booking->payment)
                                             <div class="flex items-center text-sm text-gray-600">
-                                                <svg class="w-5 h-5 mr-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                </svg>
+                                                <div class="w-5 h-5 mr-3 flex items-center justify-center">
+                                                    <span class="text-lg font-bold text-green-500">₱</span>
+                                                </div>
                                                 <span><strong class="text-gray-700">₱{{ number_format($booking->payment->amount ?? 0, 2) }}</strong></span>
                                             </div>
                                         @endif
@@ -232,19 +234,20 @@
                                                 </a>
                                             @endif
                                         @elseif($isConfirmed && $isPaymentVerified)
-                                            <!-- View Receipt & Reservation Slip for Confirmed Bookings -->
+                                            <!-- View Details & Download Reservation Slip for Confirmed Bookings -->
                                             <div class="grid grid-cols-2 gap-2">
-                                                <a href="{{ route('booking.show', $booking) }}" class="inline-flex items-center justify-center px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all text-sm font-medium">
+                                                <a href="{{ route('booking.show', $booking) }}" class="inline-flex items-center justify-center px-3 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all text-sm font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
                                                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                                     </svg>
-                                                    Receipt
+                                                    Details
                                                 </a>
-                                                <a href="{{ route('booking.show', $booking) }}" class="inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-medium">
-                                                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
+                                                <a href="{{ route('booking.download-slip', $booking) }}" class="inline-flex items-center justify-center px-3 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all text-sm font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5 group" download>
+                                                    <svg class="w-4 h-4 mr-1.5 group-hover:animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                                     </svg>
-                                                    Slip
+                                                    Download
                                                 </a>
                                             </div>
                                         @endif
@@ -280,4 +283,204 @@
             </div>
         </div>
     </div>
+
+    {{-- Real-time Booking Status Updates via AJAX --}}
+    <script>
+        let pollingInterval = null;
+        let bookingStates = {};
+
+        // Initialize booking states on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Store initial booking states
+            @foreach($bookings as $booking)
+                bookingStates[{{ $booking->id }}] = {
+                    status: '{{ $booking->status }}',
+                    payment_status: '{{ $booking->payment_status ?? "pending" }}',
+                    has_payment_proof: {{ !empty($booking->payment_proof_path) ? 'true' : 'false' }}
+                };
+            @endforeach
+
+            // Start polling for updates every 30 seconds
+            startPolling();
+        });
+
+        function startPolling() {
+            // Poll immediately on load
+            checkForUpdates();
+            
+            // Then poll every 30 seconds
+            pollingInterval = setInterval(checkForUpdates, 30000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        async function checkForUpdates() {
+            try {
+                const response = await fetch('{{ route("booking.index") }}', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    }
+                });
+
+                if (!response.ok) return;
+
+                const data = await response.json();
+                
+                if (data.bookings) {
+                    processBookingUpdates(data.bookings);
+                }
+            } catch (error) {
+                console.error('Error checking for booking updates:', error);
+            }
+        }
+
+        function processBookingUpdates(bookings) {
+            let hasChanges = false;
+
+            bookings.forEach(booking => {
+                const bookingId = booking.id;
+                const oldState = bookingStates[bookingId];
+
+                if (!oldState) return; // New booking, will appear on refresh
+
+                // Check if status changed
+                if (oldState.status !== booking.status) {
+                    hasChanges = true;
+                    showUpdateNotification(booking, 'status', oldState.status, booking.status);
+                    bookingStates[bookingId].status = booking.status;
+                }
+
+                // Check if payment status changed
+                if (oldState.payment_status !== booking.payment_status) {
+                    hasChanges = true;
+                    showUpdateNotification(booking, 'payment', oldState.payment_status, booking.payment_status);
+                    bookingStates[bookingId].payment_status = booking.payment_status;
+                }
+            });
+
+            // If there are changes, refresh the page after showing notification
+            if (hasChanges) {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            }
+        }
+
+        function showUpdateNotification(booking, type, oldValue, newValue) {
+            const notificationDiv = document.createElement('div');
+            notificationDiv.className = 'fixed top-4 right-4 z-50 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg shadow-xl max-w-md animate-slide-in';
+            
+            let title, message, icon;
+            
+            if (type === 'status') {
+                title = 'Booking Status Updated';
+                message = `Your booking for <strong>${booking.trail_name || 'Trail'}</strong> has been updated from <strong>${oldValue}</strong> to <strong>${newValue}</strong>.`;
+                icon = getStatusIcon(newValue);
+            } else if (type === 'payment') {
+                title = 'Payment Status Updated';
+                message = `Payment status for <strong>${booking.trail_name || 'Trail'}</strong> is now <strong>${newValue}</strong>.`;
+                icon = getPaymentIcon(newValue);
+            }
+            
+            notificationDiv.innerHTML = `
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        ${icon}
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <p class="text-sm font-semibold text-blue-900">${title}</p>
+                        <p class="text-sm text-blue-700 mt-1">${message}</p>
+                        <p class="text-xs text-blue-600 mt-2">Refreshing page...</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-blue-500 hover:text-blue-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notificationDiv);
+            
+            // Auto-remove after 8 seconds
+            setTimeout(() => notificationDiv.remove(), 8000);
+        }
+
+        function getStatusIcon(status) {
+            switch(status) {
+                case 'confirmed':
+                    return `<svg class="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>`;
+                case 'cancelled':
+                    return `<svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>`;
+                case 'completed':
+                    return `<svg class="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>`;
+                default:
+                    return `<svg class="w-6 h-6 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                    </svg>`;
+            }
+        }
+
+        function getPaymentIcon(status) {
+            switch(status) {
+                case 'verified':
+                case 'paid':
+                    return `<svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>`;
+                case 'rejected':
+                    return `<svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>`;
+                default:
+                    return `<svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>`;
+            }
+        }
+
+        // Stop polling when page is hidden to save resources
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                stopPolling();
+            } else {
+                startPolling();
+            }
+        });
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', function() {
+            stopPolling();
+        });
+    </script>
+
+    <style>
+        @keyframes slide-in {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .animate-slide-in {
+            animation: slide-in 0.3s ease-out;
+        }
+    </style>
 </x-app-layout>

@@ -75,7 +75,7 @@ class OrganizationBookingController extends Controller
                 $query->orderBy('created_at', $sortOrder);
         }
 
-        $bookings = $query->paginate(15)->appends($request->query());
+        $bookings = $query->paginate(10)->appends($request->query());
 
         // Calculate statistics
         $totalRevenue = Booking::whereHas('trail', function($q) use ($orgId) {
@@ -132,6 +132,12 @@ class OrganizationBookingController extends Controller
         $orgId = Auth::id();
 
         if (!$booking->trail || $booking->trail->user_id !== $orgId) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access.',
+                ], 403);
+            }
             abort(403);
         }
 
@@ -142,8 +148,34 @@ class OrganizationBookingController extends Controller
         $booking->status = $request->input('status');
         $booking->save();
 
+        // Create notification for hiker
+        \App\Models\Notification::create([
+            'user_id' => $booking->user_id,
+            'type' => 'booking_status_updated',
+            'title' => 'Booking Status Updated',
+            'message' => 'Your booking for ' . $booking->trail->trail_name . ' has been ' . $booking->status . '.',
+            'data' => [
+                'booking_id' => $booking->id,
+                'trail_id' => $booking->trail_id,
+                'trail_name' => $booking->trail->trail_name,
+                'status' => $booking->status,
+                'organization_name' => Auth::user()->display_name,
+            ],
+        ]);
+
         // Optionally: Log or dispatch notifications here
         Log::info('Organization updated booking status', ['organization_id' => $orgId, 'booking_id' => $booking->id, 'status' => $booking->status]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Booking status updated successfully.',
+                'booking' => [
+                    'id' => $booking->id,
+                    'status' => $booking->status,
+                ],
+            ]);
+        }
 
         return redirect()->route('org.bookings.show', $booking)->with('success', 'Booking status updated.');
     }
@@ -151,23 +183,55 @@ class OrganizationBookingController extends Controller
     /**
      * Verify manual payment proof.
      */
-    public function verifyPayment(Booking $booking)
+    public function verifyPayment(Request $request, Booking $booking)
     {
         $orgId = Auth::id();
 
         if (!$booking->trail || $booking->trail->user_id !== $orgId) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access.',
+                ], 403);
+            }
             abort(403);
         }
 
         if (!$booking->usesManualPayment()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This booking does not use manual payment.',
+                ], 422);
+            }
             return redirect()->back()->with('error', 'This booking does not use manual payment.');
         }
 
         if ($booking->payment_status !== 'pending') {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment is not pending verification.',
+                ], 422);
+            }
             return redirect()->back()->with('error', 'Payment is not pending verification.');
         }
 
         $booking->verifyPayment($orgId);
+
+        // Create notification for hiker
+        \App\Models\Notification::create([
+            'user_id' => $booking->user_id,
+            'type' => 'payment_verified',
+            'title' => 'Payment Verified',
+            'message' => 'Your payment for ' . $booking->trail->trail_name . ' has been verified!',
+            'data' => [
+                'booking_id' => $booking->id,
+                'trail_id' => $booking->trail_id,
+                'trail_name' => $booking->trail->trail_name,
+                'organization_name' => Auth::user()->display_name,
+            ],
+        ]);
 
         Log::info('Organization verified manual payment', [
             'organization_id' => $orgId, 
@@ -175,35 +239,89 @@ class OrganizationBookingController extends Controller
             'transaction_number' => $booking->transaction_number
         ]);
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment verified successfully!',
+                'booking' => [
+                    'id' => $booking->id,
+                    'payment_status' => $booking->payment_status,
+                ],
+            ]);
+        }
+
         return redirect()->back()->with('success', 'Payment verified successfully!');
     }
 
     /**
      * Reject manual payment proof.
      */
-    public function rejectPayment(Booking $booking)
+    public function rejectPayment(Request $request, Booking $booking)
     {
         $orgId = Auth::id();
 
         if (!$booking->trail || $booking->trail->user_id !== $orgId) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access.',
+                ], 403);
+            }
             abort(403);
         }
 
         if (!$booking->usesManualPayment()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This booking does not use manual payment.',
+                ], 422);
+            }
             return redirect()->back()->with('error', 'This booking does not use manual payment.');
         }
 
         if ($booking->payment_status !== 'pending') {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment is not pending verification.',
+                ], 422);
+            }
             return redirect()->back()->with('error', 'Payment is not pending verification.');
         }
 
         $booking->rejectPayment();
+
+        // Create notification for hiker
+        \App\Models\Notification::create([
+            'user_id' => $booking->user_id,
+            'type' => 'payment_rejected',
+            'title' => 'Payment Rejected',
+            'message' => 'Your payment for ' . $booking->trail->trail_name . ' was rejected. Please resubmit your payment proof.',
+            'data' => [
+                'booking_id' => $booking->id,
+                'trail_id' => $booking->trail_id,
+                'trail_name' => $booking->trail->trail_name,
+                'organization_name' => Auth::user()->display_name,
+            ],
+        ]);
 
         Log::info('Organization rejected manual payment', [
             'organization_id' => $orgId, 
             'booking_id' => $booking->id,
             'transaction_number' => $booking->transaction_number
         ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment rejected. Hiker will be notified to resubmit.',
+                'booking' => [
+                    'id' => $booking->id,
+                    'payment_status' => $booking->payment_status,
+                ],
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Payment rejected. Hiker will be notified to resubmit.');
     }

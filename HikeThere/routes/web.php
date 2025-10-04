@@ -107,6 +107,7 @@ Route::middleware([
     Route::get('/hiker/booking/{booking}/edit', [App\Http\Controllers\Hiker\BookingController::class, 'edit'])->name('booking.edit');
     Route::patch('/hiker/booking/{booking}', [App\Http\Controllers\Hiker\BookingController::class, 'update'])->name('booking.update');
     Route::delete('/hiker/booking/{booking}', [App\Http\Controllers\Hiker\BookingController::class, 'destroy'])->name('booking.destroy');
+    Route::get('/hiker/booking/{booking}/download-slip', [App\Http\Controllers\Hiker\BookingController::class, 'downloadSlip'])->name('booking.download-slip');
     Route::get('/hiker/booking/package-details', [App\Http\Controllers\Hiker\BookingController::class, 'packageDetails'])->name('package.details');
 
     // AJAX endpoint to fetch trails for an organization (only for followed orgs)
@@ -324,6 +325,13 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
     Route::delete('/org/payment/clear', [App\Http\Controllers\OrganizationPaymentController::class, 'clear'])->name('org.payment.clear');
 });
 
+// About HikeThere route (for organizations)
+Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])->group(function () {
+    Route::get('/org/about', function () {
+        return view('org.about');
+    })->name('org.about');
+});
+
 // Organization Events management
 Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])->group(function () {
     Route::resource('org/events', App\Http\Controllers\OrganizationEventController::class, ['as' => 'org']);
@@ -413,6 +421,11 @@ Route::middleware(['auth:sanctum', 'ensure.hiking.preferences'])->group(function
 
     // Account Settings route
     Route::get('/account/settings', [App\Http\Controllers\AccountSettingsController::class, 'index'])->name('account.settings');
+
+    // About HikeThere route (for hikers)
+    Route::get('/about', function () {
+        return view('about');
+    })->name('about');
 
     // Account Settings - Preferences
     Route::get('/account/preferences', [App\Http\Controllers\AccountSettings\PreferencesController::class, 'index'])->name('preferences.index');
@@ -559,4 +572,10 @@ Route::get('/debug-itinerary-no-transport', function () {
             : 0,
         'activities_detail' => $generatedData['preHikeActivities'] ?? []
     ]);
+});
+
+// API Routes for Event Polling (Real-time updates)
+Route::prefix('api')->group(function () {
+    Route::get('/events/latest', [App\Http\Controllers\Api\EventPollingController::class, 'getLatestEvents'])->name('api.events.latest');
+    Route::get('/events/count', [App\Http\Controllers\Api\EventPollingController::class, 'getEventCount'])->name('api.events.count');
 });

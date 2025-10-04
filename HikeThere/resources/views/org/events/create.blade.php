@@ -12,7 +12,18 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Create Event</h2>
-                <form method="POST" action="{{ route('org.events.store') }}" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Alert Messages -->
+                <div id="ajax-alert" class="hidden mb-4 p-4 rounded-lg" role="alert">
+                    <div class="flex items-center">
+                        <svg id="alert-icon" class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <span id="alert-message" class="font-medium"></span>
+                    </div>
+                </div>
+
+                <form id="event-create-form" method="POST" action="{{ route('org.events.store') }}" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     @csrf
 
                     <div class="mb-4 md:col-span-2">
@@ -82,6 +93,12 @@
                         <input type="number" name="capacity" value="{{ old('capacity') }}" min="1" class="mt-1 block w-full border border-gray-200 rounded-md shadow-sm p-2" placeholder="Number of spots" />
                     </div>
 
+                    <div class="mb-4 md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700">Hiking Start Time</label>
+                        <input type="time" name="hiking_start_time" value="{{ old('hiking_start_time') }}" class="mt-1 block w-full border border-gray-200 rounded-md shadow-sm p-2" placeholder="e.g. 08:00">
+                        <p class="text-xs text-gray-500 mt-1">What time should the hike start? This helps participants know when to arrive at the trail.</p>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700">Start</label>
@@ -107,7 +124,13 @@
 
                     <div class="flex items-center justify-end space-x-3 md:col-span-2">
                         <a href="{{ route('org.events.index') }}" class="inline-flex items-center px-4 py-2 text-sm text-gray-600 hover:underline">Cancel</a>
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-[#336d66] text-white rounded">Create Event</button>
+                        <button type="submit" id="submit-btn" class="inline-flex items-center px-4 py-2 bg-[#336d66] text-white rounded hover:bg-[#2a5a54] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span id="submit-text">Create Event</span>
+                            <svg id="submit-spinner" class="hidden animate-spin ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -341,3 +364,144 @@
     });
 </script>
 @endif
+
+<script>
+    // AJAX Event Creation Handler
+    (function() {
+        const form = document.getElementById('event-create-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const submitText = document.getElementById('submit-text');
+        const submitSpinner = document.getElementById('submit-spinner');
+        const alertBox = document.getElementById('ajax-alert');
+        const alertMessage = document.getElementById('alert-message');
+        const alertIcon = document.getElementById('alert-icon');
+
+        function showAlert(message, type = 'success') {
+            alertBox.classList.remove('hidden', 'bg-green-100', 'bg-red-100', 'text-green-800', 'text-red-800');
+            
+            if (type === 'success') {
+                alertBox.classList.add('bg-green-100', 'text-green-800');
+                alertIcon.innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>';
+            } else {
+                alertBox.classList.add('bg-red-100', 'text-red-800');
+                alertIcon.innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>';
+            }
+            
+            alertMessage.textContent = message;
+            
+            // Scroll to alert
+            alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // Auto-hide success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertBox.classList.add('hidden');
+                }, 5000);
+            }
+        }
+
+        function clearFieldErrors() {
+            // Remove all error messages
+            document.querySelectorAll('.text-red-500.text-sm').forEach(el => el.remove());
+            // Remove red borders from inputs
+            document.querySelectorAll('input.border-red-500, select.border-red-500, textarea.border-red-500').forEach(el => {
+                el.classList.remove('border-red-500');
+                el.classList.add('border-gray-200');
+            });
+        }
+
+        function showFieldErrors(errors) {
+            clearFieldErrors();
+            
+            Object.keys(errors).forEach(fieldName => {
+                const field = form.querySelector(`[name="${fieldName}"]`);
+                if (field) {
+                    // Add red border
+                    field.classList.remove('border-gray-200');
+                    field.classList.add('border-red-500');
+                    
+                    // Add error message
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'text-red-500 text-sm mt-1';
+                    errorDiv.textContent = errors[fieldName][0]; // First error message
+                    
+                    // Insert after the field
+                    field.parentNode.insertBefore(errorDiv, field.nextSibling);
+                }
+            });
+            
+            // Scroll to first error
+            const firstError = form.querySelector('.border-red-500');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstError.focus();
+            }
+        }
+
+        function setLoading(loading) {
+            submitBtn.disabled = loading;
+            
+            if (loading) {
+                submitText.textContent = 'Creating...';
+                submitSpinner.classList.remove('hidden');
+            } else {
+                submitText.textContent = 'Create Event';
+                submitSpinner.classList.add('hidden');
+            }
+        }
+
+        form?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Clear previous errors
+            clearFieldErrors();
+            alertBox.classList.add('hidden');
+            
+            // Set loading state
+            setLoading(true);
+            
+            // Get form data
+            const formData = new FormData(form);
+            
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Success
+                    showAlert(data.message || 'Event created successfully!', 'success');
+                    
+                    // Reset form
+                    form.reset();
+                    
+                    // Redirect after a short delay
+                    setTimeout(() => {
+                        window.location.href = data.redirect || '{{ route("org.events.index") }}';
+                    }, 1500);
+                } else {
+                    // Validation errors or other errors
+                    if (data.errors) {
+                        showFieldErrors(data.errors);
+                        showAlert('Please fix the errors below.', 'error');
+                    } else {
+                        showAlert(data.message || 'An error occurred while creating the event.', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('AJAX Error:', error);
+                showAlert('Network error. Please check your connection and try again.', 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+    })();
+</script>

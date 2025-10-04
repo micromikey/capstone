@@ -495,11 +495,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function organizationTrails()
     {
-        if ($this->user_type !== 'organization') {
-            return collect();
-        }
-        
-        return $this->hasMany(\App\Models\Trail::class);
+        return $this->hasMany(\App\Models\Trail::class, 'user_id');
     }
 
     /**

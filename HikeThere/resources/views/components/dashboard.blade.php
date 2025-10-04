@@ -1686,6 +1686,15 @@ $imageService = app('App\Services\TrailImageService');
                             @endif
                         </p>
                         
+                        @if($event->hiking_start_time)
+                        <div class="flex items-center text-sm text-emerald-700 font-medium mb-3">
+                            <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Hike starts at {{ \Carbon\Carbon::parse($event->hiking_start_time)->format('g:i A') }}</span>
+                        </div>
+                        @endif
+                        
                         <div class="min-h-[1.25rem] mb-3">
                             @if($event->location_name ?? false)
                             <div class="flex items-center text-sm text-gray-600">
@@ -2068,3 +2077,8 @@ $imageService = app('App\Services\TrailImageService');
         });
     });
 </script>
+
+{{-- Real-time Event Polling for Hikers --}}
+@if(isset($user) && $user && $user->user_type === 'hiker')
+@vite(['resources/js/event-poller.js'])
+@endif

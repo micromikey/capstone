@@ -137,7 +137,25 @@ class ItineraryGeneratorService
             $nights = max(0, $durationDays - 1);
         }
         
-        $startTime = $itinerary['start_time'] ?? '06:00';
+        // Priority: Use event's hiking_start_time if available, otherwise fall back to itinerary start_time
+        $startTime = null;
+        
+        // Check if trail has events with hiking_start_time (only if trail is an object)
+        if ($trail && is_object($trail) && method_exists($trail, 'events')) {
+            $trailEvents = $trail->events ?? null;
+            if ($trailEvents && $trailEvents->isNotEmpty()) {
+                $latestEvent = $trailEvents->first();
+                if ($latestEvent && isset($latestEvent->hiking_start_time)) {
+                    $startTime = $latestEvent->hiking_start_time;
+                }
+            }
+        }
+        
+        // Fallback to itinerary start_time or default
+        if (!$startTime) {
+            $startTime = $itinerary['start_time'] ?? '06:00';
+        }
+        
         $startDate = isset($itinerary['start_date']) ? Carbon::parse($itinerary['start_date']) : Carbon::today();
         $endDate = $startDate->copy()->addDays(max(0, $durationDays - 1));
 

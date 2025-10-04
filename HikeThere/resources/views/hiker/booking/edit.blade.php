@@ -18,7 +18,7 @@
                     <div class="text-sm text-gray-500">Booking #{{ $booking->id }} · Status: <span class="font-medium">{{ $booking->status }}</span></div>
                 </div>
 
-                <form action="{{ route('booking.update', $booking) }}" method="POST">
+                <form id="edit-booking-form" action="{{ route('booking.update', $booking) }}" method="POST">
                     @csrf
                     @method('PATCH')
 
@@ -121,6 +121,85 @@
                         </button>
                     </div>
                 </form>
+
+                <script>
+                    // AJAX form submission for edit booking
+                    document.getElementById('edit-booking-form')?.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        
+                        const form = this;
+                        const submitBtn = form.querySelector('button[type="submit"]');
+                        const originalText = submitBtn.innerHTML;
+                        
+                        // Show loading state
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2 inline-block" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Updating...';
+                        
+                        // Prepare form data
+                        const formData = new FormData(form);
+                        
+                        // Submit via AJAX
+                        fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                            },
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Show success message
+                                const successDiv = document.createElement('div');
+                                successDiv.className = 'fixed top-4 right-4 z-50 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg shadow-lg';
+                                successDiv.innerHTML = `
+                                    <div class="flex items-center">
+                                        <svg class="w-6 h-6 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <div>
+                                            <p class="text-green-800 font-semibold">${data.message}</p>
+                                        </div>
+                                    </div>
+                                `;
+                                document.body.appendChild(successDiv);
+                                
+                                // Redirect after short delay
+                                setTimeout(() => {
+                                    window.location.href = "{{ route('booking.show', $booking) }}";
+                                }, 1500);
+                            } else {
+                                throw new Error(data.message || 'Update failed');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            
+                            // Show error message
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'fixed top-4 right-4 z-50 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg shadow-lg';
+                            errorDiv.innerHTML = `
+                                <div class="flex items-center">
+                                    <svg class="w-6 h-6 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <div>
+                                        <p class="text-red-800 font-semibold">${error.message || 'Unable to update booking. Please try again.'}</p>
+                                    </div>
+                                </div>
+                            `;
+                            document.body.appendChild(errorDiv);
+                            
+                            // Reset button
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalText;
+                            
+                            // Auto-remove error after 5 seconds
+                            setTimeout(() => errorDiv.remove(), 5000);
+                        });
+                    });
+                </script>
 
                 <!-- Cancel Booking Section -->
                 @if($booking->canBeCancelled())

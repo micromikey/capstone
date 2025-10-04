@@ -42,8 +42,13 @@ class ItineraryController extends Controller
                 ->with('warning', 'Please complete the Pre-Hike Self-Assessment first to generate a personalized itinerary.');
         }
 
-    // Get available trails for suggestions (eager-load package to access package-side fields)
-    $trails = Trail::with(['location', 'package'])->active()->get();
+    // Get available trails for suggestions (eager-load package to access package-side fields and events for hiking start time)
+    $trails = Trail::with(['location', 'package', 'events' => function($query) {
+        $query->where('is_public', true)
+              ->whereNotNull('hiking_start_time')
+              ->orderBy('start_at', 'desc')
+              ->limit(1);
+    }])->active()->get();
 
     // Debug: log first few trails and their package data to help diagnose missing package fields
     try {
