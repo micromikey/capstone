@@ -13,6 +13,8 @@ use App\Http\Controllers\MapController;
 use App\Http\Controllers\OrganizationApprovalController;
 use App\Http\Controllers\OrganizationTrailController;
 use App\Http\Controllers\OrganizationLocationController;
+use App\Http\Controllers\Organization\DashboardController as OrganizationDashboardController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\TrailController;
 use App\Http\Controllers\TrailCoordinateController;
 use App\Http\Controllers\TrailPdfController;
@@ -26,15 +28,15 @@ use Illuminate\Support\Facades\Route;
 require __DIR__ . '/jetstream.php';
 
 // Local testing helper (remove in production) - MUST be outside auth middleware
-Route::get('/test/confirm-payment/{paymentId}', [App\Http\Controllers\PaymentController::class, 'testConfirmPayment'])->name('payment.test.confirm');
+// Route::get('/test/confirm-payment/{paymentId}', [App\Http\Controllers\PaymentController::class, 'testConfirmPayment'])->name('payment.test.confirm');
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/test-gpx', function () {
-    return view('test-gpx');
-});
+// Route::get('/test-gpx', function () {
+//     return view('test-gpx');
+// });
 
 // Email verification routes
 Route::get('/email/verify', function () {
@@ -191,7 +193,7 @@ Route::middleware([
     Route::put('/api/trails/reviews/{review}', [TrailReviewController::class, 'update'])->name('api.trails.reviews.update');
     Route::delete('/api/trails/reviews/{review}', [TrailReviewController::class, 'destroy'])->name('api.trails.reviews.destroy');
 
-    // Notifications routes
+    // Notifications routes (Hiker-only)
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/', [App\Http\Controllers\NotificationController::class, 'index'])->name('index');
         Route::get('/api/get', [App\Http\Controllers\NotificationController::class, 'getNotifications'])->name('get');
@@ -202,59 +204,6 @@ Route::middleware([
         Route::delete('/{id}', [App\Http\Controllers\NotificationController::class, 'destroy'])->name('destroy');
         Route::delete('/read/clear', [App\Http\Controllers\NotificationController::class, 'destroyRead'])->name('destroy-read');
     });
-    
-    // Debug route to manually test toast notification
-    Route::get('/test-toast-notification', function () {
-        $user = Auth::user();
-        $notificationService = new App\Services\NotificationService();
-        
-        // Create a test notification
-        $notification = $notificationService->create(
-            $user,
-            'system',
-            'Test Toast Notification',
-            'This is a test toast notification! If you see this, the system is working correctly. 🎉',
-            [
-                'test' => true,
-                'timestamp' => now()->toDateTimeString()
-            ]
-        );
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Test notification created! Check your notifications.',
-            'notification' => $notification
-        ]);
-    })->middleware('auth');
-    
-    // Debug route to manually test weather notification
-    Route::get('/test-weather-notification', function () {
-        $user = Auth::user();
-        $weatherService = new App\Services\WeatherNotificationService(
-            new App\Services\NotificationService()
-        );
-        
-        try {
-            $notification = $weatherService->sendLoginWeatherNotification($user);
-            if ($notification) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Weather notification sent!',
-                    'notification' => $notification
-                ]);
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Failed to send weather notification - check logs'
-                ]);
-            }
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
-        }
-    })->name('test.weather.notification');
 })->middleware(['user.type:hiker', 'ensure.hiking.preferences']);
 
 // Onboarding routes for hikers to set preferences (shown after email verification)
@@ -266,16 +215,10 @@ Route::middleware(['auth:sanctum', 'verified', 'user.type:hiker'])->group(functi
 // Routes that require authentication and approval (for organizations only)
 Route::middleware(['auth:sanctum', 'check.approval'])->group(function () {
     // Organization dashboard
-    Route::get('/org/dashboard', function () {
-        $totalTrails = \App\Models\Trail::where('user_id', auth()->id())->count();
-        $activeEvents = \App\Models\Event::where('user_id', auth()->id())
-            ->where(function($query) {
-                $query->where('end_at', '>=', now())
-                    ->orWhere('always_available', true);
-            })
-            ->count();
-        return view('org.dashboard', compact('totalTrails', 'activeEvents'));
-    })->name('org.dashboard');
+    Route::get('/org/dashboard', [OrganizationDashboardController::class, 'index'])->name('org.dashboard');
+    
+    // Organization search
+    Route::get('/org/search', [SearchController::class, 'orgSearchPage'])->name('org.search');
 
     // Organization trails management
     Route::resource('org/trails', OrganizationTrailController::class, ['as' => 'org']);
@@ -323,6 +266,34 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
     Route::put('/org/payment/toggle-method', [App\Http\Controllers\OrganizationPaymentController::class, 'togglePaymentMethod'])->name('org.payment.toggle-method');
     Route::post('/org/payment/test', [App\Http\Controllers\OrganizationPaymentController::class, 'test'])->name('org.payment.test');
     Route::delete('/org/payment/clear', [App\Http\Controllers\OrganizationPaymentController::class, 'clear'])->name('org.payment.clear');
+    
+    // Emergency Readiness Management (Read-Only - View Hiker Feedback)
+    Route::get('organization/emergency-readiness', [App\Http\Controllers\Organization\EmergencyReadinessController::class, 'index'])->name('organization.emergency-readiness.index');
+    Route::get('organization/emergency-readiness/{emergencyReadiness}', [App\Http\Controllers\Organization\EmergencyReadinessController::class, 'show'])->name('organization.emergency-readiness.show');
+    
+    // Safety Incidents Management (Read-Only - View Hiker Reports)
+    Route::get('organization/safety-incidents', [App\Http\Controllers\Organization\SafetyIncidentController::class, 'index'])->name('organization.safety-incidents.index');
+    Route::get('organization/safety-incidents/{safetyIncident}', [App\Http\Controllers\Organization\SafetyIncidentController::class, 'show'])->name('organization.safety-incidents.show');
+});
+
+// Hiker Safety Incident Reporting (Fixed: uses verified instead of check.approval)
+Route::middleware(['auth:sanctum', 'verified', 'user.type:hiker'])->group(function () {
+    Route::post('/hiker/incidents', [App\Http\Controllers\Hiker\SafetyIncidentController::class, 'store'])
+        ->name('hiker.incidents.store');
+    Route::get('/hiker/incidents', [App\Http\Controllers\Hiker\SafetyIncidentController::class, 'index'])
+        ->name('hiker.incidents.index');
+    Route::get('/hiker/incidents/{incident}', [App\Http\Controllers\Hiker\SafetyIncidentController::class, 'show'])
+        ->name('hiker.incidents.show');
+    
+    // Emergency Readiness Feedback
+    Route::get('/hiker/readiness', [App\Http\Controllers\Hiker\EmergencyReadinessController::class, 'index'])
+        ->name('hiker.readiness.index');
+    Route::get('/hiker/readiness/create/{booking}', [App\Http\Controllers\Hiker\EmergencyReadinessController::class, 'create'])
+        ->name('hiker.readiness.create');
+    Route::post('/hiker/readiness/{booking}', [App\Http\Controllers\Hiker\EmergencyReadinessController::class, 'store'])
+        ->name('hiker.readiness.store');
+    Route::get('/hiker/readiness/{readiness}', [App\Http\Controllers\Hiker\EmergencyReadinessController::class, 'show'])
+        ->name('hiker.readiness.show');
 });
 
 // About HikeThere route (for organizations)
@@ -335,6 +306,13 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
 // Organization Events management
 Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])->group(function () {
     Route::resource('org/events', App\Http\Controllers\OrganizationEventController::class, ['as' => 'org']);
+});
+
+// Report Generation Routes (Organizations only for now)
+Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])->prefix('reports')->name('reports.')->group(function () {
+    Route::get('/', [App\Http\Controllers\ReportController::class, 'index'])->name('index');
+    Route::post('/generate', [App\Http\Controllers\ReportController::class, 'generate'])->name('generate');
+    Route::get('/available', [App\Http\Controllers\ReportController::class, 'availableReports'])->name('available');
 });
 
 // Public Events
@@ -360,7 +338,7 @@ Route::get('/trails/{trail}/elevation-profile', [TrailPdfController::class, 'get
 // Public AJAX routes for trail reviews (anyone can view reviews)
 Route::get('/api/trails/{trail}/reviews', [TrailReviewController::class, 'getTrailReviews'])->name('api.trails.reviews.index');
 
-// API route to check assessment status
+// API route to check assessment status (Hiker-only)
 Route::get('/api/user/assessment-status', function(\Illuminate\Http\Request $request) {
     $user = $request->user();
     $hasAssessment = $user && $user->latestAssessmentResult()->exists();
@@ -370,39 +348,41 @@ Route::get('/api/user/assessment-status', function(\Illuminate\Http\Request $req
         'has_assessment' => $hasAssessment,
         'message' => $hasAssessment ? 'User has completed assessment' : 'User needs to complete assessment'
     ]);
-})->middleware('auth')->name('api.user.assessment-status');
+})->middleware(['auth', 'user.type:hiker'])->name('api.user.assessment-status');
 
-// Web route to toggle favorites using session-based auth (fallback for logged-in users)
+// Web route to toggle favorites (Hiker-only)
 Route::post('/trails/favorite/toggle', [App\Http\Controllers\Api\TrailFavoriteController::class, 'toggle'])
-    ->middleware('auth')
+    ->middleware(['auth', 'user.type:hiker'])
     ->name('trails.favorite.toggle');
 
-// Check if the current user has favorited a specific trail (authenticated users only)
+// Check if the current user has favorited a specific trail (Hiker-only)
 Route::get('/trails/{trail}/is-favorited', [App\Http\Controllers\Api\TrailFavoriteController::class, 'isFavorited'])
-    ->middleware('auth')
+    ->middleware(['auth', 'user.type:hiker'])
     ->name('trails.is-favorited');
 
 // Public AJAX routes for trail information
 Route::get('/api/trails/{trail}', [App\Http\Controllers\Api\TrailController::class, 'show'])->name('api.trails.show');
 Route::get('/api/trail/{trail}/payment-method', [App\Http\Controllers\Api\TrailController::class, 'getPaymentMethod'])->name('api.trail.payment-method');
 
-// Enhanced Map routes (temporarily public for testing)
-Route::get('/map', [MapController::class, 'index'])->name('map.index');
-Route::get('/map/simple', function () {
-    return view('map.simple');
-})->name('map.simple');
-Route::get('/map/demo', [MapController::class, 'demo'])->name('map.demo');
-Route::get('/map/trails', [MapController::class, 'getTrails'])->name('map.trails');
-Route::get('/map/trails/{id}', [MapController::class, 'getTrailDetails'])->name('map.trail.details');
-Route::get('/map/trails/{id}/images', [MapController::class, 'getTrailImages'])->name('map.trail.images');
-Route::get('/map/trails/{id}/elevation', [MapController::class, 'getTrailElevation'])->name('map.trail.elevation');
-Route::get('/map/trail-paths', [MapController::class, 'getTrailPaths'])->name('map.trail.paths');
-Route::get('/map/enhanced-trails', [MapController::class, 'getEnhancedTrails'])->name('map.enhanced.trails');
-Route::get('/map/weather', [MapController::class, 'getWeatherData'])->name('map.weather');
-Route::post('/map/search-nearby', [MapController::class, 'searchNearby'])->name('map.search.nearby');
+// Enhanced Map routes (Authenticated users only)
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/map', [MapController::class, 'index'])->name('map.index');
+    Route::get('/map/simple', function () {
+        return view('map.simple');
+    })->name('map.simple');
+    Route::get('/map/demo', [MapController::class, 'demo'])->name('map.demo');
+    Route::get('/map/trails', [MapController::class, 'getTrails'])->name('map.trails');
+    Route::get('/map/trails/{id}', [MapController::class, 'getTrailDetails'])->name('map.trail.details');
+    Route::get('/map/trails/{id}/images', [MapController::class, 'getTrailImages'])->name('map.trail.images');
+    Route::get('/map/trails/{id}/elevation', [MapController::class, 'getTrailElevation'])->name('map.trail.elevation');
+    Route::get('/map/trail-paths', [MapController::class, 'getTrailPaths'])->name('map.trail.paths');
+    Route::get('/map/enhanced-trails', [MapController::class, 'getEnhancedTrails'])->name('map.enhanced.trails');
+    Route::get('/map/weather', [MapController::class, 'getWeatherData'])->name('map.weather');
+    Route::post('/map/search-nearby', [MapController::class, 'searchNearby'])->name('map.search.nearby');
+});
 
-// Profile routes (require authentication)
-Route::middleware(['auth:sanctum', 'ensure.hiking.preferences'])->group(function () {
+// Profile routes (require authentication and hiker user type)
+Route::middleware(['auth:sanctum', 'verified', 'user.type:hiker', 'ensure.hiking.preferences'])->group(function () {
     // Trail show route (authenticated hikers only)
     Route::get('/trails/{trail}', [TrailController::class, 'show'])->name('trails.show');
     
@@ -501,6 +481,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 // Assessment routes have been moved to the protected hiker section
 // SOL END
 
+// Debug routes (commented out for production)
+/*
 // Test route for debugging Google Maps integration
 Route::get('/debug-itinerary', function () {
     $service = app(\App\Services\ItineraryGeneratorService::class);
@@ -584,9 +566,23 @@ Route::get('/debug-itinerary-no-transport', function () {
         'activities_detail' => $generatedData['preHikeActivities'] ?? []
     ]);
 });
+*/
 
-// API Routes for Event Polling (Real-time updates)
-Route::prefix('api')->group(function () {
+// API Routes for Event Polling (Real-time updates) - Authenticated users only
+Route::middleware(['auth:sanctum'])->prefix('api')->group(function () {
     Route::get('/events/latest', [App\Http\Controllers\Api\EventPollingController::class, 'getLatestEvents'])->name('api.events.latest');
     Route::get('/events/count', [App\Http\Controllers\Api\EventPollingController::class, 'getEventCount'])->name('api.events.count');
 });
+
+// Legal Pages (publicly accessible)
+Route::get('/terms-and-conditions', function () {
+    return Auth::check() 
+        ? view('legal.terms-authenticated') 
+        : view('legal.terms-guest');
+})->name('terms');
+
+Route::get('/privacy-policy', function () {
+    return Auth::check() 
+        ? view('legal.privacy-authenticated') 
+        : view('legal.privacy-guest');
+})->name('privacy');

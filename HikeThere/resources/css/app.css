@@ -32,9 +32,7 @@
 }
 
 .special-nav-highlight:hover, .special-nav-highlight:focus {
-    filter: drop-shadow(0 0 8px #ff1361) drop-shadow(0 0 16px #fff800);
-    transform: scale(1.12) rotate(-2deg) skewX(2deg);
-    text-shadow: 0 2px 8px #fff800, 0 0 16px #ff1361;
+    opacity: 0.8;
     cursor: pointer;
 }
 

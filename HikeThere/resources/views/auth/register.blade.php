@@ -85,13 +85,13 @@
                                     </label>
                                     <p class="text-gray-500">
                                         By checking this box, you agree to our
-                                        <a href="{{ route('terms.show') }}"
+                                        <a href="{{ route('terms') }}"
                                             target="_blank"
                                             class="text-[#20b6d2] hover:text-[#336d66] transition-colors">
                                             Terms of Service
                                         </a>
                                         and
-                                        <a href="{{ route('policy.show') }}"
+                                        <a href="{{ route('privacy') }}"
                                             target="_blank"
                                             class="text-[#20b6d2] hover:text-[#336d66] transition-colors">
                                             Privacy Policy

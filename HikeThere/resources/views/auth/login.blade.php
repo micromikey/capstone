@@ -72,6 +72,18 @@
                         Sign up now
                     </a>
                 </div>
+
+                <!-- Legal Links -->
+                <div class="text-center text-xs text-gray-500 pt-4 border-t border-gray-200">
+                    By continuing, you agree to our 
+                    <a href="{{ route('terms') }}" target="_blank" class="text-[#20b6d2] hover:text-[#336d66] underline">
+                        Terms & Conditions
+                    </a>
+                    and
+                    <a href="{{ route('privacy') }}" target="_blank" class="text-[#20b6d2] hover:text-[#336d66] underline">
+                        Privacy Policy
+                    </a>
+                </div>
             </form>
         </div>
     </div>

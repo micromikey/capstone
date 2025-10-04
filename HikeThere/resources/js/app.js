@@ -369,3 +369,6 @@ window.trailExplorer = trailExplorer;
 
 // Header search behaviour
 import './header-search';
+
+// Organization search behaviour
+import './org-search';

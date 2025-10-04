@@ -788,6 +788,15 @@
                             </svg>
                             Build Itinerary
                         </button>
+                        @auth
+                        @if(auth()->user()->user_type === 'hiker')
+                        <button onclick="openReportIncidentModal()" class="bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center" title="Report Safety Issue">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-1.732-1.333-2.464 0L4.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                        </button>
+                        @endif
+                        @endauth
                         <button id="original-favorite-btn" data-trail-id="{{ $trail->id }}" data-trail-slug="{{ $trail->slug }}" class="bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
                             <svg id="original-favorite-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.343l-6.828-6.829a4 4 0 010-5.656z" />
@@ -2786,4 +2795,189 @@
             alert('Unable to load print view.');
         }
     }
+
+    // Report Incident Modal Functions
+    function openReportIncidentModal() {
+        const modal = document.getElementById('reportIncidentModal');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeReportIncidentModal() {
+        const modal = document.getElementById('reportIncidentModal');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        document.getElementById('reportIncidentForm').reset();
+        // Clear any error messages
+        document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+    }
+
+    // Submit Incident Report
+    async function submitIncidentReport(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
+        
+        // Disable submit button
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+        
+        try {
+            const formData = new FormData(form);
+            
+            const response = await fetch('{{ route("hiker.incidents.store") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Show success message
+                alert('Safety incident reported successfully. Thank you for helping keep our trails safe!');
+                closeReportIncidentModal();
+            } else {
+                // Handle validation errors
+                if (data.errors) {
+                    Object.keys(data.errors).forEach(key => {
+                        const errorEl = document.getElementById(key + '_error');
+                        if (errorEl) {
+                            errorEl.textContent = data.errors[key][0];
+                        }
+                    });
+                } else {
+                    alert(data.message || 'An error occurred while submitting your report.');
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while submitting your report. Please try again.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        }
+    }
 </script>
+
+<!-- Report Incident Modal -->
+<div id="reportIncidentModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4" style="display: none;">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="bg-red-600 text-white p-6 rounded-t-xl">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-1.732-1.333-2.464 0L4.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    <h3 class="text-2xl font-bold">Report Safety Issue</h3>
+                </div>
+                <button onclick="closeReportIncidentModal()" class="text-white hover:text-red-100 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <p class="mt-2 text-red-100 text-sm">Help keep our trails safe by reporting any safety issues you've encountered.</p>
+        </div>
+
+        <!-- Modal Body -->
+        <form id="reportIncidentForm" onsubmit="submitIncidentReport(event)" class="p-6 space-y-6">
+            <input type="hidden" name="trail_id" value="{{ $trail->id }}">
+            
+            <!-- Incident Type -->
+            <div>
+                <label for="incident_type" class="block text-sm font-medium text-gray-700 mb-2">
+                    Incident Type <span class="text-red-500">*</span>
+                </label>
+                <select name="incident_type" id="incident_type" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    <option value="">Select type...</option>
+                    <option value="injury">Injury</option>
+                    <option value="accident">Accident</option>
+                    <option value="hazard">Trail Hazard</option>
+                    <option value="wildlife">Wildlife Encounter</option>
+                    <option value="weather">Weather Issue</option>
+                    <option value="equipment">Equipment Problem</option>
+                    <option value="other">Other</option>
+                </select>
+                <span id="incident_type_error" class="error-message text-red-500 text-sm mt-1"></span>
+            </div>
+
+            <!-- Severity -->
+            <div>
+                <label for="severity" class="block text-sm font-medium text-gray-700 mb-2">
+                    Severity <span class="text-red-500">*</span>
+                </label>
+                <select name="severity" id="severity" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    <option value="">Select severity...</option>
+                    <option value="low">Low - Minor issue, no immediate danger</option>
+                    <option value="medium">Medium - Moderate concern, caution advised</option>
+                    <option value="high">High - Serious issue, significant risk</option>
+                    <option value="critical">Critical - Emergency situation</option>
+                </select>
+                <span id="severity_error" class="error-message text-red-500 text-sm mt-1"></span>
+            </div>
+
+            <!-- Location -->
+            <div>
+                <label for="location" class="block text-sm font-medium text-gray-700 mb-2">
+                    Specific Location <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="location" id="location" required placeholder="e.g., Near kilometer marker 3, at the river crossing..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                <span id="location_error" class="error-message text-red-500 text-sm mt-1"></span>
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                    Description <span class="text-red-500">*</span>
+                </label>
+                <textarea name="description" id="description" rows="4" required placeholder="Please provide detailed information about the incident..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"></textarea>
+                <span id="description_error" class="error-message text-red-500 text-sm mt-1"></span>
+            </div>
+
+            <!-- Date & Time -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="incident_date" class="block text-sm font-medium text-gray-700 mb-2">
+                        Date <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" name="incident_date" id="incident_date" required max="{{ date('Y-m-d') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    <span id="incident_date_error" class="error-message text-red-500 text-sm mt-1"></span>
+                </div>
+                <div>
+                    <label for="incident_time" class="block text-sm font-medium text-gray-700 mb-2">
+                        Approximate Time
+                    </label>
+                    <input type="time" name="incident_time" id="incident_time" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    <span id="incident_time_error" class="error-message text-red-500 text-sm mt-1"></span>
+                </div>
+            </div>
+
+            <!-- Contact Info Note -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                <div class="flex">
+                    <svg class="w-5 h-5 text-blue-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                    <p class="text-sm text-blue-700">Your contact information from your profile will be included so we can follow up if needed.</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3 pt-4 border-t">
+                <button type="button" onclick="closeReportIncidentModal()" class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors">
+                    Submit Report
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -27,16 +27,77 @@
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     @if(Auth::user()->user_type === 'organization')
                     <x-nav-link href="{{ route('org.dashboard') }}" :active="request()->routeIs('org.dashboard')">
-                        {{ __('Organization Dashboard') }}
+                        {{ __('Dashboard') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('org.trails.index') }}" :active="request()->routeIs('org.trails.*')">
-                        {{ __('Trails') }}
-                    </x-nav-link>
+                    
+                    <!-- Trails Dropdown -->
+                    <div class="hidden sm:flex sm:items-center sm:-my-px" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
+                        <div class="relative">
+                            <a href="{{ route('org.trails.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('org.trails.*') || request()->routeIs('organization.emergency-readiness.*') || request()->routeIs('organization.safety-incidents.*') ? 'border-green-500 text-gray-900 focus:border-green-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:text-gray-700 focus:border-gray-300' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
+                                <div>{{ __('Trails') }}</div>
+                                <div class="ms-1">
+                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                            </a>
+
+                            <div x-show="open"
+                                    x-transition:enter="transition ease-out duration-200"
+                                    x-transition:enter-start="transform opacity-0 scale-95"
+                                    x-transition:enter-end="transform opacity-100 scale-100"
+                                    x-transition:leave="transition ease-in duration-75"
+                                    x-transition:leave-start="transform opacity-100 scale-100"
+                                    x-transition:leave-end="transform opacity-0 scale-95"
+                                    class="absolute z-50 mt-2 w-60 rounded-md shadow-lg origin-top-left left-0"
+                                    style="display: none;">
+                                <div class="rounded-md ring-1 ring-black ring-opacity-5 py-1 bg-white">
+                                    <a href="{{ route('org.trails.create') }}" class="block px-4 py-2 text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            {{ __('Add Trail') }}
+                                        </div>
+                                    </a>
+                                    <a href="{{ route('org.trails.index') }}" class="block px-4 py-2 text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                            </svg>
+                                            {{ __('Manage Trails') }}
+                                        </div>
+                                    </a>
+                                    <div class="border-t border-gray-200"></div>
+                                    <a href="{{ route('organization.emergency-readiness.index') }}" class="block px-4 py-2 text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            {{ __('Emergency Assessments') }}
+                                        </div>
+                                    </a>
+                                    <a href="{{ route('organization.safety-incidents.index') }}" class="block px-4 py-2 text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                            </svg>
+                                            {{ __('Safety Incidents') }}
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <x-nav-link href="{{ route('org.events.index') }}" :active="request()->routeIs('org.events.*')">
                         {{ __('Events') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('org.bookings.index') }}" :active="request()->routeIs('org.bookings.*')">
                         {{ __('Bookings') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('reports.index') }}" :active="request()->routeIs('reports.*')">
+                        {{ __('Reports') }}
                     </x-nav-link>
                     @else
                     <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
@@ -45,9 +106,59 @@
                     <x-nav-link href="{{ route('explore') }}" :active="request()->routeIs('explore')">
                         {{ __('Explore') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('community.index') }}" :active="request()->routeIs('community.*')">
-                        {{ __('Community') }}
-                    </x-nav-link>
+                    
+                    <!-- Community Dropdown -->
+                    <div class="hidden sm:flex sm:items-center sm:-my-px" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
+                        <div class="relative">
+                            <a href="{{ route('community.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('community.*') || request()->routeIs('hiker.incidents.*') ? 'border-green-500 text-gray-900 focus:border-green-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:text-gray-700 focus:border-gray-300' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
+                                <div>{{ __('Community') }}</div>
+                                <div class="ms-1">
+                                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                            </a>
+
+                            <div x-show="open"
+                                    x-transition:enter="transition ease-out duration-200"
+                                    x-transition:enter-start="transform opacity-0 scale-95"
+                                    x-transition:enter-end="transform opacity-100 scale-100"
+                                    x-transition:leave="transition ease-in duration-75"
+                                    x-transition:leave-start="transform opacity-100 scale-100"
+                                    x-transition:leave-end="transform opacity-0 scale-95"
+                                    class="absolute z-50 mt-2 w-60 rounded-md shadow-lg origin-top-left left-0"
+                                    style="display: none;">
+                                <div class="rounded-md ring-1 ring-black ring-opacity-5 py-1 bg-white">
+                                    <a href="{{ route('community.index') }}" class="block px-4 py-2 text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            {{ __('Discover Organizations') }}
+                                        </div>
+                                    </a>
+                                    <a href="{{ route('community.index', ['tab' => 'events']) }}" class="block px-4 py-2 text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            {{ __('Events') }}
+                                        </div>
+                                    </a>
+                                    <div class="border-t border-gray-200"></div>
+                                    <a href="{{ route('hiker.incidents.index') }}" class="block px-4 py-2 text-sm leading-5 text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                            </svg>
+                                            {{ __('My Safety Reports') }}
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <x-nav-link href="{{ route('map.index') }}" :active="request()->routeIs('map.*')">
                         {{ __('Map') }}
                     </x-nav-link>
@@ -119,6 +230,14 @@
                                 {{ __('Support') }}
                             </x-dropdown-link>
 
+                            <!-- Legal Links -->
+                            <x-dropdown-link href="{{ route('terms') }}">
+                                {{ __('Terms & Conditions') }}
+                            </x-dropdown-link>
+                            <x-dropdown-link href="{{ route('privacy') }}">
+                                {{ __('Privacy Policy') }}
+                            </x-dropdown-link>
+
                             <div class="border-t border-gray-200"></div>
 
                             <!-- Authentication -->
@@ -161,14 +280,52 @@
             <x-responsive-nav-link href="{{ route('org.dashboard') }}" :active="request()->routeIs('org.dashboard')">
                 {{ __('Organization Dashboard') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('org.trails.index') }}" :active="request()->routeIs('org.trails.*')">
-                {{ __('Trails') }}
+            
+            <!-- Trails Section -->
+            <div class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
+                {{ __('Trails Management') }}
+            </div>
+            <x-responsive-nav-link href="{{ route('org.trails.create') }}" :active="request()->routeIs('org.trails.create')">
+                <div class="flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    {{ __('Add Trail') }}
+                </div>
             </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('org.trails.index') }}" :active="request()->routeIs('org.trails.index')">
+                <div class="flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    {{ __('Manage Trails') }}
+                </div>
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('organization.emergency-readiness.index') }}" :active="request()->routeIs('organization.emergency-readiness.*')">
+                <div class="flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {{ __('Emergency Assessments') }}
+                </div>
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('organization.safety-incidents.index') }}" :active="request()->routeIs('organization.safety-incidents.*')">
+                <div class="flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    {{ __('Safety Incidents') }}
+                </div>
+            </x-responsive-nav-link>
+            
             <x-responsive-nav-link href="{{ route('org.events.index') }}" :active="request()->routeIs('org.events.*')">
                 {{ __('Events') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('org.bookings.index') }}" :active="request()->routeIs('org.bookings.*')">
                 {{ __('Bookings') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('reports.index') }}" :active="request()->routeIs('reports.*')">
+                {{ __('Reports') }}
             </x-responsive-nav-link>
             @else
             <x-responsive-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
@@ -177,9 +334,36 @@
             <x-responsive-nav-link href="{{ route('explore') }}" :active="request()->routeIs('explore')">
                 {{ __('Explore') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('community.index') }}" :active="request()->routeIs('community.*')">
+            
+            <!-- Community Section -->
+            <div class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
                 {{ __('Community') }}
+            </div>
+            <x-responsive-nav-link href="{{ route('community.index') }}" :active="request()->routeIs('community.index')">
+                <div class="flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    {{ __('Discover Organizations') }}
+                </div>
             </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('community.index', ['tab' => 'events']) }}" :active="request()->routeIs('community.*') && request()->get('tab') === 'events'">
+                <div class="flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    {{ __('Events') }}
+                </div>
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('hiker.incidents.index') }}" :active="request()->routeIs('hiker.incidents.*')">
+                <div class="flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    {{ __('My Safety Reports') }}
+                </div>
+            </x-responsive-nav-link>
+            
             <x-responsive-nav-link href="{{ route('map.index') }}" :active="request()->routeIs('map.*')">
                 {{ __('Map') }}
             </x-responsive-nav-link>
@@ -240,6 +424,14 @@
                 <!-- Support -->
                 <x-responsive-nav-link href="{{ route('support.index') }}" :active="request()->routeIs('support.*')">
                     {{ __('Support') }}
+                </x-responsive-nav-link>
+
+                <!-- Legal Links -->
+                <x-responsive-nav-link href="{{ route('terms') }}" :active="request()->routeIs('terms')">
+                    {{ __('Terms & Conditions') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('privacy') }}" :active="request()->routeIs('privacy')">
+                    {{ __('Privacy Policy') }}
                 </x-responsive-nav-link>
 
                 <!-- Authentication -->

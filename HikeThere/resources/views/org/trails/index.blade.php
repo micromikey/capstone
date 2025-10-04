@@ -161,66 +161,74 @@
             </div>
 
             <!-- Trail Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-13 0v9a1 1 0 001 1h1m8-4v1a1 1 0 01-1 1H9m13 0a1 1 0 01-1 1H9m13 0v-1a1 1 0 00-1-1H9" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-sm font-medium text-gray-500">Total Trails</p>
-                                <p class="text-2xl font-semibold text-gray-900">{{ $trails->total() }}</p>
+            <!-- Floating Statistics Dashboard (Right) -->
+            <div id="floating-stats" class="fixed top-56 right-10 z-40 transition-all duration-300 transform hidden xl:block">
+                <div class="bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/50 p-4 w-72 max-h-[calc(100vh-14rem)] overflow-y-auto">
+                    <div class="flex items-center mb-4">
+                        <svg class="w-5 h-5 mr-2 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-13 0v9a1 1 0 001 1h1m8-4v1a1 1 0 01-1 1H9m13 0a1 1 0 01-1 1H9m13 0v-1a1 1 0 00-1-1H9" />
+                        </svg>
+                        <h3 class="text-sm font-semibold text-gray-800">Trail Statistics</h3>
+                    </div>
+
+                    <div class="space-y-3">
+                        <!-- Total Trails -->
+                        <div class="bg-gradient-to-br from-white to-emerald-50 rounded-lg border border-emerald-100 p-3 hover:shadow-md transition-shadow">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-[#336d66]/10 rounded-lg p-2">
+                                    <svg class="h-5 w-5 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-13 0v9a1 1 0 001 1h1m8-4v1a1 1 0 01-1 1H9m13 0a1 1 0 01-1 1H9m13 0v-1a1 1 0 00-1-1H9" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-xs font-medium text-gray-600">Total Trails</p>
+                                    <p class="text-xl font-bold text-gray-900">{{ $trails->total() }}</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-sm font-medium text-gray-500">Active Trails</p>
-                                <p class="text-2xl font-semibold text-green-600">{{ $trails->where('is_active', true)->count() }}</p>
+                        <!-- Active Trails -->
+                        <div class="bg-gradient-to-br from-white to-green-50 rounded-lg border border-green-100 p-3 hover:shadow-md transition-shadow">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-green-100 rounded-lg p-2">
+                                    <svg class="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-xs font-medium text-gray-600">Active Trails</p>
+                                    <p class="text-xl font-bold text-green-600">{{ $trails->where('is_active', true)->count() }}</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-sm font-medium text-gray-500">Inactive Trails</p>
-                                <p class="text-2xl font-semibold text-yellow-600">{{ $trails->where('is_active', false)->count() }}</p>
+                        <!-- Inactive Trails -->
+                        <div class="bg-gradient-to-br from-white to-yellow-50 rounded-lg border border-yellow-100 p-3 hover:shadow-md transition-shadow">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-yellow-100 rounded-lg p-2">
+                                    <svg class="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-xs font-medium text-gray-600">Inactive Trails</p>
+                                    <p class="text-xl font-bold text-yellow-600">{{ $trails->where('is_active', false)->count() }}</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-sm font-medium text-gray-500">This Page</p>
-                                <p class="text-2xl font-semibold text-blue-600">{{ $trails->count() }}</p>
+                        <!-- Current Page Count -->
+                        <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-100 p-3 hover:shadow-md transition-shadow">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-blue-100 rounded-lg p-2">
+                                    <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-xs font-medium text-gray-600">Showing</p>
+                                    <p class="text-xl font-bold text-blue-600">{{ $trails->count() }}</p>
+                                </div>
                             </div>
                         </div>
                     </div>

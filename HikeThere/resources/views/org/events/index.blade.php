@@ -135,66 +135,74 @@
             </div>
 
             <!-- Event Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-13 0v9a1 1 0 001 1h1m8-4v1a1 1 0 01-1 1H9m13 0a1 1 0 01-1 1H9m13 0v-1a1 1 0 00-1-1H9" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-sm font-medium text-gray-500">Total Events</p>
-                                <p class="text-2xl font-semibold text-gray-900">{{ $events->total() }}</p>
+            <!-- Floating Statistics Dashboard (Right) -->
+            <div id="floating-stats" class="fixed top-56 right-10 z-40 transition-all duration-300 transform hidden xl:block">
+                <div class="bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/50 p-4 w-72 max-h-[calc(100vh-14rem)] overflow-y-auto">
+                    <div class="flex items-center mb-4">
+                        <svg class="w-5 h-5 mr-2 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <h3 class="text-sm font-semibold text-gray-800">Event Statistics</h3>
+                    </div>
+
+                    <div class="space-y-3">
+                        <!-- Total Events -->
+                        <div class="bg-gradient-to-br from-white to-emerald-50 rounded-lg border border-emerald-100 p-3 hover:shadow-md transition-shadow">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-[#336d66]/10 rounded-lg p-2">
+                                    <svg class="h-5 w-5 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-xs font-medium text-gray-600">Total Events</p>
+                                    <p class="text-xl font-bold text-gray-900">{{ $events->total() }}</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-sm font-medium text-gray-500">Upcoming</p>
-                                <p class="text-2xl font-semibold text-blue-600">{{ $events->where('start_at','>=',now())->count() }}</p>
+                        <!-- Upcoming Events -->
+                        <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-100 p-3 hover:shadow-md transition-shadow">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-blue-100 rounded-lg p-2">
+                                    <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-xs font-medium text-gray-600">Upcoming</p>
+                                    <p class="text-xl font-bold text-blue-600">{{ $events->where('start_at','>=',now())->count() }}</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-sm font-medium text-gray-500">This Page</p>
-                                <p class="text-2xl font-semibold text-yellow-600">{{ $events->count() }}</p>
+                        <!-- Current Page Count -->
+                        <div class="bg-gradient-to-br from-white to-yellow-50 rounded-lg border border-yellow-100 p-3 hover:shadow-md transition-shadow">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-yellow-100 rounded-lg p-2">
+                                    <svg class="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-xs font-medium text-gray-600">Always Open</p>
+                                    <p class="text-xl font-bold text-yellow-600">{{ $events->where('always_available', true)->count() }}</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-sm font-medium text-gray-500">Created</p>
-                                <p class="text-2xl font-semibold text-green-600">{{ $events->where('user_id',auth()->id())->count() }}</p>
+                        <!-- Created by User -->
+                        <div class="bg-gradient-to-br from-white to-gray-50 rounded-lg border border-gray-100 p-3 hover:shadow-md transition-shadow">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 bg-gray-100 rounded-lg p-2">
+                                    <svg class="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-xs font-medium text-gray-600">Ended</p>
+                                    <p class="text-xl font-bold text-gray-600">{{ $events->where('start_at','<',now())->count() }}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -229,12 +237,21 @@
                                                 {{ $event->trail ? $event->trail->trail_name : 'N/A' }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-900">
-                                                    {{ optional($event->start_at)->format('M d, Y') }}
-                                                </div>
-                                                <div class="text-xs text-gray-500">
-                                                    {{ optional($event->start_at)->format('h:i A') }}
-                                                </div>
+                                                @if($event->always_available)
+                                                    <div class="text-sm font-semibold text-yellow-600">
+                                                        Always Open
+                                                    </div>
+                                                    <div class="text-xs text-gray-500">
+                                                        Flexible booking
+                                                    </div>
+                                                @else
+                                                    <div class="text-sm text-gray-900">
+                                                        {{ optional($event->start_at)->format('M d, Y') }}
+                                                    </div>
+                                                    <div class="text-xs text-gray-500">
+                                                        {{ optional($event->start_at)->format('h:i A') }}
+                                                    </div>
+                                                @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 @php

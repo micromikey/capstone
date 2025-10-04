@@ -1,0 +1,157 @@
+<div class="flex flex-col lg:flex-row gap-6">
+    <!-- Sidebar Navigation -->
+    <aside class="lg:w-80 flex-shrink-0">
+        <!-- Spacer to maintain layout when sidebar is fixed -->
+        <div class="hidden lg:block lg:w-80"></div>
+        
+        <div class="bg-white rounded-lg shadow-lg border border-gray-200 lg:fixed lg:w-80 lg:top-32" style="max-height: calc(100vh - 152px);" x-data="{ activeSection: '' }" @scroll.window="
+            let sections = ['introduction', 'information-collect', 'how-use', 'data-sharing', 'payment-security', 'data-retention', 'data-security', 'privacy-rights', 'notification-preferences', 'cookies', 'children-privacy', 'international-transfers', 'third-party', 'data-breach', 'privacy-design', 'updates', 'contact', 'dpo', 'compliance', 'summary', 'consent'];
+            for (let section of sections) {
+                let element = document.getElementById(section);
+                if (element) {
+                    let rect = element.getBoundingClientRect();
+                    if (rect.top >= 0 && rect.top <= 200) {
+                        activeSection = section;
+                        break;
+                    }
+                }
+            }
+        ">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center space-x-2 text-blue-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    <h3 class="font-semibold text-gray-900">Table of Contents</h3>
+                </div>
+            </div>
+            <nav class="p-4 overflow-y-auto" style="max-height: calc(100vh - 320px);">
+                <ul class="space-y-1 text-sm">
+                    <li><a href="#introduction" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'introduction' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">1. Introduction</a></li>
+                    <li><a href="#information-collect" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'information-collect' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">2. Information We Collect</a></li>
+                    <li><a href="#how-use" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'how-use' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">3. How We Use Your Information</a></li>
+                    <li><a href="#data-sharing" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'data-sharing' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">4. Data Sharing & Disclosure</a></li>
+                    <li><a href="#payment-security" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'payment-security' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">5. Payment Data Security</a></li>
+                    <li><a href="#data-retention" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'data-retention' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">6. Data Retention</a></li>
+                    <li><a href="#data-security" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'data-security' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">7. Data Security</a></li>
+                    <li><a href="#privacy-rights" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'privacy-rights' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">8. Your Privacy Rights</a></li>
+                    <li><a href="#notification-preferences" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'notification-preferences' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">9. Notification Preferences</a></li>
+                    <li><a href="#cookies" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'cookies' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">10. Cookies & Tracking</a></li>
+                    <li><a href="#children-privacy" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'children-privacy' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">11. Children's Privacy</a></li>
+                    <li><a href="#international-transfers" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'international-transfers' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">12. International Data Transfers</a></li>
+                    <li><a href="#third-party" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'third-party' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">13. Third-Party Links</a></li>
+                    <li><a href="#data-breach" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'data-breach' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">14. Data Breach Notification</a></li>
+                    <li><a href="#privacy-design" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'privacy-design' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">15. Privacy by Design</a></li>
+                    <li><a href="#updates" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'updates' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">16. Updates to Policy</a></li>
+                    <li><a href="#contact" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'contact' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">17. Contact Us</a></li>
+                    <li><a href="#dpo" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'dpo' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">18. Data Protection Officer</a></li>
+                    <li><a href="#compliance" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'compliance' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">19. Philippine Compliance</a></li>
+                    <li><a href="#summary" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'summary' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">20. Summary of Key Points</a></li>
+                    <li><a href="#consent" class="block px-3 py-2 rounded-md hover:bg-blue-50 hover:text-blue-700 transition" :class="activeSection === 'consent' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'">21. Consent</a></li>
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 min-w-0">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 lg:p-12">
+            <!-- Privacy Notice Banner -->
+            <div class="mb-8 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-6">
+                <div class="flex items-start">
+                    <svg class="w-6 h-6 text-blue-500 mr-3 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    <div>
+                        <h3 class="text-lg font-semibold text-blue-900 mb-2">Your Privacy Matters</h3>
+                        <p class="text-blue-800 text-sm leading-relaxed">
+                            At HikeThere, we are committed to protecting your personal information and being transparent about how we collect, use, and share your data. This Privacy Policy explains our practices in detail.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div id="content" class="prose prose-lg max-w-none prose-headings:text-gray-900 prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-8 prose-h2:mb-4 prose-h2:scroll-mt-24 prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-6 prose-h3:mb-3 prose-p:text-gray-700 prose-p:leading-relaxed prose-li:text-gray-700 prose-strong:text-gray-900 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline">
+                {!! \Illuminate\Support\Str::markdown(file_get_contents(base_path('PRIVACY_POLICY.md'))) !!}
+            </div>
+
+            <!-- Footer Contact -->
+            <div class="mt-12 pt-8 border-t border-gray-200">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Privacy Questions -->
+                    <div class="bg-blue-50 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Privacy Questions?
+                        </h3>
+                        <p class="text-gray-700 text-sm mb-3">
+                            For questions about your personal data:
+                        </p>
+                        <a href="mailto:privacy@hikethere.ph" class="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium text-sm">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                            privacy@hikethere.ph
+                        </a>
+                    </div>
+
+                    <!-- NPC Complaint -->
+                    <div class="bg-green-50 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                            File a Privacy Complaint
+                        </h3>
+                        <p class="text-gray-700 text-sm mb-3">
+                            Contact the National Privacy Commission:
+                        </p>
+                        <a href="https://www.privacy.gov.ph" target="_blank" class="inline-flex items-center text-green-600 hover:text-green-700 font-medium text-sm">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                            www.privacy.gov.ph
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Your Rights -->
+                <div class="mt-6 bg-gradient-to-r from-blue-50 to-green-50 rounded-xl p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                        </svg>
+                        Your Privacy Rights
+                    </h3>
+                    <div class="grid md:grid-cols-3 gap-4 text-sm text-gray-700">
+                        <div>
+                            <strong class="text-gray-900">Access:</strong> View your data
+                        </div>
+                        <div>
+                            <strong class="text-gray-900">Rectify:</strong> Correct inaccuracies
+                        </div>
+                        <div>
+                            <strong class="text-gray-900">Erase:</strong> Delete your account
+                        </div>
+                        <div>
+                            <strong class="text-gray-900">Export:</strong> Download your data
+                        </div>
+                        <div>
+                            <strong class="text-gray-900">Object:</strong> Opt-out of processing
+                        </div>
+                        <div>
+                            <strong class="text-gray-900">Complain:</strong> File with NPC
+                        </div>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-600">
+                        <strong>To exercise your rights:</strong> Email us at 
+                        <a href="mailto:privacy@hikethere.ph" class="text-blue-600 hover:text-blue-700 font-medium">privacy@hikethere.ph</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>

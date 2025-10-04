@@ -1,0 +1,41 @@
+<x-guest-layout>
+    <!-- Guest Header -->
+    <div class="bg-white shadow sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                    </a>
+                    <div>
+                        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                            {{ __('Privacy Policy') }}
+                        </h2>
+                        <p class="text-sm text-gray-500 mt-1">Last Updated: October 5, 2025</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a href="{{ route('terms') }}" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition">
+                        Terms & Conditions
+                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                        </svg>
+                    </a>
+                    <a href="{{ route('login') }}" class="inline-flex items-center px-4 py-2 bg-[#336d66] hover:bg-[#20b6d2] text-white text-sm font-medium rounded-lg transition">
+                        Sign In
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="py-12 bg-gray-50 min-h-screen">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            @include('legal.partials.privacy-content')
+        </div>
+    </div>
+
+    @include('legal.partials.privacy-styles-scripts')
+</x-guest-layout>

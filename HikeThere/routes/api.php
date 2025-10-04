@@ -54,6 +54,10 @@ Route::prefix('trails')->group(function () {
 // Header unified search endpoint (frontend header/search inputs use this)
 Route::get('/header-search', [\App\Http\Controllers\SearchController::class, 'headerSearch']);
 
+// Organization search endpoint (for organization users to search their own content)
+// Using web middleware to access session-based auth
+Route::middleware(['web'])->get('/org-search', [\App\Http\Controllers\SearchController::class, 'orgSearch']);
+
 // Recommender proxy endpoint (calls local ML service)
 Route::get('/recommender/user/{id}', [App\Http\Controllers\Api\RecommenderController::class, 'forUser']);
 

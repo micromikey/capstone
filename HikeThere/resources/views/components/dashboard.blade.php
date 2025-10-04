@@ -205,15 +205,77 @@ $imageService = app('App\Services\TrailImageService');
             }, AUTO_REFRESH_INTERVAL + jitter);
         }
 
+        // Pagination state
+        let allTrails = [];
+        let currentPage = 1;
+        const ITEMS_PER_PAGE = 4;
+
         // Skeleton generator while loading
-        function renderSkeletons(count = 6) {
+        function renderSkeletons(count = 4) {
             const skeleton = `<div class="animate-pulse bg-white rounded-2xl p-6 h-56"></div>`;
             grid.innerHTML = Array.from({
                 length: count
             }).map(() => skeleton).join('');
         }
 
-        async function fetchRecommendations(k = 6) {
+        function updatePagination() {
+            const totalPages = Math.ceil(allTrails.length / ITEMS_PER_PAGE);
+            const pagination = document.getElementById('recommendations-pagination');
+            const pageInfo = document.getElementById('rec-page-info');
+            const prevBtn = document.getElementById('rec-prev');
+            const nextBtn = document.getElementById('rec-next');
+
+            if (totalPages > 1) {
+                pagination.classList.remove('hidden');
+                pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+                prevBtn.disabled = currentPage === 1;
+                nextBtn.disabled = currentPage === totalPages;
+            } else {
+                pagination.classList.add('hidden');
+            }
+        }
+
+        function renderCurrentPage() {
+            const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
+            const endIdx = startIdx + ITEMS_PER_PAGE;
+            const pageTrails = allTrails.slice(startIdx, endIdx);
+
+            grid.innerHTML = pageTrails.map((item) => {
+                const cardHtml = renderTrailCard(item.trail, item.score, item.id);
+                const explain = item.explanation;
+                return cardHtml.replace('</div>\n            ', `\n                <div class="p-4 border-t border-gray-100 bg-gray-50 text-sm text-gray-600 explain-container" data-explain='${escapeHtml(JSON.stringify(explain || null))}'>\n                    <button class="explain-toggle text-blue-600 underline">Why this trail?</button>\n                    <div class="explain-text mt-2 hidden"></div>\n                </div>\n            `);
+            }).join('');
+
+            // Wire explain toggles
+            Array.from(grid.querySelectorAll('.explain-toggle')).forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const container = this.closest('.explain-container');
+                    const textDiv = container.querySelector('.explain-text');
+                    const data = container.getAttribute('data-explain');
+                    if (textDiv.classList.contains('hidden')) {
+                        try {
+                            const explanation = JSON.parse(data);
+                            if (explanation && explanation.reason) {
+                                textDiv.innerHTML = `<p class="text-gray-700 leading-relaxed">${escapeHtml(explanation.reason)}</p>`;
+                            } else {
+                                textDiv.innerHTML = `<p class="text-gray-500 italic">No explanation available.</p>`;
+                            }
+                        } catch (e) {
+                            textDiv.innerHTML = `<p class="text-gray-500 italic">Unable to load explanation.</p>`;
+                        }
+                        textDiv.classList.remove('hidden');
+                        this.textContent = 'Hide explanation';
+                    } else {
+                        textDiv.classList.add('hidden');
+                        this.textContent = 'Why this trail?';
+                    }
+                });
+            });
+
+            updatePagination();
+        }
+
+        async function fetchRecommendations(k = 20) {
             // Abort previous request if any
             if (currentAbort) {
                 try {
@@ -226,7 +288,7 @@ $imageService = app('App\Services\TrailImageService');
             const signal = currentAbort.signal;
 
             // Use skeletons for richer UX + loader indicator
-            renderSkeletons(6);
+            renderSkeletons(4);
             await showLoader(true);
 
             try {
@@ -417,10 +479,26 @@ $imageService = app('App\Services\TrailImageService');
         }
 
         // Wire refresh button
-        refreshBtn.addEventListener('click', () => fetchRecommendations(6));
+        refreshBtn.addEventListener('click', () => fetchRecommendations(20));
+
+        // Wire pagination buttons
+        document.getElementById('rec-prev').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderCurrentPage();
+            }
+        });
+
+        document.getElementById('rec-next').addEventListener('click', () => {
+            const totalPages = Math.ceil(allTrails.length / ITEMS_PER_PAGE);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderCurrentPage();
+            }
+        });
 
         // Initial load
-        fetchRecommendations(6);
+        fetchRecommendations(20);
     })();
 </script>
 @endpush
@@ -436,6 +514,21 @@ $imageService = app('App\Services\TrailImageService');
         <div id="recommendations-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 custom-scrollbar overflow-x-auto">
             {{-- Filled dynamically via JS --}}
             <div class="col-span-1 text-center text-sm text-gray-600">Loading recommendations...</div>
+        </div>
+        
+        <!-- Pagination Controls -->
+        <div id="recommendations-pagination" class="flex items-center justify-center mt-6 space-x-2 hidden">
+            <button id="rec-prev" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+            <span id="rec-page-info" class="px-4 py-2 text-sm text-gray-600">Page 1 of 1</span>
+            <button id="rec-next" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
         </div>
     </div>
 
@@ -1641,7 +1734,7 @@ $imageService = app('App\Services\TrailImageService');
 
         @if(isset($upcomingEvents) && $upcomingEvents->count() > 0)
         <!-- Events Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div id="events-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             @foreach($upcomingEvents as $event)
             @php
                 $now = \Carbon\Carbon::now();
@@ -1742,6 +1835,23 @@ $imageService = app('App\Services\TrailImageService');
             </div>
             @endforeach
         </div>
+
+        <!-- Events Pagination -->
+        @if($upcomingEvents->count() > 3)
+        <div id="events-pagination" class="flex items-center justify-center mb-8 space-x-2">
+            <button id="events-prev" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+            <span id="events-page-info" class="px-4 py-2 text-sm text-gray-600">Page 1 of {{ ceil($upcomingEvents->count() / 3) }}</span>
+            <button id="events-next" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
+        </div>
+        @endif
         @else
         <!-- No Events State -->
         <div class="text-center py-12 bg-white rounded-2xl shadow-lg border border-gray-100 max-w-2xl mx-auto mb-8">
@@ -1824,7 +1934,7 @@ $imageService = app('App\Services\TrailImageService');
         </div>
 
         <!-- Followed Trails Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div id="community-trails-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             @foreach($followedTrails as $trail)
             <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 overflow-hidden group">
                 <div class="relative h-48">
@@ -1889,6 +1999,23 @@ $imageService = app('App\Services\TrailImageService');
             </div>
             @endforeach
         </div>
+
+        <!-- Community Trails Pagination -->
+        @if($followedTrails->count() > 3)
+        <div id="community-trails-pagination" class="flex items-center justify-center mb-8 space-x-2">
+            <button id="community-trails-prev" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+            <span id="community-trails-page-info" class="px-4 py-2 text-sm text-gray-600">Page 1 of {{ ceil($followedTrails->count() / 3) }}</span>
+            <button id="community-trails-next" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
+        </div>
+        @endif
 
         <!-- Community Actions -->
         <div class="text-center">
@@ -2077,6 +2204,113 @@ $imageService = app('App\Services\TrailImageService');
         });
     });
 </script>
+
+{{-- Pagination Scripts for Events and Community Trails --}}
+@if(isset($user) && $user && $user->user_type === 'hiker')
+<script>
+    // Events Pagination
+    (function() {
+        const eventsGrid = document.getElementById('events-grid');
+        if (!eventsGrid) return;
+
+        const allEventCards = Array.from(eventsGrid.children);
+        const EVENTS_PER_PAGE = 3;
+        let currentEventPage = 1;
+        const totalEventPages = Math.ceil(allEventCards.length / EVENTS_PER_PAGE);
+
+        if (totalEventPages <= 1) return;
+
+        const eventsPrevBtn = document.getElementById('events-prev');
+        const eventsNextBtn = document.getElementById('events-next');
+        const eventsPageInfo = document.getElementById('events-page-info');
+
+        function renderEventsPage() {
+            const startIdx = (currentEventPage - 1) * EVENTS_PER_PAGE;
+            const endIdx = startIdx + EVENTS_PER_PAGE;
+
+            allEventCards.forEach((card, index) => {
+                if (index >= startIdx && index < endIdx) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            eventsPageInfo.textContent = `Page ${currentEventPage} of ${totalEventPages}`;
+            eventsPrevBtn.disabled = currentEventPage === 1;
+            eventsNextBtn.disabled = currentEventPage === totalEventPages;
+        }
+
+        eventsPrevBtn.addEventListener('click', () => {
+            if (currentEventPage > 1) {
+                currentEventPage--;
+                renderEventsPage();
+            }
+        });
+
+        eventsNextBtn.addEventListener('click', () => {
+            if (currentEventPage < totalEventPages) {
+                currentEventPage++;
+                renderEventsPage();
+            }
+        });
+
+        // Initial render
+        renderEventsPage();
+    })();
+
+    // Community Trails Pagination
+    (function() {
+        const trailsGrid = document.getElementById('community-trails-grid');
+        if (!trailsGrid) return;
+
+        const allTrailCards = Array.from(trailsGrid.children);
+        const TRAILS_PER_PAGE = 3;
+        let currentTrailPage = 1;
+        const totalTrailPages = Math.ceil(allTrailCards.length / TRAILS_PER_PAGE);
+
+        if (totalTrailPages <= 1) return;
+
+        const trailsPrevBtn = document.getElementById('community-trails-prev');
+        const trailsNextBtn = document.getElementById('community-trails-next');
+        const trailsPageInfo = document.getElementById('community-trails-page-info');
+
+        function renderTrailsPage() {
+            const startIdx = (currentTrailPage - 1) * TRAILS_PER_PAGE;
+            const endIdx = startIdx + TRAILS_PER_PAGE;
+
+            allTrailCards.forEach((card, index) => {
+                if (index >= startIdx && index < endIdx) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            trailsPageInfo.textContent = `Page ${currentTrailPage} of ${totalTrailPages}`;
+            trailsPrevBtn.disabled = currentTrailPage === 1;
+            trailsNextBtn.disabled = currentTrailPage === totalTrailPages;
+        }
+
+        trailsPrevBtn.addEventListener('click', () => {
+            if (currentTrailPage > 1) {
+                currentTrailPage--;
+                renderTrailsPage();
+            }
+        });
+
+        trailsNextBtn.addEventListener('click', () => {
+            if (currentTrailPage < totalTrailPages) {
+                currentTrailPage++;
+                renderTrailsPage();
+            }
+        });
+
+        // Initial render
+        renderTrailsPage();
+    })();
+</script>
+@endif
 
 {{-- Real-time Event Polling for Hikers --}}
 @if(isset($user) && $user && $user->user_type === 'hiker')
