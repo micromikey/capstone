@@ -427,6 +427,17 @@ Route::middleware(['auth:sanctum', 'ensure.hiking.preferences'])->group(function
         return view('about');
     })->name('about');
 
+    // Support routes
+    Route::prefix('support')->name('support.')->group(function () {
+        Route::get('/', [App\Http\Controllers\SupportController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\SupportController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\SupportController::class, 'store'])->name('store');
+        Route::get('/{ticket}', [App\Http\Controllers\SupportController::class, 'show'])->name('show');
+        Route::post('/{ticket}/reply', [App\Http\Controllers\SupportController::class, 'reply'])->name('reply');
+        Route::patch('/{ticket}/status', [App\Http\Controllers\SupportController::class, 'updateStatus'])->name('updateStatus');
+        Route::delete('/{ticket}', [App\Http\Controllers\SupportController::class, 'destroy'])->name('destroy');
+    });
+
     // Account Settings - Preferences
     Route::get('/account/preferences', [App\Http\Controllers\AccountSettings\PreferencesController::class, 'index'])->name('preferences.index');
     Route::post('/account/preferences', [App\Http\Controllers\AccountSettings\PreferencesController::class, 'update'])->name('preferences.update');

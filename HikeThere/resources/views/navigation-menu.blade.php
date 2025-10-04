@@ -114,6 +114,10 @@
                                 {{ __('About HikeThere') }}
                             </x-dropdown-link>
                             @endif
+                            <!-- Support Section -->
+                            <x-dropdown-link href="{{ route('support.index') }}">
+                                {{ __('Support') }}
+                            </x-dropdown-link>
 
                             <div class="border-t border-gray-200"></div>
 
@@ -232,6 +236,11 @@
                     {{ __('About HikeThere') }}
                 </x-responsive-nav-link>
                 @endif
+
+                <!-- Support -->
+                <x-responsive-nav-link href="{{ route('support.index') }}" :active="request()->routeIs('support.*')">
+                    {{ __('Support') }}
+                </x-responsive-nav-link>
 
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}" x-data>

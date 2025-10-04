@@ -217,6 +217,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Check if user is an admin
+     */
+    public function isAdmin()
+    {
+        return $this->user_type === 'admin' || $this->email === 'admin@hikethere.com';
+    }
+
+    /**
      * Check if user is a pending organization
      */
     public function isPendingOrganization()
