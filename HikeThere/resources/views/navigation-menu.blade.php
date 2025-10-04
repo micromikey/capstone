@@ -72,10 +72,10 @@
                         <x-slot name="trigger">
                             <button class="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 transition sticky-header">
                                 @if(Auth::user()->profile_picture)
-                                    <img class="size-8 rounded-full object-cover js-profile-avatar" src="{{ Auth::user()->profile_picture_url }}" alt="{{ Auth::user()->name }}" />
+                                    <img class="size-8 rounded-full object-cover js-profile-avatar" src="{{ Auth::user()->profile_picture_url }}" alt="{{ Auth::user()->display_name }}" />
                                 @else
-                                    <div role="img" aria-label="{{ Auth::user()->name }}'s avatar" class="size-8 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-700 js-profile-avatar-placeholder">
-                                        {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
+                                    <div role="img" aria-label="{{ Auth::user()->display_name }}'s avatar" class="size-8 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-700 js-profile-avatar-placeholder">
+                                        {{ strtoupper(substr(Auth::user()->display_name ?? 'U', 0, 1)) }}
                                     </div>
                                 @endif
                             </button>
@@ -195,16 +195,16 @@
             <div class="flex items-center px-4">
                 <div class="shrink-0 me-3">
                     @if(Auth::user()->profile_picture)
-                        <img class="size-10 rounded-full object-cover js-profile-avatar" src="{{ Auth::user()->profile_picture_url }}" alt="{{ Auth::user()->name }}" />
+                        <img class="size-10 rounded-full object-cover js-profile-avatar" src="{{ Auth::user()->profile_picture_url }}" alt="{{ Auth::user()->display_name }}" />
                     @else
-                        <div role="img" aria-label="{{ Auth::user()->name }}'s avatar" class="size-10 w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-base font-semibold text-gray-700 js-profile-avatar-placeholder">
-                            {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
+                        <div role="img" aria-label="{{ Auth::user()->display_name }}'s avatar" class="size-10 w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-base font-semibold text-gray-700 js-profile-avatar-placeholder">
+                            {{ strtoupper(substr(Auth::user()->display_name ?? 'U', 0, 1)) }}
                         </div>
                     @endif
                 </div>
 
                 <div>
-                    <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
+                    <div class="font-medium text-base text-gray-800">{{ Auth::user()->display_name }}</div>
                     <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
                 </div>
             </div>

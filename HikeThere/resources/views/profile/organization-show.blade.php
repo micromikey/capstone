@@ -17,9 +17,16 @@
                     <div class="absolute bottom-0 left-0 right-0 p-6">
                         <div class="flex items-end space-x-6">
                             <div class="relative">
-                                <img src="{{ $user->profile_picture_url }}" 
-                                     alt="{{ $user->organization_name }}" 
-                                     class="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover">
+                                @if($user->profile_picture)
+                                    <img src="{{ $user->profile_picture_url }}" 
+                                         alt="{{ $user->organization_name }}" 
+                                         class="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover">
+                                @else
+                                    <div role="img" aria-label="{{ $user->organization_name }}'s logo" 
+                                         class="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gray-200 flex items-center justify-center text-4xl font-semibold text-gray-700">
+                                        {{ strtoupper(substr($user->organization_name ?? 'O', 0, 1)) }}
+                                    </div>
+                                @endif
                                 <div class="absolute -bottom-2 -right-2 bg-[#336d66] rounded-full p-2">
                                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
