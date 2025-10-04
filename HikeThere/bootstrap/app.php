@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Add security headers to all responses
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        
         $middleware->alias([
             'check.approval' => \App\Http\Middleware\CheckApprovalStatus::class,
             'user.type' => \App\Http\Middleware\CheckUserType::class,
