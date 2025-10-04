@@ -93,7 +93,61 @@ class ItineraryController extends Controller
         // Get user's latest assessment for personalized recommendations
         $assessment = Auth::user()->latestAssessmentResult;
 
-        return view('hiker.itinerary.build', compact('trails', 'assessment', 'orgSideTrips'));
+        // Get ML-based trail recommendations based on user's complete activity history
+        // (bookings, reviews, saved itineraries, assessments, viewed organizations)
+        $recommendedTrails = $this->getMLRecommendations(Auth::id(), 10);
+
+        return view('hiker.itinerary.build', compact('trails', 'assessment', 'orgSideTrips', 'recommendedTrails'));
+    }
+
+    /**
+     * Get ML-based trail recommendations for the user.
+     * Returns an array of trail recommendations with scores and explanations.
+     */
+    protected function getMLRecommendations($userId, $k = 10)
+    {
+        try {
+            // Call the recommender API endpoint
+            $response = Http::timeout(5)->get(url("/api/recommender/user/{$userId}"), [
+                'k' => $k
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                
+                // Handle both ML-style and DB-fallback responses
+                if (isset($data['recommendations']) && is_array($data['recommendations'])) {
+                    // Map recommendations to include trail IDs and scores
+                    return collect($data['recommendations'])->map(function($rec) {
+                        return [
+                            'trail_id' => $rec['id'] ?? null,
+                            'trail_name' => $rec['name'] ?? $rec['trail_name'] ?? null,
+                            'slug' => $rec['slug'] ?? null,
+                            'score' => $rec['score'] ?? 0,
+                            'explanation' => $rec['explanation'] ?? null,
+                            'average_rating' => $rec['average_rating'] ?? 0,
+                            'reviews_count' => $rec['reviews_count'] ?? 0,
+                            'primary_image' => $rec['primary_image'] ?? null,
+                            'mountain_name' => $rec['mountain_name'] ?? null,
+                            'location_label' => $rec['location_label'] ?? null,
+                        ];
+                    })->take(5); // Top 5 recommendations for the suggested trail section
+                }
+            }
+
+            Log::warning('ML recommender returned non-success or invalid format', [
+                'status' => $response->status(),
+                'user_id' => $userId
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Failed to fetch ML recommendations', [
+                'error' => $e->getMessage(),
+                'user_id' => $userId
+            ]);
+        }
+
+        // Fallback: return empty collection
+        return collect([]);
     }
 
     public function buildWithTrail(Trail $trail)
@@ -128,10 +182,13 @@ class ItineraryController extends Controller
         // Get user's latest assessment for personalized recommendations
         $assessment = Auth::user()->latestAssessmentResult;
 
+        // Get ML-based trail recommendations
+        $recommendedTrails = $this->getMLRecommendations(Auth::id(), 10);
+
         // Pass the selected trail as preselectedTrail to avoid naming conflicts in the view
         $preselectedTrail = $trail;
 
-        return view('hiker.itinerary.build', compact('trails', 'assessment', 'orgSideTrips', 'preselectedTrail'));
+        return view('hiker.itinerary.build', compact('trails', 'assessment', 'orgSideTrips', 'preselectedTrail', 'recommendedTrails'));
     }
 
     public function generate(Request $request)
@@ -159,7 +216,13 @@ class ItineraryController extends Controller
 
         // If we have a trail_id, try to load the trail and fetch fresh weather
         if ($itinerary->trail_id) {
-            $trail = \App\Models\Trail::find($itinerary->trail_id);
+            // Eager load trail with events to get hiking_start_time
+            $trail = \App\Models\Trail::with(['location', 'events' => function($query) {
+                $query->where('is_public', true)
+                      ->whereNotNull('hiking_start_time')
+                      ->orderBy('start_at', 'desc')
+                      ->limit(1);
+            }])->find($itinerary->trail_id);
             
             // Fetch fresh weather data if trail has coordinates
             if ($trail && $trail->latitude && $trail->longitude) {
@@ -211,7 +274,13 @@ class ItineraryController extends Controller
 
         // If we have a trail_id, try to load the trail and fetch fresh weather
         if ($itinerary->trail_id) {
-            $trail = \App\Models\Trail::with('location')->find($itinerary->trail_id);
+            // Eager load trail with location, events to get hiking_start_time
+            $trail = \App\Models\Trail::with(['location', 'events' => function($query) {
+                $query->where('is_public', true)
+                      ->whereNotNull('hiking_start_time')
+                      ->orderBy('start_at', 'desc')
+                      ->limit(1);
+            }])->find($itinerary->trail_id);
             
             // Fetch fresh weather data if trail has coordinates
             if ($trail && $trail->latitude && $trail->longitude) {
@@ -291,7 +360,40 @@ class ItineraryController extends Controller
         $it->duration_days = intval($payload['duration_days'] ?? 1);
         $it->nights = intval($payload['nights'] ?? max(0, $it->duration_days - 1));
         $it->start_date = $payload['start_date'] ?? null;
-        $it->start_time = $payload['start_time'] ?? null;
+        
+        // Priority for start_time: hiking_start_time from trail event > payload start_time > default
+        $startTime = $payload['start_time'] ?? null;
+        
+        // If trail_id is provided, try to get hiking_start_time from the trail's event
+        $trailId = $payload['trail_id'] ?? null;
+        if ($trailId) {
+            try {
+                $trail = \App\Models\Trail::with(['events' => function($query) {
+                    $query->where('is_public', true)
+                          ->whereNotNull('hiking_start_time')
+                          ->orderBy('start_at', 'desc')
+                          ->limit(1);
+                }])->find($trailId);
+                
+                if ($trail && $trail->events && $trail->events->isNotEmpty()) {
+                    $latestEvent = $trail->events->first();
+                    if ($latestEvent && $latestEvent->hiking_start_time) {
+                        $startTime = $latestEvent->hiking_start_time;
+                        Log::info('Using hiking_start_time from trail event', [
+                            'trail_id' => $trailId,
+                            'hiking_start_time' => $startTime
+                        ]);
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to fetch hiking_start_time from trail', [
+                    'trail_id' => $trailId,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+        
+        $it->start_time = $startTime ?? '06:00'; // Fallback to default
 
         // Store JSON fields used by the view/model
         $it->daily_schedule = $payload['daily_schedule'] ?? $payload['schedule'] ?? $payload['days'] ?? [];

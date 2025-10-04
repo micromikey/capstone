@@ -151,21 +151,23 @@
                 <!--Suggested Trail - Back to original position -->
                 <div class="rounded-xl border border-white/70 bg-white/85 p-4 ring-1 ring-black/5 backdrop-blur">
                   <div class="mb-4">
-                    <p class="text-sm font-semibold text-gray-800">Suggested Trail</p>
+                    <p class="text-sm font-semibold text-gray-800">Suggested Trails</p>
                     @if($assessment)
                     <div class="mt-2 space-y-2">
                       <p class="bg-gradient-to-r from-emerald-700 via-teal-700 to-cyan-700 bg-clip-text text-lg font-extrabold tracking-tight text-transparent">
-                        Based on your assessment score: {{ $assessment->overall_score }}/100
+                        Personalized for you based on your activity
                       </p>
                       <div class="flex items-center gap-3">
-                        <span class="text-xs text-gray-500">Difficulty level:</span>
+                        <span class="text-xs text-gray-500">Assessment Score:</span>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
                           {{ $assessment->overall_score >= 80 ? 'bg-red-100 text-red-800' : 
                              ($assessment->overall_score >= 60 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800') }}">
-                          {{ $assessment->overall_score >= 80 ? 'Hard' : ($assessment->overall_score >= 60 ? 'Moderate' : 'Easy') }}
+                          {{ $assessment->overall_score }}/100 - {{ $assessment->overall_score >= 80 ? 'Hard' : ($assessment->overall_score >= 60 ? 'Moderate' : 'Easy') }}
                         </span>
                       </div>
-                      <p class="text-xs text-gray-600">We've filtered trails that match your fitness level and experience.</p>
+                      <p class="text-xs text-gray-600">
+                        Recommendations based on your booking history, reviews, saved itineraries, and fitness level.
+                      </p>
                     </div>
                     @else
                     <div class="mt-2">
@@ -182,6 +184,82 @@
                     </div>
                     @endif
                   </div>
+
+                  <!-- ML Recommended Trails -->
+                  @if(isset($recommendedTrails) && $recommendedTrails->count() > 0)
+                  <div class="mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <h4 class="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        <svg class="w-4 h-4 inline-block mr-1 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        Top Picks for You
+                      </h4>
+                      <span class="text-xs text-gray-500">ML Powered</span>
+                    </div>
+                    
+                    <div class="space-y-2 max-h-80 overflow-y-auto pr-2">
+                      @foreach($recommendedTrails as $recommended)
+                      <div class="group relative bg-gradient-to-r from-emerald-50 to-cyan-50 rounded-lg p-3 border border-emerald-200 hover:shadow-md transition-all duration-200 cursor-pointer" 
+                           onclick="selectRecommendedTrail({{ $recommended['trail_id'] }}, '{{ addslashes($recommended['trail_name']) }}')">
+                        <!-- Recommendation Badge -->
+                        <div class="absolute top-2 right-2 flex items-center gap-1 bg-emerald-600 text-white text-xs px-2 py-0.5 rounded-full">
+                          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                          </svg>
+                          <span class="font-medium">{{ number_format($recommended['score'] * 100, 0) }}%</span>
+                        </div>
+                        
+                        <div class="pr-16">
+                          <h5 class="font-semibold text-gray-900 text-sm mb-1">
+                            {{ $recommended['trail_name'] }}
+                          </h5>
+                          
+                          <div class="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                            @if($recommended['mountain_name'])
+                            <span class="flex items-center gap-1">
+                              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/>
+                              </svg>
+                              {{ $recommended['mountain_name'] }}
+                            </span>
+                            @endif
+                            
+                            @if($recommended['average_rating'] > 0)
+                            <span class="flex items-center gap-1">
+                              <svg class="w-3 h-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                              </svg>
+                              {{ number_format($recommended['average_rating'], 1) }}
+                            </span>
+                            @endif
+                          </div>
+                          
+                          @if($recommended['location_label'])
+                          <p class="text-xs text-gray-500 mb-2">
+                            <svg class="w-3 h-3 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            </svg>
+                            {{ $recommended['location_label'] }}
+                          </p>
+                          @endif
+                          
+                          @if($recommended['explanation'])
+                          <details class="text-xs text-gray-600 bg-white/50 rounded px-2 py-1 mt-1">
+                            <summary class="cursor-pointer text-emerald-700 font-medium">Why this trail?</summary>
+                            <p class="mt-1 text-gray-600">{{ $recommended['explanation'] }}</p>
+                          </details>
+                          @else
+                          <p class="text-xs text-gray-500 italic">
+                            Recommended based on your activity history and preferences.
+                          </p>
+                          @endif
+                        </div>
+                      </div>
+                      @endforeach
+                    </div>
+                  </div>
+                  @endif
 
                   <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div class="relative w-full sm:w-72">
@@ -2907,5 +2985,63 @@
     
     // Start trying after initial delay
     setTimeout(tryPreselectedTrail, 500);
+
+    // Function to select a recommended trail from the ML suggestions
+    function selectRecommendedTrail(trailId, trailName) {
+      const trailSelect = document.getElementById('trailSelect');
+      if (!trailSelect) return;
+      
+      // Find the option with matching trail name or data-trail-id
+      const options = Array.from(trailSelect.options);
+      const matchingOption = options.find(opt => {
+        const optTrailId = opt.getAttribute('data-trail-id');
+        const optValue = opt.value;
+        return optTrailId == trailId || optValue === trailName;
+      });
+      
+      if (matchingOption) {
+        // Select the option
+        trailSelect.value = matchingOption.value;
+        
+        // Trigger change event to update the UI
+        const changeEvent = new Event('change', { bubbles: true });
+        trailSelect.dispatchEvent(changeEvent);
+        
+        // Scroll to the trail select dropdown
+        trailSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Add a visual highlight effect
+        trailSelect.classList.add('ring-4', 'ring-emerald-400');
+        setTimeout(() => {
+          trailSelect.classList.remove('ring-4', 'ring-emerald-400');
+        }, 1500);
+        
+        // Show success notification
+        showNotification('Trail selected: ' + trailName, 'success');
+      } else {
+        console.warn('Could not find matching trail option for:', trailName, trailId);
+        showNotification('Trail not found in dropdown', 'error');
+      }
+    }
+    
+    // Simple notification helper
+    function showNotification(message, type = 'info') {
+      const colors = {
+        success: 'bg-emerald-500',
+        error: 'bg-red-500',
+        info: 'bg-blue-500'
+      };
+      
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 ${colors[type] || colors.info} text-white px-4 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
   </script>
 </x-app-layout>
