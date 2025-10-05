@@ -90,9 +90,13 @@ class ProfileController extends Controller
             $path = $request->file('profile_picture')->store('profile-pictures', $disk);
             $user->update(['profile_picture' => $path]);
 
-            $url = $disk === 'gcs' 
-                ? Storage::disk('gcs')->url($path)
-                : Storage::disk('public')->url($path);
+            if ($disk === 'gcs') {
+                $bucket = config('filesystems.disks.gcs.bucket');
+                $url = "https://storage.googleapis.com/{$bucket}/{$path}";
+            } else {
+                $url = Storage::disk('public')->url($path);
+            }
+            
             // If it's an AJAX request, return JSON for the client to update in-place
             if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
                 return response()->json([
@@ -202,9 +206,12 @@ class ProfileController extends Controller
             $user->update(['profile_picture' => $path]);
 
             // Get the public URL
-            $url = $disk === 'gcs' 
-                ? Storage::disk('gcs')->url($path)
-                : Storage::disk('public')->url($path);
+            if ($disk === 'gcs') {
+                $bucket = config('filesystems.disks.gcs.bucket');
+                $url = "https://storage.googleapis.com/{$bucket}/{$path}";
+            } else {
+                $url = Storage::disk('public')->url($path);
+            }
                 
             // If it's an AJAX request, return JSON for the client to update in-place
             if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
@@ -336,9 +343,12 @@ class ProfileController extends Controller
         $user->update(['profile_picture' => $path]);
 
         // Get the public URL
-        $url = $disk === 'gcs' 
-            ? Storage::disk('gcs')->url($path)
-            : Storage::disk('public')->url($path);
+        if ($disk === 'gcs') {
+            $bucket = config('filesystems.disks.gcs.bucket');
+            $url = "https://storage.googleapis.com/{$bucket}/{$path}";
+        } else {
+            $url = Storage::disk('public')->url($path);
+        }
 
         return response()->json([ 'profile_picture_url' => $url, 'cache_bust' => time() ]);
     }
