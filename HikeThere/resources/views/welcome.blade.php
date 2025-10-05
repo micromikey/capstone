@@ -2623,13 +2623,11 @@
 
     <!-- Mobile Menu Toggle Script -->
     <script type="application/json" id="app-config">
-        {
-            !!json_encode([
-                'authenticated' => auth() - > check(),
-                'defaultTrailImage' => asset('img/default-trail.jpg'),
-                'appName' => config('app.name'),
-            ]) !!
-        }
+        {!! json_encode([
+            'authenticated' => auth()->check(),
+            'defaultTrailImage' => asset('img/default-trail.jpg'),
+            'appName' => config('app.name'),
+        ]) !!}
     </script>
 
     <script>
