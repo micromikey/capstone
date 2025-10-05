@@ -64,6 +64,18 @@ php artisan migrate --force || true
 echo "Linking storage..."
 php artisan storage:link || true
 
+# Debug: Check if Vite build assets exist at runtime
+echo "=== CHECKING VITE ASSETS AT RUNTIME ==="
+if [ -f "/app/public/build/.vite/manifest.json" ]; then
+    echo "✓ Vite manifest found!"
+    ls -la /app/public/build/
+else
+    echo "✗ CRITICAL: Vite manifest NOT found at runtime!"
+    echo "Build directory contents:"
+    ls -la /app/public/build/ || echo "Build directory doesn't exist!"
+fi
+echo "========================================"
+
 # Clear config cache
 echo "Clearing config cache..."
 php artisan config:clear || true
