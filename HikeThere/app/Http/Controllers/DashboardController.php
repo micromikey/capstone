@@ -140,7 +140,17 @@ class DashboardController extends Controller
             })->groupBy(function ($item) {
                 return Carbon::parse($item['dt_txt'])->format('Y-m-d');
             })->map(function ($dayItems) {
-                $midday = $dayItems->firstWhere('dt_txt', fn($dt) => str_contains($dt, '12:00:00')) ?? $dayItems->first();
+                // Find noon forecast or use first item
+                $midday = null;
+                foreach ($dayItems as $item) {
+                    if (str_contains($item['dt_txt'], '12:00:00')) {
+                        $midday = $item;
+                        break;
+                    }
+                }
+                if (!$midday) {
+                    $midday = $dayItems->first();
+                }
 
                 return [
                     'date' => Carbon::parse($midday['dt_txt'])->format('l, M j'),
@@ -148,12 +158,12 @@ class DashboardController extends Controller
                     'condition' => $midday['weather'][0]['main'] ?? 'Clear',
                     'icon' => $midday['weather'][0]['icon'] ?? '01d',
                 ];
-            })->take(5)->values()->all();
+            })->take(5)->values();
             
-            // Convert back to collection
-            $forecast = collect($forecast);
-            
-            \Log::info('Forecast processed from API', ['count' => $forecast->count()]);
+            \Log::info('Forecast processed from API', [
+                'count' => $forecast->count(),
+                'sample' => $forecast->first(),
+            ]);
         }
         
         // Final check - if still empty after processing, create fallback
@@ -177,7 +187,9 @@ class DashboardController extends Controller
             'isEmpty' => $forecast->isEmpty(),
             'keys' => $forecast->keys()->toArray(),
             'first_item' => $forecast->first(),
+            'first_item_json' => json_encode($forecast->first()),
             'all_items' => $forecast->toArray(),
+            'all_items_json' => json_encode($forecast->toArray()),
         ]);
 
         // Get user data for hikers
