@@ -9,7 +9,7 @@
     // Day and night gradients for each condition
     $gradients = [
         'clear' => [
-            'day' => 'bg-gradient-to-br from-yellow-100/95 via-orange-50/95 to-yellow-200/95 border-yellow-200/50',
+            'day' => 'bg-gradient-to-br from-sky-300/95 via-blue-200/95 to-cyan-200/95 border-sky-300/50',
             'night' => 'bg-gradient-to-br from-blue-900/90 via-indigo-900/90 to-slate-800/90 border-blue-900/50',
         ],
         'clouds' => [
@@ -92,15 +92,6 @@
 
         <!-- Current Weather -->
         <div class="mb-4">
-            {{-- Debug info (temporary) --}}
-            @if(config('app.debug'))
-            <div class="text-xs bg-red-500/20 p-1 rounded mb-2">
-                Debug: temp={{ $weather['temp'] ?? 'NULL' }}, 
-                feels={{ $weather['feels_like'] ?? 'NULL' }}, 
-                humid={{ $weather['humidity'] ?? 'NULL' }}
-            </div>
-            @endif
-            
             <div class="grid grid-cols-2 gap-2 items-center">
                 <!-- Column 1: Basic Weather Data -->
                 <div class="flex flex-col items-center">
@@ -300,7 +291,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const age = Date.now() - (data.timestamp || 0);
             
             if (age < WEATHER_CACHE_DURATION_MS) {
-                console.debug('Using cached floating weather (age: ' + Math.round(age / 1000) + 's)');
                 return data.weather;
             }
         } catch (e) {
@@ -333,7 +323,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Cooldown check
         const now = Date.now();
         if (lastWeatherFetchAt && (now - lastWeatherFetchAt) < WEATHER_FETCH_COOLDOWN_MS) {
-            console.debug('Skipping floating weather fetch due to cooldown');
             return;
         }
         lastWeatherFetchAt = now;
@@ -352,9 +341,6 @@ document.addEventListener('DOMContentLoaded', function() {
             url += `?lat=${encodeURIComponent(coords.lat)}&lon=${encodeURIComponent(coords.lon)}`;
         }
 
-        // Use AbortController for cancellable fetch
-        activeWeatherRequest = new AbortController();
-        const signal = activeWeatherRequest.signal;
         // Use AbortController for cancellable fetch
         activeWeatherRequest = new AbortController();
         const signal = activeWeatherRequest.signal;
@@ -392,7 +378,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Don't show error if request was cancelled
             if (error.name === 'AbortError') {
-                console.debug('Floating weather fetch cancelled');
                 return;
             }
             

@@ -591,24 +591,6 @@ $imageService = app('App\Services\TrailImageService');
                     <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 flex-1">
                         <h3 class="text-sm font-semibold mb-3 text-white/90">5-Day Forecast</h3>
                         
-                        {{-- Debug info (temporary) --}}
-                        @if(config('app.debug'))
-                        <div class="text-xs text-yellow-300 mb-2 p-2 bg-black/20 rounded">
-                            <strong>Forecast Debug:</strong><br>
-                            isset={{ isset($forecast) ? 'YES' : 'NO' }},
-                            type={{ isset($forecast) ? gettype($forecast) : 'N/A' }},
-                            @if(isset($forecast) && is_object($forecast))
-                                class={{ get_class($forecast) }},
-                                count={{ $forecast->count() }},
-                                isEmpty={{ $forecast->isEmpty() ? 'YES' : 'NO' }},
-                                keys={{ json_encode($forecast->keys()->toArray()) }}
-                            @elseif(isset($forecast) && is_array($forecast))
-                                array_count={{ count($forecast) }},
-                                keys={{ json_encode(array_keys($forecast)) }}
-                            @endif
-                        </div>
-                        @endif
-                        
                         <div class="space-y-2">
                             @if(isset($forecast) && $forecast && $forecast->count() > 0)
                             @foreach($forecast as $index => $day)
