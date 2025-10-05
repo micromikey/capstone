@@ -118,7 +118,10 @@ class DashboardController extends Controller
                 'condition' => $midday['weather'][0]['main'],
                 'icon' => $midday['weather'][0]['icon'],
             ];
-        })->take(5)->values(); // Add ->values() to reset keys to 0,1,2,3,4
+        })->take(5)->values()->all(); // Convert to plain array with numeric keys
+        
+        // Convert back to collection for easier manipulation
+        $forecast = collect($forecast);
         
         // If forecast is empty, create a fallback with current weather repeated
         \Log::info('Checking forecast emptiness', [
