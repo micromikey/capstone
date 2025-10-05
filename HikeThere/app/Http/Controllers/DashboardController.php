@@ -34,9 +34,12 @@ class DashboardController extends Controller
 
         $currentData = $current->json();
 
-         $condition = strtolower($currentData['weather'][0]['main'] ?? '');
+        $condition = strtolower($currentData['weather'][0]['main'] ?? '');
+        $icon = $currentData['weather'][0]['icon'] ?? '01d';
+        $isDay = $this->isDayTime($icon);
 
-        $gradientMap = [
+        // Different gradients for day and night
+        $gradientMap = $isDay ? [
             'clear' => 'from-yellow-400 to-orange-500',
             'clouds' => 'from-gray-400 to-gray-600',
             'rain' => 'from-blue-400 to-blue-700',
@@ -46,18 +49,29 @@ class DashboardController extends Controller
             'mist' => 'from-gray-300 to-gray-500',
             'haze' => 'from-yellow-200 to-yellow-400',
             'fog' => 'from-gray-200 to-gray-400',
+        ] : [
+            // Night gradients - darker, cooler tones
+            'clear' => 'from-indigo-900 to-blue-900',
+            'clouds' => 'from-slate-700 to-slate-900',
+            'rain' => 'from-slate-800 to-blue-900',
+            'thunderstorm' => 'from-indigo-950 to-slate-950',
+            'snow' => 'from-slate-600 to-slate-800',
+            'drizzle' => 'from-slate-700 to-blue-900',
+            'mist' => 'from-slate-600 to-slate-800',
+            'haze' => 'from-slate-700 to-slate-900',
+            'fog' => 'from-slate-600 to-slate-800',
         ];
 
-        $gradient = $gradientMap[$condition] ?? 'from-indigo-500 to-yellow-300'; // default
+        $gradient = $gradientMap[$condition] ?? ($isDay ? 'from-indigo-500 to-yellow-300' : 'from-indigo-900 to-purple-900'); // default
 
         $weather = [
             'temp' => $currentData['main']['temp'] ?? 'N/A',
             'description' => $currentData['weather'][0]['description'] ?? '',
-            'icon' => $currentData['weather'][0]['icon'] ?? null,
+            'icon' => $icon,
             'city' => $currentData['name'] ?? 'Unknown',
             'gradient' => $gradient,
             'condition' => $currentData['weather'][0]['main'] ?? 'Clear',
-            'is_day' => $this->isDayTime($currentData['weather'][0]['icon'] ?? '01d'),
+            'is_day' => $isDay,
         ];
 
 
