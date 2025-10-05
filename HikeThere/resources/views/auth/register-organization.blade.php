@@ -269,7 +269,7 @@
                                 @change="formData.business_permit = $event.target.files[0]?.name || ''; console.log('Business permit file selected:', $event.target.files[0]?.name)"
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
                                 required
-                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
                             <p class="text-sm text-gray-500">Upload a scanned copy of your business permit (PDF, JPG, PNG, DOC, DOCX - Max 10MB)</p>
                         </div>
 
@@ -280,7 +280,7 @@
                                 @change="formData.government_id = $event.target.files[0]?.name || ''; console.log('Government ID file selected:', $event.target.files[0]?.name)"
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
                                 required
-                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
                             <p class="text-sm text-gray-500">Upload a valid government ID of the representative (PDF, JPG, PNG, DOC, DOCX - Max 10MB)</p>
                         </div>
 
@@ -291,7 +291,7 @@
                                 @change="formData.additional_docs = Array.from($event.target.files).map(f => f.name); console.log('Additional docs selected:', Array.from($event.target.files).map(f => f.name))"
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
                                 multiple
-                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
                             <p class="text-sm text-gray-500">Optional: Any additional documents to support your application (PDF, JPG, PNG, DOC, DOCX - Max 10MB each)</p>
                         </div>
                     </div>
