@@ -82,7 +82,7 @@ php artisan about 2>&1 || echo "Unable to run 'artisan about', continuing anyway
 # Start supervisord
 echo "Starting supervisord..."
 echo "Nginx will listen on 0.0.0.0:9000 (Railway's assigned port)"
-echo "PHP-FPM will use Unix socket: /var/run/php-fpm.sock"
+echo "PHP-FPM will listen on 127.0.0.1:9001 (internal)"
 echo "Health check endpoint: /up"
 echo "Public domain: ${RAILWAY_PUBLIC_DOMAIN}"
 echo ""
