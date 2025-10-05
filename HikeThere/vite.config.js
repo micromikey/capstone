@@ -18,7 +18,7 @@ export default defineConfig({
         }),
     ],
     build: {
-        manifest: true,
+        manifest: 'manifest.json',  // Put manifest at root of build dir, not in .vite subdir
         outDir: 'public/build',
     },
 });
