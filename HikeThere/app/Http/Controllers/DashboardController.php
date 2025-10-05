@@ -94,11 +94,17 @@ class DashboardController extends Controller
 
         $forecastData = $forecastResponse->json();
         
-        // Debug log
-        \Log::info('Forecast API Response', [
+        // Debug log - DETAILED
+        \Log::info('Forecast API Response FULL', [
             'status' => $forecastResponse->status(),
             'has_list' => isset($forecastData['list']),
-            'count' => isset($forecastData['list']) ? count($forecastData['list']) : 0
+            'list_count' => isset($forecastData['list']) ? count($forecastData['list']) : 0,
+            'has_error' => isset($forecastData['cod']) && $forecastData['cod'] != 200,
+            'error_message' => $forecastData['message'] ?? null,
+            'sample_item' => isset($forecastData['list'][0]) ? [
+                'dt_txt' => $forecastData['list'][0]['dt_txt'] ?? null,
+                'temp' => $forecastData['list'][0]['main']['temp'] ?? null,
+            ] : null,
         ]);
 
         $forecast = collect($forecastData['list'] ?? [])->groupBy(function ($item) {
@@ -114,7 +120,11 @@ class DashboardController extends Controller
             ];
         })->take(5);
         
-        \Log::info('Processed Forecast', ['count' => $forecast->count()]);
+        \Log::info('Processed Forecast DETAILED', [
+            'count' => $forecast->count(),
+            'keys' => $forecast->keys()->toArray(),
+            'first_item' => $forecast->first(),
+        ]);
 
         // Get user data for hikers
         $user = null;
