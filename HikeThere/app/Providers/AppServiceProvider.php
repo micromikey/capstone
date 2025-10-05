@@ -6,6 +6,10 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
+use League\Flysystem\Filesystem;
+use League\Flysystem\GoogleCloudStorage\GoogleCloudStorageAdapter;
+use Google\Cloud\Storage\StorageClient;
 use App\Models\Trail;
 use App\Observers\TrailObserver;
 use App\Models\TrailPackage;
@@ -30,6 +34,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register Google Cloud Storage driver
+        Storage::extend('gcs', function ($app, $config) {
+            $storageClient = new StorageClient([
+                'projectId' => $config['project_id'],
+                'keyFile' => $config['key_file'],
+            ]);
+
+            $bucket = $storageClient->bucket($config['bucket']);
+            $adapter = new GoogleCloudStorageAdapter($bucket, $config['path_prefix'] ?? '');
+            
+            return new Filesystem($adapter, $config);
+        });
+
         Trail::observe(TrailObserver::class);
         TrailPackage::observe(TrailPackageObserver::class);
         EventModel::observe(EventObserver::class);
