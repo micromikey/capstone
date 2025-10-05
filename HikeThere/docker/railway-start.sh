@@ -87,4 +87,35 @@ echo "Health check endpoint: /up"
 echo "Public domain: ${RAILWAY_PUBLIC_DOMAIN}"
 echo ""
 
-exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+# Start supervisord in background for diagnostics
+/usr/bin/supervisord -c /etc/supervisor/supervisord.conf &
+SUPER_PID=$!
+
+# Wait for services to start
+echo "Waiting 5 seconds for services to start..."
+sleep 5
+
+# Diagnostic checks
+echo "=== DIAGNOSTIC CHECKS ==="
+echo "1. Checking if nginx is listening on port 9000:"
+netstat -tuln | grep ":9000" || echo "❌ ERROR: Nginx NOT listening on 9000"
+
+echo ""
+echo "2. Checking if PHP-FPM is listening on port 9001:"
+netstat -tuln | grep ":9001" || echo "❌ ERROR: PHP-FPM NOT listening on 9001"
+
+echo ""
+echo "3. Testing nginx -> PHP-FPM connection:"
+curl -I http://127.0.0.1:9000/ 2>&1 | head -10
+
+echo ""
+echo "4. Checking nginx error log:"
+tail -20 /var/log/nginx/error.log 2>/dev/null || echo "No errors in nginx log"
+
+echo ""
+echo "5. Checking PHP-FPM status:"
+ps aux | grep php-fpm | head -5
+
+echo ""
+echo "=== Starting normal operation ==="
+wait $SUPER_PID
