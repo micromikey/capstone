@@ -69,6 +69,7 @@ return [
             'bucket' => env('GCS_BUCKET'),
             'path_prefix' => env('GCS_PATH_PREFIX', ''),
             'storage_api_uri' => env('GCS_STORAGE_API_URI'),
+            'url' => 'https://storage.googleapis.com/' . env('GCS_BUCKET'),
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
