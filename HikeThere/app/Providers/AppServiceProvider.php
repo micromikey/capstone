@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Filesystem\FilesystemAdapter;
 use League\Flysystem\Filesystem;
 use League\Flysystem\GoogleCloudStorage\GoogleCloudStorageAdapter;
 use Google\Cloud\Storage\StorageClient;
@@ -43,8 +44,11 @@ class AppServiceProvider extends ServiceProvider
 
             $bucket = $storageClient->bucket($config['bucket']);
             $adapter = new GoogleCloudStorageAdapter($bucket, $config['path_prefix'] ?? '');
+            $filesystem = new Filesystem($adapter, $config);
             
-            return new Filesystem($adapter, $config);
+            // Return Laravel's FilesystemAdapter wrapper (not raw Flysystem)
+            // This provides the url() method and other Laravel-specific features
+            return new FilesystemAdapter($filesystem, $adapter, $config);
         });
 
         Trail::observe(TrailObserver::class);
