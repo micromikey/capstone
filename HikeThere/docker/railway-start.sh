@@ -32,13 +32,17 @@ if [ ! -f /app/.env ]; then
     cp /app/.env.example /app/.env
 fi
 
-# Generate app key - use --show and manually update if key:generate fails
+# Generate app key directly using PHP
 echo "Generating app key..."
-if ! php artisan key:generate --force --no-interaction 2>&1; then
-    echo "Standard key:generate failed, generating key manually..."
-    KEY=$(php artisan key:generate --show)
-    sed -i "s/APP_KEY=.*/APP_KEY=${KEY}/" /app/.env
-    echo "APP_KEY set manually: ${KEY}"
+if ! grep -q "APP_KEY=base64:" /app/.env; then
+    echo "Generating new APP_KEY..."
+    # Generate a random 32-byte key and base64 encode it
+    NEW_KEY="base64:$(openssl rand -base64 32)"
+    # Replace APP_KEY= with the new key
+    sed -i "s|^APP_KEY=.*|APP_KEY=${NEW_KEY}|" /app/.env
+    echo "APP_KEY generated: ${NEW_KEY}"
+else
+    echo "APP_KEY already exists, skipping generation"
 fi
 
 # Run migrations
