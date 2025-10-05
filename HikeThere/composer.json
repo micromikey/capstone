@@ -14,6 +14,7 @@
         "laravel/jetstream": "^5.3",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
+        "league/flysystem-google-cloud-storage": "3.0",
         "livewire/livewire": "^3.6.4",
         "resend/resend-php": "^0.15.0",
         "tecnickcom/tcpdf": "^6.10"
