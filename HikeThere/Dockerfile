@@ -56,8 +56,8 @@ RUN composer install --optimize-autoloader --no-scripts --no-interaction
 # Copy package files
 COPY package*.json ./
 
-# Install Node dependencies (install all deps for dev builds)
-RUN npm install
+# Install Node dependencies - clean install to avoid optional dependency bugs
+RUN npm ci || npm install
 
 # Copy application files
 COPY . .
