@@ -121,8 +121,15 @@ class DashboardController extends Controller
         })->take(5)->values(); // Add ->values() to reset keys to 0,1,2,3,4
         
         // If forecast is empty, create a fallback with current weather repeated
+        \Log::info('Checking forecast emptiness', [
+            'count' => $forecast->count(),
+            'isEmpty' => $forecast->isEmpty(),
+            'has_current_temp' => isset($currentData['main']['temp']),
+            'current_temp' => $currentData['main']['temp'] ?? 'NULL',
+        ]);
+        
         if ($forecast->count() === 0 && isset($currentData['main']['temp'])) {
-            \Log::warning('Forecast API returned empty data, using fallback');
+            \Log::warning('Forecast API returned empty data, using fallback NOW');
             $forecast = collect();
             for ($i = 0; $i < 5; $i++) {
                 $date = Carbon::now()->addDays($i);
@@ -133,6 +140,7 @@ class DashboardController extends Controller
                     'icon' => $currentData['weather'][0]['icon'] ?? '01d',
                 ]);
             }
+            \Log::info('Fallback forecast created', ['count' => $forecast->count()]);
         }
         
         \Log::info('Processed Forecast DETAILED', [
