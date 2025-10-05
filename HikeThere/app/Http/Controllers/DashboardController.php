@@ -118,10 +118,10 @@ class DashboardController extends Controller
                 'condition' => $midday['weather'][0]['main'],
                 'icon' => $midday['weather'][0]['icon'],
             ];
-        })->take(5);
+        })->take(5)->values(); // Add ->values() to reset keys to 0,1,2,3,4
         
         // If forecast is empty, create a fallback with current weather repeated
-        if ($forecast->isEmpty() && isset($currentData['main']['temp'])) {
+        if ($forecast->count() === 0 && isset($currentData['main']['temp'])) {
             \Log::warning('Forecast API returned empty data, using fallback');
             $forecast = collect();
             for ($i = 0; $i < 5; $i++) {
@@ -137,8 +137,10 @@ class DashboardController extends Controller
         
         \Log::info('Processed Forecast DETAILED', [
             'count' => $forecast->count(),
+            'isEmpty' => $forecast->isEmpty(),
             'keys' => $forecast->keys()->toArray(),
             'first_item' => $forecast->first(),
+            'all_items' => $forecast->toArray(),
         ]);
 
         // Get user data for hikers
