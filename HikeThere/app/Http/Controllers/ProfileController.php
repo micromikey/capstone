@@ -111,10 +111,16 @@ class ProfileController extends Controller
         ]);
 
         if ($request->hasFile('profile_picture')) {
+            // Determine which disk to use
+            $disk = config('filesystems.default', 'public');
+            
+            // Delete old profile picture if exists
             if ($user->profile_picture) {
-                Storage::disk('public')->delete($user->profile_picture);
+                Storage::disk($disk)->delete($user->profile_picture);
             }
-            $path = $request->file('profile_picture')->store('profile-pictures', 'public');
+            
+            // Store new profile picture
+            $path = $request->file('profile_picture')->store('profile-pictures', $disk);
             $data['profile_picture'] = $path;
         }
 
@@ -145,13 +151,23 @@ class ProfileController extends Controller
                 'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
 
+            // Determine which disk to use
+            $disk = config('filesystems.default', 'public');
+            
+            // Delete old profile picture if exists
             if ($user->profile_picture) {
-                Storage::disk('public')->delete($user->profile_picture);
+                Storage::disk($disk)->delete($user->profile_picture);
             }
-            $path = $request->file('profile_picture')->store('profile-pictures', 'public');
+            
+            // Store new profile picture
+            $path = $request->file('profile_picture')->store('profile-pictures', $disk);
             $user->update(['profile_picture' => $path]);
 
-            $url = Storage::disk('public')->url($path);
+            // Get the public URL
+            $url = $disk === 'gcs' 
+                ? Storage::disk('gcs')->url($path)
+                : Storage::disk('public')->url($path);
+                
             // If it's an AJAX request, return JSON for the client to update in-place
             if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
                 return response()->json([
@@ -184,10 +200,16 @@ class ProfileController extends Controller
         ]);
 
         if ($request->hasFile('profile_picture')) {
+            // Determine which disk to use
+            $disk = config('filesystems.default', 'public');
+            
+            // Delete old profile picture if exists
             if ($user->profile_picture) {
-                Storage::disk('public')->delete($user->profile_picture);
+                Storage::disk($disk)->delete($user->profile_picture);
             }
-            $path = $request->file('profile_picture')->store('profile-pictures', 'public');
+            
+            // Store new profile picture
+            $path = $request->file('profile_picture')->store('profile-pictures', $disk);
             $userData['profile_picture'] = $path;
         }
 
@@ -208,7 +230,9 @@ class ProfileController extends Controller
         $user = Auth::user();
         
         if ($user->profile_picture) {
-            Storage::disk('public')->delete($user->profile_picture);
+            // Determine which disk to use
+            $disk = config('filesystems.default', 'public');
+            Storage::disk($disk)->delete($user->profile_picture);
             $user->update(['profile_picture' => null]);
         }
 
@@ -227,14 +251,22 @@ class ProfileController extends Controller
             'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
+        // Determine which disk to use
+        $disk = config('filesystems.default', 'public');
+        
+        // Delete old profile picture if exists
         if ($user->profile_picture) {
-            Storage::disk('public')->delete($user->profile_picture);
+            Storage::disk($disk)->delete($user->profile_picture);
         }
 
-        $path = $request->file('profile_picture')->store('profile-pictures', 'public');
+        // Store new profile picture
+        $path = $request->file('profile_picture')->store('profile-pictures', $disk);
         $user->update(['profile_picture' => $path]);
 
-        $url = Storage::disk('public')->url($path);
+        // Get the public URL
+        $url = $disk === 'gcs' 
+            ? Storage::disk('gcs')->url($path)
+            : Storage::disk('public')->url($path);
 
         return response()->json([ 'profile_picture_url' => $url, 'cache_bust' => time() ]);
     }
