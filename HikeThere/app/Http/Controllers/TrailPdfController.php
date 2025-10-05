@@ -117,18 +117,26 @@ class TrailPdfController extends Controller
                     $rel = ltrim($rel, '/');
 
                     try {
-                        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+                        // Use configured disk (supports both local and GCS)
+                        $disk = \Illuminate\Support\Facades\Storage::disk(config('filesystems.default', 'public'));
                         if ($disk->exists($rel)) {
-                            // Use filesystem path and finfo to detect MIME type reliably without relying on disk driver methods
-                            $fullPath = $disk->path($rel);
-                            $contents = @file_get_contents($fullPath);
+                            // Get file contents
+                            $contents = $disk->get($rel);
+                            
+                            // Try to detect MIME type
                             $mime = 'image/jpeg';
-                            if ($contents && file_exists($fullPath)) {
-                                $finfo = @finfo_open(FILEINFO_MIME_TYPE);
-                                if ($finfo) {
-                                    $detected = @finfo_file($finfo, $fullPath);
-                                    if ($detected) $mime = $detected;
-                                    @finfo_close($finfo);
+                            if ($contents) {
+                                // For local disk, try filesystem detection
+                                if (config('filesystems.default') === 'public' && method_exists($disk, 'path')) {
+                                    $fullPath = $disk->path($rel);
+                                    if (file_exists($fullPath)) {
+                                        $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+                                        if ($finfo) {
+                                            $detected = @finfo_file($finfo, $fullPath);
+                                            if ($detected) $mime = $detected;
+                                            @finfo_close($finfo);
+                                        }
+                                    }
                                 }
                             }
                             $photoSrcs[] = 'data:' . $mime . ';base64,' . base64_encode((string)$contents);
@@ -146,7 +154,7 @@ class TrailPdfController extends Controller
         // Fallback: scan storage folders for candidate images
         if (count($photoSrcs) < $max) {
             try {
-                $disk = \Illuminate\Support\Facades\Storage::disk('public');
+                $disk = \Illuminate\Support\Facades\Storage::disk(config('filesystems.default', 'public'));
                 $prim = $disk->files('trail-images/primary');
                 $add = $disk->files('trail-images/additional');
                 $candidates = array_merge($prim ?? [], $add ?? []);

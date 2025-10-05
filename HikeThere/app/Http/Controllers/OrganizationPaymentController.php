@@ -199,13 +199,27 @@ class OrganizationPaymentController extends Controller
 
         // Handle QR code upload
         if ($request->hasFile('qr_code')) {
+            // Determine which disk to use with safety check
+            $disk = config('filesystems.default', 'public');
+            if ($disk === 'gcs') {
+                try {
+                    if (!config('filesystems.disks.gcs.bucket')) {
+                        $disk = 'public';
+                        \Log::warning('GCS configured but bucket not set, using public disk');
+                    }
+                } catch (\Exception $e) {
+                    $disk = 'public';
+                    \Log::error('GCS configuration error: ' . $e->getMessage());
+                }
+            }
+            
             // Delete old QR code if exists
             if ($credentials->qr_code_path) {
-                Storage::disk('public')->delete($credentials->qr_code_path);
+                Storage::disk($disk)->delete($credentials->qr_code_path);
             }
 
             // Store new QR code
-            $path = $request->file('qr_code')->store('qr_codes', 'public');
+            $path = $request->file('qr_code')->store('qr_codes', $disk);
             $credentials->qr_code_path = $path;
         }
 

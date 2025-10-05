@@ -104,10 +104,24 @@ class TrailReviewController extends Controller
                             continue;
                         }
                         
+                        // Determine which disk to use with safety check
+                        $disk = config('filesystems.default', 'public');
+                        if ($disk === 'gcs') {
+                            try {
+                                if (!config('filesystems.disks.gcs.bucket')) {
+                                    $disk = 'public';
+                                    \Log::warning('GCS configured but bucket not set, using public disk');
+                                }
+                            } catch (\Exception $e) {
+                                $disk = 'public';
+                                \Log::error('GCS configuration error: ' . $e->getMessage());
+                            }
+                        }
+                        
                         $imagePath = $image->storeAs(
                             'review-images',
                             $image->hashName(),
-                            ['disk' => 'public', 'quality' => 100]
+                            ['disk' => $disk, 'quality' => 100]
                         );
                         \Log::info("Image stored at: {$imagePath}");
                         

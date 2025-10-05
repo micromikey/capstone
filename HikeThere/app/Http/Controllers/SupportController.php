@@ -39,10 +39,24 @@ class SupportController extends Controller
             'attachments.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,pdf,doc,docx',
         ]);
 
+        // Determine which disk to use with safety check
+        $disk = config('filesystems.default', 'public');
+        if ($disk === 'gcs') {
+            try {
+                if (!config('filesystems.disks.gcs.bucket')) {
+                    $disk = 'public';
+                    \Log::warning('GCS configured but bucket not set, using public disk');
+                }
+            } catch (\Exception $e) {
+                $disk = 'public';
+                \Log::error('GCS configuration error: ' . $e->getMessage());
+            }
+        }
+
         $attachments = [];
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
-                $path = $file->store('support-attachments', 'public');
+                $path = $file->store('support-attachments', $disk);
                 $attachments[] = [
                     'name' => $file->getClientOriginalName(),
                     'path' => $path,
@@ -96,10 +110,24 @@ class SupportController extends Controller
             'attachments.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,pdf,doc,docx',
         ]);
 
+        // Determine which disk to use with safety check
+        $disk = config('filesystems.default', 'public');
+        if ($disk === 'gcs') {
+            try {
+                if (!config('filesystems.disks.gcs.bucket')) {
+                    $disk = 'public';
+                    \Log::warning('GCS configured but bucket not set, using public disk');
+                }
+            } catch (\Exception $e) {
+                $disk = 'public';
+                \Log::error('GCS configuration error: ' . $e->getMessage());
+            }
+        }
+
         $attachments = [];
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
-                $path = $file->store('support-attachments', 'public');
+                $path = $file->store('support-attachments', $disk);
                 $attachments[] = [
                     'name' => $file->getClientOriginalName(),
                     'path' => $path,
@@ -161,10 +189,22 @@ class SupportController extends Controller
             abort(403);
         }
 
+        // Determine which disk to use with safety check
+        $disk = config('filesystems.default', 'public');
+        if ($disk === 'gcs') {
+            try {
+                if (!config('filesystems.disks.gcs.bucket')) {
+                    $disk = 'public';
+                }
+            } catch (\Exception $e) {
+                $disk = 'public';
+            }
+        }
+
         // Delete attachments
         if ($ticket->attachments) {
             foreach ($ticket->attachments as $attachment) {
-                Storage::disk('public')->delete($attachment['path']);
+                Storage::disk($disk)->delete($attachment['path']);
             }
         }
 
@@ -172,7 +212,7 @@ class SupportController extends Controller
         foreach ($ticket->replies as $reply) {
             if ($reply->attachments) {
                 foreach ($reply->attachments as $attachment) {
-                    Storage::disk('public')->delete($attachment['path']);
+                    Storage::disk($disk)->delete($attachment['path']);
                 }
             }
         }

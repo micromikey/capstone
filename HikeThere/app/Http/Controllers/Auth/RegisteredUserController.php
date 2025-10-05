@@ -71,14 +71,28 @@ class RegisteredUserController extends Controller
                 // Don't set email_verified_at - organizations need approval first
             ]);
 
+            // Determine which disk to use with safety check
+            $disk = config('filesystems.default', 'public');
+            if ($disk === 'gcs') {
+                try {
+                    if (!config('filesystems.disks.gcs.bucket')) {
+                        $disk = 'public';
+                        \Log::warning('GCS configured but bucket not set, using public disk');
+                    }
+                } catch (\Exception $e) {
+                    $disk = 'public';
+                    \Log::error('GCS configuration error: ' . $e->getMessage());
+                }
+            }
+
             // Handle file uploads
-            $businessPermitPath = $request->file('business_permit')->store('organization_documents', 'public');
-            $governmentIdPath = $request->file('government_id')->store('organization_documents', 'public');
+            $businessPermitPath = $request->file('business_permit')->store('organization_documents', $disk);
+            $governmentIdPath = $request->file('government_id')->store('organization_documents', $disk);
             $additionalDocs = [];
 
             if ($request->hasFile('additional_documents')) {
                 foreach ($request->file('additional_documents') as $file) {
-                    $additionalDocs[] = $file->store('organization_documents', 'public');
+                    $additionalDocs[] = $file->store('organization_documents', $disk);
                 }
             }
 
