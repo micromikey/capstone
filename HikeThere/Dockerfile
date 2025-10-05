@@ -68,8 +68,18 @@ COPY . .
 # Run composer scripts
 RUN composer dump-autoload --optimize
 
+# Debug: Check if vite.config.js exists
+RUN ls -la vite.config.js postcss.config.js tailwind.config.js || echo "Config files missing!"
+
+# Debug: Check resources directory
+RUN ls -la resources/css/ resources/js/ || echo "Resource files missing!"
+
 # Build frontend assets (must succeed for production)
 RUN npm run build
+
+# Debug: Verify build output
+RUN ls -la public/build/ || echo "Build directory not created!"
+RUN cat public/build/.vite/manifest.json || echo "Manifest not created!"
 
 # Create build directory if npm run build didn't create it
 RUN mkdir -p /app/public/build
