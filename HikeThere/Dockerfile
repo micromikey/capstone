@@ -80,7 +80,8 @@ RUN mkdir -p /app/storage/logs \
 # Copy nginx configuration
 COPY docker/nginx/default.conf /etc/nginx/sites-available/default
 
-# Copy PHP-FPM configuration
+# Copy PHP-FPM configuration (remove default first to avoid conflicts)
+RUN rm -f /usr/local/etc/php-fpm.d/www.conf.default /usr/local/etc/php-fpm.d/docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 COPY docker/php-fpm/www.conf /usr/local/etc/php-fpm.d/www.conf
 
 # Copy supervisor configuration
