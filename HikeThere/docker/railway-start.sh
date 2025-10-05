@@ -36,15 +36,23 @@ fi
 
 # Generate app key directly using PHP
 echo "Generating app key..."
-if ! grep -q "APP_KEY=base64:" /app/.env; then
+# Only generate if APP_KEY is not already set as environment variable or in .env
+if [ -z "$APP_KEY" ] && ! grep -q "APP_KEY=base64:" /app/.env; then
     echo "Generating new APP_KEY..."
     # Generate a random 32-byte key and base64 encode it
     NEW_KEY="base64:$(openssl rand -base64 32)"
     # Replace APP_KEY= with the new key
     sed -i "s|^APP_KEY=.*|APP_KEY=${NEW_KEY}|" /app/.env
     echo "APP_KEY generated: ${NEW_KEY}"
+    echo ""
+    echo "⚠️  IMPORTANT: Add this to Railway Variables to persist across deployments:"
+    echo "APP_KEY=${NEW_KEY}"
+    echo ""
+elif [ -n "$APP_KEY" ]; then
+    echo "Using APP_KEY from environment variable"
+    sed -i "s|^APP_KEY=.*|APP_KEY=${APP_KEY}|" /app/.env
 else
-    echo "APP_KEY already exists, skipping generation"
+    echo "APP_KEY already exists in .env, skipping generation"
 fi
 
 # Run migrations
@@ -58,6 +66,17 @@ php artisan storage:link || true
 # Clear config cache
 echo "Clearing config cache..."
 php artisan config:clear || true
+
+# Cache config for better performance and to check for errors
+echo "Caching configuration..."
+if ! php artisan config:cache 2>&1; then
+    echo "⚠️  ERROR: Config cache failed - there might be syntax errors in config files"
+    echo "Continuing without config cache..."
+fi
+
+# Check if we can reach the app
+echo "Testing Laravel application..."
+php artisan about 2>&1 || echo "Unable to run 'artisan about', continuing anyway..."
 
 # Start supervisord
 echo "Starting supervisord..."
