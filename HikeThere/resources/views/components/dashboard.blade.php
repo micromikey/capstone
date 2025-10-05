@@ -285,7 +285,7 @@ $imageService = app('App\Services\TrailImageService');
             }
 
             currentAbort = new AbortController();
-            const signal = currentAbort.signal;
+            const recommenderSignal = currentAbort.signal;
 
             // Use skeletons for richer UX + loader indicator
             renderSkeletons(4);
@@ -293,7 +293,7 @@ $imageService = app('App\Services\TrailImageService');
 
             try {
                 const resp = await fetch(`/api/recommender/user/${userId}?k=${k}`, {
-                    signal
+                    signal: recommenderSignal
                 });
                 if (!resp.ok) throw new Error(`Recommender responded with ${resp.status}`);
                 const data = await resp.json();
@@ -329,7 +329,7 @@ $imageService = app('App\Services\TrailImageService');
                     if (trailCache[id]) return trailCache[id];
                     try {
                         const r = await fetch(`/api/trails/${id}`, {
-                            signal
+                            signal: recommenderSignal
                         });
                         if (!r.ok) {
                             const text = await r.text().catch(() => '');
@@ -991,7 +991,7 @@ $imageService = app('App\Services\TrailImageService');
 
         // Use AbortController for cancellable fetch
         activeWeatherRequest = new AbortController();
-        const signal = activeWeatherRequest.signal;
+        const weatherSignal = activeWeatherRequest.signal;
 
         const handleSuccess = function(data) {
             activeWeatherRequest = null;
@@ -1042,7 +1042,7 @@ $imageService = app('App\Services\TrailImageService');
         // Modern fetch with AbortController
         fetch(url, {
             method: 'GET',
-            signal: signal,
+            signal: weatherSignal,
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')

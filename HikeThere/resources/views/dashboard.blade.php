@@ -34,14 +34,4 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    fetch(`/location-weather?lat=${position.coords.latitude}&lon=${position.coords.longitude}`);
-                });
-            }
-        });
-    </script>
-
 </x-app-layout>
