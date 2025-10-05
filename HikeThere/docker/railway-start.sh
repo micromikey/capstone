@@ -21,8 +21,9 @@ echo "PHP found: $(which php)"
 echo "PHP version: $(php -v)"
 
 # Replace PORT in nginx config with Railway's $PORT environment variable
-echo "Configuring Nginx for port ${PORT:-8080}..."
-sed -i "s/listen 8080;/listen ${PORT:-8080};/" /etc/nginx/sites-available/default
+echo "Configuring Nginx for port 9000 (Railway's assigned port)..."
+# Note: Railway expects port 9000, not 8080
+# sed -i "s/listen 9000;/listen ${PORT:-9000};/" /etc/nginx/sites-available/default
 
 # Set permissions
 echo "Setting permissions..."
@@ -80,12 +81,10 @@ php artisan about 2>&1 || echo "Unable to run 'artisan about', continuing anyway
 
 # Start supervisord
 echo "Starting supervisord..."
-echo "Nginx will listen on 0.0.0.0:${PORT:-8080}"
+echo "Nginx will listen on 0.0.0.0:9000 (Railway's assigned port)"
+echo "PHP-FPM will use Unix socket: /var/run/php-fpm.sock"
 echo "Health check endpoint: /up"
 echo "Public domain: ${RAILWAY_PUBLIC_DOMAIN}"
-echo ""
-echo "Expected PHP-FPM to listen on 127.0.0.1:9000"
-echo "Expected Nginx to listen on 0.0.0.0:${PORT:-8080}"
 echo ""
 
 exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
