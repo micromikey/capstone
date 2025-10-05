@@ -40,7 +40,7 @@ class SecurityHeaders
         // Content Security Policy (basic - adjust based on your needs)
         if (app()->environment('production')) {
             $csp = "default-src 'self'; " .
-                   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://cdn.jsdelivr.net https://code.iconify.design https://unpkg.com https://code.jquery.com; " .
+                   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://cdn.jsdelivr.net https://code.iconify.design https://unpkg.com https://code.jquery.com https://cdnjs.cloudflare.com; " .
                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net https://cdnjs.cloudflare.com; " .
                    "img-src 'self' data: https: blob:; " .
                    "font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net https://cdnjs.cloudflare.com data:; " .
