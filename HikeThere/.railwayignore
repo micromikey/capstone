@@ -1,0 +1,49 @@
+# .railwayignore
+# Files to exclude from Railway deployment
+
+# Local development
+.env.local
+.env.*.local
+
+# Docker files (not needed on Railway)
+docker-compose.yml
+Dockerfile
+.dockerignore
+docker/
+
+# Testing
+tests/
+phpunit.xml
+.phpunit.result.cache
+
+# Development tools
+.editorconfig
+.git
+.github
+.idea
+.vscode
+.fleet
+.nova
+.zed
+
+# Documentation (keep essential ones)
+*.md
+!README.md
+!DEPLOYMENT_READINESS_REPORT.md
+
+# Cache and logs
+storage/logs/*
+!storage/logs/.gitignore
+bootstrap/cache/*
+!bootstrap/cache/.gitignore
+
+# Build artifacts
+node_modules/
+vendor/
+public/hot
+public/storage
+public/build
+
+# OS files
+.DS_Store
+Thumbs.db
