@@ -94,56 +94,77 @@ class DashboardController extends Controller
 
         $forecastData = $forecastResponse->json();
         
-        // Debug log - DETAILED
+        // Debug log - DETAILED with RAW response
         \Log::info('Forecast API Response FULL', [
             'status' => $forecastResponse->status(),
             'has_list' => isset($forecastData['list']),
             'list_count' => isset($forecastData['list']) ? count($forecastData['list']) : 0,
             'has_error' => isset($forecastData['cod']) && $forecastData['cod'] != 200,
             'error_message' => $forecastData['message'] ?? null,
+            'error_cod' => $forecastData['cod'] ?? null,
             'sample_item' => isset($forecastData['list'][0]) ? [
                 'dt_txt' => $forecastData['list'][0]['dt_txt'] ?? null,
                 'temp' => $forecastData['list'][0]['main']['temp'] ?? null,
             ] : null,
-        ]);
-
-        $forecast = collect($forecastData['list'] ?? [])->groupBy(function ($item) {
-            return Carbon::parse($item['dt_txt'])->format('Y-m-d');
-        })->map(function ($dayItems) {
-            $midday = $dayItems->firstWhere('dt_txt', fn($dt) => str_contains($dt, '12:00:00')) ?? $dayItems->first();
-
-            return [
-                'date' => Carbon::parse($midday['dt_txt'])->format('l, M j'),
-                'temp' => round($midday['main']['temp']),
-                'condition' => $midday['weather'][0]['main'],
-                'icon' => $midday['weather'][0]['icon'],
-            ];
-        })->take(5)->values()->all(); // Convert to plain array with numeric keys
-        
-        // Convert back to collection for easier manipulation
-        $forecast = collect($forecast);
-        
-        // If forecast is empty, create a fallback with current weather repeated
-        \Log::info('Checking forecast emptiness', [
-            'count' => $forecast->count(),
-            'isEmpty' => $forecast->isEmpty(),
-            'has_current_temp' => isset($currentData['main']['temp']),
-            'current_temp' => $currentData['main']['temp'] ?? 'NULL',
+            'full_response_keys' => array_keys($forecastData),
         ]);
         
-        if ($forecast->count() === 0 && isset($currentData['main']['temp'])) {
-            \Log::warning('Forecast API returned empty data, using fallback NOW');
+        // If forecast API returned an error or no data, use fallback immediately
+        if (!isset($forecastData['list']) || empty($forecastData['list'])) {
+            \Log::warning('Forecast API did not return list data, using fallback immediately', [
+                'response_keys' => array_keys($forecastData),
+                'cod' => $forecastData['cod'] ?? null,
+                'message' => $forecastData['message'] ?? null,
+            ]);
+            
+            // Create fallback forecast
             $forecast = collect();
             for ($i = 0; $i < 5; $i++) {
                 $date = Carbon::now()->addDays($i);
                 $forecast->push([
                     'date' => $date->format('l, M j'),
-                    'temp' => round($currentData['main']['temp'] + rand(-3, 3)), // Slight variation
+                    'temp' => round($currentData['main']['temp'] + rand(-3, 3)),
                     'condition' => $currentData['weather'][0]['main'] ?? 'Clear',
                     'icon' => $currentData['weather'][0]['icon'] ?? '01d',
                 ]);
             }
-            \Log::info('Fallback forecast created', ['count' => $forecast->count()]);
+            
+            \Log::info('Fallback forecast created immediately', ['count' => $forecast->count()]);
+        } else {
+            // Process forecast data normally
+            $forecast = collect($forecastData['list'] ?? [])->groupBy(function ($item) {
+                return Carbon::parse($item['dt_txt'])->format('Y-m-d');
+            })->map(function ($dayItems) {
+                $midday = $dayItems->firstWhere('dt_txt', fn($dt) => str_contains($dt, '12:00:00')) ?? $dayItems->first();
+
+                return [
+                    'date' => Carbon::parse($midday['dt_txt'])->format('l, M j'),
+                    'temp' => round($midday['main']['temp']),
+                    'condition' => $midday['weather'][0]['main'],
+                    'icon' => $midday['weather'][0]['icon'],
+                ];
+            })->take(5)->values()->all();
+            
+            // Convert back to collection
+            $forecast = collect($forecast);
+            
+            \Log::info('Forecast processed from API', ['count' => $forecast->count()]);
+        }
+        
+        // Final check - if still empty after processing, create fallback
+        if ($forecast->count() === 0 && isset($currentData['main']['temp'])) {
+            \Log::warning('Forecast still empty after processing, creating final fallback');
+            $forecast = collect();
+            for ($i = 0; $i < 5; $i++) {
+                $date = Carbon::now()->addDays($i);
+                $forecast->push([
+                    'date' => $date->format('l, M j'),
+                    'temp' => round($currentData['main']['temp'] + rand(-3, 3)),
+                    'condition' => $currentData['weather'][0]['main'] ?? 'Clear',
+                    'icon' => $currentData['weather'][0]['icon'] ?? '01d',
+                ]);
+            }
+            \Log::info('Final fallback forecast created', ['count' => $forecast->count()]);
         }
         
         \Log::info('Processed Forecast DETAILED', [
