@@ -1,8 +1,8 @@
 # Nixpacks Configuration for Railway
-# This tells Railway how to build and deploy your Laravel application
+# Let Nixpacks auto-detect Laravel and use default PHP setup
 
 [phases.setup]
-nixPkgs = ["php82", "php82Extensions.mbstring", "php82Extensions.pdo_mysql", "php82Extensions.gd", "php82Extensions.zip", "php82Extensions.bcmath", "php82Extensions.exif", "nodejs-20_x"]
+nixPkgs = ["php82", "php82Packages.composer", "nodejs_20"]
 
 [phases.install]
 cmds = [
@@ -12,11 +12,8 @@ cmds = [
 
 [phases.build]
 cmds = [
-    "npm run build",
-    "php artisan config:cache",
-    "php artisan route:cache",
-    "php artisan view:cache"
+    "npm run build"
 ]
 
 [start]
-cmd = "php artisan migrate --force && php artisan storage:link && php artisan serve --host=0.0.0.0 --port=$PORT"
+cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"
