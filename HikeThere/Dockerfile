@@ -62,6 +62,7 @@ RUN npm ci || npm install
 # Explicitly install Rollup Linux binary (workaround for npm optional deps bug)
 RUN npm install --no-save @rollup/rollup-linux-x64-gnu
 
+# CACHE BUST: Force rebuild from this point - Updated 2025-10-06T01:50:00Z
 # Copy application files
 COPY . .
 
