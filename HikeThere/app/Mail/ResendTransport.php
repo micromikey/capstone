@@ -58,8 +58,9 @@ class ResendTransport extends AbstractTransport
             return config('mail.from.address');
         }
         
-        $address = array_key_first($from);
-        $name = $from[$address];
+        $fromAddress = $from[0];
+        $address = $fromAddress->getAddress();
+        $name = $fromAddress->getName();
         
         return $name ? "{$name} <{$address}>" : $address;
     }
@@ -69,7 +70,9 @@ class ResendTransport extends AbstractTransport
         $to = $email->getTo();
         $addresses = [];
         
-        foreach ($to as $address => $name) {
+        foreach ($to as $toAddress) {
+            $address = $toAddress->getAddress();
+            $name = $toAddress->getName();
             $addresses[] = $name ? "{$name} <{$address}>" : $address;
         }
         
