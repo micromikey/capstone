@@ -92,6 +92,15 @@
 
         <!-- Current Weather -->
         <div class="mb-4">
+            {{-- Debug info (temporary) --}}
+            @if(config('app.debug'))
+            <div class="text-xs bg-red-500/20 p-1 rounded mb-2">
+                Debug: temp={{ $weather['temp'] ?? 'NULL' }}, 
+                feels={{ $weather['feels_like'] ?? 'NULL' }}, 
+                humid={{ $weather['humidity'] ?? 'NULL' }}
+            </div>
+            @endif
+            
             <div class="grid grid-cols-2 gap-2 items-center">
                 <!-- Column 1: Basic Weather Data -->
                 <div class="flex flex-col items-center">

@@ -590,6 +590,16 @@ $imageService = app('App\Services\TrailImageService');
                     {{-- Container 1: 5-Day Forecast in Rows --}}
                     <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-4 flex-1">
                         <h3 class="text-sm font-semibold mb-3 text-white/90">5-Day Forecast</h3>
+                        
+                        {{-- Debug info (temporary) --}}
+                        @if(config('app.debug'))
+                        <div class="text-xs text-yellow-300 mb-2">
+                            Debug: Forecast isset={{ isset($forecast) ? 'yes' : 'no' }}, 
+                            is_collection={{ is_object($forecast) && get_class($forecast) === 'Illuminate\Support\Collection' ? 'yes' : 'no' }},
+                            count={{ isset($forecast) && method_exists($forecast, 'count') ? $forecast->count() : '?' }}
+                        </div>
+                        @endif
+                        
                         <div class="space-y-2">
                             @if(isset($forecast) && $forecast && $forecast->count() > 0)
                             @foreach($forecast as $index => $day)
