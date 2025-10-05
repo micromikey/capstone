@@ -26,6 +26,12 @@ sed -i "s/listen 8080;/listen ${PORT:-8080};/" /etc/nginx/sites-available/defaul
 echo "Setting permissions..."
 chmod -R 777 /app/storage /app/bootstrap/cache
 
+# Create .env from example if it doesn't exist (Railway uses env variables)
+if [ ! -f /app/.env ]; then
+    echo "Creating .env file from .env.example..."
+    cp /app/.env.example /app/.env
+fi
+
 # Generate app key if not exists
 echo "Generating app key..."
 php artisan key:generate --force --no-interaction || true
