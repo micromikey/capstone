@@ -43,4 +43,8 @@ return [
         'api_key' => env('OPENWEATHER_API_KEY'),
     ],
 
+    'resend' => [
+        'key' => env('RESEND_API_KEY'),
+    ],
+
 ];
