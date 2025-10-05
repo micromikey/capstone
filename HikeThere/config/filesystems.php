@@ -62,11 +62,9 @@ return [
 
         'gcs' => [
             'driver' => 'gcs',
-            'project_id' => env('GCS_PROJECT_ID'),
-            'key_file' => env('GOOGLE_APPLICATION_CREDENTIALS_JSON') 
-                ? json_decode(env('GOOGLE_APPLICATION_CREDENTIALS_JSON'), true)
-                : env('GCS_KEY_FILE'), // Support both JSON string and file path
-            'bucket' => env('GCS_BUCKET'),
+            'project_id' => env('GCS_PROJECT_ID', env('GOOGLE_CLOUD_PROJECT_ID')),
+            'key_file' => env('GCS_KEY_FILE', env('GOOGLE_CLOUD_KEY_FILE')),
+            'bucket' => env('GCS_BUCKET', env('GOOGLE_CLOUD_STORAGE_BUCKET')),
             'path_prefix' => env('GCS_PATH_PREFIX', ''),
             'storage_api_uri' => env('GCS_STORAGE_API_URI'),
             'visibility' => 'public',
