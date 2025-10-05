@@ -41,9 +41,9 @@ class SecurityHeaders
         if (app()->environment('production')) {
             $csp = "default-src 'self'; " .
                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://cdn.jsdelivr.net; " .
-                   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " .
+                   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net; " .
                    "img-src 'self' data: https: blob:; " .
-                   "font-src 'self' https://fonts.gstatic.com data:; " .
+                   "font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net data:; " .
                    "connect-src 'self' https://maps.googleapis.com https://api.openweathermap.org; " .
                    "frame-src 'self' https://www.google.com;";
             
