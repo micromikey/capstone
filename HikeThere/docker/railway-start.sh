@@ -44,4 +44,4 @@ php artisan config:clear || true
 
 # Start supervisord
 echo "Starting supervisord..."
-exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf

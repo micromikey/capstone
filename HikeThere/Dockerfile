@@ -81,7 +81,7 @@ RUN mkdir -p /app/storage/logs \
 COPY docker/nginx/default.conf /etc/nginx/sites-available/default
 
 # Copy supervisor configuration
-COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 
 # Copy Railway startup script
 COPY docker/railway-start.sh /railway-start.sh
