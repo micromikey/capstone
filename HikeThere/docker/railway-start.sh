@@ -83,5 +83,9 @@ echo "Starting supervisord..."
 echo "Nginx will listen on 0.0.0.0:${PORT:-8080}"
 echo "Health check endpoint: /up"
 echo "Public domain: ${RAILWAY_PUBLIC_DOMAIN}"
+echo ""
+echo "Expected PHP-FPM to listen on 127.0.0.1:9000"
+echo "Expected Nginx to listen on 0.0.0.0:${PORT:-8080}"
+echo ""
 
 exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
