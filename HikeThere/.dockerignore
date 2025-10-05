@@ -24,6 +24,8 @@ webpack.mix.js
 README.md
 *.md
 !DEPLOYMENT_READINESS_REPORT.md
+!TERMS_AND_CONDITIONS.md
+!PRIVACY_POLICY.md
 storage/logs/*
 !storage/logs/.gitignore
 storage/framework/cache/*
