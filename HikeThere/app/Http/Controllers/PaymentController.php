@@ -90,8 +90,8 @@ class PaymentController extends Controller
         // ✅ Convert amount to centavos for PayMongo
         $amountInCentavos = $validated['amount'] * 100;
 
-        // ✅ Get PayMongo secret key from environment
-        $secretKey = env('PAYMONGO_SECRET_KEY', 'sk_test_ok5EFh3sAbFbSeaBWZeJdpKM');
+        // ✅ Get PayMongo secret key from config
+        $secretKey = config('services.paymongo.secret_key');
 
         // ✅ Call PayMongo API
         $curl = curl_init();
@@ -126,7 +126,7 @@ class PaymentController extends Controller
                 "content-type: application/json"
             ],
             // ⚠️ For local testing only — disable SSL verification
-            CURLOPT_SSL_VERIFYPEER => env('APP_ENV') === 'production',
+            CURLOPT_SSL_VERIFYPEER => config('app.env') === 'production',
         ]);
 
         $response = curl_exec($curl);

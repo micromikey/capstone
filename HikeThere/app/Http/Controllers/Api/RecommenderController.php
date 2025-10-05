@@ -56,11 +56,11 @@ class RecommenderController extends Controller
             $userProfile['preferred_difficulty'] = $normalizedPref;
         }
 
-        // ML service endpoint (adjust host/port if deployed elsewhere)
-        $mlHost = config('app.ml_recommender_host', env('ML_RECOMMENDER_HOST', 'http://127.0.0.1:8001'));
+        // ML service endpoint
+        $mlHost = config('app.ml_recommender_host');
 
         // Cache key and TTL (seconds)
-        $cacheTtl = (int) config('app.ml_recommender_cache_ttl', env('ML_RECOMMENDER_CACHE_TTL', 300));
+        $cacheTtl = (int) config('app.ml_recommender_cache_ttl');
         $cacheKey = 'recommender:user:' . $userId . ':k:' . $k . ':profile:' . md5(json_encode($userProfile));
 
         // Return cached response if present, but validate shape to avoid serving stale payloads

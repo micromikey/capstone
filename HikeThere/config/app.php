@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | ML Recommender Service
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for the machine learning recommendation service.
+    |
+    */
+
+    'ml_recommender_host' => env('ML_RECOMMENDER_HOST', 'http://127.0.0.1:8001'),
+    'ml_recommender_cache_ttl' => env('ML_RECOMMENDER_CACHE_TTL', 300),
+
 ];

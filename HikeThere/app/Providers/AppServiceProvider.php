@@ -45,10 +45,10 @@ class AppServiceProvider extends ServiceProvider
         // Only attempt this for MySQL connections and swallow any exceptions so it
         // doesn't break booting in other environments.
         try {
-            // Use DB_SESSION_TIMEZONE env var to control whether the app sets a session
+            // Use DB_SESSION_TIMEZONE config to control whether the app sets a session
             // timezone on MySQL connections. If left empty, the app will not issue a
             // `SET time_zone` and will instead rely on the server/global timezone.
-            $tz = env('DB_SESSION_TIMEZONE', null);
+            $tz = config('database.connections.mysql.session_timezone');
 
             if ($tz) {
                 $connection = DB::connection();
