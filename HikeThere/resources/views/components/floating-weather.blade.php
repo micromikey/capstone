@@ -13,7 +13,7 @@
             'night' => 'bg-gradient-to-br from-blue-900/90 via-indigo-900/90 to-slate-800/90 border-blue-900/50',
         ],
         'clouds' => [
-            'day' => 'bg-gradient-to-br from-gray-100/95 via-slate-50/95 to-gray-200/95 border-gray-200/50',
+            'day' => 'bg-gradient-to-br from-sky-200/95 via-slate-100/95 to-blue-100/95 border-sky-200/50',
             'night' => 'bg-gradient-to-br from-gray-800/90 via-slate-900/90 to-gray-700/90 border-gray-800/50',
         ],
         'rain' => [
