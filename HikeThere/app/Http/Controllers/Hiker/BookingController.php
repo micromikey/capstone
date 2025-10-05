@@ -446,7 +446,21 @@ class BookingController extends Controller
             
             // Handle payment proof upload
             if ($request->hasFile('payment_proof')) {
-                $path = $request->file('payment_proof')->store('payment_proofs', 'public');
+                // Determine which disk to use with safety check
+                $disk = config('filesystems.default', 'public');
+                if ($disk === 'gcs') {
+                    try {
+                        if (!config('filesystems.disks.gcs.bucket')) {
+                            $disk = 'public';
+                            \Log::warning('GCS configured but bucket not set, using public disk');
+                        }
+                    } catch (\Exception $e) {
+                        $disk = 'public';
+                        \Log::error('GCS configuration error: ' . $e->getMessage());
+                    }
+                }
+                
+                $path = $request->file('payment_proof')->store('payment_proofs', $disk);
                 $booking->payment_proof_path = $path;
             }
 

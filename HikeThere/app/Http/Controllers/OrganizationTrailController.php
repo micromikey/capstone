@@ -793,8 +793,22 @@ class OrganizationTrailController extends Controller
      */
     private function storeGPXFile($file, $trail)
     {
+        // Determine which disk to use with safety check
+        $disk = config('filesystems.default', 'public');
+        if ($disk === 'gcs') {
+            try {
+                if (!config('filesystems.disks.gcs.bucket')) {
+                    $disk = 'public';
+                    \Log::warning('GCS configured but bucket not set, using public disk');
+                }
+            } catch (\Exception $e) {
+                $disk = 'public';
+                \Log::error('GCS configuration error: ' . $e->getMessage());
+            }
+        }
+        
         $filename = Str::slug($trail->trail_name . '-' . $trail->mountain_name) . '.gpx';
-        $path = $file->storeAs('trail-gpx', $filename, 'public');
+        $path = $file->storeAs('trail-gpx', $filename, $disk);
         
         Log::info('GPX file stored', ['path' => $path]);
         

@@ -46,9 +46,11 @@ class AppServiceProvider extends ServiceProvider
             $adapter = new GoogleCloudStorageAdapter($bucket, $config['path_prefix'] ?? '');
             $filesystem = new Filesystem($adapter, $config);
             
-            // Return Laravel's FilesystemAdapter wrapper (not raw Flysystem)
-            // This provides the url() method and other Laravel-specific features
-            return new FilesystemAdapter($filesystem, $adapter, $config);
+            // Return Laravel's FilesystemAdapter wrapper with custom URL generator
+            return new FilesystemAdapter($filesystem, $adapter, [
+                ...$config,
+                'url' => "https://storage.googleapis.com/{$config['bucket']}",
+            ]);
         });
 
         Trail::observe(TrailObserver::class);
