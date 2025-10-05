@@ -25,7 +25,7 @@ class DashboardController extends Controller
             ? ['lat' => $lat, 'lon' => $lon]
             : ['q' => 'Manila,PH'];
 
-        $queryParams['appid'] = env('OPENWEATHER_API_KEY');
+        $queryParams['appid'] = config('services.openweather.api_key');
         $queryParams['units'] = 'metric';
 
         // Current Weather

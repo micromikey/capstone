@@ -13,7 +13,7 @@ class LocationWeatherController extends Controller
         $lat = $request->lat;
         $lon = $request->lon;
 
-        $weatherApiKey = env('OPENWEATHER_API_KEY');
+        $weatherApiKey = config('services.openweather.api_key');
 
         $response = Http::withOptions(['verify' => false])->get("https://api.openweathermap.org/data/2.5/weather", [
             'lat' => $lat,
