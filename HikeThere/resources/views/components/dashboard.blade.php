@@ -1367,7 +1367,7 @@ $imageService = app('App\Services\TrailImageService');
         // Wait up to GEO_WAIT_MS for geolocation. If it doesn't arrive, use stored/default coords.
         const geoWait = setTimeout(() => {
             if (weatherStarted) return;
-            console.warn('Geolocation wait timed out');
+            console.debug('Geolocation wait timed out - using fallback');
             if (stored && stored.lat && stored.lon) {
                 // Use saved location if available
                 startUpdates(stored);
@@ -1406,7 +1406,7 @@ $imageService = app('App\Services\TrailImageService');
                 }
             }, function(err) {
                 clearTimeout(geoWait);
-                console.warn('Geolocation failed or denied:', err && err.message);
+                console.debug('Geolocation not available:', err && err.message);
                 if (!weatherStarted) {
                     if (stored && stored.lat && stored.lon) {
                         startUpdates(stored);
