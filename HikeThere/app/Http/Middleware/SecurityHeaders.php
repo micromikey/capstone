@@ -44,7 +44,7 @@ class SecurityHeaders
                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net; " .
                    "img-src 'self' data: https: blob:; " .
                    "font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net data:; " .
-                   "connect-src 'self' https://maps.googleapis.com https://api.openweathermap.org; " .
+                   "connect-src 'self' https://maps.googleapis.com https://api.openweathermap.org https://api.iconify.design https://api.simplesvg.com https://api.unisvg.com; " .
                    "frame-src 'self' https://www.google.com;";
             
             $response->headers->set('Content-Security-Policy', $csp);
