@@ -6,7 +6,7 @@ services:
     image: mysql:8.0
     container_name: hikethere_mysql
     ports:
-      - "3306:3306"
+      - "3307:3306"  # Changed to 3307 to avoid conflict with local MySQL
     environment:
       MYSQL_ROOT_PASSWORD: hikethere_root_password
       MYSQL_DATABASE: hikethere
@@ -77,6 +77,9 @@ services:
       - ./config:/app/config
       - ./database:/app/database
       - ./public:/app/public
+      # Mount legal documents
+      - ./TERMS_AND_CONDITIONS.md:/app/TERMS_AND_CONDITIONS.md:ro
+      - ./PRIVACY_POLICY.md:/app/PRIVACY_POLICY.md:ro
       # Persistent storage
       - storage_data:/app/storage
       - ./bootstrap/cache:/app/bootstrap/cache
@@ -90,10 +93,12 @@ services:
     restart: unless-stopped
     command: >
       sh -c "
+        chmod -R 777 /app/storage /app/bootstrap/cache &&
+        php artisan key:generate --force --no-interaction || true &&
         php artisan config:clear &&
-        php artisan cache:clear &&
         php artisan migrate --force &&
         php artisan storage:link &&
+        php artisan cache:clear || true &&
         /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
       "
 
@@ -104,7 +109,7 @@ services:
       dockerfile: Dockerfile
     container_name: hikethere_ml
     ports:
-      - "8001:8001"
+      - "8002:8001"  # Changed to 8002 externally to avoid conflict
     environment:
       - ML_ARTIFACT_DIR=/app/artifacts
       - PYTHONUNBUFFERED=1

@@ -21,10 +21,8 @@ webpack.mix.js
 vite.config.js
 postcss.config.js
 tailwind.config.js
-package.json
-package-lock.json
-composer.json
-composer.lock
+# package.json and package-lock.json are needed for npm install
+# composer.json and composer.lock are needed for composer install
 README.md
 *.md
 !DEPLOYMENT_READINESS_REPORT.md
