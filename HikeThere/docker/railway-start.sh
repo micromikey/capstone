@@ -5,6 +5,8 @@ set -e  # Exit on error
 
 echo "Starting Railway deployment..."
 echo "PORT variable: ${PORT:-8080}"
+echo "All environment variables:"
+env | grep -E "(PORT|RAILWAY)" || echo "No PORT/RAILWAY variables found"
 
 # Check if PHP is available
 if ! command -v php &> /dev/null; then
