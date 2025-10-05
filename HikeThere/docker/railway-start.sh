@@ -32,9 +32,14 @@ if [ ! -f /app/.env ]; then
     cp /app/.env.example /app/.env
 fi
 
-# Generate app key if not exists
+# Generate app key - use --show and manually update if key:generate fails
 echo "Generating app key..."
-php artisan key:generate --force --no-interaction || true
+if ! php artisan key:generate --force --no-interaction 2>&1; then
+    echo "Standard key:generate failed, generating key manually..."
+    KEY=$(php artisan key:generate --show)
+    sed -i "s/APP_KEY=.*/APP_KEY=${KEY}/" /app/.env
+    echo "APP_KEY set manually: ${KEY}"
+fi
 
 # Run migrations
 echo "Running migrations..."
