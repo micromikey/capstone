@@ -65,8 +65,11 @@ COPY . .
 # Run composer scripts
 RUN composer dump-autoload --optimize
 
-# Build frontend assets (skip if build fails in development)
-RUN npm run build || echo "Skipping build for development"
+# Build frontend assets (must succeed for production)
+RUN npm run build
+
+# Create build directory if npm run build didn't create it
+RUN mkdir -p /app/public/build
 
 # Create necessary directories and set permissions
 RUN mkdir -p /app/storage/logs \
