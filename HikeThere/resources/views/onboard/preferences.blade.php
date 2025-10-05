@@ -1,37 +1,7 @@
 <x-app-layout>
 
     <div class="py-12">
-        <div class="max-w-7x                    <div class="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-2">
-                        <!-- Left: Simple mountain illustration -->
-                        <div class="relative bg-gradient-to-br from-green-50 to-white rounded-2xl p-6 flex items-center justify-center overflow-hidden">
-                            <div class="w-full h-full min-h-[260px] flex items-center justify-center">
-                                {{-- Lightweight CSS-only mountain scene --}}
-                                <svg viewBox="0 0 400 300" class="w-full h-full opacity-20" style="max-width: 320px;">
-                                    {{-- Mountains --}}
-                                    <polygon points="0,250 100,100 200,250" fill="#10b981" opacity="0.3">
-                                        <animate attributeName="opacity" values="0.3;0.4;0.3" dur="4s" repeatCount="indefinite"/>
-                                    </polygon>
-                                    <polygon points="120,250 220,80 320,250" fill="#059669" opacity="0.4">
-                                        <animate attributeName="opacity" values="0.4;0.5;0.4" dur="5s" repeatCount="indefinite"/>
-                                    </polygon>
-                                    <polygon points="200,250 300,120 400,250" fill="#047857" opacity="0.3">
-                                        <animate attributeName="opacity" values="0.3;0.4;0.3" dur="6s" repeatCount="indefinite"/>
-                                    </polygon>
-                                    {{-- Trees --}}
-                                    <g opacity="0.3">
-                                        <polygon points="80,240 90,220 100,240" fill="#065f46"/>
-                                        <polygon points="280,240 290,215 300,240" fill="#065f46"/>
-                                        <polygon points="340,240 350,225 360,240" fill="#065f46"/>
-                                    </g>
-                                    {{-- Hiking trail path --}}
-                                    <path d="M 0,260 Q 100,240 200,245 T 400,250" stroke="#10b981" stroke-width="2" fill="none" opacity="0.2" stroke-dasharray="5,5">
-                                        <animate attributeName="stroke-dashoffset" from="0" to="10" dur="2s" repeatCount="indefinite"/>
-                                    </path>
-                                </svg>
-                            </div>
-                        </div>
-
-                        <!-- Right: stacked preference panels --}}sm:px-6 lg:px-8 space-y-6">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
             @if($errors->any())
@@ -100,11 +70,32 @@
                     @endphp
 
                     <div class="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-2">
-                        <!-- Left: Visualization / decorative column -->
+                        <!-- Left: Simple mountain illustration -->
                         <div class="relative bg-gradient-to-br from-green-50 to-white rounded-2xl p-6 flex items-center justify-center overflow-hidden">
-                            <div class="w-full h-full min-h-[260px]">
-                                {{-- Inline poly-mountain partial (extracts the SVG and loads its CSS/JS) --}}
-                                @include('partials.poly-mountain')
+                            <div class="w-full h-full min-h-[260px] flex items-center justify-center">
+                                {{-- Lightweight CSS-only mountain scene --}}
+                                <svg viewBox="0 0 400 300" class="w-full h-full opacity-20" style="max-width: 320px;">
+                                    {{-- Mountains --}}
+                                    <polygon points="0,250 100,100 200,250" fill="#10b981" opacity="0.3">
+                                        <animate attributeName="opacity" values="0.3;0.4;0.3" dur="4s" repeatCount="indefinite"/>
+                                    </polygon>
+                                    <polygon points="120,250 220,80 320,250" fill="#059669" opacity="0.4">
+                                        <animate attributeName="opacity" values="0.4;0.5;0.4" dur="5s" repeatCount="indefinite"/>
+                                    </polygon>
+                                    <polygon points="200,250 300,120 400,250" fill="#047857" opacity="0.3">
+                                        <animate attributeName="opacity" values="0.3;0.4;0.3" dur="6s" repeatCount="indefinite"/>
+                                    </polygon>
+                                    {{-- Trees --}}
+                                    <g opacity="0.3">
+                                        <polygon points="80,240 90,220 100,240" fill="#065f46"/>
+                                        <polygon points="280,240 290,215 300,240" fill="#065f46"/>
+                                        <polygon points="340,240 350,225 360,240" fill="#065f46"/>
+                                    </g>
+                                    {{-- Hiking trail path --}}
+                                    <path d="M 0,260 Q 100,240 200,245 T 400,250" stroke="#10b981" stroke-width="2" fill="none" opacity="0.2" stroke-dasharray="5,5">
+                                        <animate attributeName="stroke-dashoffset" from="0" to="10" dur="2s" repeatCount="indefinite"/>
+                                    </path>
+                                </svg>
                             </div>
                         </div>
 
