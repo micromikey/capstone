@@ -1,0 +1,7 @@
+# Force Railway Rebuild
+
+This empty commit will trigger Railway to rebuild from scratch.
+
+The issue is that Railway cached the old composer dependencies and didn't install the new `league/flysystem-google-cloud-storage` package.
+
+By creating this file and committing, Railway will detect a change and rebuild everything, including running `composer install` which will install the GCS adapter.
