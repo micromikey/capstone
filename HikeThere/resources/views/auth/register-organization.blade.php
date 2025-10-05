@@ -15,6 +15,74 @@
             business_permit: '',
             government_id: '',
             additional_docs: []
+        },
+        validateStep1() {
+            if (!this.formData.organization_name.trim()) {
+                alert('Please enter Organization Name');
+                return false;
+            }
+            if (!this.formData.organization_description.trim()) {
+                alert('Please enter Organization Description');
+                return false;
+            }
+            if (!this.formData.name.trim()) {
+                alert('Please enter Representative Name');
+                return false;
+            }
+            if (!this.formData.password || this.formData.password.length < 8) {
+                alert('Password must be at least 8 characters');
+                return false;
+            }
+            if (this.formData.password !== this.formData.password_confirmation) {
+                alert('Passwords do not match');
+                return false;
+            }
+            return true;
+        },
+        validateStep2() {
+            if (!this.formData.email.trim()) {
+                alert('Please enter Email Address');
+                return false;
+            }
+            // Basic email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(this.formData.email)) {
+                alert('Please enter a valid email address');
+                return false;
+            }
+            if (!this.formData.phone.trim()) {
+                alert('Please enter Phone Number');
+                return false;
+            }
+            if (!this.formData.address.trim()) {
+                alert('Please enter Address');
+                return false;
+            }
+            return true;
+        },
+        validateStep3() {
+            const businessPermit = document.getElementById('business_permit');
+            const governmentId = document.getElementById('government_id');
+            
+            if (!businessPermit.files || businessPermit.files.length === 0) {
+                alert('Please upload Business Permit');
+                return false;
+            }
+            if (!governmentId.files || governmentId.files.length === 0) {
+                alert('Please upload Government-issued ID');
+                return false;
+            }
+            if (!this.documentationConfirmed) {
+                alert('Please confirm that all uploaded documents are clear and readable');
+                return false;
+            }
+            return true;
+        },
+        goToStep(nextStep) {
+            if (nextStep === 2 && !this.validateStep1()) return;
+            if (nextStep === 3 && !this.validateStep2()) return;
+            if (nextStep === 4 && !this.validateStep3()) return;
+            this.step = nextStep;
         }
     }" 
     x-init="console.log('Form initialized:', $data)"
@@ -34,22 +102,22 @@
             <div class="relative pt-4">
                 <div class="flex items-center justify-between mb-2">
                     <div class="w-1/4 text-center">
-                        <button @click="step = 1" :class="{'text-[#336d66] font-medium': step >= 1, 'text-gray-400': step < 1}">
+                        <button type="button" @click="step = 1" :class="{'text-[#336d66] font-medium': step >= 1, 'text-gray-400': step < 1}">
                             Organization Info
                         </button>
                     </div>
                     <div class="w-1/4 text-center">
-                        <button @click="step = 2" :class="{'text-[#336d66] font-medium': step >= 2, 'text-gray-400': step < 2}">
+                        <button type="button" @click="if(step >= 2 || validateStep1()) goToStep(2)" :class="{'text-[#336d66] font-medium': step >= 2, 'text-gray-400': step < 2, 'cursor-not-allowed': step < 2}">
                             Contact & Address
                         </button>
                     </div>
                     <div class="w-1/4 text-center">
-                        <button @click="step = 3" :class="{'text-[#336d66] font-medium': step >= 3, 'text-gray-400': step < 3}">
+                        <button type="button" @click="if(step >= 3 || (validateStep1() && validateStep2())) goToStep(3)" :class="{'text-[#336d66] font-medium': step >= 3, 'text-gray-400': step < 3, 'cursor-not-allowed': step < 3}">
                             Documentation
                         </button>
                     </div>
                     <div class="w-1/4 text-center">
-                        <button @click="step = 4" :class="{'text-[#336d66] font-medium': step >= 4, 'text-gray-400': step < 4}">
+                        <button type="button" @click="if(step >= 4 || (validateStep1() && validateStep2() && validateStep3())) goToStep(4)" :class="{'text-[#336d66] font-medium': step >= 4, 'text-gray-400': step < 4, 'cursor-not-allowed': step < 4}">
                             Review & Submit
                         </button>
                     </div>
@@ -105,10 +173,37 @@
                         <!-- Password Fields -->
                         <div class="space-y-4 pt-4 border-t">
                             <h4 class="font-medium text-gray-700">Account Security</h4>
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-4">
                                 <div>
                                     <x-label for="password" value="{{ __('Password') }}" class="mb-1" />
-                                    <x-input id="password" x-model="formData.password" class="block w-full" type="password" name="password" required autocomplete="new-password" />
+                                    <x-input id="password" x-model="formData.password" class="block w-full" type="password" name="password" required autocomplete="new-password" oninput="checkPasswordStrength(this.value)" />
+                                    
+                                    <!-- Password Strength Indicator -->
+                                    <div id="password-strength" class="mt-2 hidden">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                <div id="strength-bar" class="h-full transition-all duration-300 rounded-full" style="width: 0%"></div>
+                                            </div>
+                                            <span id="strength-text" class="text-xs font-medium"></span>
+                                        </div>
+                                        <div class="text-xs space-y-1">
+                                            <div id="req-length" class="flex items-center gap-1 text-gray-500">
+                                                <span class="requirement-icon">○</span> At least 8 characters
+                                            </div>
+                                            <div id="req-uppercase" class="flex items-center gap-1 text-gray-500">
+                                                <span class="requirement-icon">○</span> One uppercase letter
+                                            </div>
+                                            <div id="req-lowercase" class="flex items-center gap-1 text-gray-500">
+                                                <span class="requirement-icon">○</span> One lowercase letter
+                                            </div>
+                                            <div id="req-number" class="flex items-center gap-1 text-gray-500">
+                                                <span class="requirement-icon">○</span> One number
+                                            </div>
+                                            <div id="req-special" class="flex items-center gap-1 text-gray-500">
+                                                <span class="requirement-icon">○</span> One special character (!@#$%^&*)
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div>
                                     <x-label for="password_confirmation" value="{{ __('Confirm Password') }}" class="mb-1" />
@@ -119,7 +214,7 @@
                     </div>
 
                     <div class="mt-8 flex justify-end">
-                        <button type="button" @click="step = 2; console.log('Moving to step 2, formData:', formData)"
+                        <button type="button" @click="goToStep(2)"
                             class="px-6 py-2 bg-[#336d66] text-white rounded-xl hover:bg-[#20b6d2] transition-colors">
                             Next Step &rarr;
                         </button>
@@ -155,7 +250,7 @@
                             class="px-6 py-2 text-gray-600 hover:text-[#336d66] transition-colors">
                             &larr; Previous Step
                         </button>
-                        <button type="button" @click="step = 3; console.log('Moving to step 3, formData:', formData)"
+                        <button type="button" @click="goToStep(3)"
                             class="px-6 py-2 bg-[#336d66] text-white rounded-xl hover:bg-[#20b6d2] transition-colors">
                             Next Step &rarr;
                         </button>
@@ -174,8 +269,8 @@
                                 @change="formData.business_permit = $event.target.files[0]?.name || ''; console.log('Business permit file selected:', $event.target.files[0]?.name)"
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
                                 required
-                                accept=".pdf,.jpg,.jpeg,.png" />
-                            <p class="text-sm text-gray-500">Upload a scanned copy of your business permit (PDF, JPG, PNG)</p>
+                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                            <p class="text-sm text-gray-500">Upload a scanned copy of your business permit (PDF, JPG, PNG, DOC, DOCX - Max 10MB)</p>
                         </div>
 
                         <!-- Government ID -->
@@ -185,8 +280,8 @@
                                 @change="formData.government_id = $event.target.files[0]?.name || ''; console.log('Government ID file selected:', $event.target.files[0]?.name)"
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
                                 required
-                                accept=".pdf,.jpg,.jpeg,.png" />
-                            <p class="text-sm text-gray-500">Upload a valid government ID of the representative (PDF, JPG, PNG)</p>
+                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                            <p class="text-sm text-gray-500">Upload a valid government ID of the representative (PDF, JPG, PNG, DOC, DOCX - Max 10MB)</p>
                         </div>
 
                         <!-- Additional Documents -->
@@ -196,8 +291,8 @@
                                 @change="formData.additional_docs = Array.from($event.target.files).map(f => f.name); console.log('Additional docs selected:', Array.from($event.target.files).map(f => f.name))"
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
                                 multiple
-                                accept=".pdf,.jpg,.jpeg,.png" />
-                            <p class="text-sm text-gray-500">Optional: Any additional documents to support your application</p>
+                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                            <p class="text-sm text-gray-500">Optional: Any additional documents to support your application (PDF, JPG, PNG, DOC, DOCX - Max 10MB each)</p>
                         </div>
                     </div>
 
@@ -206,7 +301,7 @@
                             class="px-6 py-2 text-gray-600 hover:text-[#336d66] transition-colors">
                             &larr; Previous Step
                         </button>
-                        <button type="button" @click="step = 4; console.log('Moving to step 4, formData:', formData)"
+                        <button type="button" @click="goToStep(4)"
                             class="px-6 py-2 bg-[#336d66] text-white rounded-xl hover:bg-[#20b6d2] transition-colors">
                             Next Step &rarr;
                         </button>
@@ -409,3 +504,79 @@
         }
     </style>
 </x-guest-layout>
+
+<script>
+function checkPasswordStrength(password) {
+    const strengthIndicator = document.getElementById('password-strength');
+    const strengthBar = document.getElementById('strength-bar');
+    const strengthText = document.getElementById('strength-text');
+    
+    // Show indicator when user starts typing
+    if (password.length > 0) {
+        strengthIndicator.classList.remove('hidden');
+    } else {
+        strengthIndicator.classList.add('hidden');
+        return;
+    }
+    
+    // Check requirements
+    const requirements = {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        number: /[0-9]/.test(password),
+        special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+    
+    // Update requirement indicators
+    updateRequirement('req-length', requirements.length);
+    updateRequirement('req-uppercase', requirements.uppercase);
+    updateRequirement('req-lowercase', requirements.lowercase);
+    updateRequirement('req-number', requirements.number);
+    updateRequirement('req-special', requirements.special);
+    
+    // Calculate strength
+    const fulfilled = Object.values(requirements).filter(Boolean).length;
+    let strength = 0;
+    let strengthLabel = '';
+    let barColor = '';
+    
+    if (fulfilled === 5) {
+        strength = 100;
+        strengthLabel = 'Strong';
+        barColor = 'bg-green-500';
+    } else if (fulfilled >= 3) {
+        strength = 60;
+        strengthLabel = 'Medium';
+        barColor = 'bg-yellow-500';
+    } else {
+        strength = 30;
+        strengthLabel = 'Weak';
+        barColor = 'bg-red-500';
+    }
+    
+    // Update bar
+    strengthBar.style.width = strength + '%';
+    strengthBar.className = 'h-full transition-all duration-300 rounded-full ' + barColor;
+    strengthText.textContent = strengthLabel;
+    strengthText.className = 'text-xs font-medium ' + (
+        barColor === 'bg-green-500' ? 'text-green-600' :
+        barColor === 'bg-yellow-500' ? 'text-yellow-600' : 'text-red-600'
+    );
+}
+
+function updateRequirement(elementId, isMet) {
+    const element = document.getElementById(elementId);
+    const icon = element.querySelector('.requirement-icon');
+    
+    if (isMet) {
+        element.classList.remove('text-gray-500');
+        element.classList.add('text-green-600');
+        icon.textContent = '✓';
+    } else {
+        element.classList.remove('text-green-600');
+        element.classList.add('text-gray-500');
+        icon.textContent = '○';
+    }
+}
+</script>
