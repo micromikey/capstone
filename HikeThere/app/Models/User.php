@@ -349,9 +349,17 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getProfilePictureUrlAttribute()
     {
         if ($this->profile_picture) {
-            // If using GCS, return GCS public URL
+            // If using GCS, return GCS public URL (but check if GCS is actually configured)
             if (config('filesystems.default') === 'gcs') {
-                return \Storage::disk('gcs')->url($this->profile_picture);
+                try {
+                    // Verify GCS disk is configured before using it
+                    if (config('filesystems.disks.gcs.bucket')) {
+                        return \Storage::disk('gcs')->url($this->profile_picture);
+                    }
+                } catch (\Exception $e) {
+                    // If GCS fails, fall back to local storage
+                    \Log::warning('GCS not available, falling back to local storage: ' . $e->getMessage());
+                }
             }
             // Otherwise return local storage URL
             return asset('storage/' . $this->profile_picture);

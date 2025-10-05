@@ -70,13 +70,29 @@ class ProfileController extends Controller
                 'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
 
-            if ($user->profile_picture) {
-                Storage::disk('public')->delete($user->profile_picture);
+            // Determine which disk to use with safety check
+            $disk = config('filesystems.default', 'public');
+            if ($disk === 'gcs') {
+                try {
+                    if (!config('filesystems.disks.gcs.bucket')) {
+                        $disk = 'public';
+                        \Log::warning('GCS configured but bucket not set, using public disk');
+                    }
+                } catch (\Exception $e) {
+                    $disk = 'public';
+                    \Log::error('GCS configuration error: ' . $e->getMessage());
+                }
             }
-            $path = $request->file('profile_picture')->store('profile-pictures', 'public');
+
+            if ($user->profile_picture) {
+                Storage::disk($disk)->delete($user->profile_picture);
+            }
+            $path = $request->file('profile_picture')->store('profile-pictures', $disk);
             $user->update(['profile_picture' => $path]);
 
-            $url = Storage::disk('public')->url($path);
+            $url = $disk === 'gcs' 
+                ? Storage::disk('gcs')->url($path)
+                : Storage::disk('public')->url($path);
             // If it's an AJAX request, return JSON for the client to update in-place
             if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
                 return response()->json([
@@ -111,8 +127,19 @@ class ProfileController extends Controller
         ]);
 
         if ($request->hasFile('profile_picture')) {
-            // Determine which disk to use
+            // Determine which disk to use with safety check
             $disk = config('filesystems.default', 'public');
+            if ($disk === 'gcs') {
+                try {
+                    if (!config('filesystems.disks.gcs.bucket')) {
+                        $disk = 'public';
+                        \Log::warning('GCS configured but bucket not set, using public disk');
+                    }
+                } catch (\Exception $e) {
+                    $disk = 'public';
+                    \Log::error('GCS configuration error: ' . $e->getMessage());
+                }
+            }
             
             // Delete old profile picture if exists
             if ($user->profile_picture) {
@@ -151,8 +178,19 @@ class ProfileController extends Controller
                 'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
 
-            // Determine which disk to use
+            // Determine which disk to use with safety check
             $disk = config('filesystems.default', 'public');
+            if ($disk === 'gcs') {
+                try {
+                    if (!config('filesystems.disks.gcs.bucket')) {
+                        $disk = 'public';
+                        \Log::warning('GCS configured but bucket not set, using public disk');
+                    }
+                } catch (\Exception $e) {
+                    $disk = 'public';
+                    \Log::error('GCS configuration error: ' . $e->getMessage());
+                }
+            }
             
             // Delete old profile picture if exists
             if ($user->profile_picture) {
@@ -200,8 +238,19 @@ class ProfileController extends Controller
         ]);
 
         if ($request->hasFile('profile_picture')) {
-            // Determine which disk to use
+            // Determine which disk to use with safety check
             $disk = config('filesystems.default', 'public');
+            if ($disk === 'gcs') {
+                try {
+                    if (!config('filesystems.disks.gcs.bucket')) {
+                        $disk = 'public';
+                        \Log::warning('GCS configured but bucket not set, using public disk');
+                    }
+                } catch (\Exception $e) {
+                    $disk = 'public';
+                    \Log::error('GCS configuration error: ' . $e->getMessage());
+                }
+            }
             
             // Delete old profile picture if exists
             if ($user->profile_picture) {
@@ -230,8 +279,20 @@ class ProfileController extends Controller
         $user = Auth::user();
         
         if ($user->profile_picture) {
-            // Determine which disk to use
+            // Determine which disk to use with safety check
             $disk = config('filesystems.default', 'public');
+            if ($disk === 'gcs') {
+                try {
+                    if (!config('filesystems.disks.gcs.bucket')) {
+                        $disk = 'public';
+                        \Log::warning('GCS configured but bucket not set, using public disk');
+                    }
+                } catch (\Exception $e) {
+                    $disk = 'public';
+                    \Log::error('GCS configuration error: ' . $e->getMessage());
+                }
+            }
+            
             Storage::disk($disk)->delete($user->profile_picture);
             $user->update(['profile_picture' => null]);
         }
@@ -251,8 +312,19 @@ class ProfileController extends Controller
             'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
-        // Determine which disk to use
+        // Determine which disk to use with safety check
         $disk = config('filesystems.default', 'public');
+        if ($disk === 'gcs') {
+            try {
+                if (!config('filesystems.disks.gcs.bucket')) {
+                    $disk = 'public';
+                    \Log::warning('GCS configured but bucket not set, using public disk');
+                }
+            } catch (\Exception $e) {
+                $disk = 'public';
+                \Log::error('GCS configuration error: ' . $e->getMessage());
+            }
+        }
         
         // Delete old profile picture if exists
         if ($user->profile_picture) {
