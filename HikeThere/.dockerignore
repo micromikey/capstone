@@ -18,10 +18,8 @@ Thumbs.db
 tests/
 phpunit.xml
 webpack.mix.js
-vite.config.js
-postcss.config.js
-tailwind.config.js
 # package.json and package-lock.json are needed for npm install
+# vite.config.js, postcss.config.js, and tailwind.config.js are needed for npm run build
 # composer.json and composer.lock are needed for composer install
 README.md
 *.md
