@@ -1056,7 +1056,12 @@ $imageService = app('App\Services\TrailImageService');
         .catch(handleError);
     }
 
-    function updateWeatherDisplay(weather, forecast) {
+    function updateWeatherDisplay(weather, forecast, hourly = []) {
+        // Store hourly data for use in forecast updates
+        if (hourly && hourly.length > 0) {
+            window.__lastHourlyData = hourly;
+        }
+        
         // Update city label if available from AJAX response, otherwise show coords if known
         const cityElement = document.querySelector('.weather-city');
         if (cityElement) {
@@ -1083,6 +1088,49 @@ $imageService = app('App\Services\TrailImageService');
         if (iconElement) {
             iconElement.src = `https://openweathermap.org/img/wn/${weather.icon}@4x.png`;
             iconElement.alt = weather.description;
+        }
+
+        // Update weather widget gradient based on condition and time of day
+        const weatherContainer = document.querySelector('.weather-container');
+        if (weatherContainer && weather.icon && weather.condition) {
+            const isDay = weather.icon.endsWith('d');
+            const condition = weather.condition.toLowerCase();
+            
+            // Define gradient maps matching DashboardController.php
+            const dayGradients = {
+                'clear': 'from-yellow-400 to-orange-500',
+                'clouds': 'from-gray-400 to-gray-600',
+                'rain': 'from-blue-400 to-blue-700',
+                'thunderstorm': 'from-indigo-700 to-gray-900',
+                'snow': 'from-blue-100 to-blue-300',
+                'drizzle': 'from-teal-300 to-teal-500',
+                'mist': 'from-gray-300 to-gray-500',
+                'haze': 'from-yellow-200 to-yellow-400',
+                'fog': 'from-gray-200 to-gray-400',
+            };
+            
+            const nightGradients = {
+                'clear': 'from-indigo-900 to-blue-900',
+                'clouds': 'from-slate-700 to-slate-900',
+                'rain': 'from-slate-800 to-blue-900',
+                'thunderstorm': 'from-indigo-950 to-slate-950',
+                'snow': 'from-slate-600 to-slate-800',
+                'drizzle': 'from-slate-700 to-blue-900',
+                'mist': 'from-slate-600 to-slate-800',
+                'haze': 'from-slate-700 to-slate-900',
+                'fog': 'from-slate-600 to-slate-800',
+            };
+            
+            const gradientMap = isDay ? dayGradients : nightGradients;
+            const defaultGradient = isDay ? 'from-indigo-500 to-yellow-300' : 'from-indigo-900 to-purple-900';
+            const newGradient = gradientMap[condition] || defaultGradient;
+            
+            // Remove all old gradient classes
+            const classList = weatherContainer.className.split(' ');
+            const filteredClasses = classList.filter(cls => !cls.startsWith('from-') && !cls.startsWith('to-'));
+            
+            // Add new gradient classes
+            weatherContainer.className = filteredClasses.join(' ') + ' ' + newGradient;
         }
 
         // Update UV index

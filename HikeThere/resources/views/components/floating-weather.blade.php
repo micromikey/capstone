@@ -5,7 +5,7 @@
     // Determine day or night from weather icon (OpenWeatherMap: icon ends with 'd' for day, 'n' for night)
     $icon = $weather['icon'] ?? '01d';
     $isNight = str_ends_with($icon, 'n');
-    $weatherCondition = strtolower($weather['main'] ?? 'clear');
+    $weatherCondition = strtolower($weather['condition'] ?? $weather['main'] ?? 'clear');
     // Day and night gradients for each condition
     $gradients = [
         'clear' => [

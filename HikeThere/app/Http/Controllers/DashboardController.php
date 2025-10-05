@@ -66,12 +66,16 @@ class DashboardController extends Controller
 
         $weather = [
             'temp' => $currentData['main']['temp'] ?? 'N/A',
+            'feels_like' => $currentData['main']['feels_like'] ?? 'N/A',
             'description' => $currentData['weather'][0]['description'] ?? '',
             'icon' => $icon,
             'city' => $currentData['name'] ?? 'Unknown',
             'gradient' => $gradient,
             'condition' => $currentData['weather'][0]['main'] ?? 'Clear',
             'is_day' => $isDay,
+            'humidity' => $currentData['main']['humidity'] ?? 'N/A',
+            'uv_index' => 'N/A', // UV requires separate API call to onecall
+            'wind_speed' => $currentData['wind']['speed'] ?? 'N/A',
         ];
 
 
