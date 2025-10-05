@@ -495,8 +495,16 @@ class WeatherController extends Controller
             if ($count >= 5) break; // Only return 5 days
 
             // Support multiple shapes: our forecast summary, OpenWeather 'daily' from OneCall, or 3-hour list grouped
-            if (isset($day['date']) && isset($day['temp'])) {
-                // Already in our simplified format
+            if (isset($day['temp_midday']) && isset($day['icon'])) {
+                // Our API format from getOpenWeatherForecast
+                $formattedForecast[] = [
+                    'date' => $day['day_full'] . ', ' . $day['date_formatted'],
+                    'temp' => round($day['temp_midday']),
+                    'condition' => $day['condition'] ?? 'Clear',
+                    'icon' => $day['icon'],
+                ];
+            } elseif (isset($day['date']) && isset($day['temp'])) {
+                // Already in our simplified format (DashboardController format)
                 $formattedForecast[] = [
                     'date' => $day['date'],
                     'temp' => round($day['temp']),
