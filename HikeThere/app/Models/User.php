@@ -353,8 +353,10 @@ class User extends Authenticatable implements MustVerifyEmail
             if (config('filesystems.default') === 'gcs') {
                 try {
                     // Verify GCS disk is configured before using it
-                    if (config('filesystems.disks.gcs.bucket')) {
-                        return \Storage::disk('gcs')->url($this->profile_picture);
+                    $bucket = config('filesystems.disks.gcs.bucket');
+                    if ($bucket) {
+                        // Manually build GCS public URL
+                        return "https://storage.googleapis.com/{$bucket}/" . $this->profile_picture;
                     }
                 } catch (\Exception $e) {
                     // If GCS fails, fall back to local storage
