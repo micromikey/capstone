@@ -59,6 +59,9 @@ COPY package*.json ./
 # Install Node dependencies - clean install to avoid optional dependency bugs
 RUN npm ci || npm install
 
+# Explicitly install Rollup Linux binary (workaround for npm optional deps bug)
+RUN npm install --no-save @rollup/rollup-linux-x64-gnu
+
 # Copy application files
 COPY . .
 
