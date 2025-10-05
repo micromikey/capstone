@@ -87,8 +87,8 @@ COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/railway-start.sh /railway-start.sh
 RUN chmod +x /railway-start.sh
 
-# Expose port
-EXPOSE 8080
+# Expose port (Railway will assign dynamic port)
+EXPOSE ${PORT:-8080}
 
-# Start supervisor (Railway will use railway-start.sh via startCommand)
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Use the startup script as the default command
+CMD ["/railway-start.sh"]
