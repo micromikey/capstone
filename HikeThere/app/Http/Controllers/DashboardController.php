@@ -117,31 +117,36 @@ class DashboardController extends Controller
                 'message' => $forecastData['message'] ?? null,
             ]);
             
-            // Create fallback forecast
+            // Create fallback forecast (only if we have current weather data)
             $forecast = collect();
-            for ($i = 0; $i < 5; $i++) {
-                $date = Carbon::now()->addDays($i);
-                $forecast->push([
-                    'date' => $date->format('l, M j'),
-                    'temp' => round($currentData['main']['temp'] + rand(-3, 3)),
-                    'condition' => $currentData['weather'][0]['main'] ?? 'Clear',
-                    'icon' => $currentData['weather'][0]['icon'] ?? '01d',
-                ]);
+            if (isset($currentData['main']['temp'])) {
+                for ($i = 0; $i < 5; $i++) {
+                    $date = Carbon::now()->addDays($i);
+                    $forecast->push([
+                        'date' => $date->format('l, M j'),
+                        'temp' => round($currentData['main']['temp'] + rand(-3, 3)),
+                        'condition' => $currentData['weather'][0]['main'] ?? 'Clear',
+                        'icon' => $currentData['weather'][0]['icon'] ?? '01d',
+                    ]);
+                }
             }
             
             \Log::info('Fallback forecast created immediately', ['count' => $forecast->count()]);
         } else {
             // Process forecast data normally
-            $forecast = collect($forecastData['list'] ?? [])->groupBy(function ($item) {
+            $forecast = collect($forecastData['list'] ?? [])->filter(function ($item) {
+                // Only include items that have valid data structure
+                return isset($item['dt_txt']) && isset($item['main']['temp']) && isset($item['weather'][0]);
+            })->groupBy(function ($item) {
                 return Carbon::parse($item['dt_txt'])->format('Y-m-d');
             })->map(function ($dayItems) {
                 $midday = $dayItems->firstWhere('dt_txt', fn($dt) => str_contains($dt, '12:00:00')) ?? $dayItems->first();
 
                 return [
                     'date' => Carbon::parse($midday['dt_txt'])->format('l, M j'),
-                    'temp' => round($midday['main']['temp']),
-                    'condition' => $midday['weather'][0]['main'],
-                    'icon' => $midday['weather'][0]['icon'],
+                    'temp' => round($midday['main']['temp'] ?? 25),
+                    'condition' => $midday['weather'][0]['main'] ?? 'Clear',
+                    'icon' => $midday['weather'][0]['icon'] ?? '01d',
                 ];
             })->take(5)->values()->all();
             
