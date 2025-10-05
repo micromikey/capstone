@@ -593,10 +593,19 @@ $imageService = app('App\Services\TrailImageService');
                         
                         {{-- Debug info (temporary) --}}
                         @if(config('app.debug'))
-                        <div class="text-xs text-yellow-300 mb-2">
-                            Debug: Forecast isset={{ isset($forecast) ? 'yes' : 'no' }}, 
-                            is_collection={{ is_object($forecast) && get_class($forecast) === 'Illuminate\Support\Collection' ? 'yes' : 'no' }},
-                            count={{ isset($forecast) && method_exists($forecast, 'count') ? $forecast->count() : '?' }}
+                        <div class="text-xs text-yellow-300 mb-2 p-2 bg-black/20 rounded">
+                            <strong>Forecast Debug:</strong><br>
+                            isset={{ isset($forecast) ? 'YES' : 'NO' }},
+                            type={{ isset($forecast) ? gettype($forecast) : 'N/A' }},
+                            @if(isset($forecast) && is_object($forecast))
+                                class={{ get_class($forecast) }},
+                                count={{ $forecast->count() }},
+                                isEmpty={{ $forecast->isEmpty() ? 'YES' : 'NO' }},
+                                keys={{ json_encode($forecast->keys()->toArray()) }}
+                            @elseif(isset($forecast) && is_array($forecast))
+                                array_count={{ count($forecast) }},
+                                keys={{ json_encode(array_keys($forecast)) }}
+                            @endif
                         </div>
                         @endif
                         

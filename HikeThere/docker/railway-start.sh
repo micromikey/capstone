@@ -80,6 +80,16 @@ echo "========================================"
 echo "Clearing config cache..."
 php artisan config:clear || true
 
+# Clear ALL caches to ensure fresh deployment
+echo "Clearing view cache..."
+php artisan view:clear || true
+
+echo "Clearing route cache..."
+php artisan route:clear || true
+
+echo "Clearing application cache..."
+php artisan cache:clear || true
+
 # Cache config for better performance and to check for errors
 echo "Caching configuration..."
 if ! php artisan config:cache 2>&1; then
