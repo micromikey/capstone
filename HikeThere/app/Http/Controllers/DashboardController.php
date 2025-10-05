@@ -65,37 +65,56 @@ class DashboardController extends Controller
         $gradient = $gradientMap[$condition] ?? ($isDay ? 'from-indigo-500 to-yellow-300' : 'from-indigo-900 to-purple-900'); // default
 
         $weather = [
-            'temp' => $currentData['main']['temp'] ?? 'N/A',
-            'feels_like' => $currentData['main']['feels_like'] ?? 'N/A',
+            'temp' => round($currentData['main']['temp'] ?? 25),
+            'feels_like' => round($currentData['main']['feels_like'] ?? 27),
             'description' => $currentData['weather'][0]['description'] ?? '',
             'icon' => $icon,
             'city' => $currentData['name'] ?? 'Unknown',
             'gradient' => $gradient,
             'condition' => $currentData['weather'][0]['main'] ?? 'Clear',
             'is_day' => $isDay,
-            'humidity' => $currentData['main']['humidity'] ?? 'N/A',
+            'humidity' => $currentData['main']['humidity'] ?? 65,
             'uv_index' => 'N/A', // UV requires separate API call to onecall
-            'wind_speed' => $currentData['wind']['speed'] ?? 'N/A',
+            'wind_speed' => round($currentData['wind']['speed'] ?? 5),
         ];
+        
+        // Debug log weather data
+        \Log::info('Weather Data', [
+            'temp' => $weather['temp'],
+            'feels_like' => $weather['feels_like'],
+            'humidity' => $weather['humidity'],
+            'condition' => $weather['condition'],
+            'icon' => $weather['icon'],
+        ]);
 
 
         // Forecast
-        $forecast = Http::withOptions(['verify' => false])
-            ->get('https://api.openweathermap.org/data/2.5/forecast', $queryParams)
-            ->json();
+        $forecastResponse = Http::withOptions(['verify' => false])
+            ->get('https://api.openweathermap.org/data/2.5/forecast', $queryParams);
 
-        $forecast = collect($forecast['list'] ?? [])->groupBy(function ($item) {
+        $forecastData = $forecastResponse->json();
+        
+        // Debug log
+        \Log::info('Forecast API Response', [
+            'status' => $forecastResponse->status(),
+            'has_list' => isset($forecastData['list']),
+            'count' => isset($forecastData['list']) ? count($forecastData['list']) : 0
+        ]);
+
+        $forecast = collect($forecastData['list'] ?? [])->groupBy(function ($item) {
             return Carbon::parse($item['dt_txt'])->format('Y-m-d');
         })->map(function ($dayItems) {
             $midday = $dayItems->firstWhere('dt_txt', fn($dt) => str_contains($dt, '12:00:00')) ?? $dayItems->first();
 
             return [
                 'date' => Carbon::parse($midday['dt_txt'])->format('l, M j'),
-                'temp' => $midday['main']['temp'],
+                'temp' => round($midday['main']['temp']),
                 'condition' => $midday['weather'][0]['main'],
                 'icon' => $midday['weather'][0]['icon'],
             ];
         })->take(5);
+        
+        \Log::info('Processed Forecast', ['count' => $forecast->count()]);
 
         // Get user data for hikers
         $user = null;
