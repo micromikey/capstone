@@ -81,7 +81,7 @@ php artisan about 2>&1 || echo "Unable to run 'artisan about', continuing anyway
 # Start supervisord
 echo "Starting supervisord..."
 echo "Nginx will listen on 0.0.0.0:${PORT:-8080}"
-echo "Testing if port is available..."
-netstat -tuln | grep ${PORT:-8080} || echo "Port ${PORT:-8080} is available"
+echo "Health check endpoint: /up"
+echo "Public domain: ${RAILWAY_PUBLIC_DOMAIN}"
 
 exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
