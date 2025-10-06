@@ -64,14 +64,35 @@
             const businessPermit = document.getElementById('business_permit');
             const governmentId = document.getElementById('government_id');
             
+            console.log('Business Permit input:', businessPermit);
+            console.log('Business Permit files:', businessPermit.files);
+            console.log('Government ID input:', governmentId);
+            console.log('Government ID files:', governmentId.files);
+            
             if (!businessPermit.files || businessPermit.files.length === 0) {
                 alert('Please upload Business Permit');
                 return false;
             }
+            
+            const businessFile = businessPermit.files[0];
+            console.log('Business file details:', {
+                name: businessFile.name,
+                type: businessFile.type,
+                size: businessFile.size
+            });
+            
             if (!governmentId.files || governmentId.files.length === 0) {
                 alert('Please upload Government-issued ID');
                 return false;
             }
+            
+            const govFile = governmentId.files[0];
+            console.log('Government ID file details:', {
+                name: govFile.name,
+                type: govFile.type,
+                size: govFile.size
+            });
+            
             if (!this.documentationConfirmed) {
                 alert('Please confirm that all uploaded documents are clear and readable');
                 return false;
@@ -293,22 +314,26 @@
                         <div class="space-y-2 bg-gray-50 p-4 rounded-xl">
                             <x-label for="business_permit" value="{{ __('Business Permit') }}" class="mb-1" />
                             <input type="file" id="business_permit" name="business_permit"
-                                @change="formData.business_permit = $event.target.files[0]?.name || ''; console.log('Business permit file selected:', $event.target.files[0]?.name)"
+                                @change="formData.business_permit = $event.target.files[0]?.name || ''; console.log('Business permit file:', $event.target.files[0])"
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
-                                required
                                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
                             <p class="text-sm text-gray-500">Upload a scanned copy of your business permit (PDF, JPG, PNG, DOC, DOCX - Max 10MB)</p>
+                            <p x-show="formData.business_permit" class="text-xs text-green-600 mt-1">
+                                ✓ File selected: <span x-text="formData.business_permit"></span>
+                            </p>
                         </div>
 
                         <!-- Government ID -->
                         <div class="space-y-2 bg-gray-50 p-4 rounded-xl">
                             <x-label for="government_id" value="{{ __('Government ID') }}" class="mb-1" />
                             <input type="file" id="government_id" name="government_id"
-                                @change="formData.government_id = $event.target.files[0]?.name || ''; console.log('Government ID file selected:', $event.target.files[0]?.name)"
+                                @change="formData.government_id = $event.target.files[0]?.name || ''; console.log('Government ID file:', $event.target.files[0])"
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
-                                required
                                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
                             <p class="text-sm text-gray-500">Upload a valid government ID of the representative (PDF, JPG, PNG, DOC, DOCX - Max 10MB)</p>
+                            <p x-show="formData.government_id" class="text-xs text-green-600 mt-1">
+                                ✓ File selected: <span x-text="formData.government_id"></span>
+                            </p>
                         </div>
 
                         <!-- Additional Documents -->
