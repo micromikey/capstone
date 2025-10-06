@@ -49,9 +49,9 @@ class RegisteredUserController extends Controller
             'organization_description' => 'nullable|string|max:1000',
             'phone' => 'required|string|max:20',
             'address' => 'required|string|max:500',
-            'business_permit' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|mimetypes:application/pdf,image/jpeg,image/jpg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document|max:10240',
-            'government_id' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|mimetypes:application/pdf,image/jpeg,image/jpg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document|max:10240',
-            'additional_documents.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|mimetypes:application/pdf,image/jpeg,image/jpg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document|max:10240',
+            'business_permit' => 'required|file|max:10240',
+            'government_id' => 'required|file|max:10240',
+            'additional_documents.*' => 'nullable|file|max:10240',
             'terms' => 'required|accepted',
             'documentation_confirm' => 'required|accepted',
         ]);
