@@ -222,14 +222,20 @@
 
         <div class="content">
             <p class="greeting">
-                👋 Hello Admin!
+                <svg style="width: 24px; height: 24px; vertical-align: middle;" viewBox="0 0 24 24" fill="#336d66">
+                    <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M7.07,18.28C7.5,17.38 10.12,16.5 12,16.5C13.88,16.5 16.5,17.38 16.93,18.28C15.57,19.36 13.86,20 12,20C10.14,20 8.43,19.36 7.07,18.28M18.36,16.83C16.93,15.09 13.46,14.5 12,14.5C10.54,14.5 7.07,15.09 5.64,16.83C4.62,15.5 4,13.82 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,13.82 19.38,15.5 18.36,16.83M12,6C10.06,6 8.5,7.56 8.5,9.5C8.5,11.44 10.06,13 12,13C13.94,13 15.5,11.44 15.5,9.5C15.5,7.56 13.94,6 12,6M12,11A1.5,1.5 0 0,1 10.5,9.5A1.5,1.5 0 0,1 12,8A1.5,1.5 0 0,1 13.5,9.5A1.5,1.5 0 0,1 12,11Z"/>
+                </svg>
+                Hello Admin!
             </p>
             
             <p class="message">A new organization has registered and requires your approval. Please review the details below:</p>
 
             <div class="organization-details">
                 <h3>
-                    🏢 Organization Information
+                    <svg style="width: 24px; height: 24px; vertical-align: middle;" viewBox="0 0 24 24" fill="#336d66">
+                        <path d="M12,7V3H2V21H22V7H12M6,19H4V17H6V19M6,15H4V13H6V15M6,11H4V9H6V11M6,7H4V5H6V7M10,19H8V17H10V19M10,15H8V13H10V15M10,11H8V9H10V11M10,7H8V5H10V7M20,19H12V17H14V15H12V13H14V11H12V9H20V19M18,11H16V13H18V11M18,15H16V17H18V15Z"/>
+                    </svg>
+                    Organization Information
                     <span class="badge">PENDING REVIEW</span>
                 </h3>
                 <p><strong>Organization Name:</strong> {{ $user->organization_name ?? 'Not provided' }}</p>
@@ -243,7 +249,10 @@
             @if($organizationProfile)
             <div class="organization-details">
                 <h3>
-                    📍 Additional Details
+                    <svg style="width: 24px; height: 24px; vertical-align: middle;" viewBox="0 0 24 24" fill="#336d66">
+                        <path d="M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z"/>
+                    </svg>
+                    Additional Details
                 </h3>
                 <p><strong>Address:</strong> {{ $organizationProfile->address ?? 'Not provided' }}</p>
                 <p><strong>Website:</strong> {{ $organizationProfile->website ?? 'Not provided' }}</p>
@@ -252,7 +261,10 @@
             @if($organizationProfile->business_permit_path || $organizationProfile->government_id_path || $organizationProfile->additional_docs)
             <div class="organization-details">
                 <h3>
-                    📄 Submitted Documents
+                    <svg style="width: 24px; height: 24px; vertical-align: middle;" viewBox="0 0 24 24" fill="#336d66">
+                        <path d="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M15,18V16H6V18H15M18,14V12H6V14H18Z"/>
+                    </svg>
+                    Submitted Documents
                 </h3>
                 <div class="document-links">
                     @if($organizationProfile->business_permit_path)
@@ -289,7 +301,12 @@
             @endif
 
             <div class="action-buttons">
-                <h3>⚡ Quick Actions</h3>
+                <h3>
+                    <svg style="width: 20px; height: 20px; vertical-align: middle;" viewBox="0 0 24 24" fill="#336d66">
+                        <path d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+                    </svg>
+                    Quick Actions
+                </h3>
                 <a href="{{ URL::signedRoute('organizations.approve.email', $user->id) }}" class="btn btn-approve">
                     <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/>
