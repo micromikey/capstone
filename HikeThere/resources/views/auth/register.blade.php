@@ -143,12 +143,12 @@
                                     <input type="checkbox"
                                         id="terms"
                                         name="terms"
-                                        required
+                                        value="1"
                                         x-model="termsChecked"
                                         class="h-4 w-4 rounded border-gray-300 text-[#336d66] focus:ring-[#336d66]">
                                 </div>
                                 <div class="text-sm">
-                                    <label for="terms" class="font-medium text-gray-700">
+                                    <label for="terms" class="font-medium text-gray-700 cursor-pointer">
                                         I accept the terms of service and privacy policy
                                     </label>
                                     <p class="text-gray-500">
@@ -174,12 +174,12 @@
                                     <input type="checkbox"
                                         id="guidelines"
                                         name="guidelines"
-                                        required
+                                        value="1"
                                         x-model="guidelinesChecked"
                                         class="h-4 w-4 rounded border-gray-300 text-[#336d66] focus:ring-[#336d66]">
                                 </div>
                                 <div class="text-sm">
-                                    <label for="guidelines" class="font-medium text-gray-700">
+                                    <label for="guidelines" class="font-medium text-gray-700 cursor-pointer">
                                         I agree to follow hiking safety guidelines
                                     </label>
                                     <p class="text-gray-500">
@@ -190,11 +190,18 @@
                         </div>
                     </div>
 
+                    <!-- Debug Info (remove after testing) -->
+                    <div class="text-xs bg-blue-50 p-3 rounded-lg space-y-1">
+                        <div>Terms Checked: <span x-text="termsChecked"></span></div>
+                        <div>Guidelines Checked: <span x-text="guidelinesChecked"></span></div>
+                        <div>Button Disabled: <span x-text="!termsChecked || !guidelinesChecked"></span></div>
+                    </div>
+
                     <!-- Submit Button -->
                     <div>
                         <button type="submit"
                             class="group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-white bg-[#336d66] hover:bg-[#20b6d2] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#20b6d2] transition-colors duration-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                            x-bind:disabled="!termsChecked || !guidelinesChecked">
+                            :disabled="!termsChecked || !guidelinesChecked">
                             {{ __('Register') }}
                         </button>
                     </div>
