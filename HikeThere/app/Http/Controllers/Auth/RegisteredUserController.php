@@ -113,7 +113,7 @@ class RegisteredUserController extends Controller
             DB::commit();
 
             // Send approval notification email to admin
-            $adminEmail = config('mail.admin_email', 'admin@hikethere.com');
+            $adminEmail = config('mail.admin_email', env('ADMIN_EMAIL', 'admin@hikethere.com'));
             
             // Log the email attempt for debugging
             Log::info('Attempting to send approval email', [

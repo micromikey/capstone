@@ -25,7 +25,7 @@ return [
     | will be sent for admin review.
     |
     */
-    'admin_email' => env('MAIL_ADMIN_EMAIL', 'admin@hikethere.com'),
+    'admin_email' => env('ADMIN_EMAIL', env('MAIL_ADMIN_EMAIL', 'admin@hikethere.com')),
 
     /*
     |--------------------------------------------------------------------------
