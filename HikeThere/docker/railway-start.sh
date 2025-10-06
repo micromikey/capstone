@@ -21,9 +21,9 @@ echo "PHP found: $(which php)"
 echo "PHP version: $(php -v)"
 
 # Replace PORT in nginx config with Railway's $PORT environment variable
-echo "Configuring Nginx for port 9000 (Railway's assigned port)..."
-# Note: Railway expects port 9000, not 8080
-# sed -i "s/listen 9000;/listen ${PORT:-9000};/" /etc/nginx/sites-available/default
+echo "Configuring Nginx for port ${PORT:-9001} (Railway's assigned port)..."
+sed -i "s/listen 0.0.0.0:9001;/listen 0.0.0.0:${PORT:-9001};/" /etc/nginx/sites-available/default
+sed -i "s/listen \[::]:9001;/listen [::]:${PORT:-9001};/" /etc/nginx/sites-available/default
 
 # Set permissions
 echo "Setting permissions..."
@@ -103,8 +103,8 @@ php artisan about 2>&1 || echo "Unable to run 'artisan about', continuing anyway
 
 # Start supervisord
 echo "Starting supervisord..."
-echo "Nginx will listen on 0.0.0.0:9000 (Railway's assigned port)"
-echo "PHP-FPM will listen on 127.0.0.1:9001 (internal)"
+echo "Nginx will listen on 0.0.0.0:${PORT:-9001} (Railway's assigned port)"
+echo "PHP-FPM will listen on 127.0.0.1:9002 (internal)"
 echo "Health check endpoint: /up"
 echo "Public domain: ${RAILWAY_PUBLIC_DOMAIN}"
 echo ""
@@ -119,16 +119,16 @@ sleep 5
 
 # Diagnostic checks
 echo "=== DIAGNOSTIC CHECKS ==="
-echo "1. Checking if nginx is listening on port 9000:"
-netstat -tuln | grep ":9000" || echo "❌ ERROR: Nginx NOT listening on 9000"
+echo "1. Checking if nginx is listening on port ${PORT:-9001}:"
+netstat -tuln | grep ":${PORT:-9001}" || echo "❌ ERROR: Nginx NOT listening on ${PORT:-9001}"
 
 echo ""
-echo "2. Checking if PHP-FPM is listening on port 9001:"
-netstat -tuln | grep ":9001" || echo "❌ ERROR: PHP-FPM NOT listening on 9001"
+echo "2. Checking if PHP-FPM is listening on port 9002:"
+netstat -tuln | grep ":9002" || echo "❌ ERROR: PHP-FPM NOT listening on 9002"
 
 echo ""
 echo "3. Testing nginx -> PHP-FPM connection:"
-curl -I http://127.0.0.1:9000/ 2>&1 | head -10
+curl -I http://127.0.0.1:${PORT:-9000}/ 2>&1 | head -10
 
 echo ""
 echo "4. Checking nginx error log:"
