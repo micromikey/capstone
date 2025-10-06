@@ -1,7 +1,9 @@
 <x-guest-layout>
     <div x-data="{ 
         password: '',
-        password_confirmation: ''
+        password_confirmation: '',
+        termsChecked: false,
+        guidelinesChecked: false
     }" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#336d66]/5 to-white py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-xl">
             <div class="text-center">
@@ -142,7 +144,7 @@
                                         id="terms"
                                         name="terms"
                                         required
-                                        x-ref="terms"
+                                        x-model="termsChecked"
                                         class="h-4 w-4 rounded border-gray-300 text-[#336d66] focus:ring-[#336d66]">
                                 </div>
                                 <div class="text-sm">
@@ -173,7 +175,7 @@
                                         id="guidelines"
                                         name="guidelines"
                                         required
-                                        x-ref="guidelines"
+                                        x-model="guidelinesChecked"
                                         class="h-4 w-4 rounded border-gray-300 text-[#336d66] focus:ring-[#336d66]">
                                 </div>
                                 <div class="text-sm">
@@ -191,8 +193,8 @@
                     <!-- Submit Button -->
                     <div>
                         <button type="submit"
-                            class="group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-white bg-[#336d66] hover:bg-[#20b6d2] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#20b6d2] transition-colors duration-300 font-medium"
-                            x-bind:disabled="!$refs.terms.checked || !$refs.guidelines.checked">
+                            class="group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-white bg-[#336d66] hover:bg-[#20b6d2] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#20b6d2] transition-colors duration-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            x-bind:disabled="!termsChecked || !guidelinesChecked">
                             {{ __('Register') }}
                         </button>
                     </div>
