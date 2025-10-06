@@ -125,7 +125,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return;
         }
         
-        $this->notify(new \Illuminate\Auth\Notifications\VerifyEmail);
+        $this->notify(new \App\Notifications\CustomVerifyEmail);
     }
 
     /**

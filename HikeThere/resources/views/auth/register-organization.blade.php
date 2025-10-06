@@ -207,7 +207,34 @@
                                 </div>
                                 <div>
                                     <x-label for="password_confirmation" value="{{ __('Confirm Password') }}" class="mb-1" />
-                                    <x-input id="password_confirmation" x-model="formData.password_confirmation" class="block w-full" type="password" name="password_confirmation" required autocomplete="new-password" />
+                                    <x-input id="password_confirmation" 
+                                        x-model="formData.password_confirmation" 
+                                        @input="checkPasswordMatch()"
+                                        class="block w-full" 
+                                        type="password" 
+                                        name="password_confirmation" 
+                                        required 
+                                        autocomplete="new-password" />
+                                    
+                                    <!-- Password Match Indicator -->
+                                    <div x-show="formData.password_confirmation.length > 0" 
+                                         x-cloak 
+                                         class="mt-2 text-sm">
+                                        <div x-show="formData.password === formData.password_confirmation && formData.password_confirmation.length > 0" 
+                                             class="flex items-center gap-2 text-green-600">
+                                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                            </svg>
+                                            <span class="font-medium">Passwords match</span>
+                                        </div>
+                                        <div x-show="formData.password !== formData.password_confirmation" 
+                                             class="flex items-center gap-2 text-red-600">
+                                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                            </svg>
+                                            <span class="font-medium">Passwords do not match</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -293,6 +320,28 @@
                                 multiple
                                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
                             <p class="text-sm text-gray-500">Optional: Any additional documents to support your application (PDF, JPG, PNG, DOC, DOCX - Max 10MB each)</p>
+                        </div>
+
+                        <!-- Document Confirmation Checkbox -->
+                        <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl mt-6">
+                            <div class="flex items-start space-x-3">
+                                <div class="flex items-center h-5 mt-0.5">
+                                    <input type="checkbox"
+                                        id="documentation_confirm_step3"
+                                        name="documentation_confirm"
+                                        x-model="documentationConfirmed"
+                                        @change="console.log('Documentation checkbox changed:', documentationConfirmed)"
+                                        class="h-4 w-4 rounded border-gray-300 text-[#336d66] focus:ring-[#336d66]">
+                                </div>
+                                <div class="text-sm">
+                                    <label for="documentation_confirm_step3" class="font-medium text-gray-700 cursor-pointer">
+                                        I confirm that all uploaded documents are clear and readable
+                                    </label>
+                                    <p class="text-gray-600 mt-1">
+                                        Please ensure all documents are legible and properly scanned before proceeding.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -414,22 +463,19 @@
                                         </div>
                                     </div>
 
+                                    <!-- Documentation confirmation note - already checked in Step 3 -->
                                     <div class="flex items-start space-x-3">
                                         <div class="flex items-center h-5">
-                                            <input type="checkbox"
-                                                id="documentation_confirm"
-                                                name="documentation_confirm"
-                                                required
-                                                x-model="documentationConfirmed"
-                                                @change="console.log('Documentation checkbox changed:', documentationConfirmed)"
-                                                class="h-4 w-4 rounded border-gray-300 text-[#336d66] focus:ring-[#336d66]">
+                                            <svg class="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                            </svg>
                                         </div>
                                         <div class="text-sm">
-                                            <label for="documentation_confirm" class="font-medium text-gray-700">
-                                                I confirm all provided information and documents are accurate
-                                            </label>
+                                            <p class="font-medium text-gray-700">
+                                                Documentation confirmed
+                                            </p>
                                             <p class="text-gray-500">
-                                                The submitted information will be verified via email approval
+                                                You confirmed all provided documents are clear and readable
                                             </p>
                                         </div>
                                     </div>
@@ -473,7 +519,7 @@
 
                         <div class="mt-8 flex justify-between">
                             <button type="button"
-                                @click="step = 2"
+                                @click="step = 3"
                                 class="px-6 py-2 text-gray-600 hover:text-[#336d66] transition-colors">
                                 &larr; Previous Step
                             </button>
@@ -578,5 +624,12 @@ function updateRequirement(elementId, isMet) {
         element.classList.add('text-gray-500');
         icon.textContent = '○';
     }
+}
+
+function checkPasswordMatch() {
+    // This function is called from Alpine.js context
+    // The actual matching logic is handled by Alpine's reactive data binding
+    // No additional JavaScript needed as Alpine handles the x-show directives
+    console.log('Password match check triggered');
 }
 </script>

@@ -1,5 +1,8 @@
 <x-guest-layout>
-    <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#336d66]/5 to-white py-12 px-4 sm:px-6 lg:px-8">
+    <div x-data="{ 
+        password: '',
+        password_confirmation: ''
+    }" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#336d66]/5 to-white py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-xl">
             <div class="text-center">
                 <a href="/" class="flex items-center justify-center space-x-3 mb-8">
@@ -49,7 +52,42 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
                             </div>
-                            <x-input id="password" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl focus:ring-[#20b6d2] focus:border-[#20b6d2] transition duration-150" type="password" name="password" required autocomplete="new-password" placeholder="Create a password" />
+                            <x-input id="password" 
+                                x-model="password"
+                                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl focus:ring-[#20b6d2] focus:border-[#20b6d2] transition duration-150" 
+                                type="password" 
+                                name="password" 
+                                required 
+                                autocomplete="new-password" 
+                                placeholder="Create a password" 
+                                oninput="checkPasswordStrength(this.value)" />
+                        </div>
+                        
+                        <!-- Password Strength Indicator -->
+                        <div id="password-strength" class="mt-2 hidden">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div id="strength-bar" class="h-full transition-all duration-300 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <span id="strength-text" class="text-xs font-medium"></span>
+                            </div>
+                            <div class="text-xs space-y-1">
+                                <div id="req-length" class="flex items-center gap-1 text-gray-500">
+                                    <span class="requirement-icon">○</span> At least 8 characters
+                                </div>
+                                <div id="req-uppercase" class="flex items-center gap-1 text-gray-500">
+                                    <span class="requirement-icon">○</span> One uppercase letter
+                                </div>
+                                <div id="req-lowercase" class="flex items-center gap-1 text-gray-500">
+                                    <span class="requirement-icon">○</span> One lowercase letter
+                                </div>
+                                <div id="req-number" class="flex items-center gap-1 text-gray-500">
+                                    <span class="requirement-icon">○</span> One number
+                                </div>
+                                <div id="req-special" class="flex items-center gap-1 text-gray-500">
+                                    <span class="requirement-icon">○</span> One special character (!@#$%^&*)
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -61,7 +99,34 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
                             </div>
-                            <x-input id="password_confirmation" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl focus:ring-[#20b6d2] focus:border-[#20b6d2] transition duration-150" type="password" name="password_confirmation" required autocomplete="new-password" placeholder="Confirm your password" />
+                            <x-input id="password_confirmation" 
+                                x-model="password_confirmation"
+                                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl focus:ring-[#20b6d2] focus:border-[#20b6d2] transition duration-150" 
+                                type="password" 
+                                name="password_confirmation" 
+                                required 
+                                autocomplete="new-password" 
+                                placeholder="Confirm your password" />
+                        </div>
+                        
+                        <!-- Password Match Indicator -->
+                        <div x-show="password_confirmation.length > 0" 
+                             x-cloak 
+                             class="mt-2 text-sm">
+                            <div x-show="password === password_confirmation && password_confirmation.length > 0" 
+                                 class="flex items-center gap-2 text-green-600">
+                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                </svg>
+                                <span class="font-medium">Passwords match</span>
+                            </div>
+                            <div x-show="password !== password_confirmation" 
+                                 class="flex items-center gap-2 text-red-600">
+                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                </svg>
+                                <span class="font-medium">Passwords do not match</span>
+                            </div>
                         </div>
                     </div>
 
@@ -141,4 +206,87 @@
             </form>
         </div>
     </div>
+    
+    <!-- Add Alpine.js styles -->
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
 </x-guest-layout>
+
+<script>
+function checkPasswordStrength(password) {
+    const strengthIndicator = document.getElementById('password-strength');
+    const strengthBar = document.getElementById('strength-bar');
+    const strengthText = document.getElementById('strength-text');
+    
+    // Show indicator when user starts typing
+    if (password.length > 0) {
+        strengthIndicator.classList.remove('hidden');
+    } else {
+        strengthIndicator.classList.add('hidden');
+        return;
+    }
+    
+    // Check requirements
+    const requirements = {
+        length: password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        number: /[0-9]/.test(password),
+        special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+    
+    // Update requirement indicators
+    updateRequirement('req-length', requirements.length);
+    updateRequirement('req-uppercase', requirements.uppercase);
+    updateRequirement('req-lowercase', requirements.lowercase);
+    updateRequirement('req-number', requirements.number);
+    updateRequirement('req-special', requirements.special);
+    
+    // Calculate strength
+    const fulfilled = Object.values(requirements).filter(Boolean).length;
+    let strength = 0;
+    let strengthLabel = '';
+    let barColor = '';
+    
+    if (fulfilled === 5) {
+        strength = 100;
+        strengthLabel = 'Strong';
+        barColor = 'bg-green-500';
+    } else if (fulfilled >= 3) {
+        strength = 60;
+        strengthLabel = 'Medium';
+        barColor = 'bg-yellow-500';
+    } else {
+        strength = 30;
+        strengthLabel = 'Weak';
+        barColor = 'bg-red-500';
+    }
+    
+    // Update bar
+    strengthBar.style.width = strength + '%';
+    strengthBar.className = 'h-full transition-all duration-300 rounded-full ' + barColor;
+    strengthText.textContent = strengthLabel;
+    strengthText.className = 'text-xs font-medium ' + (
+        barColor === 'bg-green-500' ? 'text-green-600' :
+        barColor === 'bg-yellow-500' ? 'text-yellow-600' : 'text-red-600'
+    );
+}
+
+function updateRequirement(elementId, isMet) {
+    const element = document.getElementById(elementId);
+    const icon = element.querySelector('.requirement-icon');
+    
+    if (isMet) {
+        element.classList.remove('text-gray-500');
+        element.classList.add('text-green-600');
+        icon.textContent = '✓';
+    } else {
+        element.classList.remove('text-green-600');
+        element.classList.add('text-gray-500');
+        icon.textContent = '○';
+    }
+}
+</script>
