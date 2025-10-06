@@ -142,6 +142,7 @@
                                         id="terms"
                                         name="terms"
                                         required
+                                        x-ref="terms"
                                         class="h-4 w-4 rounded border-gray-300 text-[#336d66] focus:ring-[#336d66]">
                                 </div>
                                 <div class="text-sm">
@@ -172,6 +173,7 @@
                                         id="guidelines"
                                         name="guidelines"
                                         required
+                                        x-ref="guidelines"
                                         class="h-4 w-4 rounded border-gray-300 text-[#336d66] focus:ring-[#336d66]">
                                 </div>
                                 <div class="text-sm">
