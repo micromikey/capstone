@@ -190,13 +190,6 @@
                         </div>
                     </div>
 
-                    <!-- Debug Info (remove after testing) -->
-                    <div class="text-xs bg-blue-50 p-3 rounded-lg space-y-1">
-                        <div>Terms Checked: <span x-text="termsChecked"></span></div>
-                        <div>Guidelines Checked: <span x-text="guidelinesChecked"></span></div>
-                        <div>Button Disabled: <span x-text="!termsChecked || !guidelinesChecked"></span></div>
-                    </div>
-
                     <!-- Submit Button -->
                     <div>
                         <button type="submit"
