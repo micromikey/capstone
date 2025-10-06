@@ -157,7 +157,30 @@
 
             <x-validation-errors class="mb-4 bg-red-50 text-red-500 p-4 rounded-lg text-sm" />
 
-            <form method="POST" action="{{ route('register.organization.store') }}" class="mt-8" enctype="multipart/form-data" @submit="console.log('Form submitting with data:', formData)">
+            <form method="POST" action="{{ route('register.organization.store') }}" class="mt-8" enctype="multipart/form-data" 
+                @submit="
+                    console.log('=== FORM SUBMISSION DEBUG ===');
+                    console.log('Form Data:', formData);
+                    const formElement = $event.target;
+                    const formDataObj = new FormData(formElement);
+                    console.log('FormData Entries:');
+                    for (let pair of formDataObj.entries()) {
+                        if (pair[1] instanceof File) {
+                            console.log(pair[0] + ':', {
+                                name: pair[1].name,
+                                type: pair[1].type,
+                                size: pair[1].size
+                            });
+                        } else {
+                            console.log(pair[0] + ':', pair[1]);
+                        }
+                    }
+                    console.log('Business Permit Input:', document.getElementById('business_permit'));
+                    console.log('Business Permit Files:', document.getElementById('business_permit').files);
+                    console.log('Government ID Input:', document.getElementById('government_id'));
+                    console.log('Government ID Files:', document.getElementById('government_id').files);
+                    console.log('=== END DEBUG ===');
+                ">
                 @csrf
                 <input type="hidden" name="user_type" value="organization">
 
@@ -551,7 +574,20 @@
                             <button type="submit"
                                 class="px-8 py-3 bg-[#336d66] text-white rounded-xl hover:bg-[#20b6d2] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 :disabled="!termsChecked || !documentationConfirmed"
-                                @click="console.log('Form Data:', formData); console.log('Terms Checked:', termsChecked); console.log('Documentation Confirmed:', documentationConfirmed)">
+                                @click="
+                                    console.log('=== PRE-SUBMIT CHECK ===');
+                                    const bp = document.getElementById('business_permit');
+                                    const gi = document.getElementById('government_id');
+                                    console.log('Business Permit exists?', !!bp);
+                                    console.log('Business Permit files count:', bp?.files?.length);
+                                    console.log('Business Permit file:', bp?.files[0]);
+                                    console.log('Government ID exists?', !!gi);
+                                    console.log('Government ID files count:', gi?.files?.length);
+                                    console.log('Government ID file:', gi?.files[0]);
+                                    console.log('Terms Checked:', termsChecked);
+                                    console.log('Documentation Confirmed:', documentationConfirmed);
+                                    console.log('=== END PRE-SUBMIT CHECK ===');
+                                ">
                                 Submit Registration
                             </button>
                         </div>
