@@ -61,8 +61,8 @@
             return true;
         },
         validateStep3() {
-            const businessPermit = document.getElementById('business_permit');
-            const governmentId = document.getElementById('government_id');
+            const businessPermit = document.getElementById('business_permit_real');
+            const governmentId = document.getElementById('government_id_real');
             
             console.log('Business Permit input:', businessPermit);
             console.log('Business Permit files:', businessPermit.files);
@@ -183,6 +183,20 @@
                 ">
                 @csrf
                 <input type="hidden" name="user_type" value="organization">
+
+                <!-- Hidden file inputs that are always in the DOM for form submission -->
+                <div style="position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;">
+                    <input type="file" id="business_permit_real" name="business_permit" 
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        @change="console.log('Real business permit changed:', $event.target.files[0])">
+                    <input type="file" id="government_id_real" name="government_id"
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        @change="console.log('Real government ID changed:', $event.target.files[0])">
+                    <input type="file" id="additional_documents_real" name="additional_documents[]"
+                        multiple
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        @change="console.log('Real additional docs changed:', Array.from($event.target.files).map(f => f.name))">
+                </div>
 
                 <!-- Step 1: Organization Information -->
                 <div x-show="step === 1">
@@ -329,15 +343,24 @@
                 </div>
 
                 <!-- Step 3: Documentation -->
-                <div x-show="step === 3" x-cloak>
+                <div :class="step === 3 ? '' : 'hidden'">
                     <div class="space-y-6">
                         <h3 class="text-lg font-semibold text-gray-900">Required Documentation</h3>
 
                         <!-- Business Permit -->
                         <div class="space-y-2 bg-gray-50 p-4 rounded-xl">
                             <x-label for="business_permit" value="{{ __('Business Permit') }}" class="mb-1" />
-                            <input type="file" id="business_permit" name="business_permit"
-                                @change="formData.business_permit = $event.target.files[0]?.name || ''; console.log('Business permit file:', $event.target.files[0])"
+                            <input type="file" id="business_permit" 
+                                @change="
+                                    const files = $event.target.files;
+                                    if (files.length > 0) {
+                                        const dt = new DataTransfer();
+                                        dt.items.add(files[0]);
+                                        document.getElementById('business_permit_real').files = dt.files;
+                                        formData.business_permit = files[0].name;
+                                        console.log('Business permit file:', files[0]);
+                                    }
+                                "
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
                                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
                             <p class="text-sm text-gray-500">Upload a scanned copy of your business permit (PDF, JPG, PNG, DOC, DOCX - Max 10MB)</p>
@@ -349,8 +372,17 @@
                         <!-- Government ID -->
                         <div class="space-y-2 bg-gray-50 p-4 rounded-xl">
                             <x-label for="government_id" value="{{ __('Government ID') }}" class="mb-1" />
-                            <input type="file" id="government_id" name="government_id"
-                                @change="formData.government_id = $event.target.files[0]?.name || ''; console.log('Government ID file:', $event.target.files[0])"
+                            <input type="file" id="government_id"
+                                @change="
+                                    const files = $event.target.files;
+                                    if (files.length > 0) {
+                                        const dt = new DataTransfer();
+                                        dt.items.add(files[0]);
+                                        document.getElementById('government_id_real').files = dt.files;
+                                        formData.government_id = files[0].name;
+                                        console.log('Government ID file:', files[0]);
+                                    }
+                                "
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
                                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
                             <p class="text-sm text-gray-500">Upload a valid government ID of the representative (PDF, JPG, PNG, DOC, DOCX - Max 10MB)</p>
@@ -362,8 +394,19 @@
                         <!-- Additional Documents -->
                         <div class="space-y-2 bg-gray-50 p-4 rounded-xl">
                             <x-label for="additional_docs" value="{{ __('Additional Supporting Documents') }}" class="mb-1" />
-                            <input type="file" id="additional_documents" name="additional_documents[]"
-                                @change="formData.additional_docs = Array.from($event.target.files).map(f => f.name); console.log('Additional docs selected:', Array.from($event.target.files).map(f => f.name))"
+                            <input type="file" id="additional_documents"
+                                @change="
+                                    const files = $event.target.files;
+                                    if (files.length > 0) {
+                                        const dt = new DataTransfer();
+                                        for (let file of files) {
+                                            dt.items.add(file);
+                                        }
+                                        document.getElementById('additional_documents_real').files = dt.files;
+                                        formData.additional_docs = Array.from(files).map(f => f.name);
+                                        console.log('Additional docs selected:', Array.from(files).map(f => f.name));
+                                    }
+                                "
                                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#336d66]/10 file:text-[#336d66] hover:file:bg-[#336d66]/20 cursor-pointer"
                                 multiple
                                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
