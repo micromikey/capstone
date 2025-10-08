@@ -351,6 +351,33 @@ class CommunityPostController extends Controller
             }
         }
 
+        // Delete associated trail review if exists
+        if ($post->trail_review_id) {
+            $trailReview = \App\Models\TrailReview::find($post->trail_review_id);
+            if ($trailReview) {
+                // Delete trail review images if any
+                if ($trailReview->review_images) {
+                    $reviewImages = is_array($trailReview->review_images) 
+                        ? $trailReview->review_images 
+                        : json_decode($trailReview->review_images, true);
+                    
+                    if (is_array($reviewImages)) {
+                        foreach ($reviewImages as $image) {
+                            $path = is_array($image) ? $image['path'] : $image;
+                            $disk = (is_array($image) && isset($image['disk'])) ? $image['disk'] : 'public';
+                            try {
+                                Storage::disk($disk)->delete($path);
+                            } catch (\Exception $e) {
+                                \Log::warning("Failed to delete trail review image: " . $e->getMessage());
+                            }
+                        }
+                    }
+                }
+                
+                $trailReview->delete();
+            }
+        }
+
         $post->delete();
 
         return response()->json([

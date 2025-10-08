@@ -2072,7 +2072,14 @@ $imageService = app('App\\Services\\TrailImageService');
             const name = user?.display_name || user?.organization_name || user?.name || 'Unknown';
             const avatarUrl = user?.profile_picture_url;
             
-            if (avatarUrl && avatarUrl !== '/images/default-avatar.png') {
+            // Check if avatar URL is valid and not a default/placeholder
+            const hasValidAvatar = avatarUrl && 
+                                   avatarUrl.trim() !== '' && 
+                                   avatarUrl !== '/images/default-avatar.png' &&
+                                   avatarUrl !== 'default-avatar.png' &&
+                                   !avatarUrl.includes('default');
+            
+            if (hasValidAvatar) {
                 return `<img src="${avatarUrl}" alt="${name}" class="${size} rounded-full object-cover">`;
             } else {
                 const initials = getInitials(name);
