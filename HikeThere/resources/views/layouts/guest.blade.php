@@ -8,13 +8,22 @@
 
     <title>{{ config('app.name', 'HikeThere') }}</title>
 
+    @php
+        // Use GCS URL if available, otherwise fallback to local asset
+        $defaultOgImage = env('OG_IMAGE_URL') 
+            ? env('OG_IMAGE_URL') 
+            : (config('filesystems.default') === 'gcs' && env('GCS_BUCKET')
+                ? 'https://storage.googleapis.com/' . env('GCS_BUCKET') . '/assets/og-image.png'
+                : asset('img/og-image.png'));
+    @endphp
+
     <!-- Open Graph / Facebook / Messenger -->
     <meta property="og:type" content="{{ $metaType ?? 'website' }}">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:title" content="{{ $metaTitle ?? config('app.name', 'HikeThere') . ' - Your Ultimate Hiking Companion' }}">
     <meta property="og:description" content="{{ $metaDescription ?? 'Discover breathtaking hiking trails, join exciting outdoor events, connect with fellow adventurers, and ensure your safety with emergency readiness features. Start your hiking journey with HikeThere today!' }}">
-    <meta property="og:image" content="{{ $metaImage ?? asset('img/og-image.png') }}">
-    <meta property="og:image:secure_url" content="{{ $metaImage ?? asset('img/og-image.png') }}">
+    <meta property="og:image" content="{{ $metaImage ?? $defaultOgImage }}">
+    <meta property="og:image:secure_url" content="{{ $metaImage ?? $defaultOgImage }}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="{{ $metaImageAlt ?? 'HikeThere - Discover hiking trails and join outdoor adventures' }}">
@@ -28,7 +37,7 @@
     <meta name="twitter:url" content="{{ url()->current() }}">
     <meta name="twitter:title" content="{{ $metaTitle ?? config('app.name', 'HikeThere') . ' - Your Ultimate Hiking Companion' }}">
     <meta name="twitter:description" content="{{ $metaDescription ?? 'Discover breathtaking hiking trails, join exciting outdoor events, connect with fellow adventurers, and ensure your safety with emergency readiness features.' }}">
-    <meta name="twitter:image" content="{{ $metaImage ?? asset('img/og-image.png') }}">
+    <meta property="og:image" content="{{ $metaImage ?? $defaultOgImage }}">
     <meta name="twitter:image:alt" content="{{ $metaImageAlt ?? 'HikeThere - Discover hiking trails and join outdoor adventures' }}">
 
     <!-- General Meta -->

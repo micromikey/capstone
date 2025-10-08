@@ -1,4 +1,14 @@
 <x-app-layout>
+    @php
+        // Smart image URL resolution for GCS or local fallback
+        $getImageUrl = function($imageName) {
+            if (env('GCS_BUCKET')) {
+                return 'https://storage.googleapis.com/' . env('GCS_BUCKET') . '/assets/' . $imageName;
+            }
+            return asset('img/' . $imageName);
+        };
+    @endphp
+    
     <div class="bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 min-h-screen py-10">
         <div class="max-w-6xl mx-auto px-4 md:px-8">
             <!-- Search Bar Section -->
@@ -36,7 +46,7 @@
                 <!-- Build Itineraries Card -->
                 <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 overflow-hidden h-full">
                     <div class="relative h-48">
-                        <img src="{{ asset('img/1.png') }}" alt="Build Itineraries" class="w-full h-full object-cover">
+                        <img src="{{ $getImageUrl('1.png') }}" alt="Build Itineraries" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
                         <div class="absolute bottom-4 left-4 right-4">
                             <h3 class="text-2xl font-bold text-white mb-2">Build Itineraries</h3>
@@ -86,7 +96,7 @@
                 <!-- Self Assessment Card -->
                 <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 overflow-hidden h-full">
                     <div class="relative h-48">
-                        <img src="{{ asset('img/2.png') }}" alt="Self Assessment" class="w-full h-full object-cover">
+                        <img src="{{ $getImageUrl('2.png') }}" alt="Self Assessment" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
                         <div class="absolute bottom-4 left-4 right-4">
                             <h3 class="text-2xl font-bold text-white mb-2">Self Assessment</h3>
@@ -136,7 +146,7 @@
                 <!-- Bookings Card -->
                 <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 overflow-hidden h-full">
                     <div class="relative h-48">
-                        <img src="{{ asset('img/3.png') }}" alt="Bookings" class="w-full h-full object-cover">
+                        <img src="{{ $getImageUrl('3.png') }}" alt="Bookings" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
                         <div class="absolute bottom-4 left-4 right-4">
                             <h3 class="text-2xl font-bold text-white mb-2">Bookings</h3>
