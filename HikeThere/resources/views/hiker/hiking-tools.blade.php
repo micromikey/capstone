@@ -3,7 +3,7 @@
         // Smart image URL resolution for GCS or local fallback
         $getImageUrl = function($imageName) {
             if (env('GCS_BUCKET')) {
-                return 'https://storage.googleapis.com/' . env('GCS_BUCKET') . '/assets/' . $imageName;
+                return 'https://storage.googleapis.com/' . env('GCS_BUCKET') . '/img/' . $imageName;
             }
             return asset('img/' . $imageName);
         };

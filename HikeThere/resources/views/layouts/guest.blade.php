@@ -13,7 +13,7 @@
         $defaultOgImage = env('OG_IMAGE_URL') 
             ? env('OG_IMAGE_URL') 
             : (config('filesystems.default') === 'gcs' && env('GCS_BUCKET')
-                ? 'https://storage.googleapis.com/' . env('GCS_BUCKET') . '/assets/og-image.png'
+                ? 'https://storage.googleapis.com/' . env('GCS_BUCKET') . '/img/og-image.png'
                 : asset('img/og-image.png'));
     @endphp
 
