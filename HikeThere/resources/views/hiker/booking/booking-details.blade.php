@@ -253,13 +253,19 @@
 
                     <!-- Removed Payment Section - Now handled after booking creation -->
 
-                    <div class="flex items-center justify-start pt-6 border-t border-gray-200">
+                    <div class="flex items-center justify-between pt-6 border-t border-gray-200">
                         <a href="{{ route('booking.index') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors duration-200">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                             </svg>
                             Cancel
                         </a>
+                        <button type="button" id="scroll_to_preview" class="inline-flex items-center px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-md hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-blue-200">
+                            Next
+                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                            </svg>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -301,7 +307,7 @@
                 </div>
 
                 <!-- Booking Preview - Now below both columns -->
-                <div class="mt-8 pt-8 border-t border-gray-200">
+                <div id="booking_preview_section" class="mt-8 pt-8 border-t border-gray-200 scroll-mt-6">
                     <div class="bg-gradient-to-br from-gray-50 via-slate-50 to-blue-50 border border-gray-200 rounded-xl shadow-sm p-6">
                         <div class="flex items-center mb-4">
                             <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
@@ -392,6 +398,32 @@
             const participantsPlaceholder = document.getElementById('participants_placeholder');
             const participantsContainer = document.getElementById('participants_container');
 
+            // Current user data for auto-filling participant 1
+            const currentUser = {
+                name: '{{ Auth::user()->name ?? "" }}',
+                contact: '{{ Auth::user()->contact_number ?? Auth::user()->phone ?? "" }}'
+            };
+
+            // Handle "Next" button to scroll to booking preview
+            const scrollToPreviewBtn = document.getElementById('scroll_to_preview');
+            if (scrollToPreviewBtn) {
+                scrollToPreviewBtn.addEventListener('click', function() {
+                    const bookingPreview = document.getElementById('booking_preview_section');
+                    if (bookingPreview) {
+                        bookingPreview.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start'
+                        });
+                        
+                        // Optional: Add a subtle highlight effect
+                        bookingPreview.classList.add('ring-4', 'ring-blue-300', 'ring-opacity-50');
+                        setTimeout(() => {
+                            bookingPreview.classList.remove('ring-4', 'ring-blue-300', 'ring-opacity-50');
+                        }, 2000);
+                    }
+                });
+            }
+
             // Handle party size changes to show/hide participants section
             if (partySizeInput) {
                 partySizeInput.addEventListener('input', function() {
@@ -414,13 +446,24 @@
                 
                 for (let i = 0; i < count; i++) {
                     const participantDiv = document.createElement('div');
-                    participantDiv.className = 'bg-white border border-emerald-300 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
+                    const isFirstParticipant = i === 0;
+                    
+                    // For first participant, use current user data and make it readonly
+                    const nameValue = isFirstParticipant ? currentUser.name : '';
+                    const contactValue = isFirstParticipant ? currentUser.contact : '';
+                    const readonlyAttr = isFirstParticipant ? 'readonly' : '';
+                    const bgClass = isFirstParticipant ? 'bg-emerald-50' : 'bg-white';
+                    const badgeClass = isFirstParticipant ? 'bg-blue-600' : 'bg-emerald-600';
+                    const participantLabel = isFirstParticipant ? 'Participant 1 (You)' : `Participant ${i + 1}`;
+                    
+                    participantDiv.className = `${bgClass} border border-emerald-300 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow`;
                     participantDiv.innerHTML = `
                         <div class="flex items-center justify-between mb-4">
                             <h4 class="text-sm font-bold text-gray-900 flex items-center">
-                                <span class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold mr-2">${i + 1}</span>
-                                Participant ${i + 1}
+                                <span class="w-8 h-8 rounded-full ${badgeClass} text-white flex items-center justify-center text-xs font-bold mr-2">${i + 1}</span>
+                                ${participantLabel}
                             </h4>
+                            ${isFirstParticipant ? '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">Primary</span>' : ''}
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -429,8 +472,10 @@
                                 </label>
                                 <input type="text" 
                                        name="participants[${i}][name]" 
+                                       value="${nameValue}"
+                                       ${readonlyAttr}
                                        required
-                                       class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 text-sm"
+                                       class="block w-full px-3 py-2 ${bgClass} border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 text-sm ${readonlyAttr ? 'cursor-not-allowed' : ''}"
                                        placeholder="Enter full name">
                             </div>
                             <div>
@@ -439,8 +484,10 @@
                                 </label>
                                 <input type="text" 
                                        name="participants[${i}][contact]" 
+                                       value="${contactValue}"
+                                       ${readonlyAttr}
                                        required
-                                       class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 text-sm"
+                                       class="block w-full px-3 py-2 ${bgClass} border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 text-sm ${readonlyAttr ? 'cursor-not-allowed' : ''}"
                                        placeholder="Phone or mobile number">
                             </div>
                         </div>
