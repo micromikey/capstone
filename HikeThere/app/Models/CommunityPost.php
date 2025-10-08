@@ -131,16 +131,20 @@ class CommunityPost extends Model
             $path = is_array($image) && isset($image['path']) ? $image['path'] : $image;
             
             // If it's already a full URL, return as-is
-            if (filter_var($path, FILTER_VALIDATE_URL)) {
+            if (preg_match('/^https?:\/\//', $path)) {
                 return $path;
             }
             
-            // Use Google Cloud Storage for production
-            if (config('filesystems.default') === 'gcs') {
-                return Storage::disk('gcs')->url($path);
+            // Try to generate GCS URL if the file exists
+            try {
+                if (config('filesystems.default') === 'gcs') {
+                    return Storage::disk('gcs')->url($path);
+                }
+            } catch (\Exception $e) {
+                // Silently fall through to local storage
             }
             
-            // Fallback to local storage
+            // Fallback to local storage URL
             return asset('storage/' . $path);
         }, $images);
     }
