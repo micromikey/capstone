@@ -7,8 +7,8 @@
             </div>
 
             <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-8 max-w-7xl mx-auto transform hover:shadow-2xl transition-all duration-300">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                    <div class="md:col-span-1">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                    <div class="lg:col-span-1">
                         {{-- Display general errors at the top --}}
                         @if($errors->any())
                             <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg">
@@ -251,26 +251,6 @@
                         </div>
                     </div>
 
-                    <!-- Participants Section (shown only when party_size >= 2) -->
-                    <div id="participants_section" class="hidden">
-                        <div class="border-t border-gray-200 pt-6 mt-6">
-                            <div class="flex items-center justify-between mb-4">
-                                <label class="flex items-center text-sm font-semibold text-gray-800">
-                                    <svg class="w-5 h-5 text-emerald-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                    </svg>
-                                    Participant Details
-                                </label>
-                                <span class="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">Required for groups of 2+</span>
-                            </div>
-                            <p class="text-sm text-gray-600 mb-4">Please provide the name and contact information for each participant in your group.</p>
-                            
-                            <div id="participants_container" class="space-y-4">
-                                <!-- Participant fields will be dynamically generated here -->
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Removed Payment Section - Now handled after booking creation -->
 
                     <div class="flex items-center justify-start pt-6 border-t border-gray-200">
@@ -284,64 +264,113 @@
                 </form>
             </div>
 
-                    <aside class="md:col-span-1 self-start sticky top-6">
-                        <div class="bg-gradient-to-br from-gray-50 via-slate-50 to-blue-50 border border-gray-200 rounded-xl shadow-sm p-6">
-                            <div class="flex items-center mb-4">
-                                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                    </svg>
+                    <!-- Participants Section - Now in right column -->
+                    <div class="lg:col-span-1">
+                        <div id="participants_section" class="hidden">
+                            <div class="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl shadow-sm p-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <label class="flex items-center text-sm font-semibold text-gray-800">
+                                        <svg class="w-5 h-5 text-emerald-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                        </svg>
+                                        Participant Details
+                                    </label>
+                                    <span class="text-xs text-gray-500 bg-white px-3 py-1 rounded-full shadow-sm">Required for groups of 2+</span>
                                 </div>
-                                <h4 class="text-lg font-bold text-gray-900">Booking Preview</h4>
-                            </div>
-                            <p class="text-sm text-gray-600 leading-relaxed">Select a trail to see package details and available booking options.</p>
-                            <div class="mt-3">
-                                @include('partials.trail-package-preview')
-                            </div>
-                            <div id="slot_selection_info" class="mt-6 p-4 bg-white/60 backdrop-blur-sm border border-gray-200 rounded-lg">
-                                <div class="space-y-3">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium text-gray-700 flex items-center">
-                                            <svg class="w-4 h-4 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                            Selected slot:
-                                        </span>
-                                        <span id="selected_slot_label" class="text-sm font-semibold text-gray-900">—</span>
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium text-gray-700 flex items-center">
-                                            <svg class="w-4 h-4 text-purple-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                            Hiking start time:
-                                        </span>
-                                        <span id="selected_slot_start_time" class="text-sm font-semibold text-gray-900">—</span>
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium text-gray-700 flex items-center">
-                                            <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                            </svg>
-                                            Remaining spots:
-                                        </span>
-                                        <span id="selected_slot_remaining" class="inline-flex items-center px-2 py-1 text-xs font-bold text-green-800 bg-green-100 rounded-full">—</span>
-                                    </div>
+                                <p class="text-sm text-gray-600 mb-4">Please provide the name and contact information for each participant in your group.</p>
+                                
+                                <div id="participants_container" class="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                                    <!-- Participant fields will be dynamically generated here -->
                                 </div>
-                            </div>
-                            
-                            <!-- Create Booking Button -->
-                            <div class="mt-6 pt-4 border-t border-gray-200">
-                                <button type="submit" form="booking-form" class="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 text-white font-semibold rounded-xl shadow-lg hover:from-emerald-700 hover:via-emerald-800 hover:to-teal-800 transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-emerald-200">
-                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Create Booking
-                                </button>
                             </div>
                         </div>
-                    </aside>
+                        
+                        <!-- Placeholder when no participants -->
+                        <div id="participants_placeholder" class="bg-gradient-to-br from-gray-50 to-slate-50 border border-gray-200 rounded-xl shadow-sm p-6">
+                            <div class="text-center py-8">
+                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                </div>
+                                <h4 class="text-lg font-semibold text-gray-700 mb-2">Participant Details</h4>
+                                <p class="text-sm text-gray-500">Set party size to 2 or more to add participant information</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Booking Preview - Now below both columns -->
+                <div class="mt-8 pt-8 border-t border-gray-200">
+                    <div class="bg-gradient-to-br from-gray-50 via-slate-50 to-blue-50 border border-gray-200 rounded-xl shadow-sm p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                            </div>
+                            <h4 class="text-lg font-bold text-gray-900">Booking Preview</h4>
+                        </div>
+                        <p class="text-sm text-gray-600 leading-relaxed mb-4">Select a trail to see package details and available booking options.</p>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Trail Package Preview -->
+                            <div class="lg:col-span-2">
+                                @include('partials.trail-package-preview')
+                            </div>
+                            
+                            <!-- Slot Selection Info -->
+                            <div class="lg:col-span-1">
+                                <div id="slot_selection_info" class="p-4 bg-white/60 backdrop-blur-sm border border-gray-200 rounded-lg">
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm font-medium text-gray-700 flex items-center">
+                                                <svg class="w-4 h-4 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                                Selected slot:
+                                            </span>
+                                            <span id="selected_slot_label" class="text-sm font-semibold text-gray-900">—</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm font-medium text-gray-700 flex items-center">
+                                                <svg class="w-4 h-4 text-purple-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                                Hiking start time:
+                                            </span>
+                                            <span id="selected_slot_start_time" class="text-sm font-semibold text-gray-900">—</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm font-medium text-gray-700 flex items-center">
+                                                <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                                </svg>
+                                                Remaining spots:
+                                            </span>
+                                            <span id="selected_slot_remaining" class="inline-flex items-center px-2 py-1 text-xs font-bold text-green-800 bg-green-100 rounded-full">—</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Create Booking Button -->
+                                <div class="mt-4">
+                                    <button type="submit" form="booking-form" class="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 text-white font-semibold rounded-xl shadow-lg hover:from-emerald-700 hover:via-emerald-800 hover:to-teal-800 transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-emerald-200">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        Create Booking
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="hidden">
+                    <!-- Aside content moved below in full-width section -->
+                </aside>
                 </div>
                 @if(!empty($prefill))
                     <script>
@@ -360,6 +389,7 @@
             const batchSelect = document.getElementById('batch_select');
             const partySizeInput = document.querySelector('input[name="party_size"]');
             const participantsSection = document.getElementById('participants_section');
+            const participantsPlaceholder = document.getElementById('participants_placeholder');
             const participantsContainer = document.getElementById('participants_container');
 
             // Handle party size changes to show/hide participants section
@@ -369,9 +399,11 @@
                     
                     if (partySize >= 2) {
                         participantsSection.classList.remove('hidden');
+                        participantsPlaceholder.classList.add('hidden');
                         generateParticipantFields(partySize);
                     } else {
                         participantsSection.classList.add('hidden');
+                        participantsPlaceholder.classList.remove('hidden');
                         participantsContainer.innerHTML = '';
                     }
                 });
@@ -382,7 +414,7 @@
                 
                 for (let i = 0; i < count; i++) {
                     const participantDiv = document.createElement('div');
-                    participantDiv.className = 'bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-5';
+                    participantDiv.className = 'bg-white border border-emerald-300 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
                     participantDiv.innerHTML = `
                         <div class="flex items-center justify-between mb-4">
                             <h4 class="text-sm font-bold text-gray-900 flex items-center">
