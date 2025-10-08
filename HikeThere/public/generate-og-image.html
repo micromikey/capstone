@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HikeThere - OG Image Generator</title>
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -118,7 +119,7 @@
         .logo {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 20px;
         }
 
         .logo-text {
@@ -136,14 +137,9 @@
         }
 
         .logo-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #F59E0B, #FBBF24);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
         }
 
         /* Tagline */
@@ -180,6 +176,14 @@
 
         .feature-icon {
             font-size: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .feature-icon .iconify {
+            width: 28px;
+            height: 28px;
         }
 
         /* URL Badge */
@@ -278,7 +282,7 @@
         <div class="content">
             <div class="logo-container">
                 <div class="logo">
-                    <div class="logo-icon">⛰️</div>
+                    <img src="img/icon1.png" alt="HikeThere Logo" class="logo-icon" />
                     <div class="logo-text">
                         <span class="logo-hike">HIKE</span>
                         <span class="logo-there">There</span>
@@ -292,15 +296,21 @@
             
             <div class="features">
                 <div class="feature">
-                    <span class="feature-icon">🗺️</span>
+                    <span class="feature-icon">
+                        <span class="iconify" data-icon="mdi:map-marker-path"></span>
+                    </span>
                     <span>Discover Trails</span>
                 </div>
                 <div class="feature">
-                    <span class="feature-icon">📅</span>
+                    <span class="feature-icon">
+                        <span class="iconify" data-icon="mdi:calendar-check"></span>
+                    </span>
                     <span>Join Events</span>
                 </div>
                 <div class="feature">
-                    <span class="feature-icon">🎒</span>
+                    <span class="feature-icon">
+                        <span class="iconify" data-icon="mdi:account-group"></span>
+                    </span>
                     <span>Connect Hikers</span>
                 </div>
             </div>
