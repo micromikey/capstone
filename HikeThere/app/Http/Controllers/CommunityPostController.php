@@ -357,7 +357,7 @@ class CommunityPostController extends Controller
             // Get trails from followed organizations
             $trails = Trail::where('is_active', true)
                 ->whereIn('user_id', $followedOrgIds)
-                ->with('user:id,display_name')
+                ->with('user:id,name,organization_name')
                 ->select('id', 'trail_name', 'user_id', 'slug')
                 ->orderBy('trail_name')
                 ->get();
@@ -451,25 +451,26 @@ class CommunityPostController extends Controller
         // Get organization details
         $orgIds = $follows->pluck('organization_id')->toArray();
         $organizations = \App\Models\User::whereIn('id', $orgIds)
-            ->select('id', 'display_name', 'role', 'user_type')
+            ->select('id', 'name', 'organization_name', 'role', 'user_type')
             ->get();
 
         // Get trails from followed organizations
         $trails = Trail::whereIn('user_id', $orgIds)
-            ->with('user:id,display_name')
+            ->with('user:id,name,organization_name')
             ->get(['id', 'trail_name', 'user_id', 'slug', 'is_active']);
 
         // Get active trails only
         $activeTrails = Trail::where('is_active', true)
             ->whereIn('user_id', $orgIds)
-            ->with('user:id,display_name')
+            ->with('user:id,name,organization_name')
             ->get(['id', 'trail_name', 'user_id', 'slug', 'is_active']);
 
         return response()->json([
             'debug_info' => [
                 'current_user' => [
                     'id' => $user->id,
-                    'name' => $user->display_name,
+                    'name' => $user->name,
+                    'display_name' => $user->display_name,
                     'email' => $user->email,
                     'role' => $user->role,
                     'user_type' => $user->user_type
@@ -481,15 +482,44 @@ class CommunityPostController extends Controller
                 ],
                 'organizations_followed' => [
                     'count' => $organizations->count(),
-                    'details' => $organizations
+                    'details' => $organizations->map(function($org) {
+                        return [
+                            'id' => $org->id,
+                            'name' => $org->name,
+                            'organization_name' => $org->organization_name,
+                            'display_name' => $org->display_name,
+                            'role' => $org->role,
+                            'user_type' => $org->user_type
+                        ];
+                    })
                 ],
                 'all_trails_from_followed_orgs' => [
                     'count' => $trails->count(),
-                    'trails' => $trails
+                    'trails' => $trails->map(function($trail) {
+                        return [
+                            'id' => $trail->id,
+                            'trail_name' => $trail->trail_name,
+                            'slug' => $trail->slug,
+                            'is_active' => $trail->is_active,
+                            'user_id' => $trail->user_id,
+                            'organization_name' => $trail->user->organization_name ?? $trail->user->name ?? 'Unknown',
+                            'organization_display_name' => $trail->user->display_name ?? 'Unknown'
+                        ];
+                    })
                 ],
                 'active_trails_only' => [
                     'count' => $activeTrails->count(),
-                    'trails' => $activeTrails
+                    'trails' => $activeTrails->map(function($trail) {
+                        return [
+                            'id' => $trail->id,
+                            'trail_name' => $trail->trail_name,
+                            'slug' => $trail->slug,
+                            'is_active' => $trail->is_active,
+                            'user_id' => $trail->user_id,
+                            'organization_name' => $trail->user->organization_name ?? $trail->user->name ?? 'Unknown',
+                            'organization_display_name' => $trail->user->display_name ?? 'Unknown'
+                        ];
+                    })
                 ]
             ],
             'what_api_returns' => [

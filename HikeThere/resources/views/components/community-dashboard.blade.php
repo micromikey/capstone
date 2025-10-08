@@ -1561,10 +1561,11 @@ $imageService = app('App\\Services\\TrailImageService');
                             contentSelect.innerHTML = '<option value="">Select a trail you\'ve visited</option>';
                             contentSelect.disabled = false;
                             data.trails.forEach(trail => {
-                                console.log('  - Trail:', trail.trail_name, 'by', trail.user?.display_name);
+                                const displayName = trail.user?.organization_name || trail.user?.name || 'Unknown';
+                                console.log('  - Trail:', trail.trail_name, 'by', displayName);
                                 const option = document.createElement('option');
                                 option.value = trail.id;
-                                option.textContent = trail.trail_name + ' (by ' + trail.user.display_name + ')';
+                                option.textContent = trail.trail_name + ' (by ' + displayName + ')';
                                 contentSelect.appendChild(option);
                             });
                             showToast('success', `Found ${data.trails.length} trail(s) from organizations you follow`);
