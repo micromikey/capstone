@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class CommunityPostController extends Controller
 {
@@ -20,30 +21,46 @@ class CommunityPostController extends Controller
      */
     public function index(Request $request)
     {
-        $query = CommunityPost::with(['user', 'trail', 'event', 'likes', 'comments'])
-            ->active()
-            ->latest();
+        try {
+            $query = CommunityPost::with(['user', 'trail', 'event', 'likes', 'comments'])
+                ->active()
+                ->latest();
 
-        // Filter by type if specified
-        if ($request->has('type')) {
-            $query->where('type', $request->type);
-        }
+            // Filter by type if specified
+            if ($request->has('type')) {
+                $query->where('type', $request->type);
+            }
 
-        // If user is authenticated and wants to see followed organizations' posts
-        if (auth()->check() && $request->get('following')) {
-            $query->fromFollowedOrganizations(auth()->id());
-        }
+            // If user is authenticated and wants to see followed organizations' posts
+            if (auth()->check() && $request->get('following')) {
+                $query->fromFollowedOrganizations(auth()->id());
+            }
 
-        $posts = $query->paginate(20);
+            $posts = $query->paginate(20);
 
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'posts' => $posts
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'posts' => $posts
+                ]);
+            }
+
+            return view('community.posts.index', compact('posts'));
+        } catch (\Exception $e) {
+            Log::error('Error in CommunityPost index: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
             ]);
+            
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to load posts: ' . $e->getMessage(),
+                    'posts' => ['data' => [], 'total' => 0]
+                ], 500);
+            }
+            
+            return back()->with('error', 'Failed to load posts');
         }
-
-        return view('community.posts.index', compact('posts'));
     }
 
     /**
@@ -299,29 +316,51 @@ class CommunityPostController extends Controller
      */
     public function getUserTrails()
     {
-        $user = auth()->user();
-        
-        // Get trails the user has booked or trails from followed organizations
-        $trails = Trail::where('is_active', true)
-            ->where(function($query) use ($user) {
-                // Trails from followed organizations
-                $query->whereHas('user.followers', function($q) use ($user) {
-                    $q->where('follower_id', $user->id);
+        try {
+            $user = auth()->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated',
+                    'trails' => []
+                ], 401);
+            }
+            
+            // Get trails the user has booked or trails from followed organizations
+            $trails = Trail::where('is_active', true)
+                ->where(function($query) use ($user) {
+                    // Trails from followed organizations
+                    $query->whereHas('user', function($userQuery) use ($user) {
+                        $userQuery->whereHas('followers', function($followerQuery) use ($user) {
+                            $followerQuery->where('follower_id', $user->id);
+                        });
+                    })
+                    // Or trails the user has booked
+                    ->orWhereHas('bookings', function($bookingQuery) use ($user) {
+                        $bookingQuery->where('user_id', $user->id)
+                          ->where('payment_status', 'completed');
+                    });
                 })
-                // Or trails the user has booked
-                ->orWhereHas('bookings', function($q) use ($user) {
-                    $q->where('user_id', $user->id)
-                      ->where('payment_status', 'completed');
-                });
-            })
-            ->with('user:id,display_name')
-            ->select('id', 'trail_name', 'user_id', 'slug')
-            ->get();
+                ->with('user:id,display_name')
+                ->select('id', 'trail_name', 'user_id', 'slug')
+                ->get();
 
-        return response()->json([
-            'success' => true,
-            'trails' => $trails
-        ]);
+            return response()->json([
+                'success' => true,
+                'trails' => $trails
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in getUserTrails: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load trails: ' . $e->getMessage(),
+                'trails' => []
+            ], 500);
+        }
     }
 
     /**
@@ -329,22 +368,42 @@ class CommunityPostController extends Controller
      */
     public function getOrganizationContent()
     {
-        $user = auth()->user();
+        try {
+            $user = auth()->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated',
+                    'trails' => [],
+                    'events' => []
+                ], 401);
+            }
 
-        $trails = Trail::where('user_id', $user->id)
-            ->where('is_active', true)
-            ->select('id', 'trail_name', 'slug')
-            ->get();
+            $trails = Trail::where('user_id', $user->id)
+                ->where('is_active', true)
+                ->select('id', 'trail_name', 'slug')
+                ->get();
 
-        $events = Event::where('user_id', $user->id)
-            ->where('is_active', true)
-            ->select('id', 'title', 'slug')
-            ->get();
+            $events = Event::where('user_id', $user->id)
+                ->where('is_active', true)
+                ->select('id', 'title', 'slug')
+                ->get();
 
-        return response()->json([
-            'success' => true,
-            'trails' => $trails,
-            'events' => $events
-        ]);
+            return response()->json([
+                'success' => true,
+                'trails' => $trails,
+                'events' => $events
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in getOrganizationContent: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load content: ' . $e->getMessage(),
+                'trails' => [],
+                'events' => []
+            ], 500);
+        }
     }
 }
