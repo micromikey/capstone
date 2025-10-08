@@ -4,13 +4,30 @@
     $imageService = app('App\Services\TrailImageService');
     
     // Smart image URL resolution for GCS or local fallback
-    $getImageUrl = function($imagePath) {
-        if (env('GCS_BUCKET') && $imagePath) {
-            // Remove 'public/' prefix if present
-            $cleanPath = str_replace('public/', '', $imagePath);
-            return 'https://storage.googleapis.com/' . env('GCS_BUCKET') . '/' . $cleanPath;
+    $getImageUrl = function($imageData) {
+        // Handle array format (with disk info)
+        if (is_array($imageData)) {
+            $path = $imageData['path'] ?? '';
+            $disk = $imageData['disk'] ?? 'public';
+            
+            if ($disk === 'gcs' && env('GCS_BUCKET')) {
+                return 'https://storage.googleapis.com/' . env('GCS_BUCKET') . '/' . $path;
+            }
+            return asset('storage/' . $path);
         }
-        return asset('storage/' . $imagePath);
+        
+        // Handle string format (direct path)
+        if (is_string($imageData) && $imageData) {
+            // Check if using GCS
+            if (env('GCS_BUCKET')) {
+                // Remove 'public/' prefix if present for GCS
+                $cleanPath = str_replace('public/', '', $imageData);
+                return 'https://storage.googleapis.com/' . env('GCS_BUCKET') . '/' . $cleanPath;
+            }
+            return asset('storage/' . $imageData);
+        }
+        
+        return asset('images/placeholder-trail.jpg');
     };
     @endphp
     <div>
@@ -343,7 +360,7 @@
                                             @foreach($reviewImages as $index => $image)
                                                 @if($index < 4)
                                                     <div class="relative {{ $imageCount == 1 ? 'aspect-square' : ($imageCount == 2 ? 'aspect-square' : ($imageCount == 3 && $index == 2 ? 'col-span-2 aspect-video' : 'aspect-square')) }} rounded-md overflow-hidden group cursor-pointer bg-gray-100">
-                                                        <img src="{{ $getImageUrl($image['path']) }}" 
+                                                        <img src="{{ $getImageUrl($image) }}" 
                                                             alt="Review image {{ $index + 1 }}"
                                                             class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                                                             onerror="this.src='{{ asset('images/placeholder-trail.jpg') }}'">
