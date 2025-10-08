@@ -81,10 +81,29 @@
         scroll-behavior: smooth;
     }
 
-    /* Hide on mobile devices for better responsiveness */
-    @media (max-width: 1024px) {
+    /* Hide on mobile and tablet devices for better responsiveness */
+    @media (max-width: 1280px) {
         #floating-navigation {
             display: none !important;
+        }
+    }
+
+    /* For medium screens, reduce size and reposition */
+    @media (min-width: 1281px) and (max-width: 1440px) {
+        #floating-navigation {
+            left: 5px !important;
+            top: 200px !important;
+        }
+        
+        #floating-navigation .bg-white\/95 {
+            padding: 0.75rem !important;
+            min-width: 160px !important;
+            max-width: 200px !important;
+        }
+        
+        #floating-navigation .floating-nav-link {
+            padding: 0.375rem 0.5rem !important;
+            font-size: 0.8125rem !important;
         }
     }
 </style>
