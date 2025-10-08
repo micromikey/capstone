@@ -728,11 +728,18 @@
                                                     </div>
                                                     <p class="text-gray-700 mt-2">{{ $review->review }}</p>
                                                     
-                                                                                                         <!-- Review Images -->
-                                                     @if($review->review_images && count($review->review_images) > 0)
-                                                         <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2">
-                                                             @foreach($review->review_images as $image)
-                                                                 <div class="relative group">
+                                                    <!-- Review Images -->
+                                                    @php
+                                                        $reviewImages = $review->review_images;
+                                                        if (is_string($reviewImages)) {
+                                                            $reviewImages = json_decode($reviewImages, true) ?? [];
+                                                        }
+                                                        $reviewImages = is_array($reviewImages) ? $reviewImages : [];
+                                                    @endphp
+                                                    @if(!empty($reviewImages))
+                                                        <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2">
+                                                            @foreach($reviewImages as $image)
+                                                                <div class="relative group">
                                                         <img src="{{ asset('storage/' . $image['path']) }}" 
                                                             alt="Review photo" 
                                                             loading="lazy"
@@ -740,15 +747,22 @@
                                                             class="w-full h-20 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity review-image"
                                                             data-image-src="{{ asset('storage/' . $image['path']) }}"
                                                             data-image-caption="{{ $review->user->name }}">
-                                                                 </div>
-                                                             @endforeach
-                                                         </div>
-                                                     @endif
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
                                                     
+                                                    @php
+                                                        $conditions = $review->conditions;
+                                                        if (is_string($conditions)) {
+                                                            $conditions = json_decode($conditions, true) ?? [];
+                                                        }
+                                                        $conditions = is_array($conditions) ? $conditions : [];
+                                                    @endphp
                                                     <div class="flex items-center space-x-4 mt-2 text-sm text-gray-500">
                                                         <span>Hiked on {{ $review->hike_date->format('M d, Y') }}</span>
-                                                        @if($review->conditions && count($review->conditions) > 0)
-                                                            <span>Conditions: {{ implode(', ', $review->conditions) }}</span>
+                                                        @if(!empty($conditions))
+                                                            <span>Conditions: {{ implode(', ', $conditions) }}</span>
                                                         @endif
                                                     </div>
                                                 </div>
