@@ -43,7 +43,7 @@
                                         <p class="text-sm text-gray-700 mb-4">Scan this QR code with your mobile wallet (GCash, PayMaya, etc.) to complete payment of <strong>₱{{ number_format($booking->price_cents / 100, 2) }}</strong></p>
                                         
                                         <div class="flex justify-center mb-4 bg-white p-4 rounded-lg">
-                                            <img src="{{ asset('storage/' . $credentials->qr_code_path) }}" alt="Payment QR Code" class="max-w-xs w-full border-2 border-gray-300 rounded-lg shadow-md">
+                                            <img src="{{ $credentials->getQrCodeUrl() }}" alt="Payment QR Code" class="max-w-xs w-full border-2 border-gray-300 rounded-lg shadow-md">
                                         </div>
 
                                         @if($credentials->manual_payment_instructions)
@@ -60,6 +60,18 @@
                                             Upload Payment Receipt <span class="text-red-500">*</span>
                                         </label>
                                         <p class="text-xs text-gray-600 mb-3">Take a screenshot of your payment confirmation and upload it here</p>
+                                        
+                                        <!-- Security Notice -->
+                                        <div class="mb-3 bg-green-50 border-l-4 border-green-500 p-3 rounded-r-lg">
+                                            <div class="flex items-start">
+                                                <svg class="w-4 h-4 text-green-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                                                </svg>
+                                                <p class="text-xs text-green-800">
+                                                    <strong>Secure Upload:</strong> Your payment proof is encrypted and securely stored. Only authorized organization staff can view it for verification purposes.
+                                                </p>
+                                            </div>
+                                        </div>
                                         
                                         <div id="payment-proof-preview-container" class="hidden mb-4">
                                             <div class="relative inline-block">

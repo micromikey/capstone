@@ -461,7 +461,7 @@
                                                 </div>
                                             </div>
                                             
-                                            <a href="{{ asset('storage/' . $booking->payment_proof_path) }}" target="_blank" class="block group relative">
+                                            <a href="{{ $booking->getPaymentProofUrl() }}" target="_blank" class="block group relative">
                                                 <!-- Blur Overlay -->
                                                 <div class="relative overflow-hidden rounded-lg border-4 border-red-400 shadow-xl">
                                                     <!-- Secure Badge Overlay -->
@@ -479,7 +479,7 @@
                                                     </div>
                                                     
                                                     <!-- Blurred Image -->
-                                                    <img src="{{ asset('storage/' . $booking->payment_proof_path) }}" alt="Secure Payment Proof" class="w-full h-auto blur-sm group-hover:blur-none transition-all duration-500">
+                                                    <img src="{{ $booking->getPaymentProofUrl() }}" alt="Secure Payment Proof" class="w-full h-auto blur-sm group-hover:blur-none transition-all duration-500">
                                                     
                                                     <!-- Center Overlay -->
                                                     <div class="absolute inset-0 bg-black/60 group-hover:bg-black/20 transition-all duration-500 flex items-center justify-center z-20 group-hover:opacity-0">

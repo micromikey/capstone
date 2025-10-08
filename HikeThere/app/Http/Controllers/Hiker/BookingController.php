@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use App\Models\User as UserModel;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -449,22 +450,56 @@ class BookingController extends Controller
             
             // Handle payment proof upload
             if ($request->hasFile('payment_proof')) {
-                // Determine which disk to use with safety check
+                // Determine which disk to use - prioritize GCS for production
                 $disk = config('filesystems.default', 'public');
+                
+                // Verify GCS is properly configured
                 if ($disk === 'gcs') {
                     try {
-                        if (!config('filesystems.disks.gcs.bucket')) {
+                        $bucket = config('filesystems.disks.gcs.bucket');
+                        if (!$bucket) {
+                            Log::warning('GCS configured but bucket not set, falling back to public disk');
                             $disk = 'public';
-                            \Log::warning('GCS configured but bucket not set, using public disk');
+                        } else {
+                            Log::info('Using GCS bucket for payment proof storage', ['bucket' => $bucket]);
                         }
                     } catch (\Exception $e) {
+                        Log::error('GCS configuration error, falling back to public disk', [
+                            'error' => $e->getMessage()
+                        ]);
                         $disk = 'public';
-                        \Log::error('GCS configuration error: ' . $e->getMessage());
                     }
                 }
                 
-                $path = $request->file('payment_proof')->store('payment_proofs', $disk);
-                $booking->payment_proof_path = $path;
+                try {
+                    $file = $request->file('payment_proof');
+                    $filename = 'payment_proofs/' . $booking->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+                    
+                    // Upload to selected disk with public visibility
+                    $path = Storage::disk($disk)->putFileAs(
+                        'payment_proofs',
+                        $file,
+                        $booking->id . '_' . time() . '.' . $file->getClientOriginalExtension(),
+                        'public'
+                    );
+                    
+                    $booking->payment_proof_path = $path;
+                    
+                    Log::info('Payment proof uploaded successfully', [
+                        'booking_id' => $booking->id,
+                        'path' => $path,
+                        'disk' => $disk,
+                        'file_size' => $file->getSize()
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to upload payment proof', [
+                        'booking_id' => $booking->id,
+                        'error' => $e->getMessage()
+                    ]);
+                    
+                    return redirect()->back()
+                        ->with('error', 'Failed to upload payment proof. Please try again.');
+                }
             }
 
             if ($request->filled('transaction_number')) {

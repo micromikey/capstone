@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class OrganizationPaymentCredential extends Model
 {
@@ -112,6 +114,28 @@ class OrganizationPaymentCredential extends Model
     public function hasManualPaymentConfigured(): bool
     {
         return !empty($this->qr_code_path);
+    }
+
+    /**
+     * Get the full URL for the QR code
+     */
+    public function getQrCodeUrl(): ?string
+    {
+        if (empty($this->qr_code_path)) {
+            return null;
+        }
+
+        try {
+            $disk = config('filesystems.default', 'public');
+            return Storage::disk($disk)->url($this->qr_code_path);
+        } catch (\Exception $e) {
+            Log::error('Failed to get QR code URL', [
+                'path' => $this->qr_code_path,
+                'error' => $e->getMessage()
+            ]);
+            // Fallback to asset helper
+            return asset('storage/' . $this->qr_code_path);
+        }
     }
 
     /**

@@ -199,28 +199,73 @@ class OrganizationPaymentController extends Controller
 
         // Handle QR code upload
         if ($request->hasFile('qr_code')) {
-            // Determine which disk to use with safety check
+            // Determine which disk to use - prioritize GCS for production
             $disk = config('filesystems.default', 'public');
+            
+            // Verify GCS is properly configured
             if ($disk === 'gcs') {
                 try {
-                    if (!config('filesystems.disks.gcs.bucket')) {
+                    $bucket = config('filesystems.disks.gcs.bucket');
+                    if (!$bucket) {
+                        Log::warning('GCS configured but bucket not set, falling back to public disk');
                         $disk = 'public';
-                        \Log::warning('GCS configured but bucket not set, using public disk');
+                    } else {
+                        Log::info('Using GCS bucket for QR code storage', ['bucket' => $bucket]);
                     }
                 } catch (\Exception $e) {
+                    Log::error('GCS configuration error, falling back to public disk', [
+                        'error' => $e->getMessage()
+                    ]);
                     $disk = 'public';
-                    \Log::error('GCS configuration error: ' . $e->getMessage());
                 }
             }
             
             // Delete old QR code if exists
             if ($credentials->qr_code_path) {
-                Storage::disk($disk)->delete($credentials->qr_code_path);
+                try {
+                    Storage::disk($disk)->delete($credentials->qr_code_path);
+                    Log::info('Deleted old QR code', [
+                        'path' => $credentials->qr_code_path,
+                        'disk' => $disk
+                    ]);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to delete old QR code', [
+                        'path' => $credentials->qr_code_path,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
 
-            // Store new QR code
-            $path = $request->file('qr_code')->store('qr_codes', $disk);
-            $credentials->qr_code_path = $path;
+            // Store new QR code with public visibility
+            try {
+                $file = $request->file('qr_code');
+                $filename = 'qr_codes/' . $orgId . '_' . time() . '.' . $file->getClientOriginalExtension();
+                
+                // Upload to selected disk
+                $path = Storage::disk($disk)->putFileAs(
+                    'qr_codes',
+                    $file,
+                    $orgId . '_' . time() . '.' . $file->getClientOriginalExtension(),
+                    'public'
+                );
+                
+                $credentials->qr_code_path = $path;
+                
+                Log::info('QR code uploaded successfully', [
+                    'organization_id' => $orgId,
+                    'path' => $path,
+                    'disk' => $disk,
+                    'file_size' => $file->getSize()
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to upload QR code', [
+                    'organization_id' => $orgId,
+                    'error' => $e->getMessage()
+                ]);
+                
+                return redirect()->route('org.payment.index')
+                    ->with('error', 'Failed to upload QR code. Please try again.');
+            }
         }
 
         // Update manual payment instructions

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class Booking extends Model
 {
@@ -205,5 +207,28 @@ class Booking extends Model
         $this->update([
             'payment_status' => 'rejected',
         ]);
+    }
+
+    /**
+     * Get the full URL for the payment proof image
+     */
+    public function getPaymentProofUrl(): ?string
+    {
+        if (empty($this->payment_proof_path)) {
+            return null;
+        }
+
+        try {
+            $disk = config('filesystems.default', 'public');
+            return Storage::disk($disk)->url($this->payment_proof_path);
+        } catch (\Exception $e) {
+            Log::error('Failed to get payment proof URL', [
+                'booking_id' => $this->id,
+                'path' => $this->payment_proof_path,
+                'error' => $e->getMessage()
+            ]);
+            // Fallback to asset helper
+            return asset('storage/' . $this->payment_proof_path);
+        }
     }
 }
