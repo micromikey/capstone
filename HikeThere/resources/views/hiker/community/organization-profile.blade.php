@@ -5,13 +5,16 @@
     
     // Smart image URL resolution for GCS or local fallback
     $getImageUrl = function($imageData) {
+        // Get GCS bucket from config
+        $gcsBucket = config('filesystems.disks.gcs.bucket');
+        
         // Handle array format (with disk info)
         if (is_array($imageData)) {
             $path = $imageData['path'] ?? '';
             $disk = $imageData['disk'] ?? 'public';
             
-            if ($disk === 'gcs' && env('GCS_BUCKET')) {
-                return 'https://storage.googleapis.com/' . env('GCS_BUCKET') . '/' . $path;
+            if ($disk === 'gcs' && $gcsBucket) {
+                return 'https://storage.googleapis.com/' . $gcsBucket . '/' . $path;
             }
             return asset('storage/' . $path);
         }
@@ -19,10 +22,10 @@
         // Handle string format (direct path)
         if (is_string($imageData) && $imageData) {
             // Check if using GCS
-            if (env('GCS_BUCKET')) {
+            if ($gcsBucket) {
                 // Remove 'public/' prefix if present for GCS
                 $cleanPath = str_replace('public/', '', $imageData);
-                return 'https://storage.googleapis.com/' . env('GCS_BUCKET') . '/' . $cleanPath;
+                return 'https://storage.googleapis.com/' . $gcsBucket . '/' . $cleanPath;
             }
             return asset('storage/' . $imageData);
         }
@@ -359,8 +362,19 @@
                                         <div class="grid {{ $gridClass }} gap-1">
                                             @foreach($reviewImages as $index => $image)
                                                 @if($index < 4)
+                                                    @php
+                                                        $imageUrl = $getImageUrl($image);
+                                                        // Debug: Log the URL being generated (only for first image)
+                                                        if ($index === 0) {
+                                                            \Log::info('Review Image URL', [
+                                                                'image_data' => $image,
+                                                                'generated_url' => $imageUrl,
+                                                                'gcs_bucket' => config('filesystems.disks.gcs.bucket')
+                                                            ]);
+                                                        }
+                                                    @endphp
                                                     <div class="relative {{ $imageCount == 1 ? 'aspect-square' : ($imageCount == 2 ? 'aspect-square' : ($imageCount == 3 && $index == 2 ? 'col-span-2 aspect-video' : 'aspect-square')) }} rounded-md overflow-hidden group cursor-pointer bg-gray-100">
-                                                        <img src="{{ $getImageUrl($image) }}" 
+                                                        <img src="{{ $imageUrl }}" 
                                                             alt="Review image {{ $index + 1 }}"
                                                             class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                                                             onerror="this.src='{{ asset('images/placeholder-trail.jpg') }}'">
