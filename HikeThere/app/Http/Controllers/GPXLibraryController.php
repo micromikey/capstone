@@ -4,52 +4,59 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use DOMDocument;
 use DOMXPath;
 
 class GPXLibraryController extends Controller
 {
     /**
-     * Get available GPX files from the public/geojson directory
+     * Get available GPX files from the configured storage (GCS in production)
      */
     public function index()
     {
         try {
             $gpxFiles = [];
-            $gpxDirectory = public_path('geojson');
+            $disk = config('filesystems.default', 'public');
             
-            if (is_dir($gpxDirectory)) {
-                $files = glob($gpxDirectory . '/*.gpx');
+            // Get all .gpx files from geojson folder in configured storage
+            $files = Storage::disk($disk)->files('geojson');
+            $gpxFilesList = array_filter($files, function($file) {
+                return pathinfo($file, PATHINFO_EXTENSION) === 'gpx';
+            });
+            
+            foreach ($gpxFilesList as $filePath) {
+                $filename = basename($filePath);
+                $name = pathinfo($filename, PATHINFO_FILENAME);
                 
-                foreach ($files as $file) {
-                    $filename = basename($file);
-                    $name = pathinfo($filename, PATHINFO_FILENAME);
-                    
-                    // Prioritize Philippine trails files
-                    $priority = 0;
-                    if (str_contains($filename, 'philippine') || str_contains($filename, 'luzon')) {
-                        $priority = 100;
-                    } elseif (str_contains($filename, 'test')) {
-                        $priority = 10;
-                    }
-                    
-                    // Get basic file info
-                    $gpxFiles[] = [
-                        'filename' => $filename,
-                        'name' => ucwords(str_replace(['_', '-'], ' ', $name)),
-                        'path' => 'geojson/' . $filename,
-                        'url' => asset('geojson/' . $filename),
-                        'size' => filesize($file),
-                        'modified' => filemtime($file),
-                        'priority' => $priority
-                    ];
+                // Prioritize Philippine trails files
+                $priority = 0;
+                if (str_contains($filename, 'philippine') || str_contains($filename, 'luzon')) {
+                    $priority = 100;
+                } elseif (str_contains($filename, 'test')) {
+                    $priority = 10;
                 }
                 
-                // Sort by priority (Philippine trails first)
-                usort($gpxFiles, function($a, $b) {
-                    return $b['priority'] - $a['priority'];
-                });
+                // Get file info from storage
+                $size = Storage::disk($disk)->size($filePath);
+                $modified = Storage::disk($disk)->lastModified($filePath);
+                $url = Storage::disk($disk)->url($filePath);
+                
+                $gpxFiles[] = [
+                    'filename' => $filename,
+                    'name' => ucwords(str_replace(['_', '-'], ' ', $name)),
+                    'path' => $filePath,
+                    'url' => $url,
+                    'size' => $size,
+                    'modified' => $modified,
+                    'priority' => $priority
+                ];
             }
+            
+            // Sort by priority (Philippine trails first)
+            usort($gpxFiles, function($a, $b) {
+                return $b['priority'] - $a['priority'];
+            });
             
             return response()->json([
                 'success' => true,
@@ -78,16 +85,19 @@ class GPXLibraryController extends Controller
         
         try {
             $filename = $request->filename;
-            $filePath = public_path('geojson/' . $filename);
+            $disk = config('filesystems.default', 'public');
+            $filePath = 'geojson/' . $filename;
             
-            if (!file_exists($filePath)) {
+            // Check if file exists in storage
+            if (!Storage::disk($disk)->exists($filePath)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'GPX file not found'
                 ]);
             }
             
-            $gpxContent = file_get_contents($filePath);
+            // Read content from storage
+            $gpxContent = Storage::disk($disk)->get($filePath);
             $gpxData = $this->parseGPXContent($gpxContent);
             
             return response()->json([
@@ -125,27 +135,27 @@ class GPXLibraryController extends Controller
             $location = strtolower($request->location ?? '');
             
             $allMatches = [];
-            $gpxDirectory = public_path('geojson');
+            $disk = config('filesystems.default', 'public');
             
-            if (is_dir($gpxDirectory)) {
-                $files = glob($gpxDirectory . '/*.gpx');
+            // Get all .gpx files from geojson folder
+            $files = Storage::disk($disk)->files('geojson');
+            $gpxFilesList = array_filter($files, function($file) {
+                return pathinfo($file, PATHINFO_EXTENSION) === 'gpx';
+            });
+            
+            foreach ($gpxFilesList as $filePath) {
+                $filename = basename($filePath);
                 
-                foreach ($files as $file) {
-                    $filename = basename($file);
+                // Consider all GPX files in the directory when searching
+                $gpxContent = Storage::disk($disk)->get($filePath);
+                $gpxData = $this->parseGPXContent($gpxContent);
+                
+                if ($gpxData && isset($gpxData['trails'])) {
+                    $matches = $this->findMatchingTrails($gpxData['trails'], $mountainName, $trailName, $location);
                     
-                    // Consider all GPX files in the directory when searching. Previously we
-                    // skipped files unless they contained 'philippine', 'luzon', or 'test'
-                    // in the filename which excluded many valid files (e.g. mt-pulag-...gpx).
-                    $gpxContent = file_get_contents($file);
-                    $gpxData = $this->parseGPXContent($gpxContent);
-                    
-                    if ($gpxData && isset($gpxData['trails'])) {
-                        $matches = $this->findMatchingTrails($gpxData['trails'], $mountainName, $trailName, $location);
-                        
-                        foreach ($matches as $match) {
-                            $match['source_file'] = $filename;
-                            $allMatches[] = $match;
-                        }
+                    foreach ($matches as $match) {
+                        $match['source_file'] = $filename;
+                        $allMatches[] = $match;
                     }
                 }
             }

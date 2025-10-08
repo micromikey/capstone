@@ -608,19 +608,23 @@ class OrganizationTrailController extends Controller
 
     /**
      * Handle trail image uploads with quality preservation
+     * Uses configured storage disk (GCS in production, public locally)
      */
     protected function handleTrailImages(Request $request, Trail $trail)
     {
         try {
+            // Get the configured default disk (should be 'gcs' in production)
+            $disk = config('filesystems.default', 'public');
+            
             // Handle primary image
             if ($request->hasFile('primary_image')) {
                 $primaryFile = $request->file('primary_image');
                 
-                // Store with high quality preservation (avoid compression)
+                // Store to configured disk (GCS in production)
                 $primaryPath = $primaryFile->storeAs(
                     'trail-images/primary',
                     $primaryFile->hashName(),
-                    ['disk' => 'public', 'quality' => 100]
+                    $disk
                 );
                 
                 TrailImage::create([
@@ -632,7 +636,10 @@ class OrganizationTrailController extends Controller
                     'is_primary' => true,
                 ]);
                 
-                Log::info('Primary image uploaded', ['path' => $primaryPath]);
+                Log::info('Primary image uploaded', [
+                    'path' => $primaryPath,
+                    'disk' => $disk
+                ]);
             }
 
             // Handle additional images
@@ -640,11 +647,11 @@ class OrganizationTrailController extends Controller
                 $sortOrder = 2;
                 foreach ($request->file('additional_images') as $file) {
                     if ($file) {
-                        // Store with high quality preservation
+                        // Store to configured disk (GCS in production)
                         $path = $file->storeAs(
                             'trail-images/additional',
                             $file->hashName(),
-                            ['disk' => 'public', 'quality' => 100]
+                            $disk
                         );
                         
                         TrailImage::create([
@@ -657,7 +664,10 @@ class OrganizationTrailController extends Controller
                         ]);
                         
                         $sortOrder++;
-                        Log::info('Additional image uploaded', ['path' => $path]);
+                        Log::info('Additional image uploaded', [
+                            'path' => $path,
+                            'disk' => $disk
+                        ]);
                     }
                 }
             }
@@ -666,11 +676,11 @@ class OrganizationTrailController extends Controller
             if ($request->hasFile('map_image')) {
                 $mapFile = $request->file('map_image');
                 
-                // Store with high quality preservation
+                // Store to configured disk (GCS in production)
                 $mapPath = $mapFile->storeAs(
                     'trail-images/maps',
                     $mapFile->hashName(),
-                    ['disk' => 'public', 'quality' => 100]
+                    $disk
                 );
                 
                 TrailImage::create([
@@ -682,7 +692,10 @@ class OrganizationTrailController extends Controller
                     'is_primary' => false,
                 ]);
                 
-                Log::info('Map image uploaded', ['path' => $mapPath]);
+                Log::info('Map image uploaded', [
+                    'path' => $mapPath,
+                    'disk' => $disk
+                ]);
             }
             
         } catch (\Exception $e) {
