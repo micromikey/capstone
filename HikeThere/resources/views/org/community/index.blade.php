@@ -180,24 +180,24 @@
                     </form>
                 </div>
             </div>
+            </div>
         </div>
     </div>
-</x-app-layout>
 
-@push('scripts')
-<script>
-    let userTrails = [];
-    let userEvents = [];
-    let currentPostId = null;
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM Content Loaded - Organization Community Posts');
+    @push('scripts')
+    <script>
+        let userTrails = [];
+        let userEvents = [];
+        let currentPostId = null;
         
-        // Load posts immediately on page load
-        loadCommunityPosts();
-        
-        // Load organization's trails and events
-        loadOrganizationContent();
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded - Organization Community Posts');
+            
+            // Load posts immediately on page load
+            loadCommunityPosts();
+            
+            // Load organization's trails and events
+            loadOrganizationContent();
 
         // Create post button handler
         const createPostBtn = document.getElementById('create-post-btn');
@@ -889,6 +889,6 @@
     // Expose functions globally for inline handlers
     window.openImageModal = openImageModal;
     window.loadCommunityPosts = loadCommunityPosts;
-</script>
-@endpush
-
+    </script>
+    @endpush
+</x-app-layout>
