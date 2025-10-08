@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HikeThere - OG Image Generator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f3f4f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .instructions {
+            max-width: 1200px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .instructions h2 {
+            color: #0EA5E9;
+            margin-top: 0;
+        }
+
+        .instructions ol {
+            line-height: 1.8;
+        }
+
+        .instructions code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Open Graph Image Canvas */
+        .og-canvas {
+            width: 1200px;
+            height: 630px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #0EA5E9 0%, #06B6D4 50%, #10B981 100%);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+
+        /* Decorative Elements */
+        .bg-pattern {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            background-image: 
+                radial-gradient(circle at 20% 30%, white 2px, transparent 2px),
+                radial-gradient(circle at 80% 70%, white 2px, transparent 2px),
+                radial-gradient(circle at 40% 80%, white 1px, transparent 1px);
+            background-size: 50px 50px, 60px 60px, 40px 40px;
+        }
+
+        .mountain-silhouette {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.15);
+            clip-path: polygon(
+                0% 100%, 
+                0% 60%, 
+                15% 45%, 
+                25% 55%, 
+                35% 40%, 
+                45% 50%, 
+                55% 35%, 
+                65% 45%, 
+                75% 30%, 
+                85% 45%, 
+                100% 40%, 
+                100% 100%
+            );
+        }
+
+        /* Content Container */
+        .content {
+            position: relative;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 60px;
+            z-index: 10;
+        }
+
+        /* Logo Styling */
+        .logo-container {
+            background: white;
+            padding: 30px 50px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 40px;
+            transform: scale(1);
+            transition: transform 0.3s ease;
+        }
+
+        .logo-container:hover {
+            transform: scale(1.05);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-text {
+            font-size: 72px;
+            font-weight: 900;
+            letter-spacing: -2px;
+        }
+
+        .logo-hike {
+            color: #0EA5E9;
+        }
+
+        .logo-there {
+            color: #F59E0B;
+        }
+
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #F59E0B, #FBBF24);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+        }
+
+        /* Tagline */
+        .tagline {
+            color: white;
+            font-size: 32px;
+            font-weight: 600;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            max-width: 900px;
+            line-height: 1.4;
+        }
+
+        /* Features */
+        .features {
+            display: flex;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+            font-size: 20px;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px 25px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+        }
+
+        /* URL Badge */
+        .url-badge {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #0EA5E9;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 700;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Controls */
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            max-width: 1200px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .control-group input,
+        .control-group select {
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 200px;
+        }
+
+        button {
+            background: #0EA5E9;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #0284c7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+        }
+
+        .download-btn {
+            background: #10B981;
+        }
+
+        .download-btn:hover {
+            background: #059669;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <h2>🎨 HikeThere Open Graph Image Generator</h2>
+        <p><strong>Instructions:</strong></p>
+        <ol>
+            <li>Customize the text below if needed</li>
+            <li>Right-click on the preview image below</li>
+            <li>Select <code>Save image as...</code></li>
+            <li>Save it as <code>og-image.png</code> in your <code>public/img/</code> folder</li>
+            <li>The image will automatically be used for social media previews!</li>
+        </ol>
+        <p><strong>Note:</strong> For best quality, use a screenshot tool or browser extension to capture at exactly 1200x630px.</p>
+    </div>
+
+    <div class="og-canvas" id="ogCanvas">
+        <div class="bg-pattern"></div>
+        <div class="mountain-silhouette"></div>
+        
+        <div class="content">
+            <div class="logo-container">
+                <div class="logo">
+                    <div class="logo-icon">⛰️</div>
+                    <div class="logo-text">
+                        <span class="logo-hike">HIKE</span>
+                        <span class="logo-there">There</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tagline" id="taglineText">
+                Your Ultimate Hiking Companion
+            </div>
+            
+            <div class="features">
+                <div class="feature">
+                    <span class="feature-icon">🗺️</span>
+                    <span>Discover Trails</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">📅</span>
+                    <span>Join Events</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">🎒</span>
+                    <span>Connect Hikers</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="url-badge" id="urlText">
+            hikethere.site
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label>Tagline</label>
+            <input type="text" id="taglineInput" value="Your Ultimate Hiking Companion" />
+        </div>
+        <div class="control-group">
+            <label>Website URL</label>
+            <input type="text" id="urlInput" value="hikethere.site" />
+        </div>
+        <div class="control-group">
+            <label>Color Scheme</label>
+            <select id="colorScheme">
+                <option value="blue">Blue Ocean (Default)</option>
+                <option value="mountain">Mountain Green</option>
+                <option value="sunset">Sunset Orange</option>
+                <option value="forest">Forest Deep</option>
+            </select>
+        </div>
+        <button onclick="updatePreview()">Update Preview</button>
+        <button class="download-btn" onclick="downloadInstructions()">📥 Download Instructions</button>
+    </div>
+
+    <script>
+        const colorSchemes = {
+            blue: 'linear-gradient(135deg, #0EA5E9 0%, #06B6D4 50%, #10B981 100%)',
+            mountain: 'linear-gradient(135deg, #10B981 0%, #059669 50%, #047857 100%)',
+            sunset: 'linear-gradient(135deg, #F59E0B 0%, #EF4444 50%, #EC4899 100%)',
+            forest: 'linear-gradient(135deg, #059669 0%, #047857 50%, #064E3B 100%)'
+        };
+
+        function updatePreview() {
+            const tagline = document.getElementById('taglineInput').value;
+            const url = document.getElementById('urlInput').value;
+            const scheme = document.getElementById('colorScheme').value;
+
+            document.getElementById('taglineText').textContent = tagline;
+            document.getElementById('urlText').textContent = url;
+            document.getElementById('ogCanvas').style.background = colorSchemes[scheme];
+        }
+
+        function downloadInstructions() {
+            const instructions = `
+HikeThere - Open Graph Image Setup Instructions
+================================================
+
+1. CAPTURE THE IMAGE:
+   - Use Windows Snipping Tool (Win + Shift + S)
+   - Or right-click the preview and "Save image as..."
+   - Or use a browser extension like "GoFullPage"
+   - Target size: 1200 x 630 pixels
+
+2. SAVE THE IMAGE:
+   - Save as: og-image.png
+   - Location: HikeThere/public/img/og-image.png
+
+3. UPDATE YOUR CODE:
+   The meta tags are already set up in your layouts!
+   Just make sure the image path matches in:
+   - resources/views/layouts/app.blade.php
+   - resources/views/layouts/guest.blade.php
+
+4. DEPLOY & TEST:
+   - Deploy your changes
+   - Visit: https://developers.facebook.com/tools/debug/
+   - Paste your URL: https://hikethere.site/
+   - Click "Scrape Again" to refresh cache
+
+5. VERIFY:
+   - Share your link on Messenger, WhatsApp, or Facebook
+   - The custom image should appear!
+
+Need help? Check the Laravel documentation for asset management.
+            `;
+            
+            const blob = new Blob([instructions], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'og-image-setup-instructions.txt';
+            a.click();
+        }
+
+        // Add hover effect
+        document.getElementById('ogCanvas').addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.01)';
+            this.style.transition = 'transform 0.3s ease';
+        });
+
+        document.getElementById('ogCanvas').addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    </script>
+</body>
+</html>
