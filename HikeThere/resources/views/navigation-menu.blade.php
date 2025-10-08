@@ -198,6 +198,17 @@
                                 {{ __('Manage Account') }}
                             </div>
 
+                            @if(Auth::user()->user_type === 'organization')
+                            <x-dropdown-link href="{{ route('org.profile.show') }}">
+                                {{ __('Profile') }}
+                            </x-dropdown-link>
+                            <x-dropdown-link href="{{ route('org.profile.edit') }}">
+                                {{ __('Edit Profile') }}
+                            </x-dropdown-link>
+                            <x-dropdown-link href="{{ route('org.account.settings') }}">
+                                {{ __('Account Settings') }}
+                            </x-dropdown-link>
+                            @else
                             <x-dropdown-link href="{{ route('custom.profile.show') }}">
                                 {{ __('Profile') }}
                             </x-dropdown-link>
@@ -207,6 +218,7 @@
                             <x-dropdown-link href="{{ route('account.settings') }}">
                                 {{ __('Account Settings') }}
                             </x-dropdown-link>
+                            @endif
                             @if(Auth::user()->user_type === 'organization')
                             <x-dropdown-link href="{{ route('org.payment.index') }}">
                                 {{ __('Payment Setup') }}
@@ -395,6 +407,17 @@
 
             <div class="mt-3 space-y-1">
                 <!-- Account Management -->
+                @if(Auth::user()->user_type === 'organization')
+                <x-responsive-nav-link href="{{ route('org.profile.show') }}" :active="request()->routeIs('org.profile.show')">
+                    {{ __('Profile') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('org.profile.edit') }}" :active="request()->routeIs('org.profile.edit')">
+                    {{ __('Edit Profile') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('org.account.settings') }}" :active="request()->routeIs('org.account.settings')">
+                    {{ __('Account Settings') }}
+                </x-responsive-nav-link>
+                @else
                 <x-responsive-nav-link href="{{ route('custom.profile.show') }}" :active="request()->routeIs('custom.profile.show')">
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
@@ -404,6 +427,7 @@
                 <x-responsive-nav-link href="{{ route('account.settings') }}" :active="request()->routeIs('account.settings')">
                     {{ __('Account Settings') }}
                 </x-responsive-nav-link>
+                @endif
                 @if(Auth::user()->user_type === 'organization')
                 <x-responsive-nav-link href="{{ route('org.payment.index') }}" :active="request()->routeIs('org.payment.*')">
                     {{ __('Payment Setup') }}

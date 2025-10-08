@@ -425,7 +425,7 @@
 
                         <p class="text-gray-700">
                             Configure your <a href="{{ route('org.payment.index') }}" class="text-blue-600 hover:text-blue-800 font-semibold">Payment Setup</a> 
-                            or visit your <a href="{{ route('account.settings') }}" class="text-blue-600 hover:text-blue-800 font-semibold">Account Settings</a> 
+                            or visit your <a href="{{ route('org.account.settings') }}" class="text-blue-600 hover:text-blue-800 font-semibold">Account Settings</a> 
                             to manage your organization preferences.
                         </p>
                     </div>
