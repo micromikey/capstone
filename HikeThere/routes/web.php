@@ -177,7 +177,21 @@ Route::middleware([
     Route::get('/itinerary/refactored/show', [App\Http\Controllers\Hiker\RefactoredItineraryController::class, 'show'])->name('itinerary.refactored.show');
     Route::post('/itinerary/refactored/api', [App\Http\Controllers\Hiker\RefactoredItineraryController::class, 'generateApi'])->name('itinerary.refactored.api');
 
-    // Community routes
+    // Notifications routes (Hiker-only)
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [App\Http\Controllers\NotificationController::class, 'index'])->name('index');
+        Route::get('/api/get', [App\Http\Controllers\NotificationController::class, 'getNotifications'])->name('get');
+        Route::get('/api/latest', [App\Http\Controllers\NotificationController::class, 'getLatest'])->name('latest');
+        Route::post('/{id}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('read');
+        Route::post('/{id}/unread', [App\Http\Controllers\NotificationController::class, 'markAsUnread'])->name('unread');
+        Route::post('/read-all', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('read-all');
+        Route::delete('/{id}', [App\Http\Controllers\NotificationController::class, 'destroy'])->name('destroy');
+        Route::delete('/read/clear', [App\Http\Controllers\NotificationController::class, 'destroyRead'])->name('destroy-read');
+    });
+})->middleware(['user.type:hiker', 'ensure.hiking.preferences']);
+
+// Community routes accessible to both hikers and organizations
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/community', [CommunityController::class, 'index'])->name('community.index');
     Route::get('/community/organization/{organization}', [CommunityController::class, 'showOrganization'])->name('community.organization.show');
 
@@ -216,8 +230,8 @@ Route::middleware([
         Route::post('/read-all', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('read-all');
         Route::delete('/{id}', [App\Http\Controllers\NotificationController::class, 'destroy'])->name('destroy');
         Route::delete('/read/clear', [App\Http\Controllers\NotificationController::class, 'destroyRead'])->name('destroy-read');
-    });
-})->middleware(['user.type:hiker', 'ensure.hiking.preferences']);
+    })->middleware('user.type:hiker');
+});
 
 // Onboarding routes for hikers to set preferences (shown after email verification)
 Route::middleware(['auth:sanctum', 'verified', 'user.type:hiker'])->group(function () {
@@ -330,9 +344,6 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
     // Hiker Profile View (only for hikers with confirmed bookings)
     Route::get('/org/community/hiker/{hiker}', [App\Http\Controllers\Organization\HikerProfileController::class, 'show'])
         ->name('org.community.hiker-profile');
-    
-    // Community Posts (Organizations can view, create, like, and comment)
-    Route::get('/community', [App\Http\Controllers\CommunityPostController::class, 'index'])->name('community.index');
 });
 
 // Organization Events management
