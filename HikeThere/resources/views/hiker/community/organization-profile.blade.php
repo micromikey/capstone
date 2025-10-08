@@ -2,6 +2,16 @@
     @php
     // Initialize the TrailImageService for dynamic images
     $imageService = app('App\Services\TrailImageService');
+    
+    // Smart image URL resolution for GCS or local fallback
+    $getImageUrl = function($imagePath) {
+        if (env('GCS_BUCKET') && $imagePath) {
+            // Remove 'public/' prefix if present
+            $cleanPath = str_replace('public/', '', $imagePath);
+            return 'https://storage.googleapis.com/' . env('GCS_BUCKET') . '/' . $cleanPath;
+        }
+        return asset('storage/' . $imagePath);
+    };
     @endphp
     <div>
         <x-slot name="header">
@@ -333,7 +343,7 @@
                                             @foreach($reviewImages as $index => $image)
                                                 @if($index < 4)
                                                     <div class="relative {{ $imageCount == 1 ? 'aspect-square' : ($imageCount == 2 ? 'aspect-square' : ($imageCount == 3 && $index == 2 ? 'col-span-2 aspect-video' : 'aspect-square')) }} rounded-md overflow-hidden group cursor-pointer bg-gray-100">
-                                                        <img src="{{ asset('storage/' . $image['path']) }}" 
+                                                        <img src="{{ $getImageUrl($image['path']) }}" 
                                                             alt="Review image {{ $index + 1 }}"
                                                             class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                                                             onerror="this.src='{{ asset('images/placeholder-trail.jpg') }}'">
