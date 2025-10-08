@@ -258,6 +258,18 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
     Route::post('/org/bookings/{booking}/reject-payment', [App\Http\Controllers\OrganizationBookingController::class, 'rejectPayment'])->name('org.bookings.reject-payment');
 });
 
+// Organization Profile routes - accessible to approved organizations
+Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])->group(function () {
+    Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('custom.profile.show');
+    Route::get('/profile/edit', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile/picture', [App\Http\Controllers\ProfileController::class, 'deleteProfilePicture'])->name('profile.picture.delete');
+    Route::post('/profile/picture/upload', [App\Http\Controllers\ProfileController::class, 'uploadProfilePicture'])->name('profile.picture.upload');
+    
+    // Account Settings route
+    Route::get('/account/settings', [App\Http\Controllers\AccountSettingsController::class, 'index'])->name('account.settings');
+});
+
 // Organization Payment Setup - accessible to approved organizations
 Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])->group(function () {
     Route::get('/org/payment', [App\Http\Controllers\OrganizationPaymentController::class, 'index'])->name('org.payment.index');

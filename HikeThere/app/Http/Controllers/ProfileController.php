@@ -230,6 +230,7 @@ class ProfileController extends Controller
             'organization_description' => 'required|string|max:1000',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:500',
             'website' => 'nullable|url|max:255',
             'mission_statement' => 'nullable|string|max:1000',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
@@ -241,7 +242,7 @@ class ProfileController extends Controller
         ];
 
         $organizationData = $request->only([
-            'organization_description', 'phone', 'website', 'mission_statement'
+            'organization_description', 'phone', 'address', 'website', 'mission_statement'
         ]);
 
         if ($request->hasFile('profile_picture')) {
@@ -270,6 +271,9 @@ class ProfileController extends Controller
         }
 
         $user->update($userData);
+        
+        // Also update email in organization profile to keep them in sync
+        $organizationData['email'] = $request->email;
         
         if ($user->organizationProfile) {
             $user->organizationProfile->update($organizationData);

@@ -93,6 +93,16 @@
                                     @enderror
                                 </div>
                             </div>
+
+                            <div class="mt-6">
+                                <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                                <textarea name="address" id="address" rows="3" 
+                                          placeholder="Enter your complete address" 
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#336d66] focus:border-[#336d66]">{{ old('address', $organizationProfile->address ?? '') }}</textarea>
+                                @error('address')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
 
                         <!-- Organization Description -->
