@@ -145,6 +145,147 @@
         </div>
     </div>
 
+    <!-- Edit Post Modal -->
+    <div id="edit-post-modal" class="fixed inset-0 z-[9999] hidden overflow-y-auto" aria-labelledby="edit-modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+                <form id="edit-post-form" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" id="edit-post-id" name="post_id">
+                    
+                    <div class="bg-white px-6 pt-6 pb-4">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-2xl font-bold text-gray-900" id="edit-modal-title">Edit Post</h3>
+                            <button type="button" id="close-edit-modal-btn" class="text-gray-400 hover:text-gray-500 transition-colors">
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="space-y-5">
+                            <!-- Content/Trail Info (Read-only) -->
+                            <div id="edit-content-info" class="p-3 bg-gray-50 rounded-lg text-sm text-gray-700"></div>
+
+                            <!-- Rating (for trail posts) -->
+                            <div id="edit-rating-section" class="hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                                <div class="flex gap-2">
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="edit_rating" value="1" class="text-yellow-500 focus:ring-yellow-500">
+                                        <span class="ml-2">⭐</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="edit_rating" value="2" class="text-yellow-500 focus:ring-yellow-500">
+                                        <span class="ml-2">⭐⭐</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="edit_rating" value="3" class="text-yellow-500 focus:ring-yellow-500">
+                                        <span class="ml-2">⭐⭐⭐</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="edit_rating" value="4" class="text-yellow-500 focus:ring-yellow-500">
+                                        <span class="ml-2">⭐⭐⭐⭐</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="radio" name="edit_rating" value="5" class="text-yellow-500 focus:ring-yellow-500">
+                                        <span class="ml-2">⭐⭐⭐⭐⭐</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Description <span class="text-red-500">*</span>
+                                </label>
+                                <textarea name="content" id="edit-post-content" rows="5" required maxlength="5000" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                                    placeholder="Share what makes this trail or event special..."></textarea>
+                                <p class="mt-1 text-xs text-gray-500"><span id="edit-char-count">0</span>/5000 characters</p>
+                            </div>
+
+                            <!-- Existing Images -->
+                            <div id="edit-existing-images" class="hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Current Images</label>
+                                <div id="edit-existing-images-grid" class="grid grid-cols-3 gap-3"></div>
+                            </div>
+
+                            <!-- Add New Images -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Add New Photos (Optional, max 10 total)</label>
+                                <div class="flex items-center justify-center w-full">
+                                    <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                            <svg class="w-8 h-8 mb-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                            </svg>
+                                            <p class="text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                                            <p class="text-xs text-gray-500">PNG, JPG, GIF up to 5MB each</p>
+                                        </div>
+                                        <input type="file" name="images[]" id="edit-images-input" multiple accept="image/*" class="hidden" max="10">
+                                    </label>
+                                </div>
+                                
+                                <!-- New Image Previews -->
+                                <div id="edit-new-image-previews" class="grid grid-cols-3 gap-3 mt-4 hidden"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+                        <button type="button" id="cancel-edit-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" id="submit-edit-btn" class="px-6 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg font-medium hover:from-purple-700 hover:to-purple-800 transition-colors">
+                            Update Post
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-post-modal" class="fixed inset-0 z-[9999] hidden overflow-y-auto" aria-labelledby="delete-modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-6 pt-6 pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="delete-modal-title">
+                                Delete Post
+                            </h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500">
+                                    Are you sure you want to delete this post? This action cannot be undone. All comments and likes will also be deleted.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 sm:flex sm:flex-row-reverse gap-3">
+                    <button type="button" id="confirm-delete-btn" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+                        Delete Post
+                    </button>
+                    <button type="button" id="cancel-delete-btn" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:mt-0 sm:w-auto sm:text-sm transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Comments Modal -->
     <div id="comments-modal" class="fixed inset-0 z-[9999] hidden overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20">
@@ -182,6 +323,8 @@
         let userTrails = [];
         let userEvents = [];
         let currentPostId = null;
+        let postToDelete = null;
+        let postToEdit = null;
         
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM Content Loaded - Organization Community Posts');
@@ -252,6 +395,54 @@
         const addCommentForm = document.getElementById('add-comment-form');
         if (addCommentForm) {
             addCommentForm.addEventListener('submit', handleAddComment);
+        }
+        
+        // Edit modal handlers
+        const closeEditModalBtn = document.getElementById('close-edit-modal-btn');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const editPostModal = document.getElementById('edit-post-modal');
+        const editPostForm = document.getElementById('edit-post-form');
+        
+        if (closeEditModalBtn) closeEditModalBtn.addEventListener('click', closeEditModal);
+        if (cancelEditBtn) cancelEditBtn.addEventListener('click', closeEditModal);
+        if (editPostForm) editPostForm.addEventListener('submit', handleEditSubmit);
+        
+        if (editPostModal) {
+            editPostModal.addEventListener('click', function(e) {
+                if (e.target === editPostModal) {
+                    closeEditModal();
+                }
+            });
+        }
+        
+        // Edit character counter
+        const editPostContent = document.getElementById('edit-post-content');
+        if (editPostContent) {
+            editPostContent.addEventListener('input', function() {
+                document.getElementById('edit-char-count').textContent = this.value.length;
+            });
+        }
+        
+        // Edit image upload preview
+        const editImagesInput = document.getElementById('edit-images-input');
+        if (editImagesInput) {
+            editImagesInput.addEventListener('change', handleEditImagePreview);
+        }
+        
+        // Delete modal handlers
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const deletePostModal = document.getElementById('delete-post-modal');
+        
+        if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', closeDeleteModal);
+        if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', confirmDeletePost);
+        
+        if (deletePostModal) {
+            deletePostModal.addEventListener('click', function(e) {
+                if (e.target === deletePostModal) {
+                    closeDeleteModal();
+                }
+            });
         }
         
         // Listen for open comments modal event
@@ -758,6 +949,40 @@
         const likeIcon = post.is_liked_by_auth_user ? '❤️' : '🤍';
         const likeClass = post.is_liked_by_auth_user ? 'text-red-500' : 'text-gray-500';
         
+        // Check if current user owns this post
+        const currentUserId = {{ auth()->id() }};
+        const isOwner = post.user_id === currentUserId;
+        
+        // Edit/Delete menu for post owner
+        let ownerMenuHtml = '';
+        if (isOwner) {
+            ownerMenuHtml = `
+                <div class="relative inline-block text-left post-menu">
+                    <button type="button" class="post-menu-btn p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
+                        </svg>
+                    </button>
+                    <div class="post-menu-dropdown hidden absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                        <div class="py-1">
+                            <button class="edit-post-btn w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                                Edit Post
+                            </button>
+                            <button class="delete-post-btn w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                                Delete Post
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
@@ -775,7 +1000,10 @@
                             <p class="text-sm text-gray-500">${formattedDate}${post.hike_date ? ' • Hiked on ' + new Date(post.hike_date).toLocaleDateString() : ''}</p>
                         </div>
                     </div>
-                    ${isOrg ? '<span class="px-3 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">Organization</span>' : ''}
+                    <div class="flex items-center gap-2">
+                        ${isOrg ? '<span class="px-3 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">Organization</span>' : ''}
+                        ${ownerMenuHtml}
+                    </div>
                 </div>
                 
                 <!-- Trail/Event Link -->
@@ -826,6 +1054,44 @@
             });
         }
         
+        // Add event listeners for edit/delete menu
+        if (isOwner) {
+            const menuBtn = card.querySelector('.post-menu-btn');
+            const menuDropdown = card.querySelector('.post-menu-dropdown');
+            const editBtn = card.querySelector('.edit-post-btn');
+            const deleteBtn = card.querySelector('.delete-post-btn');
+            
+            if (menuBtn && menuDropdown) {
+                menuBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    menuDropdown.classList.toggle('hidden');
+                });
+                
+                // Close menu when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!card.contains(e.target)) {
+                        menuDropdown.classList.add('hidden');
+                    }
+                });
+            }
+            
+            if (editBtn) {
+                editBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    menuDropdown.classList.add('hidden');
+                    openEditModal(post);
+                });
+            }
+            
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    menuDropdown.classList.add('hidden');
+                    openDeleteModal(post.id);
+                });
+            }
+        }
+        
         return card;
     }
 
@@ -861,6 +1127,253 @@
         .catch(error => {
             console.error('Error toggling like:', error);
         });
+    }
+
+    // ==================== EDIT POST FUNCTIONS ====================
+    function openEditModal(post) {
+        postToEdit = post;
+        const modal = document.getElementById('edit-post-modal');
+        
+        // Set post ID
+        document.getElementById('edit-post-id').value = post.id;
+        
+        // Show content info
+        const contentInfo = document.getElementById('edit-content-info');
+        if (post.trail) {
+            contentInfo.innerHTML = `📍 Trail: <strong>${post.trail.trail_name}</strong>`;
+        } else if (post.event) {
+            contentInfo.innerHTML = `🎉 Event: <strong>${post.event.title}</strong>`;
+        }
+        
+        // Set rating if exists
+        if (post.rating) {
+            document.getElementById('edit-rating-section').classList.remove('hidden');
+            document.querySelector(`input[name="edit_rating"][value="${post.rating}"]`).checked = true;
+        } else {
+            document.getElementById('edit-rating-section').classList.add('hidden');
+        }
+        
+        // Set content
+        const contentField = document.getElementById('edit-post-content');
+        contentField.value = post.content;
+        document.getElementById('edit-char-count').textContent = post.content.length;
+        
+        // Show existing images
+        if (post.image_urls && post.image_urls.length > 0) {
+            const existingImagesSection = document.getElementById('edit-existing-images');
+            const existingImagesGrid = document.getElementById('edit-existing-images-grid');
+            existingImagesSection.classList.remove('hidden');
+            existingImagesGrid.innerHTML = '';
+            
+            post.image_urls.forEach((url, index) => {
+                const imageDiv = document.createElement('div');
+                imageDiv.className = 'relative group';
+                imageDiv.innerHTML = `
+                    <img src="${url}" class="w-full h-32 object-cover rounded-lg">
+                    <button type="button" class="delete-existing-image absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity" data-index="${index}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                `;
+                existingImagesGrid.appendChild(imageDiv);
+            });
+            
+            // Add delete listeners
+            document.querySelectorAll('.delete-existing-image').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    this.closest('.relative').remove();
+                });
+            });
+        } else {
+            document.getElementById('edit-existing-images').classList.add('hidden');
+        }
+        
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeEditModal() {
+        const modal = document.getElementById('edit-post-modal');
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        
+        // Reset form
+        document.getElementById('edit-post-form').reset();
+        document.getElementById('edit-new-image-previews').innerHTML = '';
+        document.getElementById('edit-new-image-previews').classList.add('hidden');
+        document.getElementById('edit-char-count').textContent = '0';
+        postToEdit = null;
+    }
+    
+    function handleEditImagePreview(e) {
+        const files = Array.from(e.target.files);
+        const previews = document.getElementById('edit-new-image-previews');
+        
+        if (files.length === 0) {
+            previews.classList.add('hidden');
+            return;
+        }
+        
+        previews.classList.remove('hidden');
+        previews.innerHTML = '';
+        
+        files.slice(0, 10).forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'relative group';
+                div.innerHTML = `
+                    <img src="${e.target.result}" class="w-full h-32 object-cover rounded-lg">
+                    <button type="button" class="remove-new-image absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity" data-index="${index}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                `;
+                previews.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+    
+    function handleEditSubmit(e) {
+        e.preventDefault();
+        
+        const postId = document.getElementById('edit-post-id').value;
+        const formData = new FormData(e.target);
+        
+        // Get deleted image indices
+        const existingImages = document.querySelectorAll('#edit-existing-images-grid .relative');
+        const deletedIndices = [];
+        postToEdit.image_urls.forEach((url, index) => {
+            const exists = Array.from(existingImages).some(div => {
+                const img = div.querySelector('img');
+                return img && img.src === url;
+            });
+            if (!exists) {
+                deletedIndices.push(index);
+            }
+        });
+        
+        if (deletedIndices.length > 0) {
+            deletedIndices.forEach(index => {
+                formData.append('delete_images[]', index);
+            });
+        }
+        
+        const submitBtn = document.getElementById('submit-edit-btn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Updating...';
+        
+        fetch(`/community/posts/${postId}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                closeEditModal();
+                loadCommunityPosts(); // Reload posts
+                
+                // Show success message
+                showToast('Post updated successfully!', 'success');
+            } else {
+                showToast(data.message || 'Failed to update post', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating post:', error);
+            showToast('Failed to update post. Please try again.', 'error');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Update Post';
+        });
+    }
+    
+    // ==================== DELETE POST FUNCTIONS ====================
+    function openDeleteModal(postId) {
+        postToDelete = postId;
+        const modal = document.getElementById('delete-post-modal');
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeDeleteModal() {
+        const modal = document.getElementById('delete-post-modal');
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        postToDelete = null;
+    }
+    
+    function confirmDeletePost() {
+        if (!postToDelete) return;
+        
+        const confirmBtn = document.getElementById('confirm-delete-btn');
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Deleting...';
+        
+        fetch(`/community/posts/${postToDelete}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                closeDeleteModal();
+                loadCommunityPosts(); // Reload posts
+                showToast('Post deleted successfully!', 'success');
+            } else {
+                showToast(data.message || 'Failed to delete post', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting post:', error);
+            showToast('Failed to delete post. Please try again.', 'error');
+        })
+        .finally(() => {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Delete Post';
+        });
+    }
+    
+    // ==================== TOAST NOTIFICATION ====================
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 z-[99999] px-6 py-3 rounded-lg shadow-lg text-white transform transition-all duration-300 ${
+            type === 'success' ? 'bg-green-600' : 'bg-red-600'
+        }`;
+        toast.innerHTML = `
+            <div class="flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    ${type === 'success' 
+                        ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>'
+                        : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>'
+                    }
+                </svg>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 300);
+        }, 3000);
     }
 
     // Image modal

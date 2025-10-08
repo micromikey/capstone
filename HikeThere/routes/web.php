@@ -206,6 +206,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('community/posts')->name('community.posts.')->group(function () {
         Route::get('/', [App\Http\Controllers\CommunityPostController::class, 'index'])->name('index');
         Route::post('/', [App\Http\Controllers\CommunityPostController::class, 'store'])->name('store');
+        Route::put('/{post}', [App\Http\Controllers\CommunityPostController::class, 'update'])->name('update');
         Route::post('/{post}/like', [App\Http\Controllers\CommunityPostController::class, 'toggleLike'])->name('like');
         Route::post('/{post}/comments', [App\Http\Controllers\CommunityPostController::class, 'addComment'])->name('comments.store');
         Route::get('/{post}/comments', [App\Http\Controllers\CommunityPostController::class, 'getComments'])->name('comments.index');

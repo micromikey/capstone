@@ -138,14 +138,25 @@ class CommunityPostController extends Controller
             $uploadedImages = [];
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $index => $image) {
-                    // Use GCS disk if available, fallback to public
-                    $disk = config('filesystems.default') === 'gcs' ? 'gcs' : 'public';
-                    $path = $image->store('community-posts', $disk);
-                    $uploadedImages[] = [
-                        'path' => $path,
-                        'caption' => $validated['image_captions'][$index] ?? null,
-                        'disk' => $disk
-                    ];
+                    try {
+                        // Use GCS disk if available, fallback to public
+                        $disk = config('filesystems.default') === 'gcs' ? 'gcs' : 'public';
+                        $path = $image->store('community-posts', $disk);
+                        $uploadedImages[] = [
+                            'path' => $path,
+                            'caption' => $validated['image_captions'][$index] ?? null,
+                            'disk' => $disk
+                        ];
+                    } catch (\Exception $e) {
+                        Log::error('Error uploading image: ' . $e->getMessage());
+                        // Fallback to public storage on error
+                        $path = $image->store('community-posts', 'public');
+                        $uploadedImages[] = [
+                            'path' => $path,
+                            'caption' => $validated['image_captions'][$index] ?? null,
+                            'disk' => 'public'
+                        ];
+                    }
                 }
             }
 
@@ -335,7 +346,8 @@ class CommunityPostController extends Controller
         if ($post->images) {
             foreach ($post->images as $image) {
                 $path = is_array($image) ? $image['path'] : $image;
-                Storage::disk('public')->delete($path);
+                $disk = (is_array($image) && isset($image['disk'])) ? $image['disk'] : 'public';
+                Storage::disk($disk)->delete($path);
             }
         }
 
@@ -345,6 +357,103 @@ class CommunityPostController extends Controller
             'success' => true,
             'message' => 'Post deleted successfully'
         ]);
+    }
+
+    /**
+     * Update a post
+     */
+    public function update(Request $request, CommunityPost $post)
+    {
+        if ($post->user_id !== auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to update this post'
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'content' => 'required|string|max:5000',
+            'rating' => 'nullable|integer|min:1|max:5',
+            'conditions' => 'nullable|array',
+            'images' => 'nullable|array|max:10',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'image_captions' => 'nullable|array',
+            'delete_images' => 'nullable|array',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Handle image deletions
+            if ($request->has('delete_images') && is_array($request->delete_images)) {
+                $currentImages = $post->images ?? [];
+                $remainingImages = [];
+                
+                foreach ($currentImages as $index => $image) {
+                    if (!in_array($index, $request->delete_images)) {
+                        $remainingImages[] = $image;
+                    } else {
+                        // Delete the image file
+                        $path = is_array($image) ? $image['path'] : $image;
+                        $disk = (is_array($image) && isset($image['disk'])) ? $image['disk'] : 'public';
+                        Storage::disk($disk)->delete($path);
+                    }
+                }
+                
+                $currentImages = $remainingImages;
+            } else {
+                $currentImages = $post->images ?? [];
+            }
+
+            // Handle new image uploads
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $index => $image) {
+                    $disk = config('filesystems.default') === 'gcs' ? 'gcs' : 'public';
+                    $path = $image->store('community-posts', $disk);
+                    $currentImages[] = [
+                        'path' => $path,
+                        'caption' => $validated['image_captions'][$index] ?? null,
+                        'disk' => $disk
+                    ];
+                }
+            }
+
+            // Update the post
+            $post->update([
+                'content' => $validated['content'],
+                'rating' => $validated['rating'] ?? $post->rating,
+                'conditions' => $validated['conditions'] ?? $post->conditions,
+                'images' => !empty($currentImages) ? $currentImages : null,
+                'image_captions' => $validated['image_captions'] ?? $post->image_captions,
+            ]);
+
+            // Update associated trail review if exists
+            if ($post->trail_review_id && isset($validated['rating'])) {
+                $post->trailReview()->update([
+                    'rating' => $validated['rating'],
+                    'review' => $validated['content'],
+                    'conditions' => $validated['conditions'] ?? null,
+                ]);
+            }
+
+            DB::commit();
+
+            $post->load(['user', 'trail', 'event']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Post updated successfully!',
+                'post' => $post
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update post: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

@@ -127,21 +127,37 @@ class CommunityPost extends Model
             return [];
         }
         
-        return array_map(function($image) {
-            if (is_array($image) && isset($image['path'])) {
-                $path = $image['path'];
-                $disk = $image['disk'] ?? 'public';
-                
-                // If using GCS, return the full GCS URL
-                if ($disk === 'gcs') {
-                    return Storage::disk('gcs')->url($path);
+        $urls = array_map(function($image) {
+            try {
+                if (is_array($image) && isset($image['path'])) {
+                    $path = $image['path'];
+                    $disk = $image['disk'] ?? 'public';
+                    
+                    // If using GCS, return the full GCS URL
+                    if ($disk === 'gcs' && config('filesystems.default') === 'gcs') {
+                        try {
+                            return Storage::disk('gcs')->url($path);
+                        } catch (\Exception $e) {
+                            // Fallback to GCS public URL format
+                            $bucket = config('filesystems.disks.gcs.bucket');
+                            return "https://storage.googleapis.com/{$bucket}/{$path}";
+                        }
+                    }
+                    
+                    // Otherwise return local storage URL
+                    return asset('storage/' . $path);
                 }
-                
-                // Otherwise return local storage URL
-                return asset('storage/' . $path);
+                return asset('storage/' . $image);
+            } catch (\Exception $e) {
+                \Log::error('Error generating image URL: ' . $e->getMessage());
+                return null;
             }
-            return asset('storage/' . $image);
         }, $images);
+        
+        // Filter out null values
+        return array_values(array_filter($urls, function($url) {
+            return $url !== null;
+        }));
     }
 
     /**
