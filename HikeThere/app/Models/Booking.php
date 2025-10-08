@@ -16,6 +16,7 @@ class Booking extends Model
         'event_id',
         'date',
         'party_size',
+        'participants',
         'status',
         'notes',
         'price_cents',
@@ -26,6 +27,10 @@ class Booking extends Model
         'payment_method_used',
         'payment_verified_at',
         'payment_verified_by',
+    ];
+
+    protected $casts = [
+        'participants' => 'array',
     ];
 
     public function user()

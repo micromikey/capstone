@@ -79,6 +79,9 @@ class BookingController extends Controller
             'event_id' => 'nullable|exists:events,id',
             'date' => 'nullable|date',
             'party_size' => 'required|integer|min:1|max:100',
+            'participants' => 'nullable|array',
+            'participants.*.name' => 'required_with:participants|string|max:255',
+            'participants.*.contact' => 'required_with:participants|string|max:255',
             'notes' => 'nullable|string|max:2000',
         ]);
 

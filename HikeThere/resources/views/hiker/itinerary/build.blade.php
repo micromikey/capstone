@@ -261,6 +261,25 @@
                   </div>
                   @endif
 
+                  <!-- Region Filter -->
+                  <div class="mb-4">
+                    <label for="regionFilter" class="block text-sm font-medium text-gray-700 mb-2">
+                      <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                      </svg>
+                      Filter by Region
+                    </label>
+                    <select id="regionFilter" class="w-full sm:w-72 rounded-md bg-white px-3 py-2 text-sm ring-1 ring-gray-300 focus:ring-2 focus:ring-emerald-400 transition-all">
+                      <option value="">All Regions</option>
+                      @php
+                        $regions = $trails->pluck('location.region')->filter()->unique()->sort()->values();
+                      @endphp
+                      @foreach($regions as $region)
+                        <option value="{{ $region }}">{{ $region }}</option>
+                      @endforeach
+                    </select>
+                  </div>
+
                   <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div class="relative w-full sm:w-72">
                       <div class="rounded-md bg-gradient-to-r from-emerald-300/40 to-cyan-300/40 p-[1px]">
@@ -347,7 +366,14 @@
                                       // Get hiking start time from the trail's most recent event
                                       $hikingStartTime = $trail->events->first()?->hiking_start_time ?? null;
                                     @endphp
-                                    <option value="{{ $trail->trail_name }}" data-trail-id="{{ $trail->id }}" {{ $isSelected ? 'selected' : '' }} data-side-trips='@json($sideTripsArray)' data-transport='@json($transportPayload)'
+                                    <option value="{{ $trail->trail_name }}" 
+                                      data-trail-id="{{ $trail->id }}" 
+                                      data-region="{{ $trail->location ? $trail->location->region : '' }}"
+                                      data-province="{{ $trail->location ? $trail->location->province : '' }}"
+                                      data-difficulty="{{ ucfirst($trail->difficulty ?? 'Unknown') }}"
+                                      {{ $isSelected ? 'selected' : '' }} 
+                                      data-side-trips='@json($sideTripsArray)' 
+                                      data-transport='@json($transportPayload)'
                                       @if($hours) data-hours='{{ htmlspecialchars(json_encode($hours), ENT_QUOTES, 'UTF-8') }}' @endif
                                       @if(!empty($trail->opening_time)) data-opening="{{ e($trail->opening_time) }}" @endif
                                       @if(!empty($trail->closing_time)) data-closing="{{ e($trail->closing_time) }}" @endif
@@ -425,7 +451,14 @@
                                     // Get hiking start time from the trail's most recent event
                                     $hikingStartTime = $trail->events->first()?->hiking_start_time ?? null;
                                   @endphp
-                                  <option value="{{ $trail->trail_name }}" data-trail-id="{{ $trail->id }}" {{ $isSelected ? 'selected' : '' }} data-side-trips='@json($sideTripsArray)' data-transport='@json($transportPayload)'
+                                  <option value="{{ $trail->trail_name }}" 
+                                    data-trail-id="{{ $trail->id }}" 
+                                    data-region="{{ $trail->location ? $trail->location->region : '' }}"
+                                    data-province="{{ $trail->location ? $trail->location->province : '' }}"
+                                    data-difficulty="{{ ucfirst($trail->difficulty ?? 'Unknown') }}"
+                                    {{ $isSelected ? 'selected' : '' }} 
+                                    data-side-trips='@json($sideTripsArray)' 
+                                    data-transport='@json($transportPayload)'
                                     @if($hours) data-hours='{{ htmlspecialchars(json_encode($hours), ENT_QUOTES, 'UTF-8') }}' @endif
                                     @if(!empty($trail->opening_time)) data-opening="{{ e($trail->opening_time) }}" @endif
                                     @if(!empty($trail->closing_time)) data-closing="{{ e($trail->closing_time) }}" @endif
@@ -1773,6 +1806,67 @@
         }
       }
       
+      // Region filter functionality
+      const regionFilter = document.getElementById('regionFilter');
+      const trailSelect = document.getElementById('trailSelect');
+      
+      if (regionFilter && trailSelect) {
+        // Store all options when page loads
+        const allOptions = Array.from(trailSelect.options);
+        
+        regionFilter.addEventListener('change', function() {
+          const selectedRegion = this.value.toLowerCase().trim();
+          
+          // Remove all options except the first one (placeholder)
+          while (trailSelect.options.length > 1) {
+            trailSelect.remove(1);
+          }
+          
+          // Get optgroups if they exist
+          const optgroups = {};
+          allOptions.forEach(option => {
+            if (option.value === '') return; // Skip placeholder
+            
+            const region = option.getAttribute('data-region');
+            const parentLabel = option.parentElement?.label || '';
+            
+            // Filter by region if selected
+            if (selectedRegion === '' || (region && region.toLowerCase() === selectedRegion)) {
+              // Create optgroups if they don't exist
+              if (parentLabel && !optgroups[parentLabel]) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = parentLabel;
+                optgroups[parentLabel] = optgroup;
+                trailSelect.appendChild(optgroup);
+              }
+              
+              // Clone and append the option
+              const clonedOption = option.cloneNode(true);
+              if (parentLabel && optgroups[parentLabel]) {
+                optgroups[parentLabel].appendChild(clonedOption);
+              } else {
+                trailSelect.appendChild(clonedOption);
+              }
+            }
+          });
+          
+          // Update trail count display
+          const visibleCount = trailSelect.options.length - 1; // Exclude placeholder
+          const selectedTrailCount = document.getElementById('selectedTrailCount');
+          if (selectedTrailCount) {
+            selectedTrailCount.textContent = visibleCount;
+          }
+          
+          // Show notification
+          if (selectedRegion) {
+            const regionName = regionFilter.options[regionFilter.selectedIndex].text;
+            showNotification(`Showing ${visibleCount} trails in ${regionName}`, 'info');
+          } else {
+            showNotification(`Showing all ${visibleCount} trails`, 'info');
+          }
+        });
+      }
+      
       // Load saved location from localStorage if available
       loadSavedLocation();
       
@@ -1811,6 +1905,7 @@
         
         if (selectedOption) {
           const trailText = selectedOption.text;
+          const difficulty = selectedOption.getAttribute('data-difficulty') || 'Unknown';
           
           // Update trail name display
           if (selectedTrailDisplay) {
@@ -1825,6 +1920,22 @@
           // Update destination display
           if (destinationDisplay) {
             destinationDisplay.textContent = selectedTrail;
+          }
+          
+          // Update difficulty display
+          if (trailDifficultyDisplay) {
+            trailDifficultyDisplay.textContent = `Difficulty: ${difficulty}`;
+            // Add color coding based on difficulty
+            trailDifficultyDisplay.className = 'text-sm font-medium';
+            if (difficulty.toLowerCase() === 'beginner' || difficulty.toLowerCase() === 'easy') {
+              trailDifficultyDisplay.classList.add('text-green-700');
+            } else if (difficulty.toLowerCase() === 'intermediate' || difficulty.toLowerCase() === 'moderate') {
+              trailDifficultyDisplay.classList.add('text-yellow-700');
+            } else if (difficulty.toLowerCase() === 'advanced' || difficulty.toLowerCase() === 'difficult' || difficulty.toLowerCase() === 'hard') {
+              trailDifficultyDisplay.classList.add('text-red-700');
+            } else {
+              trailDifficultyDisplay.classList.add('text-gray-700');
+            }
           }
           
           // Update trail count to show selected trail
