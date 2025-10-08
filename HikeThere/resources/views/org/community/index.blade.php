@@ -191,6 +191,8 @@
     let currentPostId = null;
     
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM Content Loaded - Organization Community Posts');
+        
         // Load posts immediately on page load
         loadCommunityPosts();
         
@@ -608,17 +610,33 @@
     }
 
     function loadCommunityPosts() {
+        console.log('Loading community posts...');
         const container = document.getElementById('posts-container');
+        
+        if (!container) {
+            console.error('Posts container not found!');
+            return;
+        }
         
         fetch('/community/posts', {
             headers: {
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            credentials: 'same-origin'
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Posts response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Posts data received:', data);
             if (data.success && data.posts && data.posts.data) {
+                console.log(`Found ${data.posts.data.length} posts`);
                 if (data.posts.data.length === 0) {
                     container.innerHTML = `
                         <div class="text-center py-12">
@@ -638,6 +656,9 @@
                         container.appendChild(postCard);
                     });
                 }
+            } else {
+                console.error('Unexpected response format:', data);
+                throw new Error('Invalid response format');
             }
         })
         .catch(error => {
@@ -650,6 +671,7 @@
                         </svg>
                     </div>
                     <p class="text-gray-500 text-lg mb-2">Failed to load posts</p>
+                    <p class="text-gray-400 text-sm mb-3">${error.message}</p>
                     <button onclick="loadCommunityPosts()" class="text-emerald-600 hover:text-emerald-700 font-medium">Try again</button>
                 </div>
             `;
@@ -864,7 +886,9 @@
         document.body.appendChild(modal);
     }
     
+    // Expose functions globally for inline handlers
     window.openImageModal = openImageModal;
+    window.loadCommunityPosts = loadCommunityPosts;
 </script>
 @endpush
 
