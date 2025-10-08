@@ -344,6 +344,35 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
     // Organization Community/Posts
     Route::get('/org/community', [CommunityController::class, 'index'])->name('org.community.index');
     
+    // API: Get organization's own trails and events for post creation
+    Route::get('/api/organization/trails', function(\Illuminate\Http\Request $request) {
+        $user = $request->user();
+        $trails = \App\Models\Trail::where('organization_id', $user->id)
+            ->where('status', 'active')
+            ->select('id', 'trail_name')
+            ->orderBy('trail_name')
+            ->get();
+        
+        return response()->json([
+            'success' => true,
+            'trails' => $trails
+        ]);
+    })->name('api.organization.trails');
+    
+    Route::get('/api/organization/events', function(\Illuminate\Http\Request $request) {
+        $user = $request->user();
+        $events = \App\Models\Event::where('organization_id', $user->id)
+            ->where('start_date', '>=', now())
+            ->select('id', 'title')
+            ->orderBy('start_date')
+            ->get();
+        
+        return response()->json([
+            'success' => true,
+            'events' => $events
+        ]);
+    })->name('api.organization.events');
+    
     // Hiker Profile View (only for hikers with confirmed bookings)
     Route::get('/org/community/hiker/{hiker}', [App\Http\Controllers\Organization\HikerProfileController::class, 'show'])
         ->name('org.community.hiker-profile');

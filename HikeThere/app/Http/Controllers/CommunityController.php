@@ -18,8 +18,9 @@ class CommunityController extends Controller
     {
         $user = Auth::user();
         
-        if ($user->user_type !== 'hiker') {
-            return redirect()->route('dashboard')->with('error', 'Access denied. Community features are only available for hikers.');
+        // Allow both hikers and organizations to access community
+        if (!in_array($user->user_type, ['hiker', 'organization'])) {
+            return redirect()->route('dashboard')->with('error', 'Access denied.');
         }
 
         // Get approved organizations
@@ -57,35 +58,38 @@ class CommunityController extends Controller
             $organization->average_rating = $totalRatings > 0 ? round($sumRatings / $totalRatings, 1) : 0;
         }
 
-        // Get organizations the hiker is following
-        $followingIds = $user->following()->pluck('users.id')->toArray();
+        // For organizations, they don't follow others, so set empty defaults
+        if ($user->user_type === 'organization') {
+            $followingIds = [];
+            $followedTrails = collect();
+            $events = collect();
+        } else {
+            // For hikers - get organizations they are following
+            $followingIds = $user->following()->pluck('users.id')->toArray();
 
-        // Get upcoming events from followed organizations
-        $events = collect();
-        if (!empty($followingIds)) {
-            // Select events that are relevant:
-            // - always_available
-            // - start in the future
-            // - or have an explicit end date in the future (ongoing events)
-            $events = \App\Models\Event::whereIn('user_id', $followingIds)
-                ->where(function($q) {
-                    $q->where('always_available', true)
-                      ->orWhere('start_at', '>=', now())
-                      ->orWhere(function($q2) {
-                          $q2->whereNotNull('end_at')->where('end_at', '>', now());
-                      });
-                })
-                ->with(['user'])
-                ->orderBy('start_at', 'asc')
+            // Get upcoming events from followed organizations
+            $events = collect();
+            if (!empty($followingIds)) {
+                $events = \App\Models\Event::whereIn('user_id', $followingIds)
+                    ->where(function($q) {
+                        $q->where('always_available', true)
+                          ->orWhere('start_at', '>=', now())
+                          ->orWhere(function($q2) {
+                              $q2->whereNotNull('end_at')->where('end_at', '>', now());
+                          });
+                    })
+                    ->with(['user'])
+                    ->orderBy('start_at', 'asc')
+                    ->limit(6)
+                    ->get();
+            }
+
+            // Get recent trails from followed organizations
+            $followedTrails = $user->followedOrganizationsTrails()
+                ->with(['user', 'location', 'primaryImage'])
                 ->limit(6)
                 ->get();
         }
-
-        // Get recent trails from followed organizations
-        $followedTrails = $user->followedOrganizationsTrails()
-            ->with(['user', 'location', 'primaryImage'])
-            ->limit(6)
-            ->get();
 
         // Get total trails count from all approved organizations
         $totalTrails = Trail::whereHas('user', function($query) {
@@ -93,7 +97,12 @@ class CommunityController extends Controller
                   ->where('approval_status', 'approved');
         })->where('is_active', true)->count();
 
-    return view('hiker.community.index', compact('organizations', 'followingIds', 'followedTrails', 'totalTrails', 'events'));
+        // Return appropriate view based on user type
+        if ($user->user_type === 'organization') {
+            return view('org.community.index', compact('organizations', 'followingIds', 'followedTrails', 'totalTrails', 'events'));
+        }
+        
+        return view('hiker.community.index', compact('organizations', 'followingIds', 'followedTrails', 'totalTrails', 'events'));
     }
 
     /**
