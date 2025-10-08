@@ -37,7 +37,7 @@
     <meta name="twitter:url" content="{{ url()->current() }}">
     <meta name="twitter:title" content="{{ $metaTitle ?? config('app.name', 'HikeThere') . ' - Your Ultimate Hiking Companion' }}">
     <meta name="twitter:description" content="{{ $metaDescription ?? 'Discover breathtaking hiking trails, join exciting outdoor events, connect with fellow adventurers, and ensure your safety with emergency readiness features.' }}">
-    <meta property="og:image" content="{{ $metaImage ?? $defaultOgImage }}">
+    <meta name="twitter:image" content="{{ $metaImage ?? $defaultOgImage }}">
     <meta name="twitter:image:alt" content="{{ $metaImageAlt ?? 'HikeThere - Discover hiking trails and join outdoor adventures' }}">
 
     <!-- General Meta -->

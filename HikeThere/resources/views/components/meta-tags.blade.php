@@ -11,7 +11,14 @@
 @php
     $defaultTitle = config('app.name', 'HikeThere') . ' - Your Ultimate Hiking Companion';
     $defaultDescription = 'Discover breathtaking hiking trails, join exciting outdoor events, connect with fellow adventurers, and ensure your safety with emergency readiness features. Start your hiking journey with HikeThere today!';
-    $defaultImage = asset('img/og-image.png');
+    
+    // Use GCS URL if available, otherwise fallback to local asset
+    $defaultImage = env('OG_IMAGE_URL') 
+        ? env('OG_IMAGE_URL') 
+        : (config('filesystems.default') === 'gcs' && env('GCS_BUCKET')
+            ? 'https://storage.googleapis.com/' . env('GCS_BUCKET') . '/img/og-image.png'
+            : asset('img/og-image.png'));
+    
     $defaultKeywords = 'hiking, trails, outdoor events, hiking community, emergency readiness, trail maps, hiking safety, adventure, nature, outdoor activities';
     
     $metaTitle = $title ?? $defaultTitle;
