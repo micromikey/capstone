@@ -135,13 +135,18 @@ class CommunityPost extends Model
                 return $path;
             }
             
-            // Try to generate GCS URL if the file exists
+            // Try to use GCS for production
             try {
-                if (config('filesystems.default') === 'gcs') {
+                // Check if GCS is configured
+                $gcsKeyPath = config('filesystems.disks.gcs.key_file_path');
+                $gcsBucket = config('filesystems.disks.gcs.bucket');
+                
+                if ($gcsKeyPath && $gcsBucket && file_exists($gcsKeyPath)) {
+                    // Use GCS URL format
                     return Storage::disk('gcs')->url($path);
                 }
             } catch (\Exception $e) {
-                // Silently fall through to local storage
+                \Log::warning('GCS URL generation failed: ' . $e->getMessage());
             }
             
             // Fallback to local storage URL
