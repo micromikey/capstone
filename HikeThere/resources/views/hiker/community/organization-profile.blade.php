@@ -304,9 +304,18 @@
                                 </div>
 
                                 <!-- Right: Review Images -->
-                                @if($review->review_images && count($review->review_images) > 0)
+                                @php
+                                    // Ensure review_images is an array
+                                    $reviewImages = $review->review_images;
+                                    if (is_string($reviewImages)) {
+                                        $reviewImages = json_decode($reviewImages, true) ?? [];
+                                    }
+                                    $reviewImages = is_array($reviewImages) ? $reviewImages : [];
+                                @endphp
+                                
+                                @if(!empty($reviewImages))
                                     @php
-                                        $imageCount = count($review->review_images);
+                                        $imageCount = count($reviewImages);
                                         $displayCount = min($imageCount, 4);
                                         // Dynamic grid classes based on image count - smaller sizes
                                         if ($imageCount == 1) {
@@ -321,7 +330,7 @@
                                     @endphp
                                     <div class="flex-shrink-0">
                                         <div class="grid {{ $gridClass }} gap-1">
-                                            @foreach($review->review_images as $index => $image)
+                                            @foreach($reviewImages as $index => $image)
                                                 @if($index < 4)
                                                     <div class="relative {{ $imageCount == 1 ? 'aspect-square' : ($imageCount == 2 ? 'aspect-square' : ($imageCount == 3 && $index == 2 ? 'col-span-2 aspect-video' : 'aspect-square')) }} rounded-md overflow-hidden group cursor-pointer bg-gray-100">
                                                         <img src="{{ asset('storage/' . $image['path']) }}" 
