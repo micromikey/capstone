@@ -370,6 +370,8 @@
                                       data-trail-id="{{ $trail->id }}" 
                                       data-region="{{ $trail->location ? $trail->location->region : '' }}"
                                       data-province="{{ $trail->location ? $trail->location->province : '' }}"
+                                      data-mountain="{{ $trail->mountain_name ?? '' }}"
+                                      data-full-address="{{ $trail->location ? $trail->location->province . ', ' . $trail->location->region : '' }}"
                                       data-difficulty="{{ ucfirst($trail->difficulty ?? 'Unknown') }}"
                                       {{ $isSelected ? 'selected' : '' }} 
                                       data-side-trips='@json($sideTripsArray)' 
@@ -455,6 +457,8 @@
                                     data-trail-id="{{ $trail->id }}" 
                                     data-region="{{ $trail->location ? $trail->location->region : '' }}"
                                     data-province="{{ $trail->location ? $trail->location->province : '' }}"
+                                    data-mountain="{{ $trail->mountain_name ?? '' }}"
+                                    data-full-address="{{ $trail->location ? $trail->location->province . ', ' . $trail->location->region : '' }}"
                                     data-difficulty="{{ ucfirst($trail->difficulty ?? 'Unknown') }}"
                                     {{ $isSelected ? 'selected' : '' }} 
                                     data-side-trips='@json($sideTripsArray)' 
@@ -1906,6 +1910,8 @@
         if (selectedOption) {
           const trailText = selectedOption.text;
           const difficulty = selectedOption.getAttribute('data-difficulty') || 'Unknown';
+          const mountainName = selectedOption.getAttribute('data-mountain') || '';
+          const fullAddress = selectedOption.getAttribute('data-full-address') || '';
           
           // Update trail name display
           if (selectedTrailDisplay) {
@@ -1917,9 +1923,19 @@
             trailNameInput.value = selectedTrail;
           }
           
-          // Update destination display
+          // Update destination display with formatted output
           if (destinationDisplay) {
-            destinationDisplay.textContent = selectedTrail;
+            // Format: Trail Name, Mountain Name
+            // Under: Full Address
+            let destinationHTML = `<div class="font-medium text-gray-900">${selectedTrail}`;
+            if (mountainName) {
+              destinationHTML += `, ${mountainName}`;
+            }
+            destinationHTML += `</div>`;
+            if (fullAddress) {
+              destinationHTML += `<div class="text-xs text-gray-600 mt-1">${fullAddress}</div>`;
+            }
+            destinationDisplay.innerHTML = destinationHTML;
           }
           
           // Update difficulty display
@@ -1959,7 +1975,9 @@
           // Fallback if option not found
           if (selectedTrailDisplay) selectedTrailDisplay.textContent = selectedTrail;
           if (trailNameInput) trailNameInput.value = selectedTrail;
-          if (destinationDisplay) destinationDisplay.textContent = selectedTrail;
+          if (destinationDisplay) {
+            destinationDisplay.innerHTML = `<div class="font-medium text-gray-900">${selectedTrail}</div>`;
+          }
           if (selectedTrailCount) {
             selectedTrailCount.textContent = `Selected: ${selectedTrail}`;
             selectedTrailCount.className = 'text-sm font-medium text-emerald-700';
@@ -1969,7 +1987,9 @@
         // Reset displays when no trail is selected
         if (selectedTrailDisplay) selectedTrailDisplay.textContent = 'Select trail first';
         if (trailNameInput) trailNameInput.value = '';
-        if (destinationDisplay) destinationDisplay.textContent = 'Select trail first';
+        if (destinationDisplay) {
+          destinationDisplay.innerHTML = '<div class="text-gray-500">Select trail first</div>';
+        }
         if (selectedTrailCount) {
           selectedTrailCount.textContent = `${trails.length} trails available`;
           selectedTrailCount.className = 'text-sm font-medium text-emerald-700';
