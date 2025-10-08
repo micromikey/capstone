@@ -327,23 +327,26 @@ class CommunityPostController extends Controller
                 ], 401);
             }
             
-            // Get trails the user has booked or trails from followed organizations
+            // Get IDs of organizations the user follows
+            $followedOrgIds = DB::table('follows')
+                ->where('follower_id', $user->id)
+                ->pluck('following_id')
+                ->toArray();
+            
+            if (empty($followedOrgIds)) {
+                return response()->json([
+                    'success' => true,
+                    'trails' => [],
+                    'message' => 'Follow some organizations to see their trails'
+                ]);
+            }
+            
+            // Get trails from followed organizations
             $trails = Trail::where('is_active', true)
-                ->where(function($query) use ($user) {
-                    // Trails from followed organizations
-                    $query->whereHas('user', function($userQuery) use ($user) {
-                        $userQuery->whereHas('followers', function($followerQuery) use ($user) {
-                            $followerQuery->where('follower_id', $user->id);
-                        });
-                    })
-                    // Or trails the user has booked
-                    ->orWhereHas('bookings', function($bookingQuery) use ($user) {
-                        $bookingQuery->where('user_id', $user->id)
-                          ->where('payment_status', 'completed');
-                    });
-                })
+                ->whereIn('user_id', $followedOrgIds)
                 ->with('user:id,display_name')
                 ->select('id', 'trail_name', 'user_id', 'slug')
+                ->orderBy('trail_name')
                 ->get();
 
             return response()->json([
@@ -352,7 +355,8 @@ class CommunityPostController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Error in getUserTrails: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'user_id' => auth()->id()
             ]);
             
             return response()->json([
