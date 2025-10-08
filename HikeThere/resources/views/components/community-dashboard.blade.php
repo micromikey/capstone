@@ -104,7 +104,7 @@ $imageService = app('App\\Services\\TrailImageService');
         </div>
     </div>
     
-    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+    <div class="relative max-w-[90rem] mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <div class="text-center">
             <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-4 px-2">Trail Connections</h1>
             <p class="text-lg sm:text-xl md:text-2xl text-purple-100 mb-6 sm:mb-8 px-4">Discover hiking organizations that match your interests</p>
@@ -123,7 +123,7 @@ $imageService = app('App\\Services\\TrailImageService');
         </div>
     </div>
 </div>
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+<div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <!-- Tab Buttons -->
     <div class="mb-6">
         <div class="flex items-center space-x-3" role="tablist" aria-label="Community Tabs">

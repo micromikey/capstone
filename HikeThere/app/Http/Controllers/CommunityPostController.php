@@ -101,6 +101,39 @@ class CommunityPostController extends Controller
                 }
             }
 
+            // Check if organization already has a post for this trail or event
+            if ($type === 'organization') {
+                $existingPost = null;
+                
+                if (isset($validated['trail_id'])) {
+                    $existingPost = CommunityPost::where('user_id', $user->id)
+                        ->where('trail_id', $validated['trail_id'])
+                        ->where('type', 'organization')
+                        ->first();
+                    
+                    if ($existingPost) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'You have already posted about this trail. Organizations can only post once per trail.'
+                        ], 422);
+                    }
+                }
+                
+                if (isset($validated['event_id'])) {
+                    $existingPost = CommunityPost::where('user_id', $user->id)
+                        ->where('event_id', $validated['event_id'])
+                        ->where('type', 'organization')
+                        ->first();
+                    
+                    if ($existingPost) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'You have already posted about this event. Organizations can only post once per event.'
+                        ], 422);
+                    }
+                }
+            }
+
             // Handle image uploads
             $uploadedImages = [];
             if ($request->hasFile('images')) {
