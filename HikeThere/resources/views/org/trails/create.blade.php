@@ -2512,21 +2512,41 @@
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.message || `HTTP ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 document.getElementById('gpxLibraryLoading').classList.add('hidden');
                 
                 if (data.success) {
-                    displayGPXFiles(data.files);
-                    document.getElementById('gpxFilesList').classList.remove('hidden');
+                    if (data.files && data.files.length > 0) {
+                        displayGPXFiles(data.files);
+                        document.getElementById('gpxFilesList').classList.remove('hidden');
+                    } else {
+                        const errorEl = document.getElementById('gpxLibraryError');
+                        errorEl.innerHTML = '<p class="text-yellow-600">No GPX files found in the library. Please upload GPX files to the geojson/ folder in your storage.</p>';
+                        errorEl.classList.remove('hidden');
+                    }
                 } else {
-                    document.getElementById('gpxLibraryError').classList.remove('hidden');
+                    const errorEl = document.getElementById('gpxLibraryError');
+                    errorEl.innerHTML = `<p class="text-red-600">${data.message || 'Failed to load GPX library'}</p>`;
+                    if (data.debug) {
+                        errorEl.innerHTML += `<p class="text-sm text-gray-600 mt-2">Disk: ${data.debug.disk}<br>Error: ${data.debug.error}</p>`;
+                    }
+                    errorEl.classList.remove('hidden');
                 }
             })
             .catch(error => {
                 console.error('Error loading GPX library:', error);
                 document.getElementById('gpxLibraryLoading').classList.add('hidden');
-                document.getElementById('gpxLibraryError').classList.remove('hidden');
+                const errorEl = document.getElementById('gpxLibraryError');
+                errorEl.innerHTML = `<p class="text-red-600">Error: ${error.message}</p><p class="text-sm text-gray-600 mt-2">Check the browser console and server logs for more details.</p>`;
+                errorEl.classList.remove('hidden');
             });
         }
 

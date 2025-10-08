@@ -19,11 +19,15 @@ class GPXLibraryController extends Controller
             $gpxFiles = [];
             $disk = config('filesystems.default', 'public');
             
+            Log::info('Loading GPX library', ['disk' => $disk]);
+            
             // Get all .gpx files from geojson folder in configured storage
             $files = Storage::disk($disk)->files('geojson');
             $gpxFilesList = array_filter($files, function($file) {
                 return pathinfo($file, PATHINFO_EXTENSION) === 'gpx';
             });
+            
+            Log::info('Found GPX files', ['count' => count($gpxFilesList), 'files' => $gpxFilesList]);
             
             foreach ($gpxFilesList as $filePath) {
                 $filename = basename($filePath);
@@ -37,20 +41,38 @@ class GPXLibraryController extends Controller
                     $priority = 10;
                 }
                 
-                // Get file info from storage
-                $size = Storage::disk($disk)->size($filePath);
-                $modified = Storage::disk($disk)->lastModified($filePath);
-                $url = Storage::disk($disk)->url($filePath);
-                
-                $gpxFiles[] = [
-                    'filename' => $filename,
-                    'name' => ucwords(str_replace(['_', '-'], ' ', $name)),
-                    'path' => $filePath,
-                    'url' => $url,
-                    'size' => $size,
-                    'modified' => $modified,
-                    'priority' => $priority
-                ];
+                try {
+                    // Get file info from storage
+                    $size = Storage::disk($disk)->size($filePath);
+                    $modified = Storage::disk($disk)->lastModified($filePath);
+                    
+                    // Generate URL based on disk type
+                    if ($disk === 'gcs') {
+                        // For GCS, construct public URL manually
+                        $bucket = config('filesystems.disks.gcs.bucket');
+                        $url = "https://storage.googleapis.com/{$bucket}/{$filePath}";
+                    } else {
+                        // For local/public disk, use the url() method
+                        $url = Storage::disk($disk)->url($filePath);
+                    }
+                    
+                    $gpxFiles[] = [
+                        'filename' => $filename,
+                        'name' => ucwords(str_replace(['_', '-'], ' ', $name)),
+                        'path' => $filePath,
+                        'url' => $url,
+                        'size' => $size,
+                        'modified' => $modified,
+                        'priority' => $priority
+                    ];
+                } catch (\Exception $fileError) {
+                    Log::warning('Error processing GPX file', [
+                        'file' => $filename,
+                        'error' => $fileError->getMessage()
+                    ]);
+                    // Skip this file and continue with others
+                    continue;
+                }
             }
             
             // Sort by priority (Philippine trails first)
@@ -58,19 +80,28 @@ class GPXLibraryController extends Controller
                 return $b['priority'] - $a['priority'];
             });
             
+            Log::info('GPX library loaded successfully', ['files_returned' => count($gpxFiles)]);
+            
             return response()->json([
                 'success' => true,
                 'files' => $gpxFiles
             ]);
             
         } catch (\Exception $e) {
-            Log::error('Error loading GPX library', ['error' => $e->getMessage()]);
+            Log::error('Error loading GPX library', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to load GPX library',
-                'files' => []
-            ]);
+                'message' => 'Failed to load GPX library: ' . $e->getMessage(),
+                'files' => [],
+                'debug' => [
+                    'disk' => config('filesystems.default', 'public'),
+                    'error' => $e->getMessage()
+                ]
+            ], 500);
         }
     }
     
