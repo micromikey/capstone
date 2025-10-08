@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class CommunityPost extends Model
 {
@@ -127,10 +128,20 @@ class CommunityPost extends Model
         }
         
         return array_map(function($image) {
-            if (is_array($image) && isset($image['path'])) {
-                return asset('storage/' . $image['path']);
+            $path = is_array($image) && isset($image['path']) ? $image['path'] : $image;
+            
+            // If it's already a full URL, return as-is
+            if (filter_var($path, FILTER_VALIDATE_URL)) {
+                return $path;
             }
-            return asset('storage/' . $image);
+            
+            // Use Google Cloud Storage for production
+            if (config('filesystems.default') === 'gcs') {
+                return Storage::disk('gcs')->url($path);
+            }
+            
+            // Fallback to local storage
+            return asset('storage/' . $path);
         }, $images);
     }
 
