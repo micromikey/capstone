@@ -16,7 +16,7 @@ $imageService = app('App\\Services\\TrailImageService');
 @endphp
 
 <!-- Main Tabs Section (Above Hero) -->
-<div class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+<div class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
     <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8">
         <nav class="flex space-x-8" aria-label="Main Tabs">
             <button id="main-tab-community" 
@@ -1535,8 +1535,18 @@ $imageService = app('App\\Services\\TrailImageService');
             
             contentSelect.innerHTML = '<option value="">Loading trails...</option>';
             
-            fetch('{{ route("community.posts.user-trails") }}')
-                .then(response => response.json())
+            fetch('{{ route("community.posts.user-trails") }}', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success && data.trails.length > 0) {
                         contentSelect.innerHTML = '<option value="">Select a trail you\'ve visited</option>';
@@ -1554,6 +1564,7 @@ $imageService = app('App\\Services\\TrailImageService');
                 .catch(error => {
                     console.error('Error loading trails:', error);
                     contentSelect.innerHTML = '<option value="">Error loading trails</option>';
+                    showToast('error', 'Error loading trails: ' + error.message);
                 });
         }
 
@@ -1571,8 +1582,18 @@ $imageService = app('App\\Services\\TrailImageService');
             hikeDateSection.classList.add('hidden');
             conditionsSection.classList.add('hidden');
             
-            fetch('{{ route("community.posts.organization-content") }}')
-                .then(response => response.json())
+            fetch('{{ route("community.posts.organization-content") }}', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
                         // Populate trails
@@ -1595,10 +1616,13 @@ $imageService = app('App\\Services\\TrailImageService');
                                 eventSelect.appendChild(option);
                             });
                         }
+                    } else {
+                        throw new Error(data.message || 'Failed to load content');
                     }
                 })
                 .catch(error => {
                     console.error('Error loading content:', error);
+                    showToast('error', 'Error loading content: ' + error.message);
                 });
         }
 
@@ -1794,8 +1818,18 @@ $imageService = app('App\\Services\\TrailImageService');
                 postsLoading.classList.remove('hidden');
             }
             
-            fetch(`{{ route("community.posts.index") }}?page=${currentPage}`)
-                .then(response => response.json())
+            fetch(`{{ route("community.posts.index") }}?page=${currentPage}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
                         postsLoading.classList.add('hidden');
@@ -1826,12 +1860,14 @@ $imageService = app('App\\Services\\TrailImageService');
                                 loadMoreContainer.classList.add('hidden');
                             }
                         }
+                    } else {
+                        throw new Error(data.message || 'Failed to load posts');
                     }
                 })
                 .catch(error => {
                     console.error('Error loading posts:', error);
                     postsLoading.classList.add('hidden');
-                    showToast('error', 'Failed to load posts');
+                    showToast('error', 'Error loading posts: ' + error.message);
                 })
                 .finally(() => {
                     isLoadingPosts = false;
