@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class CommunityPost extends Model
 {
@@ -128,7 +129,16 @@ class CommunityPost extends Model
         
         return array_map(function($image) {
             if (is_array($image) && isset($image['path'])) {
-                return asset('storage/' . $image['path']);
+                $path = $image['path'];
+                $disk = $image['disk'] ?? 'public';
+                
+                // If using GCS, return the full GCS URL
+                if ($disk === 'gcs') {
+                    return Storage::disk('gcs')->url($path);
+                }
+                
+                // Otherwise return local storage URL
+                return asset('storage/' . $path);
             }
             return asset('storage/' . $image);
         }, $images);

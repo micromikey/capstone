@@ -134,14 +134,17 @@ class CommunityPostController extends Controller
                 }
             }
 
-            // Handle image uploads
+            // Handle image uploads to GCS
             $uploadedImages = [];
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $index => $image) {
-                    $path = $image->store('community-posts', 'public');
+                    // Use GCS disk if available, fallback to public
+                    $disk = config('filesystems.default') === 'gcs' ? 'gcs' : 'public';
+                    $path = $image->store('community-posts', $disk);
                     $uploadedImages[] = [
                         'path' => $path,
-                        'caption' => $validated['image_captions'][$index] ?? null
+                        'caption' => $validated['image_captions'][$index] ?? null,
+                        'disk' => $disk
                     ];
                 }
             }

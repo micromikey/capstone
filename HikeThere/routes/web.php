@@ -347,9 +347,10 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
     // API: Get organization's own trails and events for post creation
     Route::get('/api/organization/trails', function(\Illuminate\Http\Request $request) {
         $user = $request->user();
-        $trails = \App\Models\Trail::where('organization_id', $user->id)
-            ->where('status', 'active')
-            ->select('id', 'trail_name')
+        // Get organization's created/owned trails, not followed trails
+        $trails = \App\Models\Trail::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->select('id', 'trail_name', 'slug')
             ->orderBy('trail_name')
             ->get();
         
@@ -361,9 +362,10 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
     
     Route::get('/api/organization/events', function(\Illuminate\Http\Request $request) {
         $user = $request->user();
-        $events = \App\Models\Event::where('organization_id', $user->id)
-            ->where('start_date', '>=', now())
-            ->select('id', 'title')
+        // Get organization's created/owned events, not followed events
+        $events = \App\Models\Event::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->select('id', 'title', 'slug')
             ->orderBy('start_date')
             ->get();
         
