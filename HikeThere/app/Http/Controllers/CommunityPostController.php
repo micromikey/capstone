@@ -328,9 +328,9 @@ class CommunityPostController extends Controller
             }
             
             // Get IDs of organizations the user follows
-            $followedOrgIds = DB::table('follows')
-                ->where('follower_id', $user->id)
-                ->pluck('following_id')
+            $followedOrgIds = DB::table('user_follows')
+                ->where('hiker_id', $user->id)
+                ->pluck('organization_id')
                 ->toArray();
             
             if (empty($followedOrgIds)) {
