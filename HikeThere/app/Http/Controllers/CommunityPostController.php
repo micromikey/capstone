@@ -320,6 +320,7 @@ class CommunityPostController extends Controller
             $user = auth()->user();
             
             if (!$user) {
+                Log::warning('getUserTrails: User not authenticated');
                 return response()->json([
                     'success' => false,
                     'message' => 'User not authenticated',
@@ -327,13 +328,25 @@ class CommunityPostController extends Controller
                 ], 401);
             }
             
+            Log::info('getUserTrails called', [
+                'user_id' => $user->id,
+                'user_role' => $user->role,
+                'user_type' => $user->user_type
+            ]);
+            
             // Get IDs of organizations the user follows
             $followedOrgIds = DB::table('user_follows')
                 ->where('hiker_id', $user->id)
                 ->pluck('organization_id')
                 ->toArray();
             
+            Log::info('Followed organizations', [
+                'count' => count($followedOrgIds),
+                'org_ids' => $followedOrgIds
+            ]);
+            
             if (empty($followedOrgIds)) {
+                Log::info('No followed organizations found for user ' . $user->id);
                 return response()->json([
                     'success' => true,
                     'trails' => [],
@@ -348,6 +361,12 @@ class CommunityPostController extends Controller
                 ->select('id', 'trail_name', 'user_id', 'slug')
                 ->orderBy('trail_name')
                 ->get();
+            
+            Log::info('Trails found', [
+                'count' => $trails->count(),
+                'trail_ids' => $trails->pluck('id')->toArray(),
+                'trail_names' => $trails->pluck('trail_name')->toArray()
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -409,5 +428,74 @@ class CommunityPostController extends Controller
                 'events' => []
             ], 500);
         }
+    }
+
+    /**
+     * Debug endpoint to check user's follows and trails
+     */
+    public function debugUserTrails()
+    {
+        $user = auth()->user();
+        
+        if (!$user) {
+            return response()->json([
+                'error' => 'Not authenticated'
+            ], 401);
+        }
+
+        // Get follows
+        $follows = DB::table('user_follows')
+            ->where('hiker_id', $user->id)
+            ->get();
+
+        // Get organization details
+        $orgIds = $follows->pluck('organization_id')->toArray();
+        $organizations = \App\Models\User::whereIn('id', $orgIds)
+            ->select('id', 'display_name', 'role', 'user_type')
+            ->get();
+
+        // Get trails from followed organizations
+        $trails = Trail::whereIn('user_id', $orgIds)
+            ->with('user:id,display_name')
+            ->get(['id', 'trail_name', 'user_id', 'slug', 'is_active']);
+
+        // Get active trails only
+        $activeTrails = Trail::where('is_active', true)
+            ->whereIn('user_id', $orgIds)
+            ->with('user:id,display_name')
+            ->get(['id', 'trail_name', 'user_id', 'slug', 'is_active']);
+
+        return response()->json([
+            'debug_info' => [
+                'current_user' => [
+                    'id' => $user->id,
+                    'name' => $user->display_name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'user_type' => $user->user_type
+                ],
+                'follows' => [
+                    'count' => $follows->count(),
+                    'raw_data' => $follows,
+                    'organization_ids' => $orgIds
+                ],
+                'organizations_followed' => [
+                    'count' => $organizations->count(),
+                    'details' => $organizations
+                ],
+                'all_trails_from_followed_orgs' => [
+                    'count' => $trails->count(),
+                    'trails' => $trails
+                ],
+                'active_trails_only' => [
+                    'count' => $activeTrails->count(),
+                    'trails' => $activeTrails
+                ]
+            ],
+            'what_api_returns' => [
+                'success' => true,
+                'trails' => $activeTrails
+            ]
+        ], 200, [], JSON_PRETTY_PRINT);
     }
 }

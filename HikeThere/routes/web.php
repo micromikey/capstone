@@ -199,6 +199,7 @@ Route::middleware([
         Route::delete('/{post}', [App\Http\Controllers\CommunityPostController::class, 'destroy'])->name('destroy');
         Route::get('/user-trails', [App\Http\Controllers\CommunityPostController::class, 'getUserTrails'])->name('user-trails');
         Route::get('/organization-content', [App\Http\Controllers\CommunityPostController::class, 'getOrganizationContent'])->name('organization-content');
+        Route::get('/debug-trails', [App\Http\Controllers\CommunityPostController::class, 'debugUserTrails'])->name('debug-trails');
     });
 
     // AJAX Trail Review routes

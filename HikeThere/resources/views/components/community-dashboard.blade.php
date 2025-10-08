@@ -1535,6 +1535,8 @@ $imageService = app('App\\Services\\TrailImageService');
             
             contentSelect.innerHTML = '<option value="">Loading trails...</option>';
             
+            console.log('🔍 Loading user trails from:', '{{ route("community.posts.user-trails") }}');
+            
             fetch('{{ route("community.posts.user-trails") }}', {
                 headers: {
                     'Accept': 'application/json',
@@ -1542,33 +1544,44 @@ $imageService = app('App\\Services\\TrailImageService');
                 }
             })
                 .then(response => {
+                    console.log('📡 Response status:', response.status);
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     return response.json();
                 })
                 .then(data => {
+                    console.log('📦 Received data:', data);
+                    console.log('✅ Success:', data.success);
+                    console.log('🗺️ Trails count:', data.trails ? data.trails.length : 0);
+                    
                     if (data.success) {
                         if (data.trails && data.trails.length > 0) {
+                            console.log('✨ Populating dropdown with', data.trails.length, 'trails');
                             contentSelect.innerHTML = '<option value="">Select a trail you\'ve visited</option>';
                             contentSelect.disabled = false;
                             data.trails.forEach(trail => {
+                                console.log('  - Trail:', trail.trail_name, 'by', trail.user?.display_name);
                                 const option = document.createElement('option');
                                 option.value = trail.id;
                                 option.textContent = trail.trail_name + ' (by ' + trail.user.display_name + ')';
                                 contentSelect.appendChild(option);
                             });
+                            showToast('success', `Found ${data.trails.length} trail(s) from organizations you follow`);
                         } else {
+                            console.warn('⚠️ No trails returned');
                             contentSelect.innerHTML = '<option value="">No trails available - Follow organizations with trails first</option>';
                             contentSelect.disabled = true;
                             showToast('info', 'Follow some organizations to see their trails here');
                         }
                     } else {
+                        console.error('❌ API returned success: false');
                         throw new Error(data.message || 'Failed to load trails');
                     }
                 })
                 .catch(error => {
-                    console.error('Error loading trails:', error);
+                    console.error('💥 Error loading trails:', error);
+                    console.error('Error stack:', error.stack);
                     contentSelect.innerHTML = '<option value="">Error loading trails - Please try again</option>';
                     contentSelect.disabled = true;
                     showToast('error', 'Error loading trails: ' + error.message);
