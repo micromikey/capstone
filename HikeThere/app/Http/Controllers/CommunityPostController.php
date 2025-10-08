@@ -84,7 +84,7 @@ class CommunityPostController extends Controller
             DB::beginTransaction();
 
             $user = auth()->user();
-            $type = $user->role === 'organization' ? 'organization' : 'hiker';
+            $type = $user->user_type === 'organization' ? 'organization' : 'hiker';
 
             // Check if user already has a post for this trail (hikers only)
             if ($type === 'hiker' && isset($validated['trail_id'])) {
@@ -330,7 +330,6 @@ class CommunityPostController extends Controller
             
             Log::info('getUserTrails called', [
                 'user_id' => $user->id,
-                'user_role' => $user->role,
                 'user_type' => $user->user_type
             ]);
             
@@ -451,7 +450,7 @@ class CommunityPostController extends Controller
         // Get organization details
         $orgIds = $follows->pluck('organization_id')->toArray();
         $organizations = \App\Models\User::whereIn('id', $orgIds)
-            ->select('id', 'name', 'organization_name', 'role', 'user_type')
+            ->select('id', 'name', 'organization_name', 'user_type')
             ->get();
 
         // Get trails from followed organizations
@@ -472,7 +471,6 @@ class CommunityPostController extends Controller
                     'name' => $user->name,
                     'display_name' => $user->display_name,
                     'email' => $user->email,
-                    'role' => $user->role,
                     'user_type' => $user->user_type
                 ],
                 'follows' => [
@@ -488,7 +486,6 @@ class CommunityPostController extends Controller
                             'name' => $org->name,
                             'organization_name' => $org->organization_name,
                             'display_name' => $org->display_name,
-                            'role' => $org->role,
                             'user_type' => $org->user_type
                         ];
                     })

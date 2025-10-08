@@ -1464,7 +1464,6 @@ $imageService = app('App\\Services\\TrailImageService');
         // ========================================
         let currentPage = 1;
         let isLoadingPosts = false;
-        const userRole = '{{ auth()->check() ? auth()->user()->role : "" }}';
         const userType = '{{ auth()->check() ? auth()->user()->user_type : "" }}';
 
         // Create Post Modal
@@ -1501,8 +1500,8 @@ $imageService = app('App\\Services\\TrailImageService');
             createPostModal.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
             
-            // Load content based on user role
-            if (userRole === 'organization') {
+            // Load content based on user type
+            if (userType === 'organization') {
                 loadOrganizationContent();
             } else {
                 loadUserTrails();
