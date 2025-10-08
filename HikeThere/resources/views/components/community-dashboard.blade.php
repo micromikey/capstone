@@ -14,6 +14,43 @@
 @php
 $imageService = app('App\\Services\\TrailImageService');
 @endphp
+
+<!-- Main Tabs Section (Above Hero) -->
+<div class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8">
+        <nav class="flex space-x-8" aria-label="Main Tabs">
+            <button id="main-tab-community" 
+                    class="main-tab-button py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200"
+                    role="tab" 
+                    aria-controls="main-content-community" 
+                    aria-selected="true"
+                    data-tab="community">
+                <span class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"></path>
+                    </svg>
+                    Community
+                </span>
+            </button>
+            <button id="main-tab-posts" 
+                    class="main-tab-button py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200"
+                    role="tab" 
+                    aria-controls="main-content-posts" 
+                    aria-selected="false"
+                    data-tab="posts">
+                <span class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                    </svg>
+                    Posts
+                </span>
+            </button>
+        </nav>
+    </div>
+</div>
+
+<!-- Community Tab Content -->
+<div id="main-content-community" class="main-tab-content" role="tabpanel" aria-labelledby="main-tab-community">
 <!-- Hero Section -->
 <div id="community-hero" class="relative bg-gradient-to-r from-purple-500 via-purple-300 to-pink-500 text-white overflow-hidden hero-container">
     <div class="absolute inset-0 bg-black bg-opacity-20"></div>
@@ -488,6 +525,169 @@ $imageService = app('App\\Services\\TrailImageService');
             <p class="mt-1 text-sm text-gray-500">Follow some organizations to see their latest trails here.</p>
         </div>
         @endif
+    </div>
+</div>
+</div>
+<!-- End Community Tab Content -->
+
+<!-- Posts Tab Content -->
+<div id="main-content-posts" class="main-tab-content hidden" role="tabpanel" aria-labelledby="main-tab-posts">
+    <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Posts Header with Create Button -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Community Posts</h1>
+                <p class="mt-2 text-gray-600">Share your hiking experiences and discover content from organizations</p>
+            </div>
+            <button id="create-post-btn" class="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Create Post
+            </button>
+        </div>
+
+        <!-- Posts Feed -->
+        <div id="posts-feed" class="space-y-6">
+            <!-- Loading State -->
+            <div id="posts-loading" class="flex justify-center py-12">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+            </div>
+            
+            <!-- Posts will be loaded here dynamically -->
+        </div>
+
+        <!-- Load More Button -->
+        <div id="load-more-container" class="text-center mt-8 hidden">
+            <button id="load-more-btn" class="px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors duration-200">
+                Load More Posts
+            </button>
+        </div>
+    </div>
+</div>
+<!-- End Posts Tab Content -->
+
+<!-- Create Post Modal -->
+<div id="create-post-modal" class="fixed inset-0 z-[9999] hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+
+        <!-- Modal panel -->
+        <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+            <form id="create-post-form" enctype="multipart/form-data">
+                @csrf
+                <div class="bg-white px-6 pt-6 pb-4">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold text-gray-900" id="modal-title">Create a Post</h3>
+                        <button type="button" id="close-modal-btn" class="text-gray-400 hover:text-gray-500 transition-colors">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="space-y-5">
+                        <!-- Trail/Event Selection -->
+                        <div id="content-selection-section">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <span id="selection-label">Select Trail</span> <span class="text-red-500">*</span>
+                            </label>
+                            <select id="content-select" name="trail_id" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                                <option value="">Loading...</option>
+                            </select>
+                            <select id="event-select" name="event_id" class="hidden w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                                <option value="">Select an event</option>
+                            </select>
+                        </div>
+
+                        <!-- For hikers: Rating -->
+                        <div id="rating-section" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Rating (Optional)</label>
+                            <div class="flex gap-2">
+                                <div class="star-rating flex gap-1">
+                                    <button type="button" class="star-btn text-3xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="1">★</button>
+                                    <button type="button" class="star-btn text-3xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="2">★</button>
+                                    <button type="button" class="star-btn text-3xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="3">★</button>
+                                    <button type="button" class="star-btn text-3xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="4">★</button>
+                                    <button type="button" class="star-btn text-3xl text-gray-300 hover:text-yellow-400 transition-colors" data-rating="5">★</button>
+                                </div>
+                                <input type="hidden" name="rating" id="rating-input">
+                            </div>
+                        </div>
+
+                        <!-- For hikers: Hike Date -->
+                        <div id="hike-date-section" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Hike Date (Optional)</label>
+                            <input type="date" name="hike_date" id="hike-date-input" max="{{ date('Y-m-d') }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                        </div>
+
+                        <!-- For hikers: Trail Conditions -->
+                        <div id="conditions-section" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Trail Conditions (Optional)</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="flex items-center gap-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                                    <input type="checkbox" name="conditions[]" value="dry" class="rounded text-emerald-600 focus:ring-emerald-500">
+                                    <span class="text-sm">Dry</span>
+                                </label>
+                                <label class="flex items-center gap-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                                    <input type="checkbox" name="conditions[]" value="muddy" class="rounded text-emerald-600 focus:ring-emerald-500">
+                                    <span class="text-sm">Muddy</span>
+                                </label>
+                                <label class="flex items-center gap-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                                    <input type="checkbox" name="conditions[]" value="rocky" class="rounded text-emerald-600 focus:ring-emerald-500">
+                                    <span class="text-sm">Rocky</span>
+                                </label>
+                                <label class="flex items-center gap-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                                    <input type="checkbox" name="conditions[]" value="slippery" class="rounded text-emerald-600 focus:ring-emerald-500">
+                                    <span class="text-sm">Slippery</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Content/Description -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Share your experience <span class="text-red-500">*</span>
+                            </label>
+                            <textarea name="content" id="post-content" rows="5" required maxlength="5000" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+                                placeholder="Tell us about your experience..."></textarea>
+                            <p class="mt-1 text-xs text-gray-500"><span id="char-count">0</span>/5000 characters</p>
+                        </div>
+
+                        <!-- Image Upload -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Add Photos (Optional, max 10)</label>
+                            <div class="flex items-center justify-center w-full">
+                                <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <svg class="w-8 h-8 mb-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                        </svg>
+                                        <p class="text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                                        <p class="text-xs text-gray-500">PNG, JPG, GIF up to 5MB each</p>
+                                    </div>
+                                    <input type="file" name="images[]" id="images-input" multiple accept="image/*" class="hidden" max="10">
+                                </label>
+                            </div>
+                            
+                            <!-- Image Previews -->
+                            <div id="image-previews" class="grid grid-cols-3 gap-3 mt-4 hidden"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+                    <button type="button" id="cancel-post-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" id="submit-post-btn" class="px-6 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors">
+                        Post
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -1218,8 +1418,776 @@ $imageService = app('App\\Services\\TrailImageService');
             .tab-button[aria-selected="true"] { box-shadow: 0 8px 20px rgba(16,185,129,0.12); }
             .tab-button:focus { outline: 3px solid rgba(56,189,248,0.18); outline-offset: 2px; }
             .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+            .main-tab-button { border-color: transparent; color: #6b7280; }
+            .main-tab-button[aria-selected="true"] { border-color: #10b981; color: #10b981; }
+            .main-tab-content { display: block; }
+            .main-tab-content.hidden { display: none; }
         `;
         document.head.appendChild(extraStyles);
+
+        // ========================================
+        // MAIN TABS FUNCTIONALITY (Community vs Posts)
+        // ========================================
+        const mainTabButtons = document.querySelectorAll('.main-tab-button');
+        const mainTabContents = document.querySelectorAll('.main-tab-content');
+
+        function activateMainTab(tabName) {
+            mainTabButtons.forEach(btn => {
+                const isActive = btn.dataset.tab === tabName;
+                btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            });
+
+            mainTabContents.forEach(content => {
+                const contentId = content.id.replace('main-content-', '');
+                if (contentId === tabName) {
+                    content.classList.remove('hidden');
+                    
+                    // Load posts when Posts tab is activated
+                    if (tabName === 'posts' && !content.dataset.loaded) {
+                        loadPosts();
+                        content.dataset.loaded = 'true';
+                    }
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        mainTabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                activateMainTab(button.dataset.tab);
+            });
+        });
+
+        // ========================================
+        // POSTS TAB FUNCTIONALITY
+        // ========================================
+        let currentPage = 1;
+        let isLoadingPosts = false;
+        const userRole = '{{ auth()->check() ? auth()->user()->role : "" }}';
+        const userType = '{{ auth()->check() ? auth()->user()->user_type : "" }}';
+
+        // Create Post Modal
+        const createPostBtn = document.getElementById('create-post-btn');
+        const createPostModal = document.getElementById('create-post-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const cancelPostBtn = document.getElementById('cancel-post-btn');
+        const createPostForm = document.getElementById('create-post-form');
+
+        if (createPostBtn) {
+            createPostBtn.addEventListener('click', openCreatePostModal);
+        }
+
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', closeCreatePostModal);
+        }
+
+        if (cancelPostBtn) {
+            cancelPostBtn.addEventListener('click', closeCreatePostModal);
+        }
+
+        // Close modal on backdrop click
+        if (createPostModal) {
+            createPostModal.addEventListener('click', (e) => {
+                if (e.target === createPostModal) {
+                    closeCreatePostModal();
+                }
+            });
+        }
+
+        function openCreatePostModal() {
+            if (!createPostModal) return;
+            
+            createPostModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            
+            // Load content based on user role
+            if (userRole === 'organization') {
+                loadOrganizationContent();
+            } else {
+                loadUserTrails();
+            }
+        }
+
+        function closeCreatePostModal() {
+            if (!createPostModal) return;
+            
+            createPostModal.classList.add('hidden');
+            document.body.style.overflow = '';
+            createPostForm.reset();
+            document.getElementById('image-previews').innerHTML = '';
+            document.getElementById('image-previews').classList.add('hidden');
+            resetStarRating();
+        }
+
+        // Load trails for hikers
+        function loadUserTrails() {
+            const contentSelect = document.getElementById('content-select');
+            const ratingSection = document.getElementById('rating-section');
+            const hikeDateSection = document.getElementById('hike-date-section');
+            const conditionsSection = document.getElementById('conditions-section');
+            const selectionLabel = document.getElementById('selection-label');
+            
+            selectionLabel.textContent = 'Select Trail';
+            ratingSection.classList.remove('hidden');
+            hikeDateSection.classList.remove('hidden');
+            conditionsSection.classList.remove('hidden');
+            
+            contentSelect.innerHTML = '<option value="">Loading trails...</option>';
+            
+            fetch('{{ route("community.posts.user-trails") }}')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.trails.length > 0) {
+                        contentSelect.innerHTML = '<option value="">Select a trail you\'ve visited</option>';
+                        data.trails.forEach(trail => {
+                            const option = document.createElement('option');
+                            option.value = trail.id;
+                            option.textContent = trail.trail_name + ' (by ' + trail.user.display_name + ')';
+                            contentSelect.appendChild(option);
+                        });
+                    } else {
+                        contentSelect.innerHTML = '<option value="">No trails available - Follow organizations or book trails first</option>';
+                        contentSelect.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading trails:', error);
+                    contentSelect.innerHTML = '<option value="">Error loading trails</option>';
+                });
+        }
+
+        // Load content for organizations
+        function loadOrganizationContent() {
+            const contentSelect = document.getElementById('content-select');
+            const eventSelect = document.getElementById('event-select');
+            const ratingSection = document.getElementById('rating-section');
+            const hikeDateSection = document.getElementById('hike-date-section');
+            const conditionsSection = document.getElementById('conditions-section');
+            const selectionLabel = document.getElementById('selection-label');
+            
+            selectionLabel.textContent = 'Select Trail or Event';
+            ratingSection.classList.add('hidden');
+            hikeDateSection.classList.add('hidden');
+            conditionsSection.classList.add('hidden');
+            
+            fetch('{{ route("community.posts.organization-content") }}')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Populate trails
+                        contentSelect.innerHTML = '<option value="">Select your trail</option>';
+                        data.trails.forEach(trail => {
+                            const option = document.createElement('option');
+                            option.value = trail.id;
+                            option.textContent = trail.trail_name;
+                            contentSelect.appendChild(option);
+                        });
+
+                        // Populate events
+                        if (data.events.length > 0) {
+                            eventSelect.classList.remove('hidden');
+                            eventSelect.innerHTML = '<option value="">Or select your event</option>';
+                            data.events.forEach(event => {
+                                const option = document.createElement('option');
+                                option.value = event.id;
+                                option.textContent = event.title;
+                                eventSelect.appendChild(option);
+                            });
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading content:', error);
+                });
+        }
+
+        // Star rating functionality
+        const starButtons = document.querySelectorAll('.star-btn');
+        const ratingInput = document.getElementById('rating-input');
+        let currentRating = 0;
+
+        starButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const rating = parseInt(this.dataset.rating);
+                setStarRating(rating);
+            });
+
+            button.addEventListener('mouseenter', function() {
+                const rating = parseInt(this.dataset.rating);
+                highlightStars(rating);
+            });
+        });
+
+        document.querySelector('.star-rating')?.addEventListener('mouseleave', function() {
+            highlightStars(currentRating);
+        });
+
+        function setStarRating(rating) {
+            currentRating = rating;
+            ratingInput.value = rating;
+            highlightStars(rating);
+        }
+
+        function highlightStars(rating) {
+            starButtons.forEach(button => {
+                const starRating = parseInt(button.dataset.rating);
+                if (starRating <= rating) {
+                    button.classList.remove('text-gray-300');
+                    button.classList.add('text-yellow-400');
+                } else {
+                    button.classList.remove('text-yellow-400');
+                    button.classList.add('text-gray-300');
+                }
+            });
+        }
+
+        function resetStarRating() {
+            currentRating = 0;
+            ratingInput.value = '';
+            highlightStars(0);
+        }
+
+        // Character count for post content
+        const postContent = document.getElementById('post-content');
+        const charCount = document.getElementById('char-count');
+        
+        if (postContent) {
+            postContent.addEventListener('input', function() {
+                charCount.textContent = this.value.length;
+            });
+        }
+
+        // Image upload and preview
+        const imagesInput = document.getElementById('images-input');
+        const imagePreviews = document.getElementById('image-previews');
+        let selectedImages = [];
+
+        if (imagesInput) {
+            imagesInput.addEventListener('change', handleImageSelection);
+        }
+
+        function handleImageSelection(e) {
+            const files = Array.from(e.target.files);
+            
+            if (selectedImages.length + files.length > 10) {
+                showToast('warning', 'You can only upload up to 10 images');
+                return;
+            }
+
+            files.forEach(file => {
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('warning', `${file.name} is too large. Max size is 5MB`);
+                    return;
+                }
+
+                selectedImages.push(file);
+                const reader = new FileReader();
+                
+                reader.onload = function(event) {
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'relative group';
+                    previewDiv.innerHTML = `
+                        <img src="${event.target.result}" class="w-full h-24 object-cover rounded-lg">
+                        <button type="button" class="remove-image absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity" data-index="${selectedImages.length - 1}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    `;
+                    
+                    imagePreviews.appendChild(previewDiv);
+                    imagePreviews.classList.remove('hidden');
+                    
+                    previewDiv.querySelector('.remove-image').addEventListener('click', function() {
+                        const index = parseInt(this.dataset.index);
+                        removeImage(index, previewDiv);
+                    });
+                };
+                
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function removeImage(index, previewDiv) {
+            selectedImages.splice(index, 1);
+            previewDiv.remove();
+            
+            if (selectedImages.length === 0) {
+                imagePreviews.classList.add('hidden');
+            }
+            
+            // Update indices
+            document.querySelectorAll('.remove-image').forEach((btn, idx) => {
+                btn.dataset.index = idx;
+            });
+        }
+
+        // Submit post form
+        if (createPostForm) {
+            createPostForm.addEventListener('submit', handlePostSubmit);
+        }
+
+        function handlePostSubmit(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submit-post-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Posting...';
+            
+            const formData = new FormData(createPostForm);
+            
+            // Add selected images to form data
+            selectedImages.forEach((image, index) => {
+                formData.append(`images[${index}]`, image);
+            });
+            
+            // Add conditions as array
+            const conditions = Array.from(document.querySelectorAll('input[name="conditions[]"]:checked')).map(cb => cb.value);
+            formData.delete('conditions[]');
+            conditions.forEach(condition => {
+                formData.append('conditions[]', condition);
+            });
+            
+            fetch('{{ route("community.posts.store") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('success', data.message);
+                    closeCreatePostModal();
+                    // Reload posts
+                    currentPage = 1;
+                    loadPosts(true);
+                } else {
+                    showToast('error', data.message || 'Failed to create post');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('error', 'An error occurred while creating the post');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Post';
+            });
+        }
+
+        // Load posts function
+        function loadPosts(refresh = false) {
+            if (isLoadingPosts) return;
+            
+            isLoadingPosts = true;
+            const postsFeed = document.getElementById('posts-feed');
+            const postsLoading = document.getElementById('posts-loading');
+            
+            if (refresh) {
+                currentPage = 1;
+                postsFeed.innerHTML = '';
+                postsLoading.classList.remove('hidden');
+            }
+            
+            fetch(`{{ route("community.posts.index") }}?page=${currentPage}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        postsLoading.classList.add('hidden');
+                        
+                        if (data.posts.data.length === 0 && currentPage === 1) {
+                            postsFeed.innerHTML = `
+                                <div class="text-center py-12 bg-white rounded-xl shadow-sm">
+                                    <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                                    </svg>
+                                    <h3 class="mt-4 text-lg font-medium text-gray-900">No posts yet</h3>
+                                    <p class="mt-2 text-gray-500">Be the first to share your hiking experience!</p>
+                                    <button onclick="document.getElementById('create-post-btn').click()" class="mt-4 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
+                                        Create Your First Post
+                                    </button>
+                                </div>
+                            `;
+                        } else {
+                            data.posts.data.forEach(post => {
+                                postsFeed.appendChild(createPostCard(post));
+                            });
+                            
+                            // Show/hide load more button
+                            const loadMoreContainer = document.getElementById('load-more-container');
+                            if (data.posts.next_page_url) {
+                                loadMoreContainer.classList.remove('hidden');
+                            } else {
+                                loadMoreContainer.classList.add('hidden');
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading posts:', error);
+                    postsLoading.classList.add('hidden');
+                    showToast('error', 'Failed to load posts');
+                })
+                .finally(() => {
+                    isLoadingPosts = false;
+                });
+        }
+
+        // Load more posts
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', () => {
+                currentPage++;
+                loadPosts();
+            });
+        }
+
+        // TO BE CONTINUED IN NEXT PART - createPostCard function and interactions
+        
+        // Create post card HTML
+        function createPostCard(post) {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden';
+            card.dataset.postId = post.id;
+            
+            const userAvatar = post.user.profile_photo_url || '/images/default-avatar.png';
+            const isOrg = post.type === 'organization';
+            const formattedDate = new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            
+            let contentLink = '';
+            if (post.trail) {
+                contentLink = `<a href="/trails/${post.trail.slug}" class="text-emerald-600 hover:text-emerald-700 font-medium">📍 ${post.trail.trail_name}</a>`;
+            } else if (post.event) {
+                contentLink = `<a href="/events/${post.event.slug}" class="text-emerald-600 hover:text-emerald-700 font-medium">🎉 ${post.event.title}</a>`;
+            }
+            
+            let ratingHtml = '';
+            if (post.rating) {
+                const stars = '⭐'.repeat(post.rating) + '☆'.repeat(5 - post.rating);
+                ratingHtml = `<div class="mt-2 text-yellow-500 text-lg">${stars}</div>`;
+            }
+            
+            let conditionsHtml = '';
+            if (post.conditions && post.conditions.length > 0) {
+                conditionsHtml = `
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        ${post.conditions.map(condition => `
+                            <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium capitalize">${condition}</span>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            let imagesHtml = '';
+            if (post.image_urls && post.image_urls.length > 0) {
+                const imageGrid = post.image_urls.length === 1 ? 'grid-cols-1' : 
+                                 post.image_urls.length === 2 ? 'grid-cols-2' : 'grid-cols-3';
+                imagesHtml = `
+                    <div class="mt-4 grid ${imageGrid} gap-2">
+                        ${post.image_urls.map((url, idx) => `
+                            <img src="${url}" alt="Post image ${idx + 1}" 
+                                 class="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                 onclick="openImageModal('${url}')">
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            const likeIcon = post.is_liked_by_auth_user ? '❤️' : '🤍';
+            const likeClass = post.is_liked_by_auth_user ? 'text-red-500' : 'text-gray-500';
+            
+            card.innerHTML = `
+                <div class="p-6">
+                    <!-- Post Header -->
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <img src="${userAvatar}" alt="${post.user.display_name}" class="w-12 h-12 rounded-full object-cover">
+                            <div>
+                                <h3 class="font-semibold text-gray-900">${post.user.display_name}</h3>
+                                <p class="text-sm text-gray-500">${formattedDate}${post.hike_date ? ' • Hiked on ' + new Date(post.hike_date).toLocaleDateString() : ''}</p>
+                            </div>
+                        </div>
+                        ${isOrg ? '<span class="px-3 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium">Organization</span>' : ''}
+                    </div>
+                    
+                    <!-- Trail/Event Link -->
+                    ${contentLink ? `<div class="mb-3">${contentLink}</div>` : ''}
+                    
+                    <!-- Rating -->
+                    ${ratingHtml}
+                    
+                    <!-- Post Content -->
+                    <p class="mt-3 text-gray-700 whitespace-pre-wrap">${escapeHtml(post.content)}</p>
+                    
+                    <!-- Conditions -->
+                    ${conditionsHtml}
+                    
+                    <!-- Images -->
+                    ${imagesHtml}
+                    
+                    <!-- Actions -->
+                    <div class="mt-6 pt-4 border-t border-gray-200 flex items-center justify-between">
+                        <div class="flex items-center gap-6">
+                            <button class="like-btn flex items-center gap-2 ${likeClass} hover:text-red-500 transition-colors" data-post-id="${post.id}">
+                                <span class="text-xl">${likeIcon}</span>
+                                <span class="like-count font-medium">${post.likes_count || 0}</span>
+                            </button>
+                            <button class="comment-toggle-btn flex items-center gap-2 text-gray-500 hover:text-emerald-600 transition-colors" data-post-id="${post.id}">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                </svg>
+                                <span class="comment-count font-medium">${post.comments_count || 0}</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Comments Section -->
+                    <div class="comments-section hidden mt-4 pt-4 border-t border-gray-200" data-post-id="${post.id}">
+                        <!-- Add Comment Form -->
+                        <div class="mb-4">
+                            <textarea class="comment-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none" 
+                                      placeholder="Write a comment..." rows="2" data-post-id="${post.id}"></textarea>
+                            <button class="submit-comment-btn mt-2 px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 transition-colors" data-post-id="${post.id}">
+                                Post Comment
+                            </button>
+                        </div>
+                        
+                        <!-- Comments List -->
+                        <div class="comments-list space-y-4" data-post-id="${post.id}">
+                            <div class="text-center py-4">
+                                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600 mx-auto"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Attach event listeners
+            attachPostEventListeners(card, post.id);
+            
+            return card;
+        }
+        
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+        
+        function attachPostEventListeners(card, postId) {
+            // Like button
+            const likeBtn = card.querySelector('.like-btn');
+            if (likeBtn) {
+                likeBtn.addEventListener('click', () => handleLike(postId, card));
+            }
+            
+            // Comment toggle
+            const commentToggleBtn = card.querySelector('.comment-toggle-btn');
+            if (commentToggleBtn) {
+                commentToggleBtn.addEventListener('click', () => toggleComments(postId, card));
+            }
+            
+            // Submit comment
+            const submitCommentBtn = card.querySelector('.submit-comment-btn');
+            if (submitCommentBtn) {
+                submitCommentBtn.addEventListener('click', () => submitComment(postId, card));
+            }
+        }
+        
+        // Handle like/unlike
+        function handleLike(postId, card) {
+            fetch(`{{ url('community/posts') }}/${postId}/like`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const likeBtn = card.querySelector('.like-btn');
+                    const likeCount = card.querySelector('.like-count');
+                    const likeIcon = likeBtn.querySelector('span');
+                    
+                    if (data.is_liked) {
+                        likeIcon.textContent = '❤️';
+                        likeBtn.classList.remove('text-gray-500');
+                        likeBtn.classList.add('text-red-500');
+                    } else {
+                        likeIcon.textContent = '🤍';
+                        likeBtn.classList.remove('text-red-500');
+                        likeBtn.classList.add('text-gray-500');
+                    }
+                    
+                    likeCount.textContent = data.likes_count;
+                }
+            })
+            .catch(error => {
+                console.error('Error liking post:', error);
+                showToast('error', 'Failed to like post');
+            });
+        }
+        
+        // Toggle comments section
+        function toggleComments(postId, card) {
+            const commentsSection = card.querySelector('.comments-section');
+            const commentsList = commentsSection.querySelector('.comments-list');
+            
+            if (commentsSection.classList.contains('hidden')) {
+                commentsSection.classList.remove('hidden');
+                
+                // Load comments if not already loaded
+                if (!commentsList.dataset.loaded) {
+                    loadComments(postId, card);
+                    commentsList.dataset.loaded = 'true';
+                }
+            } else {
+                commentsSection.classList.add('hidden');
+            }
+        }
+        
+        // Load comments for a post
+        function loadComments(postId, card) {
+            const commentsList = card.querySelector('.comments-list');
+            
+            fetch(`{{ url('community/posts') }}/${postId}/comments`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        commentsList.innerHTML = '';
+                        
+                        if (data.comments.data.length === 0) {
+                            commentsList.innerHTML = '<p class="text-center text-gray-500 text-sm py-4">No comments yet. Be the first to comment!</p>';
+                        } else {
+                            data.comments.data.forEach(comment => {
+                                commentsList.appendChild(createCommentElement(comment, postId));
+                            });
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading comments:', error);
+                    commentsList.innerHTML = '<p class="text-center text-red-500 text-sm py-4">Failed to load comments</p>';
+                });
+        }
+        
+        // Submit a comment
+        function submitComment(postId, card, parentId = null) {
+            const commentInput = card.querySelector(`.comment-input[data-post-id="${postId}"]`);
+            const comment = commentInput.value.trim();
+            
+            if (!comment) {
+                showToast('warning', 'Please enter a comment');
+                return;
+            }
+            
+            fetch(`{{ url('community/posts') }}/${postId}/comments`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    comment: comment,
+                    parent_id: parentId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('success', 'Comment added!');
+                    commentInput.value = '';
+                    
+                    // Update comment count
+                    const commentCount = card.querySelector('.comment-count');
+                    commentCount.textContent = parseInt(commentCount.textContent) + 1;
+                    
+                    // Reload comments
+                    const commentsList = card.querySelector('.comments-list');
+                    commentsList.dataset.loaded = 'false';
+                    loadComments(postId, card);
+                } else {
+                    showToast('error', data.message || 'Failed to add comment');
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting comment:', error);
+                showToast('error', 'Failed to add comment');
+            });
+        }
+        
+        // Create comment element
+        function createCommentElement(comment, postId) {
+            const div = document.createElement('div');
+            div.className = 'comment-item bg-gray-50 rounded-lg p-4';
+            
+            const userAvatar = comment.user.profile_photo_url || '/images/default-avatar.png';
+            const formattedDate = new Date(comment.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            
+            div.innerHTML = `
+                <div class="flex gap-3">
+                    <img src="${userAvatar}" alt="${comment.user.display_name}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-semibold text-sm text-gray-900">${comment.user.display_name}</span>
+                            <span class="text-xs text-gray-500">${formattedDate}</span>
+                        </div>
+                        <p class="text-sm text-gray-700">${escapeHtml(comment.comment)}</p>
+                        
+                        ${comment.replies && comment.replies.length > 0 ? `
+                            <div class="mt-3 ml-4 space-y-3 border-l-2 border-gray-200 pl-4">
+                                ${comment.replies.map(reply => `
+                                    <div class="flex gap-2">
+                                        <img src="${reply.user.profile_photo_url || '/images/default-avatar.png'}" 
+                                             alt="${reply.user.display_name}" class="w-6 h-6 rounded-full object-cover flex-shrink-0">
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-semibold text-xs text-gray-900">${reply.user.display_name}</span>
+                                                <span class="text-xs text-gray-500">${new Date(reply.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                            </div>
+                                            <p class="text-xs text-gray-700 mt-1">${escapeHtml(reply.comment)}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            return div;
+        }
+        
+        // Image modal (simple version)
+        function openImageModal(url) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 z-[9999] bg-black bg-opacity-90 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <img src="${url}" class="max-w-full max-h-full object-contain">
+                <button class="absolute top-4 right-4 text-white text-4xl hover:text-gray-300">&times;</button>
+            `;
+            
+            modal.addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
+            
+            document.body.appendChild(modal);
+        }
+        
+        window.openImageModal = openImageModal;
     });
 </script>
 @endpush

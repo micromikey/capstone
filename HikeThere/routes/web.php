@@ -188,6 +188,19 @@ Route::middleware([
     Route::get('/api/community/organization/{organization}', [CommunityController::class, 'getOrganization'])->name('api.community.organization');
     Route::get('/api/community/organization/{organization}/trails', [CommunityController::class, 'getOrganizationTrails'])->name('api.community.organization.trails');
 
+    // Community Posts routes
+    Route::prefix('community/posts')->name('community.posts.')->group(function () {
+        Route::get('/', [App\Http\Controllers\CommunityPostController::class, 'index'])->name('index');
+        Route::post('/', [App\Http\Controllers\CommunityPostController::class, 'store'])->name('store');
+        Route::post('/{post}/like', [App\Http\Controllers\CommunityPostController::class, 'toggleLike'])->name('like');
+        Route::post('/{post}/comments', [App\Http\Controllers\CommunityPostController::class, 'addComment'])->name('comments.store');
+        Route::get('/{post}/comments', [App\Http\Controllers\CommunityPostController::class, 'getComments'])->name('comments.index');
+        Route::delete('/comments/{comment}', [App\Http\Controllers\CommunityPostController::class, 'deleteComment'])->name('comments.destroy');
+        Route::delete('/{post}', [App\Http\Controllers\CommunityPostController::class, 'destroy'])->name('destroy');
+        Route::get('/user-trails', [App\Http\Controllers\CommunityPostController::class, 'getUserTrails'])->name('user-trails');
+        Route::get('/organization-content', [App\Http\Controllers\CommunityPostController::class, 'getOrganizationContent'])->name('organization-content');
+    });
+
     // AJAX Trail Review routes
     Route::post('/api/trails/reviews', [TrailReviewController::class, 'store'])->name('api.trails.reviews.store');
     Route::put('/api/trails/reviews/{review}', [TrailReviewController::class, 'update'])->name('api.trails.reviews.update');
