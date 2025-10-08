@@ -197,28 +197,122 @@
             </div>
 
             <!-- Bottom Info Section -->
-            <div class="mt-16 text-center">
-                <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
-                    <h3 class="text-2xl font-bold text-gray-800 mb-4">Ready to Start Your Adventure?</h3>
-                    <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
-                        These tools are designed to help you plan safe and enjoyable hiking experiences.
-                        Start with the assessment to understand your readiness level, then build your perfect itinerary.
-                    </p>
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                        <a href="{{ route('assessment.instruction') }}"
-                            class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 transform hover:scale-105">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Start Assessment First
-                        </a>
-                        <a href="{{ route('itinerary.build') }}"
-                            class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 transform hover:scale-105">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"></path>
-                            </svg>
-                            Build Itinerary
-                        </a>
+            <div class="mt-16">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Trail Assessment Card -->
+                    <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
+                        <div class="bg-gradient-to-r from-emerald-600 to-emerald-700 p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-2xl font-bold text-white mb-2">Trail Assessment</h3>
+                                    <p class="text-emerald-100">Share your trail experience and conditions</p>
+                                </div>
+                                <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.818-4.818A4 4 0 1119 9m-7 7a2 2 0 100-4 2 2 0 000 4z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <p class="text-gray-600 mb-4 leading-relaxed">
+                                After completing a hike, help the community by assessing the trail's emergency readiness, 
+                                equipment availability, and overall safety conditions.
+                            </p>
+                            <div class="space-y-2 mb-6">
+                                <div class="flex items-center text-sm text-gray-500">
+                                    <svg class="w-4 h-4 text-emerald-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Rate emergency equipment
+                                </div>
+                                <div class="flex items-center text-sm text-gray-500">
+                                    <svg class="w-4 h-4 text-emerald-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Assess staff availability
+                                </div>
+                                <div class="flex items-center text-sm text-gray-500">
+                                    <svg class="w-4 h-4 text-emerald-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Provide feedback & recommendations
+                                </div>
+                            </div>
+                            <a href="{{ route('hiker.readiness.index') }}"
+                                class="block w-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white text-center py-3 px-4 rounded-xl font-semibold hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 transform hover:scale-105">
+                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                                View My Assessments
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Report a Problem Card -->
+                    <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
+                        <div class="bg-gradient-to-r from-red-600 to-red-700 p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-2xl font-bold text-white mb-2">Report a Problem</h3>
+                                    <p class="text-red-100">Help keep trails safe for everyone</p>
+                                </div>
+                                <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <p class="text-gray-600 mb-4 leading-relaxed">
+                                Encountered a safety issue, trail damage, or hazard during your hike? 
+                                Report it immediately to help protect other hikers and maintain trail quality.
+                            </p>
+                            <div class="space-y-2 mb-6">
+                                <div class="flex items-center text-sm text-gray-500">
+                                    <svg class="w-4 h-4 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Report safety incidents
+                                </div>
+                                <div class="flex items-center text-sm text-gray-500">
+                                    <svg class="w-4 h-4 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Document trail hazards
+                                </div>
+                                <div class="flex items-center text-sm text-gray-500">
+                                    <svg class="w-4 h-4 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Quick incident reporting
+                                </div>
+                            </div>
+                            <a href="{{ route('hiker.incidents.index') }}"
+                                class="block w-full bg-gradient-to-r from-red-600 to-red-700 text-white text-center py-3 px-4 rounded-xl font-semibold hover:from-red-700 hover:to-red-800 transition-all duration-200 transform hover:scale-105">
+                                <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                                View My Reports
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Banner -->
+                <div class="mt-6 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-xl p-6 border border-blue-200">
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-blue-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                            <h4 class="font-semibold text-gray-800 mb-1">Help Us Keep Trails Safe</h4>
+                            <p class="text-sm text-gray-600 leading-relaxed">
+                                Your feedback and incident reports are crucial for maintaining trail safety and quality. 
+                                By sharing your experiences, you help create a safer hiking environment for the entire community.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

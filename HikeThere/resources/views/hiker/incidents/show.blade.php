@@ -1,9 +1,9 @@
 <x-app-layout>
-    <div class="py-12 bg-gray-50 min-h-screen">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 min-h-screen py-10">
+        <div class="max-w-4xl mx-auto px-4 md:px-8">
             <!-- Back Button -->
             <div class="mb-6">
-                <a href="{{ route('hiker.incidents.index') }}" class="inline-flex items-center text-green-600 hover:text-green-700 transition-colors">
+                <a href="{{ route('hiker.incidents.index') }}" class="inline-flex items-center text-red-600 hover:text-red-700 font-medium transition-colors">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>
@@ -12,7 +12,7 @@
             </div>
 
             <!-- Main Card -->
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
                 <!-- Header -->
                 <div class="bg-gradient-to-r from-red-600 to-red-700 p-6 text-white">
                     <div class="flex items-start justify-between">
@@ -41,14 +41,14 @@
                 <!-- Content -->
                 <div class="p-6 space-y-6">
                     <!-- Trail Information -->
-                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+                    <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-lg">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">Trail Information</h3>
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-900 font-medium">{{ $incident->trail->name }}</p>
                                 <p class="text-sm text-gray-600">{{ $incident->trail->location }}</p>
                             </div>
-                            <a href="{{ route('trails.show', $incident->trail->slug) }}" class="text-green-600 hover:text-green-700 text-sm font-medium">
+                            <a href="{{ route('trails.show', $incident->trail->slug) }}" class="text-emerald-600 hover:text-emerald-700 text-sm font-medium">
                                 View Trail →
                             </a>
                         </div>
@@ -126,7 +126,7 @@
 
                     <!-- Organization Response -->
                     @if($incident->resolution_notes)
-                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
                         <h3 class="text-lg font-semibold text-gray-900 mb-2 flex items-center">
                             <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
@@ -141,7 +141,7 @@
                         @endif
                     </div>
                     @else
-                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
                         <div class="flex">
                             <svg class="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
@@ -177,7 +177,7 @@
 
             <!-- Action to Report Another -->
             <div class="mt-6 text-center">
-                <a href="{{ route('trails.index') }}" class="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                <a href="{{ route('trails.index') }}" class="inline-flex items-center px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium shadow-lg hover:shadow-xl">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                     </svg>
