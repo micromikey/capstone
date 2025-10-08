@@ -625,23 +625,14 @@ $imageService = app('App\\Services\\TrailImageService');
                         <!-- For hikers: Trail Conditions -->
                         <div id="conditions-section" class="hidden">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Trail Conditions (Optional)</label>
-                            <div class="grid grid-cols-2 gap-3">
-                                <label class="flex items-center gap-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                                    <input type="checkbox" name="conditions[]" value="dry" class="rounded text-emerald-600 focus:ring-emerald-500">
-                                    <span class="text-sm">Dry</span>
-                                </label>
-                                <label class="flex items-center gap-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                                    <input type="checkbox" name="conditions[]" value="muddy" class="rounded text-emerald-600 focus:ring-emerald-500">
-                                    <span class="text-sm">Muddy</span>
-                                </label>
-                                <label class="flex items-center gap-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                                    <input type="checkbox" name="conditions[]" value="rocky" class="rounded text-emerald-600 focus:ring-emerald-500">
-                                    <span class="text-sm">Rocky</span>
-                                </label>
-                                <label class="flex items-center gap-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                                    <input type="checkbox" name="conditions[]" value="slippery" class="rounded text-emerald-600 focus:ring-emerald-500">
-                                    <span class="text-sm">Slippery</span>
-                                </label>
+                            <div class="flex flex-wrap gap-2">
+                                @foreach(['sunny', 'cloudy', 'rainy', 'windy', 'foggy', 'hot', 'cold', 'humid', 'dry'] as $condition)
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" name="conditions[]" value="{{ $condition }}" 
+                                               class="text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded">
+                                        <span class="ml-2 text-sm text-gray-600">{{ ucfirst($condition) }}</span>
+                                    </label>
+                                @endforeach
                             </div>
                         </div>
 
@@ -1805,11 +1796,10 @@ $imageService = app('App\\Services\\TrailImageService');
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showToast('success', data.message);
+                    showToast('success', data.message || 'Post created successfully!');
                     closeCreatePostModal();
-                    // Reload posts
-                    currentPage = 1;
-                    loadPosts(true);
+                    // Reload the page to show the new post
+                    window.location.reload();
                 } else {
                     showToast('error', data.message || 'Failed to create post');
                 }
@@ -1911,7 +1901,9 @@ $imageService = app('App\\Services\\TrailImageService');
             card.className = 'bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden';
             card.dataset.postId = post.id;
             
-            const userAvatar = post.user.profile_photo_url || '/images/default-avatar.png';
+            // Get user display name and avatar
+            const userName = post.user?.display_name || post.user?.organization_name || post.user?.name || 'Unknown User';
+            const userAvatar = post.user?.profile_photo_url || post.user?.profile_photo_path || '/images/default-avatar.png';
             const isOrg = post.type === 'organization';
             const formattedDate = new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             
@@ -1962,9 +1954,9 @@ $imageService = app('App\\Services\\TrailImageService');
                     <!-- Post Header -->
                     <div class="flex items-start justify-between mb-4">
                         <div class="flex items-center gap-3">
-                            <img src="${userAvatar}" alt="${post.user.display_name}" class="w-12 h-12 rounded-full object-cover">
+                            <img src="${userAvatar}" alt="${userName}" class="w-12 h-12 rounded-full object-cover" onerror="this.src='/images/default-avatar.png'">
                             <div>
-                                <h3 class="font-semibold text-gray-900">${post.user.display_name}</h3>
+                                <h3 class="font-semibold text-gray-900">${userName}</h3>
                                 <p class="text-sm text-gray-500">${formattedDate}${post.hike_date ? ' • Hiked on ' + new Date(post.hike_date).toLocaleDateString() : ''}</p>
                             </div>
                         </div>
@@ -2190,34 +2182,38 @@ $imageService = app('App\\Services\\TrailImageService');
             const div = document.createElement('div');
             div.className = 'comment-item bg-gray-50 rounded-lg p-4';
             
-            const userAvatar = comment.user.profile_photo_url || '/images/default-avatar.png';
+            const userName = comment.user?.display_name || comment.user?.organization_name || comment.user?.name || 'Unknown User';
+            const userAvatar = comment.user?.profile_photo_url || comment.user?.profile_photo_path || '/images/default-avatar.png';
             const formattedDate = new Date(comment.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             
             div.innerHTML = `
                 <div class="flex gap-3">
-                    <img src="${userAvatar}" alt="${comment.user.display_name}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
+                    <img src="${userAvatar}" alt="${userName}" class="w-8 h-8 rounded-full object-cover flex-shrink-0" onerror="this.src='/images/default-avatar.png'">
                     <div class="flex-1">
                         <div class="flex items-center gap-2 mb-1">
-                            <span class="font-semibold text-sm text-gray-900">${comment.user.display_name}</span>
+                            <span class="font-semibold text-sm text-gray-900">${userName}</span>
                             <span class="text-xs text-gray-500">${formattedDate}</span>
                         </div>
                         <p class="text-sm text-gray-700">${escapeHtml(comment.comment)}</p>
                         
                         ${comment.replies && comment.replies.length > 0 ? `
                             <div class="mt-3 ml-4 space-y-3 border-l-2 border-gray-200 pl-4">
-                                ${comment.replies.map(reply => `
+                                ${comment.replies.map(reply => {
+                                    const replyUserName = reply.user?.display_name || reply.user?.organization_name || reply.user?.name || 'Unknown User';
+                                    const replyAvatar = reply.user?.profile_photo_url || reply.user?.profile_photo_path || '/images/default-avatar.png';
+                                    return `
                                     <div class="flex gap-2">
-                                        <img src="${reply.user.profile_photo_url || '/images/default-avatar.png'}" 
-                                             alt="${reply.user.display_name}" class="w-6 h-6 rounded-full object-cover flex-shrink-0">
+                                        <img src="${replyAvatar}" 
+                                             alt="${replyUserName}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" onerror="this.src='/images/default-avatar.png'">
                                         <div>
                                             <div class="flex items-center gap-2">
-                                                <span class="font-semibold text-xs text-gray-900">${reply.user.display_name}</span>
+                                                <span class="font-semibold text-xs text-gray-900">${replyUserName}</span>
                                                 <span class="text-xs text-gray-500">${new Date(reply.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                                             </div>
                                             <p class="text-xs text-gray-700 mt-1">${escapeHtml(reply.comment)}</p>
                                         </div>
                                     </div>
-                                `).join('')}
+                                `;}).join('')}
                             </div>
                         ` : ''}
                     </div>
