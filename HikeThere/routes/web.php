@@ -365,9 +365,9 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
         $user = $request->user();
         // Get organization's created/owned events, not followed events
         $events = \App\Models\Event::where('user_id', $user->id)
-            ->where('is_active', true)
+            ->where('is_public', true)
             ->select('id', 'title', 'slug')
-            ->orderBy('start_date')
+            ->orderBy('start_at')
             ->get();
         
         return response()->json([
