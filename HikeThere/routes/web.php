@@ -346,65 +346,31 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
     
     // API: Get organization's own trails and events for post creation
     Route::get('/api/organization/trails', function(\Illuminate\Http\Request $request) {
-        try {
-            $user = $request->user();
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthenticated',
-                    'trails' => []
-                ], 401);
-            }
-            
-            $trails = \App\Models\Trail::where('organization_id', $user->id)
-                ->where('status', 'active')
-                ->select('id', 'trail_name')
-                ->orderBy('trail_name')
-                ->get();
-            
-            return response()->json([
-                'success' => true,
-                'trails' => $trails
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Error fetching organization trails: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'trails' => []
-            ], 500);
-        }
+        $user = $request->user();
+        $trails = \App\Models\Trail::where('organization_id', $user->id)
+            ->where('status', 'active')
+            ->select('id', 'trail_name')
+            ->orderBy('trail_name')
+            ->get();
+        
+        return response()->json([
+            'success' => true,
+            'trails' => $trails
+        ]);
     })->name('api.organization.trails');
     
     Route::get('/api/organization/events', function(\Illuminate\Http\Request $request) {
-        try {
-            $user = $request->user();
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthenticated',
-                    'events' => []
-                ], 401);
-            }
-            
-            $events = \App\Models\Event::where('organization_id', $user->id)
-                ->where('start_date', '>=', now())
-                ->select('id', 'title')
-                ->orderBy('start_date')
-                ->get();
-            
-            return response()->json([
-                'success' => true,
-                'events' => $events
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Error fetching organization events: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'events' => []
-            ], 500);
-        }
+        $user = $request->user();
+        $events = \App\Models\Event::where('organization_id', $user->id)
+            ->where('start_date', '>=', now())
+            ->select('id', 'title')
+            ->orderBy('start_date')
+            ->get();
+        
+        return response()->json([
+            'success' => true,
+            'events' => $events
+        ]);
     })->name('api.organization.events');
     
     // Hiker Profile View (only for hikers with confirmed bookings)

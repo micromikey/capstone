@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 class CommunityPost extends Model
 {
@@ -128,35 +127,10 @@ class CommunityPost extends Model
         }
         
         return array_map(function($image) {
-            $path = is_array($image) && isset($image['path']) ? $image['path'] : $image;
-            
-            // If it's already a full URL, return as-is
-            if (preg_match('/^https?:\/\//', $path)) {
-                return $path;
+            if (is_array($image) && isset($image['path'])) {
+                return asset('storage/' . $image['path']);
             }
-            
-            // Try to use GCS for production
-            try {
-                $gcsBucket = config('filesystems.disks.gcs.bucket');
-                
-                if ($gcsBucket) {
-                    // First try using Storage facade
-                    try {
-                        $url = Storage::disk('gcs')->url($path);
-                        if ($url) {
-                            return $url;
-                        }
-                    } catch (\Exception $e) {
-                        // If Storage fails, manually construct GCS URL
-                        return 'https://storage.googleapis.com/' . $gcsBucket . '/' . $path;
-                    }
-                }
-            } catch (\Exception $e) {
-                \Log::warning('GCS URL generation failed: ' . $e->getMessage());
-            }
-            
-            // Fallback to local storage URL
-            return asset('storage/' . $path);
+            return asset('storage/' . $image);
         }, $images);
     }
 
