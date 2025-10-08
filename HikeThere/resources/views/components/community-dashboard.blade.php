@@ -1548,22 +1548,29 @@ $imageService = app('App\\Services\\TrailImageService');
                     return response.json();
                 })
                 .then(data => {
-                    if (data.success && data.trails.length > 0) {
-                        contentSelect.innerHTML = '<option value="">Select a trail you\'ve visited</option>';
-                        data.trails.forEach(trail => {
-                            const option = document.createElement('option');
-                            option.value = trail.id;
-                            option.textContent = trail.trail_name + ' (by ' + trail.user.display_name + ')';
-                            contentSelect.appendChild(option);
-                        });
+                    if (data.success) {
+                        if (data.trails && data.trails.length > 0) {
+                            contentSelect.innerHTML = '<option value="">Select a trail you\'ve visited</option>';
+                            contentSelect.disabled = false;
+                            data.trails.forEach(trail => {
+                                const option = document.createElement('option');
+                                option.value = trail.id;
+                                option.textContent = trail.trail_name + ' (by ' + trail.user.display_name + ')';
+                                contentSelect.appendChild(option);
+                            });
+                        } else {
+                            contentSelect.innerHTML = '<option value="">No trails available - Follow organizations with trails first</option>';
+                            contentSelect.disabled = true;
+                            showToast('info', 'Follow some organizations to see their trails here');
+                        }
                     } else {
-                        contentSelect.innerHTML = '<option value="">No trails available - Follow organizations or book trails first</option>';
-                        contentSelect.disabled = true;
+                        throw new Error(data.message || 'Failed to load trails');
                     }
                 })
                 .catch(error => {
                     console.error('Error loading trails:', error);
-                    contentSelect.innerHTML = '<option value="">Error loading trails</option>';
+                    contentSelect.innerHTML = '<option value="">Error loading trails - Please try again</option>';
+                    contentSelect.disabled = true;
                     showToast('error', 'Error loading trails: ' + error.message);
                 });
         }
