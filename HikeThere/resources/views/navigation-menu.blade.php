@@ -96,7 +96,7 @@
                     <x-nav-link href="{{ route('org.bookings.index') }}" :active="request()->routeIs('org.bookings.*')">
                         {{ __('Bookings') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('community.index') }}" :active="request()->routeIs('community.index')">
+                    <x-nav-link href="{{ route('org.community.index') }}" :active="request()->routeIs('org.community.*')">
                         {{ __('Posts') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('reports.index') }}" :active="request()->routeIs('reports.*')">
@@ -339,7 +339,7 @@
             <x-responsive-nav-link href="{{ route('org.bookings.index') }}" :active="request()->routeIs('org.bookings.*')">
                 {{ __('Bookings') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('community.index') }}" :active="request()->routeIs('community.index')">
+            <x-responsive-nav-link href="{{ route('org.community.index') }}" :active="request()->routeIs('org.community.*')">
                 {{ __('Posts') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('reports.index') }}" :active="request()->routeIs('reports.*')">

@@ -162,78 +162,11 @@ $imageService = app('App\\Services\\TrailImageService');
                             <img src="{{ $organization->profile_picture_url }}" alt="{{ $organization->display_name }}"
                                 class="w-full h-48 object-cover rounded-t-xl">
                         @else
-                            <!-- Mountain + Community SVG Placeholder -->
-                            <div class="w-full h-48 bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600 rounded-t-xl flex items-center justify-center relative overflow-hidden">
-                                <!-- Mountain Background -->
-                                <svg class="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice">
-                                    <path d="M0,200 L0,100 L100,40 L200,120 L300,20 L400,80 L400,200 Z" fill="white" opacity="0.3"/>
-                                    <path d="M0,200 L0,120 L80,80 L160,140 L240,60 L320,100 L400,60 L400,200 Z" fill="white" opacity="0.2"/>
-                                </svg>
-                                
-                                <!-- Community Icon with Mountain -->
-                                <div class="relative z-10 text-white">
-                                    <svg class="w-28 h-28 mx-auto drop-shadow-2xl" viewBox="0 0 120 120" fill="none">
-                                        <!-- Mountain Base (larger, more prominent) -->
-                                        <path d="M20 85 L45 45 L60 65 L75 35 L100 70 L100 85 Z" 
-                                              fill="white" opacity="0.25"/>
-                                        <path d="M30 85 L50 55 L60 65 L70 45 L90 75 L90 85 Z" 
-                                              fill="white" opacity="0.20"/>
-                                        
-                                        <!-- Mountain Peak (center focal point) -->
-                                        <path d="M60 20 L75 45 L45 45 Z" 
-                                              fill="white" opacity="0.35" stroke="white" stroke-width="1.5"/>
-                                        
-                                        <!-- Community Circle of People -->
-                                        <!-- Person 1 (top center - leader) -->
-                                        <g transform="translate(60, 52)">
-                                            <circle cx="0" cy="0" r="5" fill="white" opacity="0.95"/>
-                                            <path d="M-4 6 Q-4 10 0 12 Q4 10 4 6" fill="white" opacity="0.95"/>
-                                        </g>
-                                        
-                                        <!-- Person 2 (left) -->
-                                        <g transform="translate(42, 62)">
-                                            <circle cx="0" cy="0" r="4.5" fill="white" opacity="0.90"/>
-                                            <path d="M-3.5 5 Q-3.5 8 0 10 Q3.5 8 3.5 5" fill="white" opacity="0.90"/>
-                                        </g>
-                                        
-                                        <!-- Person 3 (right) -->
-                                        <g transform="translate(78, 62)">
-                                            <circle cx="0" cy="0" r="4.5" fill="white" opacity="0.90"/>
-                                            <path d="M-3.5 5 Q-3.5 8 0 10 Q3.5 8 3.5 5" fill="white" opacity="0.90"/>
-                                        </g>
-                                        
-                                        <!-- Person 4 (bottom left) -->
-                                        <g transform="translate(48, 75)">
-                                            <circle cx="0" cy="0" r="4" fill="white" opacity="0.85"/>
-                                            <path d="M-3 4 Q-3 7 0 9 Q3 7 3 4" fill="white" opacity="0.85"/>
-                                        </g>
-                                        
-                                        <!-- Person 5 (bottom right) -->
-                                        <g transform="translate(72, 75)">
-                                            <circle cx="0" cy="0" r="4" fill="white" opacity="0.85"/>
-                                            <path d="M-3 4 Q-3 7 0 9 Q3 7 3 4" fill="white" opacity="0.85"/>
-                                        </g>
-                                        
-                                        <!-- Connection Circle/Network -->
-                                        <circle cx="60" cy="65" r="22" stroke="white" stroke-width="1.5" 
-                                                fill="none" opacity="0.4" stroke-dasharray="3 3"/>
-                                        
-                                        <!-- Connecting Lines between people -->
-                                        <path d="M60 60 L42 68 M60 60 L78 68 M42 68 L48 80 M78 68 L72 80 M48 80 L72 80" 
-                                              stroke="white" stroke-width="1.2" opacity="0.35" stroke-linecap="round"/>
-                                        
-                                        <!-- Flag on mountain peak -->
-                                        <line x1="60" y1="20" x2="60" y2="32" stroke="white" stroke-width="1.5" opacity="0.5"/>
-                                        <path d="M60 22 L68 25 L60 28 Z" fill="white" opacity="0.5"/>
-                                    </svg>
-                                    <p class="text-center text-sm font-semibold mt-2 drop-shadow-lg tracking-wide">{{ Str::limit($organization->display_name, 20) }}</p>
+                            <!-- Initials Avatar -->
+                            <div class="w-full h-48 bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600 rounded-t-xl flex items-center justify-center">
+                                <div class="text-white text-6xl font-bold">
+                                    {{ strtoupper(substr($organization->display_name, 0, 1)) }}{{ strtoupper(substr(explode(' ', $organization->display_name)[1] ?? '', 0, 1)) }}
                                 </div>
-                                
-                                <!-- Decorative dots -->
-                                <div class="absolute top-4 left-4 w-2 h-2 bg-white rounded-full opacity-60"></div>
-                                <div class="absolute top-8 right-8 w-1.5 h-1.5 bg-white rounded-full opacity-50"></div>
-                                <div class="absolute bottom-6 left-8 w-2 h-2 bg-white rounded-full opacity-40"></div>
-                                <div class="absolute bottom-10 right-6 w-1 h-1 bg-white rounded-full opacity-60"></div>
                             </div>
                         @endif
                         <div class="absolute top-4 right-4">
@@ -1896,6 +1829,40 @@ $imageService = app('App\\Services\\TrailImageService');
         // TO BE CONTINUED IN NEXT PART - createPostCard function and interactions
         
         // Create post card HTML
+        // Helper function to get initials from name
+        function getInitials(name) {
+            if (!name) return '?';
+            const words = name.trim().split(' ');
+            if (words.length === 1) {
+                return words[0].substring(0, 2).toUpperCase();
+            }
+            return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+        }
+        
+        // Helper function to create avatar HTML (with initials fallback)
+        function createAvatarHtml(user, size = 'w-10 h-10', textSize = 'text-sm') {
+            const name = user?.display_name || user?.organization_name || user?.name || 'Unknown';
+            const avatarUrl = user?.profile_picture_url;
+            
+            if (avatarUrl && avatarUrl !== '/images/default-avatar.png') {
+                return `<img src="${avatarUrl}" alt="${name}" class="${size} rounded-full object-cover">`;
+            } else {
+                const initials = getInitials(name);
+                const colors = [
+                    'bg-gradient-to-br from-blue-400 to-blue-600',
+                    'bg-gradient-to-br from-green-400 to-green-600',
+                    'bg-gradient-to-br from-purple-400 to-purple-600',
+                    'bg-gradient-to-br from-pink-400 to-pink-600',
+                    'bg-gradient-to-br from-indigo-400 to-indigo-600',
+                    'bg-gradient-to-br from-emerald-400 to-emerald-600',
+                ];
+                const colorIndex = name.charCodeAt(0) % colors.length;
+                const colorClass = colors[colorIndex];
+                
+                return `<div class="${size} ${colorClass} rounded-full flex items-center justify-center text-white font-bold ${textSize}">${initials}</div>`;
+            }
+        }
+        
         function createPostCard(post) {
             const card = document.createElement('div');
             card.className = 'bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden';
@@ -1903,7 +1870,7 @@ $imageService = app('App\\Services\\TrailImageService');
             
             // Get user display name and avatar
             const userName = post.user?.display_name || post.user?.organization_name || post.user?.name || 'Unknown User';
-            const userAvatar = post.user?.profile_picture_url || '/images/default-avatar.png';
+            const avatarHtml = createAvatarHtml(post.user, 'w-12 h-12', 'text-lg');
             const isOrg = post.type === 'organization';
             const formattedDate = new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             
@@ -1954,7 +1921,7 @@ $imageService = app('App\\Services\\TrailImageService');
                     <!-- Post Header -->
                     <div class="flex items-start justify-between mb-4">
                         <div class="flex items-center gap-3">
-                            <img src="${userAvatar}" alt="${userName}" class="w-12 h-12 rounded-full object-cover" onerror="this.src='/images/default-avatar.png'">
+                            ${avatarHtml}
                             <div>
                                 <h3 class="font-semibold text-gray-900">${userName}</h3>
                                 <p class="text-sm text-gray-500">${formattedDate}${post.hike_date ? ' • Hiked on ' + new Date(post.hike_date).toLocaleDateString() : ''}</p>
@@ -2183,12 +2150,12 @@ $imageService = app('App\\Services\\TrailImageService');
             div.className = 'comment-item bg-gray-50 rounded-lg p-4';
             
             const userName = comment.user?.display_name || comment.user?.organization_name || comment.user?.name || 'Unknown User';
-            const userAvatar = comment.user?.profile_picture_url || '/images/default-avatar.png';
+            const avatarHtml = createAvatarHtml(comment.user, 'w-8 h-8', 'text-xs');
             const formattedDate = new Date(comment.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             
             div.innerHTML = `
                 <div class="flex gap-3">
-                    <img src="${userAvatar}" alt="${userName}" class="w-8 h-8 rounded-full object-cover flex-shrink-0" onerror="this.src='/images/default-avatar.png'">
+                    ${avatarHtml}
                     <div class="flex-1">
                         <div class="flex items-center gap-2 mb-1">
                             <span class="font-semibold text-sm text-gray-900">${userName}</span>
@@ -2200,11 +2167,10 @@ $imageService = app('App\\Services\\TrailImageService');
                             <div class="mt-3 ml-4 space-y-3 border-l-2 border-gray-200 pl-4">
                                 ${comment.replies.map(reply => {
                                     const replyUserName = reply.user?.display_name || reply.user?.organization_name || reply.user?.name || 'Unknown User';
-                                    const replyAvatar = reply.user?.profile_picture_url || '/images/default-avatar.png';
+                                    const replyAvatarHtml = createAvatarHtml(reply.user, 'w-6 h-6', 'text-[10px]');
                                     return `
                                     <div class="flex gap-2">
-                                        <img src="${replyAvatar}" 
-                                             alt="${replyUserName}" class="w-6 h-6 rounded-full object-cover flex-shrink-0" onerror="this.src='/images/default-avatar.png'">
+                                        ${replyAvatarHtml}
                                         <div>
                                             <div class="flex items-center gap-2">
                                                 <span class="font-semibold text-xs text-gray-900">${replyUserName}</span>

@@ -341,6 +341,9 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
         return view('org.about');
     })->name('org.about');
     
+    // Organization Community/Posts
+    Route::get('/org/community', [CommunityController::class, 'index'])->name('org.community.index');
+    
     // Hiker Profile View (only for hikers with confirmed bookings)
     Route::get('/org/community/hiker/{hiker}', [App\Http\Controllers\Organization\HikerProfileController::class, 'show'])
         ->name('org.community.hiker-profile');
