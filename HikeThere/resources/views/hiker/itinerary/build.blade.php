@@ -366,12 +366,18 @@
                                       // Get hiking start time from the trail's most recent event
                                       $hikingStartTime = $trail->events->first()?->hiking_start_time ?? null;
                                     @endphp
+                                    @php
+                                      // Get region and province from location or directly from trail
+                                      $region = $trail->location?->region ?? $trail->region ?? '';
+                                      $province = $trail->location?->province ?? '';
+                                      $fullAddress = $province && $region ? "$province, $region" : ($province ?: ($region ?: ''));
+                                    @endphp
                                     <option value="{{ $trail->trail_name }}" 
                                       data-trail-id="{{ $trail->id }}" 
-                                      data-region="{{ $trail->location ? $trail->location->region : '' }}"
-                                      data-province="{{ $trail->location ? $trail->location->province : '' }}"
+                                      data-region="{{ $region }}"
+                                      data-province="{{ $province }}"
                                       data-mountain="{{ $trail->mountain_name ?? '' }}"
-                                      data-full-address="{{ $trail->location ? $trail->location->province . ', ' . $trail->location->region : '' }}"
+                                      data-full-address="{{ $fullAddress }}"
                                       data-difficulty="{{ ucfirst($trail->difficulty ?? 'Unknown') }}"
                                       {{ $isSelected ? 'selected' : '' }} 
                                       data-side-trips='@json($sideTripsArray)' 
@@ -384,7 +390,7 @@
                                       @if(!empty($trail->departure_time)) data-departure-time="{{ e($trail->departure_time) }}" @elseif(!empty($trail->departure_time)) data-departure-time="{{ e($trail->departure_time) }}" @endif
                                       @if(!empty($trail->pickup_time)) data-pickup-time-short="{{ e(\Carbon\Carbon::parse($trail->pickup_time)->format('H:i')) }}" @elseif(!empty($trail->pickup_time)) data-pickup-time-short="{{ e(\Carbon\Carbon::parse($trail->pickup_time)->format('H:i')) }}" @endif
                                       @if(!empty($trail->departure_time)) data-departure-time-short="{{ e(\Carbon\Carbon::parse($trail->departure_time)->format('H:i')) }}" @elseif(!empty($trail->departure_time)) data-departure-time-short="{{ e(\Carbon\Carbon::parse($trail->departure_time)->format('H:i')) }}" @endif>
-                                      {{ $trail->trail_name }} - {{ $trail->location ? $trail->location->province . ', ' . $trail->location->region : ($trail->mountain_name ?? 'Location N/A') }} ({{ ucfirst($trail->difficulty ?? 'Unknown') }})
+                                      {{ $trail->trail_name }} - {{ $fullAddress ?: ($trail->mountain_name ?? 'Location N/A') }} ({{ ucfirst($trail->difficulty ?? 'Unknown') }})
                                     </option>
                                   @endforeach
                               </optgroup>
@@ -452,13 +458,17 @@
                                     $isSelected = (old('trail') == $trail->trail_name) || (isset($preselectedTrail) && $preselectedTrail->id == $trail->id);
                                     // Get hiking start time from the trail's most recent event
                                     $hikingStartTime = $trail->events->first()?->hiking_start_time ?? null;
+                                    // Get region and province from location or directly from trail
+                                    $region2 = $trail->location?->region ?? $trail->region ?? '';
+                                    $province2 = $trail->location?->province ?? '';
+                                    $fullAddress2 = $province2 && $region2 ? "$province2, $region2" : ($province2 ?: ($region2 ?: ''));
                                   @endphp
                                   <option value="{{ $trail->trail_name }}" 
                                     data-trail-id="{{ $trail->id }}" 
-                                    data-region="{{ $trail->location ? $trail->location->region : '' }}"
-                                    data-province="{{ $trail->location ? $trail->location->province : '' }}"
+                                    data-region="{{ $region2 }}"
+                                    data-province="{{ $province2 }}"
                                     data-mountain="{{ $trail->mountain_name ?? '' }}"
-                                    data-full-address="{{ $trail->location ? $trail->location->province . ', ' . $trail->location->region : '' }}"
+                                    data-full-address="{{ $fullAddress2 }}"
                                     data-difficulty="{{ ucfirst($trail->difficulty ?? 'Unknown') }}"
                                     {{ $isSelected ? 'selected' : '' }} 
                                     data-side-trips='@json($sideTripsArray)' 
@@ -471,7 +481,7 @@
                                     @if(!empty($trail->departure_time)) data-departure-time="{{ e($trail->departure_time) }}" @elseif(!empty($trail->departure_time)) data-departure-time="{{ e($trail->departure_time) }}" @endif
                                     @if(!empty($trail->pickup_time)) data-pickup-time-short="{{ e(\Carbon\Carbon::parse($trail->pickup_time)->format('H:i')) }}" @elseif(!empty($trail->pickup_time)) data-pickup-time-short="{{ e(\Carbon\Carbon::parse($trail->pickup_time)->format('H:i')) }}" @endif
                                     @if(!empty($trail->departure_time)) data-departure-time-short="{{ e(\Carbon\Carbon::parse($trail->departure_time)->format('H:i')) }}" @elseif(!empty($trail->departure_time)) data-departure-time-short="{{ e(\Carbon\Carbon::parse($trail->departure_time)->format('H:i')) }}" @endif>
-                                    {{ $trail->trail_name }} - {{ $trail->location ? $trail->location->province . ', ' . $trail->location->region : ($trail->mountain_name ?? 'Location N/A') }} ({{ ucfirst($trail->difficulty ?? 'Unknown') }})
+                                    {{ $trail->trail_name }} - {{ $fullAddress2 ?: ($trail->mountain_name ?? 'Location N/A') }} ({{ ucfirst($trail->difficulty ?? 'Unknown') }})
                                   </option>
                                 @endforeach
                               </optgroup>
