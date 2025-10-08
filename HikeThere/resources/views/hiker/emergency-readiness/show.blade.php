@@ -15,9 +15,16 @@
             <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6 border border-gray-100">
                 <div class="bg-gradient-to-r from-emerald-600 to-green-600 p-6 text-white">
                     <div class="flex items-start justify-between">
-                        <div>
-                            <h1 class="text-3xl font-bold mb-2">Trail Assessment Details</h1>
-                            <p class="text-emerald-100">Emergency Readiness Feedback</p>
+                        <div class="flex items-start gap-3">
+                            <div class="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.818-4.818A4 4 0 1119 9m-7 7a2 2 0 100-4 2 2 0 000 4z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h1 class="text-3xl font-bold mb-2">Trail Assessment Details</h1>
+                                <p class="text-emerald-100">Emergency Readiness Feedback</p>
+                            </div>
                         </div>
                         <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-white/20 backdrop-blur-sm">
                             {{ $readiness->readiness_level }}

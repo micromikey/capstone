@@ -7,8 +7,8 @@
             </div>
 
             <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-8 max-w-7xl mx-auto transform hover:shadow-2xl transition-all duration-300">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                    <div class="lg:col-span-1">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+                    <div class="lg:col-span-1 flex flex-col">
                         {{-- Display general errors at the top --}}
                         @if($errors->any())
                             <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg">
@@ -253,27 +253,21 @@
 
                     <!-- Removed Payment Section - Now handled after booking creation -->
 
-                    <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                    <div class="mt-auto flex items-center justify-start pt-6 border-t border-gray-200">
                         <a href="{{ route('booking.index') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors duration-200">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                             </svg>
                             Cancel
                         </a>
-                        <button type="button" id="scroll_to_preview" class="inline-flex items-center px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-md hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-blue-200">
-                            Next
-                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-                            </svg>
-                        </button>
                     </div>
                 </form>
             </div>
 
                     <!-- Participants Section - Now in right column -->
-                    <div class="lg:col-span-1">
-                        <div id="participants_section" class="hidden">
-                            <div class="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl shadow-sm p-6">
+                    <div class="lg:col-span-1 flex flex-col">
+                        <div id="participants_section" class="hidden flex-grow">
+                            <div class="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl shadow-sm p-6 h-full">
                                 <div class="flex items-center justify-between mb-4">
                                     <label class="flex items-center text-sm font-semibold text-gray-800">
                                         <svg class="w-5 h-5 text-emerald-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,7 +286,7 @@
                         </div>
                         
                         <!-- Placeholder when no participants -->
-                        <div id="participants_placeholder" class="bg-gradient-to-br from-gray-50 to-slate-50 border border-gray-200 rounded-xl shadow-sm p-6">
+                        <div id="participants_placeholder" class="bg-gradient-to-br from-gray-50 to-slate-50 border border-gray-200 rounded-xl shadow-sm p-6 flex-grow">
                             <div class="text-center py-8">
                                 <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,6 +296,16 @@
                                 <h4 class="text-lg font-semibold text-gray-700 mb-2">Participant Details</h4>
                                 <p class="text-sm text-gray-500">Set party size to 2 or more to add participant information</p>
                             </div>
+                        </div>
+                        
+                        <!-- Next Button - Always at bottom aligned with Cancel -->
+                        <div class="mt-auto pt-6 border-t border-gray-200">
+                            <button type="button" id="scroll_to_preview" class="w-full inline-flex items-center justify-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-md hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 focus:ring-4 focus:ring-blue-200">
+                                <span class="mr-2">Next: View Booking Preview</span>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>
