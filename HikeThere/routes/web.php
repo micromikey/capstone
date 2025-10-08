@@ -313,6 +313,10 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
     Route::get('/org/about', function () {
         return view('org.about');
     })->name('org.about');
+    
+    // Hiker Profile View (only for hikers with confirmed bookings)
+    Route::get('/org/community/hiker/{hiker}', [App\Http\Controllers\Organization\HikerProfileController::class, 'show'])
+        ->name('org.community.hiker-profile');
 });
 
 // Organization Events management
@@ -393,7 +397,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/map/search-nearby', [MapController::class, 'searchNearby'])->name('map.search.nearby');
 });
 
-// Profile routes (require authentication and hiker user type)
+// Hiker-specific routes (require hiker user type and preferences)
 Route::middleware(['auth:sanctum', 'verified', 'user.type:hiker', 'ensure.hiking.preferences'])->group(function () {
     // Trail show route (authenticated hikers only)
     Route::get('/trails/{trail}', [TrailController::class, 'show'])->name('trails.show');

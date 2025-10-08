@@ -260,6 +260,10 @@ class AssessmentController extends Controller
             'readiness_level' => $readinessLevel['level'],
             'recommendations' => $recommendations,
             'completed_at' => now(),
+            'emergency_contact_name' => $emergencyData['emergency_name'] ?? null,
+            'emergency_contact_relationship' => $emergencyData['emergency_relationship'] ?? null,
+            'emergency_contact_phone' => $emergencyData['emergency_number'] ?? null,
+            'emergency_contact_phone_alt' => $emergencyData['emergency_alt'] ?? null,
         ]);
 
         // Clear session data

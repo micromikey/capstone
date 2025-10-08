@@ -21,6 +21,10 @@ class AssessmentResult extends Model
         'readiness_level',
         'recommendations',
         'completed_at',
+        'emergency_contact_name',
+        'emergency_contact_relationship',
+        'emergency_contact_phone',
+        'emergency_contact_phone_alt',
     ];
 
     protected $casts = [
