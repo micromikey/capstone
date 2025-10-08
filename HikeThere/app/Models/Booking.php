@@ -220,14 +220,32 @@ class Booking extends Model
 
         try {
             $disk = config('filesystems.default', 'public');
+            
+            // For GCS, construct the full URL directly
+            if ($disk === 'gcs') {
+                $bucket = config('filesystems.disks.gcs.bucket');
+                if ($bucket) {
+                    return 'https://storage.googleapis.com/' . $bucket . '/' . $this->payment_proof_path;
+                }
+            }
+            
+            // For local/public disk, use Storage facade
             return Storage::disk($disk)->url($this->payment_proof_path);
         } catch (\Exception $e) {
             Log::error('Failed to get payment proof URL', [
                 'booking_id' => $this->id,
                 'path' => $this->payment_proof_path,
+                'disk' => config('filesystems.default'),
                 'error' => $e->getMessage()
             ]);
-            // Fallback to asset helper
+            
+            // Fallback: try GCS URL directly if it looks like a GCS path
+            $bucket = config('filesystems.disks.gcs.bucket');
+            if ($bucket && strpos($this->payment_proof_path, 'payment_proofs/') !== false) {
+                return 'https://storage.googleapis.com/' . $bucket . '/' . $this->payment_proof_path;
+            }
+            
+            // Final fallback to asset helper
             return asset('storage/' . $this->payment_proof_path);
         }
     }

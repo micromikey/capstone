@@ -43,7 +43,44 @@
                                         <p class="text-sm text-gray-700 mb-4">Scan this QR code with your mobile wallet (GCash, PayMaya, etc.) to complete payment of <strong>₱{{ number_format($booking->price_cents / 100, 2) }}</strong></p>
                                         
                                         <div class="flex justify-center mb-4 bg-white p-4 rounded-lg">
-                                            <img src="{{ $credentials->getQrCodeUrl() }}" alt="Payment QR Code" class="max-w-xs w-full border-2 border-gray-300 rounded-lg shadow-md">
+                                            @php
+                                                $qrUrl = $credentials->getQrCodeUrl();
+                                                // Debug info (remove after testing)
+                                                $debugInfo = [
+                                                    'qr_path' => $credentials->qr_code_path,
+                                                    'qr_url' => $qrUrl,
+                                                    'disk' => config('filesystems.default'),
+                                                    'bucket' => config('filesystems.disks.gcs.bucket'),
+                                                ];
+                                            @endphp
+                                            
+                                            <!-- Debug Info (temporary - remove after testing) -->
+                                            @if(config('app.debug'))
+                                            <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                                                <strong>Debug Info:</strong>
+                                                <pre class="mt-2 text-left">{{ json_encode($debugInfo, JSON_PRETTY_PRINT) }}</pre>
+                                            </div>
+                                            @endif
+                                            
+                                            @if($qrUrl)
+                                                <img src="{{ $qrUrl }}" 
+                                                     alt="Payment QR Code" 
+                                                     class="max-w-xs w-full border-2 border-gray-300 rounded-lg shadow-md"
+                                                     onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'text-center text-red-600 p-8\'><svg class=\'mx-auto h-12 w-12 mb-2\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z\'/></svg><p class=\'text-sm font-medium\'>Unable to load QR code</p><p class=\'text-xs mt-1\'>Please contact the organization</p></div>';">
+                                            @else
+                                                <img src="{{ $qrUrl }}" 
+                                                     alt="Payment QR Code" 
+                                                     class="max-w-xs w-full border-2 border-gray-300 rounded-lg shadow-md"
+                                                     onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'text-center text-red-600 p-8\'><svg class=\'mx-auto h-12 w-12 mb-2\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z\'/></svg><p class=\'text-sm font-medium\'>Unable to load QR code</p><p class=\'text-xs mt-1\'>Please contact the organization</p></div>';">
+                                            @else
+                                                <div class="text-center text-red-600 p-8">
+                                                    <svg class="mx-auto h-12 w-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                                    </svg>
+                                                    <p class="text-sm font-medium">QR Code Not Available</p>
+                                                    <p class="text-xs mt-1">Please contact the organization</p>
+                                                </div>
+                                            @endif
                                         </div>
 
                                         @if($credentials->manual_payment_instructions)

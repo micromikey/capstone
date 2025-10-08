@@ -127,13 +127,31 @@ class OrganizationPaymentCredential extends Model
 
         try {
             $disk = config('filesystems.default', 'public');
+            
+            // For GCS, construct the full URL
+            if ($disk === 'gcs') {
+                $bucket = config('filesystems.disks.gcs.bucket');
+                if ($bucket) {
+                    return 'https://storage.googleapis.com/' . $bucket . '/' . $this->qr_code_path;
+                }
+            }
+            
+            // For local/public disk, use Storage facade
             return Storage::disk($disk)->url($this->qr_code_path);
         } catch (\Exception $e) {
             Log::error('Failed to get QR code URL', [
                 'path' => $this->qr_code_path,
+                'disk' => config('filesystems.default'),
                 'error' => $e->getMessage()
             ]);
-            // Fallback to asset helper
+            
+            // Fallback: try GCS URL directly if it looks like a GCS path
+            $bucket = config('filesystems.disks.gcs.bucket');
+            if ($bucket && strpos($this->qr_code_path, 'qr_codes/') !== false) {
+                return 'https://storage.googleapis.com/' . $bucket . '/' . $this->qr_code_path;
+            }
+            
+            // Final fallback to asset helper
             return asset('storage/' . $this->qr_code_path);
         }
     }

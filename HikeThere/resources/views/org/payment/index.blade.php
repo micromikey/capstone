@@ -223,9 +223,24 @@
                                         @if($credentials->qr_code_path)
                                             <div class="mb-4" id="current-qr-display">
                                                 <p class="text-sm font-medium text-gray-700 mb-2">Current QR Code:</p>
-                                                <img src="{{ $credentials->getQrCodeUrl() }}" 
-                                                     alt="Current QR Code" 
-                                                     class="mx-auto h-48 w-48 object-contain border rounded">
+                                                @php
+                                                    $qrUrl = $credentials->getQrCodeUrl();
+                                                @endphp
+                                                @if($qrUrl)
+                                                    <img src="{{ $qrUrl }}" 
+                                                         alt="Current QR Code" 
+                                                         class="mx-auto h-48 w-48 object-contain border rounded shadow-md"
+                                                         onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f3f4f6%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2214%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23666%22%3EImage Not Found%3C/text%3E%3C/svg%3E'; this.parentElement.insertAdjacentHTML('afterend', '<p class=\'text-xs text-red-600 mt-2\'>Failed to load image. Please re-upload your QR code.</p>');">
+                                                    <p class="text-xs text-gray-500 mt-2">{{ basename($credentials->qr_code_path) }}</p>
+                                                @else
+                                                    <div class="text-red-600">
+                                                        <svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                                        </svg>
+                                                        <p class="text-sm mt-2">Unable to load QR code</p>
+                                                        <p class="text-xs mt-1">Please re-upload your QR code</p>
+                                                    </div>
+                                                @endif
                                             </div>
                                         @endif
                                         <svg id="upload-icon" class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">

@@ -307,6 +307,29 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
     Route::post('/org/payment/test', [App\Http\Controllers\OrganizationPaymentController::class, 'test'])->name('org.payment.test');
     Route::delete('/org/payment/clear', [App\Http\Controllers\OrganizationPaymentController::class, 'clear'])->name('org.payment.clear');
     
+    // Debug route for QR code configuration
+    Route::get('/debug-qr-config', function() {
+        $user = auth()->user();
+        $credentials = App\Models\OrganizationPaymentCredential::where('user_id', $user->id)->first();
+        
+        if (!$credentials) {
+            return response()->json(['error' => 'No payment credentials found'], 404);
+        }
+        
+        $disk = config('filesystems.default', 'public');
+        $bucket = config('filesystems.disks.gcs.bucket');
+        
+        return response()->json([
+            'qr_code_path' => $credentials->qr_code_path,
+            'qr_code_url' => $credentials->getQrCodeUrl(),
+            'filesystem_disk' => $disk,
+            'gcs_bucket' => $bucket,
+            'is_gcs' => $disk === 'gcs',
+            'has_qr_code' => !empty($credentials->qr_code_path),
+            'expected_gcs_url' => $bucket ? 'https://storage.googleapis.com/' . $bucket . '/' . $credentials->qr_code_path : null,
+        ]);
+    })->name('debug.qr.config');
+    
     // Emergency Readiness Management (Read-Only - View Hiker Feedback)
     Route::get('organization/emergency-readiness', [App\Http\Controllers\Organization\EmergencyReadinessController::class, 'index'])->name('organization.emergency-readiness.index');
     Route::get('organization/emergency-readiness/{emergencyReadiness}', [App\Http\Controllers\Organization\EmergencyReadinessController::class, 'show'])->name('organization.emergency-readiness.show');

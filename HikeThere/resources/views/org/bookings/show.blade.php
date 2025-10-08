@@ -478,8 +478,24 @@
                                                         </div>
                                                     </div>
                                                     
-                                                    <!-- Blurred Image -->
-                                                    <img src="{{ $booking->getPaymentProofUrl() }}" alt="Secure Payment Proof" class="w-full h-auto blur-sm group-hover:blur-none transition-all duration-500">
+                                                    <!-- Blurred Image with Error Handling -->
+                                                    @php
+                                                        $proofUrl = $booking->getPaymentProofUrl();
+                                                    @endphp
+                                                    @if($proofUrl)
+                                                        <img src="{{ $proofUrl }}" 
+                                                             alt="Secure Payment Proof" 
+                                                             class="w-full h-auto blur-sm group-hover:blur-none transition-all duration-500"
+                                                             onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'bg-red-50 p-8 text-center\'><svg class=\'mx-auto h-12 w-12 text-red-600 mb-2\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z\'/></svg><p class=\'text-sm font-medium text-red-900\'>Unable to load payment proof</p><p class=\'text-xs text-red-700 mt-1\'>Image file may be missing or inaccessible</p></div>';">
+                                                    @else
+                                                        <div class="bg-red-50 p-8 text-center">
+                                                            <svg class="mx-auto h-12 w-12 text-red-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                                            </svg>
+                                                            <p class="text-sm font-medium text-red-900">Payment Proof Not Available</p>
+                                                            <p class="text-xs text-red-700 mt-1">Unable to generate secure URL</p>
+                                                        </div>
+                                                    @endif
                                                     
                                                     <!-- Center Overlay -->
                                                     <div class="absolute inset-0 bg-black/60 group-hover:bg-black/20 transition-all duration-500 flex items-center justify-center z-20 group-hover:opacity-0">
