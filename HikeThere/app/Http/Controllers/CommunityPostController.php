@@ -137,8 +137,11 @@ class CommunityPostController extends Controller
             // Handle image uploads
             $uploadedImages = [];
             if ($request->hasFile('images')) {
+                // Use GCS in production, public disk in local
+                $disk = config('filesystems.default') === 'gcs' ? 'gcs' : 'public';
+                
                 foreach ($request->file('images') as $index => $image) {
-                    $path = $image->store('community-posts', 'public');
+                    $path = $image->store('community-posts', $disk);
                     $uploadedImages[] = [
                         'path' => $path,
                         'caption' => $validated['image_captions'][$index] ?? null
