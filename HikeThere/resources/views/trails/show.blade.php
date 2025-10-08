@@ -191,8 +191,8 @@
                             <div class="bg-gray-50 rounded-lg p-4">
                                 <div class="flex items-center justify-between">
                                     <a href="{{ route('community.organization.show', $trail->user_id) }}" class="flex items-center gap-3 hover:opacity-80 transition-opacity flex-1">
-                                        @if($trail->user->profile_photo_path)
-                                            <img src="{{ asset('storage/' . $trail->user->profile_photo_path) }}" alt="{{ $trail->user->display_name }}" class="w-12 h-12 rounded-full object-cover">
+                                        @if($trail->user->profile_picture)
+                                            <img src="{{ $trail->user->profile_picture_url }}" alt="{{ $trail->user->display_name }}" class="w-12 h-12 rounded-full object-cover">
                                         @else
                                             <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-semibold">
                                                 {{ strtoupper(substr($trail->user->display_name, 0, 1)) }}{{ strtoupper(substr(explode(' ', $trail->user->display_name)[1] ?? '', 0, 1)) }}
@@ -705,8 +705,8 @@
                                     @foreach($trail->reviews->take(5) as $review)
                                         <div class="border-b border-gray-200 pb-6 last:border-b-0">
                                             <div class="flex items-start space-x-4">
-                                                @if($review->user->profile_photo_path)
-                                                    <img src="{{ asset('storage/' . $review->user->profile_photo_path) }}" alt="{{ $review->user->name }}" class="w-10 h-10 rounded-full object-cover">
+                                                @if($review->user->profile_picture)
+                                                    <img src="{{ $review->user->profile_picture_url }}" alt="{{ $review->user->name }}" class="w-10 h-10 rounded-full object-cover">
                                                 @else
                                                     <div class="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-semibold text-sm">
                                                         {{ strtoupper(substr($review->user->name, 0, 1)) }}{{ strtoupper(substr(explode(' ', $review->user->name)[1] ?? '', 0, 1)) }}

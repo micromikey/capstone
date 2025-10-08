@@ -1903,7 +1903,7 @@ $imageService = app('App\\Services\\TrailImageService');
             
             // Get user display name and avatar
             const userName = post.user?.display_name || post.user?.organization_name || post.user?.name || 'Unknown User';
-            const userAvatar = post.user?.profile_photo_url || post.user?.profile_photo_path || '/images/default-avatar.png';
+            const userAvatar = post.user?.profile_picture_url || '/images/default-avatar.png';
             const isOrg = post.type === 'organization';
             const formattedDate = new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             
@@ -2183,7 +2183,7 @@ $imageService = app('App\\Services\\TrailImageService');
             div.className = 'comment-item bg-gray-50 rounded-lg p-4';
             
             const userName = comment.user?.display_name || comment.user?.organization_name || comment.user?.name || 'Unknown User';
-            const userAvatar = comment.user?.profile_photo_url || comment.user?.profile_photo_path || '/images/default-avatar.png';
+            const userAvatar = comment.user?.profile_picture_url || '/images/default-avatar.png';
             const formattedDate = new Date(comment.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             
             div.innerHTML = `
@@ -2200,7 +2200,7 @@ $imageService = app('App\\Services\\TrailImageService');
                             <div class="mt-3 ml-4 space-y-3 border-l-2 border-gray-200 pl-4">
                                 ${comment.replies.map(reply => {
                                     const replyUserName = reply.user?.display_name || reply.user?.organization_name || reply.user?.name || 'Unknown User';
-                                    const replyAvatar = reply.user?.profile_photo_url || reply.user?.profile_photo_path || '/images/default-avatar.png';
+                                    const replyAvatar = reply.user?.profile_picture_url || '/images/default-avatar.png';
                                     return `
                                     <div class="flex gap-2">
                                         <img src="${replyAvatar}" 
