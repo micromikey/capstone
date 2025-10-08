@@ -260,14 +260,14 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
 
 // Organization Profile routes - accessible to approved organizations
 Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])->group(function () {
-    Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('org.profile.show');
-    Route::get('/profile/edit', [App\Http\Controllers\ProfileController::class, 'edit'])->name('org.profile.edit');
-    Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('org.profile.update');
-    Route::delete('/profile/picture', [App\Http\Controllers\ProfileController::class, 'deleteProfilePicture'])->name('org.profile.picture.delete');
-    Route::post('/profile/picture/upload', [App\Http\Controllers\ProfileController::class, 'uploadProfilePicture'])->name('org.profile.picture.upload');
+    Route::get('/org/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('org.profile.show');
+    Route::get('/org/profile/edit', [App\Http\Controllers\ProfileController::class, 'edit'])->name('org.profile.edit');
+    Route::put('/org/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('org.profile.update');
+    Route::delete('/org/profile/picture', [App\Http\Controllers\ProfileController::class, 'deleteProfilePicture'])->name('org.profile.picture.delete');
+    Route::post('/org/profile/picture/upload', [App\Http\Controllers\ProfileController::class, 'uploadProfilePicture'])->name('org.profile.picture.upload');
     
     // Account Settings route
-    Route::get('/account/settings', [App\Http\Controllers\AccountSettingsController::class, 'index'])->name('org.account.settings');
+    Route::get('/org/account/settings', [App\Http\Controllers\AccountSettingsController::class, 'index'])->name('org.account.settings');
 });
 
 // Organization Payment Setup - accessible to approved organizations
