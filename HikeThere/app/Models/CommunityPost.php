@@ -137,13 +137,19 @@ class CommunityPost extends Model
             
             // Try to use GCS for production
             try {
-                // Check if GCS is configured
-                $gcsKeyPath = config('filesystems.disks.gcs.key_file_path');
                 $gcsBucket = config('filesystems.disks.gcs.bucket');
                 
-                if ($gcsKeyPath && $gcsBucket && file_exists($gcsKeyPath)) {
-                    // Use GCS URL format
-                    return Storage::disk('gcs')->url($path);
+                if ($gcsBucket) {
+                    // First try using Storage facade
+                    try {
+                        $url = Storage::disk('gcs')->url($path);
+                        if ($url) {
+                            return $url;
+                        }
+                    } catch (\Exception $e) {
+                        // If Storage fails, manually construct GCS URL
+                        return 'https://storage.googleapis.com/' . $gcsBucket . '/' . $path;
+                    }
                 }
             } catch (\Exception $e) {
                 \Log::warning('GCS URL generation failed: ' . $e->getMessage());
