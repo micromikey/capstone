@@ -44,7 +44,7 @@
             <ul style="margin: 0; padding-left: 20px;">
                 @foreach($ticket->attachments as $attachment)
                 <li style="margin: 5px 0;">
-                    <a href="{{ url(Storage::url($attachment['path'])) }}" style="color: #2563eb; text-decoration: none;">
+                    <a href="{{ url(\App\Helpers\StorageHelper::url($attachment['path'])) }}" style="color: #2563eb; text-decoration: none;">
                         {{ $attachment['name'] }} ({{ number_format($attachment['size'] / 1024, 2) }} KB)
                     </a>
                 </li>

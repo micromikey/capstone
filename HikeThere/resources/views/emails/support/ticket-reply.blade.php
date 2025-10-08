@@ -30,7 +30,7 @@
             <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #bfdbfe;">
                 <p style="margin: 0 0 5px 0; font-size: 13px; font-weight: 600; color: #1e40af;">📎 Attachments:</p>
                 @foreach($reply->attachments as $attachment)
-                <a href="{{ url(Storage::url($attachment['path'])) }}" style="display: block; color: #2563eb; text-decoration: none; font-size: 13px; margin: 5px 0;">
+                <a href="{{ url(\App\Helpers\StorageHelper::url($attachment['path'])) }}" style="display: block; color: #2563eb; text-decoration: none; font-size: 13px; margin: 5px 0;">
                     → {{ $attachment['name'] }}
                 </a>
                 @endforeach

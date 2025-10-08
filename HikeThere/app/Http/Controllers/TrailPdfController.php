@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\StorageHelper;
 use App\Models\Trail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -142,7 +143,7 @@ class TrailPdfController extends Controller
                             $photoSrcs[] = 'data:' . $mime . ';base64,' . base64_encode((string)$contents);
                         } else {
                             // fallback to public URL via Storage facade
-                            $photoSrcs[] = \Illuminate\Support\Facades\Storage::url($rel);
+                            $photoSrcs[] = StorageHelper::url($rel);
                         }
                     } catch (\Exception $e) {
                         $photoSrcs[] = asset('storage/' . $rel);
@@ -178,7 +179,7 @@ class TrailPdfController extends Controller
                     }
                     $photoSrcs[] = 'data:' . $mime . ';base64,' . base64_encode((string)$contents);
                 } catch (\Exception $e) {
-                    $photoSrcs[] = \Illuminate\Support\Facades\Storage::url($c);
+                    $photoSrcs[] = StorageHelper::url($c);
                 }
             }
         }
@@ -329,7 +330,7 @@ class TrailPdfController extends Controller
                 }
             }
 
-            return Storage::url($path);
+            return StorageHelper::url($path);
         } catch (\Exception $e) {
             Log::warning('Failed to fetch static map: ' . $e->getMessage());
             return null;

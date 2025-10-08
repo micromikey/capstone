@@ -4,6 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Trail;
+use App\Helpers\StorageHelper;
 
 class TrailImage extends Model
 {
@@ -22,12 +23,6 @@ class TrailImage extends Model
 
     public function getUrlAttribute()
     {
-        // Check if it's already a full URL (external image)
-        if (filter_var($this->image_path, FILTER_VALIDATE_URL)) {
-            return $this->image_path;
-        }
-        
-        // Otherwise, it's a local file
-        return Storage::url($this->image_path);
+        return StorageHelper::url($this->image_path);
     }
 }

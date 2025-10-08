@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Trail;
 use App\Services\TrailImageService;
+use App\Helpers\StorageHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -465,7 +466,7 @@ class TrailController extends Controller
                     'estimated_time' => $trail->estimated_time,
                     'estimated_time_formatted' => $trail->estimated_time_formatted,
                     'coordinates' => $trail->coordinates,
-                        'gpx_file' => $trail->gpx_file ? Storage::url($trail->gpx_file) : null,
+                        'gpx_file' => StorageHelper::url($trail->gpx_file),
                     'average_rating' => $trail->average_rating,
                     'total_reviews' => $trail->total_reviews,
                     'location' => $trail->location ? [
@@ -505,7 +506,7 @@ class TrailController extends Controller
             'estimated_time' => $trail->estimated_time,
             'estimated_time_formatted' => $trail->estimated_time_formatted,
             'coordinates' => $trail->coordinates,
-                'gpx_file' => $trail->gpx_file ? Storage::url($trail->gpx_file) : null,
+                'gpx_file' => $trail->gpx_file ? StorageHelper::url($trail->gpx_file) : null,
             'summary' => $trail->summary,
             'description' => $trail->description,
             'features' => $trail->features,
@@ -618,7 +619,7 @@ class TrailController extends Controller
                 'duration' => $trail->duration,
                 'best_season' => $trail->best_season,
                 'coordinates' => $trail->coordinates,
-                    'gpx_file' => $trail->gpx_file ? Storage::url($trail->gpx_file) : null,
+                    'gpx_file' => $trail->gpx_file ? StorageHelper::url($trail->gpx_file) : null,
             ];
         });
 
@@ -663,7 +664,7 @@ class TrailController extends Controller
             ]),
             'features' => $trail->features,
             'coordinates' => $trail->coordinates,
-            'gpx_file' => $trail->gpx_file ? \Storage::url($trail->gpx_file) : null,
+            'gpx_file' => $trail->gpx_file ? StorageHelper::url($trail->gpx_file) : null,
             'price' => $trail->price,
             'duration' => $trail->duration,
             'best_season' => $trail->best_season,
@@ -834,7 +835,7 @@ class TrailController extends Controller
             'elevation_gain' => $trail->elevation_gain,
             'estimated_time' => $trail->estimated_time_formatted,
             'difficulty' => $trail->difficulty,
-            'gpx_file' => $trail->gpx_file ? \Storage::url($trail->gpx_file) : null,
+            'gpx_file' => $trail->gpx_file ? StorageHelper::url($trail->gpx_file) : null,
             'coordinate_generation_method' => $trail->coordinate_generation_method,
         ]);
     }
