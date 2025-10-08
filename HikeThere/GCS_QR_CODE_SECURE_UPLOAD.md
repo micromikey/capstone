@@ -181,19 +181,65 @@ FILESYSTEM_DISK=gcs
 
 ## Usage Flow
 
-### Organization Upload:
+### Organization Upload (QR Code):
 1. Org navigates to Payment Setup
 2. Uploads QR code image
 3. File uploaded to GCS with public visibility
-4. Path stored in database
+4. Path stored in database: `qr_codes/{org_id}_{timestamp}.ext`
 5. Old file automatically deleted
+
+### Hiker Upload (Payment Proof):
+1. Hiker selects trail and books
+2. Proceeds to payment page
+3. Sees org's QR code (loaded from GCS)
+4. Scans and pays via mobile wallet
+5. Uploads payment proof screenshot
+6. File uploaded to GCS: `payment_proofs/{booking_id}_{timestamp}.ext`
+7. Transaction recorded with reference number
 
 ### Hiker Checkout:
 1. Hiker selects trail and books
 2. Proceeds to payment page
 3. QR code displayed from GCS URL
 4. Hiker scans and pays
-5. Uploads payment proof
+5. Uploads payment proof (stored in GCS)
+
+## Static Assets in GCS
+
+For static images (like card images in hiking-tools.blade.php), you need to:
+
+1. **Upload images to GCS manually** using Google Cloud Console or gsutil:
+   ```bash
+   gsutil cp public/img/*.png gs://YOUR-BUCKET-NAME/img/
+   ```
+
+2. **Set public access** for static assets:
+   ```bash
+   gsutil iam ch allUsers:objectViewer gs://YOUR-BUCKET-NAME
+   ```
+
+3. **Image structure in GCS**:
+   ```
+   gs://your-bucket/
+   ├── img/
+   │   ├── 1.png          # Build Itineraries card
+   │   ├── 2.png          # Self Assessment card
+   │   └── 3.png          # Bookings card
+   ├── qr_codes/
+   │   └── {org_id}_{timestamp}.{ext}
+   └── payment_proofs/
+       └── {booking_id}_{timestamp}.{ext}
+   ```
+
+4. **Helper function usage** (already implemented in hiking-tools.blade.php):
+   ```php
+   $getImageUrl = function($imageName) {
+       if (env('GCS_BUCKET')) {
+           return 'https://storage.googleapis.com/' . env('GCS_BUCKET') . '/img/' . $imageName;
+       }
+       return asset('img/' . $imageName);
+   };
+   ```
 
 ## Maintenance
 

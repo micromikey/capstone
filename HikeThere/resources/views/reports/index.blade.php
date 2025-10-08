@@ -254,10 +254,11 @@
                                 <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                                 </svg>
-                                Report Output
+                                Report Output Format
                             </h5>
-                            <div>
-                                <label class="flex items-center space-x-3 p-3 rounded-lg border-2 border-emerald-200 bg-white">
+                            <div class="space-y-3">
+                                <!-- Screen View Option -->
+                                <label class="flex items-center space-x-3 p-3 rounded-lg border-2 border-emerald-200 bg-white hover:bg-emerald-50 cursor-pointer transition">
                                     <input type="radio" name="output_format" value="screen" checked class="text-emerald-600">
                                     <div class="flex items-center">
                                         <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -266,7 +267,35 @@
                                         <span class="text-sm font-medium">View On-screen</span>
                                     </div>
                                 </label>
-                                <p class="mt-2 text-sm text-gray-500">PDF and Excel export coming soon</p>
+                                
+                                <!-- PDF Export Option -->
+                                <label class="flex items-center space-x-3 p-3 rounded-lg border-2 border-red-200 bg-white hover:bg-red-50 cursor-pointer transition">
+                                    <input type="radio" name="output_format" value="pdf" class="text-red-600">
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                        </svg>
+                                        <span class="text-sm font-medium">Export as PDF</span>
+                                    </div>
+                                </label>
+                                
+                                <!-- Excel/CSV Export Option -->
+                                <label class="flex items-center space-x-3 p-3 rounded-lg border-2 border-green-200 bg-white hover:bg-green-50 cursor-pointer transition">
+                                    <input type="radio" name="output_format" value="csv" class="text-green-600">
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        <span class="text-sm font-medium">Export as Excel (CSV)</span>
+                                    </div>
+                                </label>
+                                
+                                <p class="mt-2 text-xs text-gray-500 italic">
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    PDF format is best for printing, CSV format works with Excel and Google Sheets
+                                </p>
                             </div>
                         </div>
 
@@ -305,23 +334,68 @@
             submitBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-3 inline" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generating...';
             
             const formData = new FormData(this);
+            const outputFormat = formData.get('output_format');
             
             try {
-                const response = await fetch('{{ route("reports.generate") }}', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    },
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.error) {
-                    alert('Error: ' + data.message);
+                // For PDF and CSV, download the file directly
+                if (outputFormat === 'pdf' || outputFormat === 'csv') {
+                    const response = await fetch('{{ route("reports.generate") }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        alert('Error: ' + (errorData.message || 'Failed to generate report'));
+                        return;
+                    }
+                    
+                    // Get filename from Content-Disposition header
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    let filename = 'report.' + outputFormat;
+                    if (contentDisposition) {
+                        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+                        if (filenameMatch) {
+                            filename = filenameMatch[1];
+                        }
+                    }
+                    
+                    // Create blob and download
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    // Show success message
+                    alert('Report downloaded successfully!');
+                    
                 } else {
-                    displayReport(data);
+                    // For screen output, display the JSON response
+                    const response = await fetch('{{ route("reports.generate") }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        },
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        alert('Error: ' + data.message);
+                    } else {
+                        displayReport(data);
+                    }
                 }
             } catch (error) {
                 alert('Failed to generate report: ' + error.message);

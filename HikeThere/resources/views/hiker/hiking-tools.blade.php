@@ -2,8 +2,9 @@
     @php
         // Smart image URL resolution for GCS or local fallback
         $getImageUrl = function($imageName) {
-            if (env('GCS_BUCKET')) {
-                return 'https://storage.googleapis.com/' . env('GCS_BUCKET') . '/img/' . $imageName;
+            $bucket = config('filesystems.disks.gcs.bucket');
+            if ($bucket && config('filesystems.default') === 'gcs') {
+                return 'https://storage.googleapis.com/' . $bucket . '/img/' . $imageName;
             }
             return asset('img/' . $imageName);
         };

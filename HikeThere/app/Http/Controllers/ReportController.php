@@ -7,6 +7,7 @@ use App\Models\Trail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
 
 class ReportController extends Controller
@@ -87,7 +88,7 @@ class ReportController extends Controller
             // Validate request
             $validator = Validator::make($request->all(), [
                 'report_type' => 'required|string|in:overall_transactions,booking_volumes,trail_popularity,emergency_readiness,safety_incidents,feedback_summary',
-                'output_format' => 'required|string|in:screen',
+                'output_format' => 'required|string|in:screen,pdf,csv',
                 'date_from' => 'nullable|date',
                 'date_to' => 'nullable|date|after_or_equal:date_from',
                 'trail_id' => 'nullable|exists:trails,id',
@@ -118,8 +119,29 @@ class ReportController extends Controller
                 $organizationId
             );
 
-            // For now, only support screen output
-            return response()->json($reportData);
+            // Add trail name if specific trail was selected
+            if ($request->trail_id) {
+                $trail = Trail::find($request->trail_id);
+                $reportData['trail_name'] = $trail ? $trail->trail_name : 'Unknown Trail';
+            }
+
+            // Add organization name if organization user
+            if ($organizationId) {
+                $reportData['organization_name'] = $user->organization_name ?? $user->name;
+            }
+
+            // Handle different output formats
+            switch ($request->output_format) {
+                case 'pdf':
+                    return $this->generatePDF($reportData);
+                
+                case 'csv':
+                    return $this->generateCSV($reportData);
+                
+                case 'screen':
+                default:
+                    return response()->json($reportData);
+            }
 
         } catch (Exception $e) {
             Log::error('Report generation failed: ' . $e->getMessage());
@@ -128,6 +150,109 @@ class ReportController extends Controller
                 'message' => 'Failed to generate report: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Generate PDF from report data
+     */
+    protected function generatePDF($reportData)
+    {
+        try {
+            $pdf = Pdf::loadView('reports.pdf', $reportData);
+            
+            // Generate filename
+            $filename = $this->generateFilename($reportData['title'], 'pdf');
+            
+            return $pdf->download($filename);
+        } catch (Exception $e) {
+            Log::error('PDF generation failed: ' . $e->getMessage());
+            return response()->json([
+                'error' => true,
+                'message' => 'Failed to generate PDF: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate CSV from report data
+     */
+    protected function generateCSV($reportData)
+    {
+        try {
+            $filename = $this->generateFilename($reportData['title'], 'csv');
+            
+            $headers = [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+            ];
+
+            $callback = function() use ($reportData) {
+                $file = fopen('php://output', 'w');
+                
+                // Add UTF-8 BOM for Excel compatibility
+                fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+                
+                // Write report header
+                fputcsv($file, [$reportData['title']]);
+                fputcsv($file, ['Period: ' . $reportData['period']]);
+                fputcsv($file, ['Generated: ' . now()->format('Y-m-d H:i:s')]);
+                fputcsv($file, []); // Empty line
+                
+                // Write summary section
+                if (isset($reportData['summary']) && !empty($reportData['summary'])) {
+                    fputcsv($file, ['=== SUMMARY ===']);
+                    foreach ($reportData['summary'] as $key => $value) {
+                        if (!is_array($value) && !is_object($value)) {
+                            $label = str_replace('_', ' ', ucwords($key, '_'));
+                            fputcsv($file, [$label, $value]);
+                        }
+                    }
+                    fputcsv($file, []); // Empty line
+                }
+                
+                // Write detailed data
+                if (isset($reportData['data']) && count($reportData['data']) > 0) {
+                    fputcsv($file, ['=== DETAILED DATA ===']);
+                    
+                    // Write headers
+                    $headers = array_keys($reportData['data'][0]);
+                    $headerLabels = array_map(function($header) {
+                        return str_replace('_', ' ', ucwords($header, '_'));
+                    }, $headers);
+                    fputcsv($file, $headerLabels);
+                    
+                    // Write data rows
+                    foreach ($reportData['data'] as $row) {
+                        fputcsv($file, array_values($row));
+                    }
+                } else {
+                    fputcsv($file, ['No data available for the selected period']);
+                }
+                
+                fclose($file);
+            };
+
+            return response()->stream($callback, 200, $headers);
+        } catch (Exception $e) {
+            Log::error('CSV generation failed: ' . $e->getMessage());
+            return response()->json([
+                'error' => true,
+                'message' => 'Failed to generate CSV: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate filename for exports
+     */
+    protected function generateFilename($title, $extension)
+    {
+        $slug = preg_replace('/[^A-Za-z0-9-]+/', '_', strtolower($title));
+        $date = now()->format('Y-m-d');
+        return "{$slug}_{$date}.{$extension}";
     }
 
     /**

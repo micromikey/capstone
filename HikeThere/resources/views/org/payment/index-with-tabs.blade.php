@@ -143,7 +143,7 @@
                                         @if($credentials->qr_code_path)
                                             <div class="mb-4">
                                                 <p class="text-sm font-medium text-gray-700 mb-2">Current QR Code:</p>
-                                                <img src="{{ asset('storage/' . $credentials->qr_code_path) }}" alt="Current QR Code" class="mx-auto h-48 w-48 object-contain border rounded">
+                                                <img src="{{ $credentials->getQrCodeUrl() }}" alt="Current QR Code" class="mx-auto h-48 w-48 object-contain border rounded">
                                             </div>
                                         @endif
                                         <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
