@@ -43,7 +43,7 @@ class SecurityHeaders
                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net https://cdnjs.cloudflare.com; " .
                "img-src 'self' data: https: blob: https://storage.googleapis.com; " .
                "font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net https://cdnjs.cloudflare.com data:; " .
-               "connect-src 'self' https://maps.googleapis.com https://api.openweathermap.org https://api.iconify.design https://api.simplesvg.com https://api.unisvg.com https://cloudflareinsights.com; " .
+               "connect-src 'self' https://maps.googleapis.com https://api.openweathermap.org https://api.iconify.design https://api.simplesvg.com https://api.unisvg.com https://cloudflareinsights.com https://cdn.jsdelivr.net; " .
                "frame-src 'self' https://www.google.com; " .
                "media-src 'self' data: blob:;";
         

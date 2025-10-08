@@ -2723,26 +2723,18 @@
 <script>
     // Print helper: fetch the print map HTML and print it inside a hidden iframe
     function printTrailMapFromButton(btn){
-        const id = btn.getAttribute('data-trail-id');
-        if(!id) return;
-        printTrailMap(id);
+        // Get the print URL directly from the button's data attribute
+        const printUrl = btn.getAttribute('data-print-url');
+        if(!printUrl){
+            console.error('Print URL not found on button');
+            return;
+        }
+        printTrailMap(printUrl);
     }
 
-    async function printTrailMap(trailId){
+    async function printTrailMap(url){
         try{
-            // Prefer server-generated URL from button's data-print-url attribute
-            let url = null;
-            const btn = document.querySelector(`[data-trail-id="${trailId}"]`);
-            if(btn && btn.dataset && btn.dataset.printUrl){
-                url = btn.dataset.printUrl;
-            }
-
-            // Fallback to constructed URL if no data attribute provided
-            if(!url){
-                url = `${BASE_URL}/trails/` + trailId + '/print-map';
-            }
-
-            // Fetch the rendered print view (server should render same as route('trails.print-map', $trail))
+            // Fetch the rendered print view
             const res = await fetch(url, { credentials: 'same-origin' });
             if(!res.ok) throw new Error('Failed to load print view');
             const html = await res.text();
