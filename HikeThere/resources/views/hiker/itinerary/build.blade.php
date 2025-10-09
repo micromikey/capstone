@@ -199,7 +199,50 @@
                     </div>
                     
                     <div class="space-y-2">
-                      @php $recommended = $recommendedTrails->first(); @endphp
+                      @php
+                        // Prefer the same 'Recommended for your level' trail used in the dropdown
+                        $recommended = null;
+                        if (isset($trails) && $trails->count() > 0) {
+                          $filteredTrails = $trails;
+                          if (isset($assessment)) {
+                            $difficulty = $assessment->overall_score >= 80 ? 'advanced' : ($assessment->overall_score >= 60 ? 'intermediate' : 'beginner');
+                            $filteredTrails = $trails->filter(function($trail) use ($difficulty) {
+                              return strtolower($trail->difficulty) === $difficulty;
+                            });
+                          }
+
+                          if (isset($filteredTrails) && $filteredTrails->count() > 0) {
+                            $top = $filteredTrails->first();
+                            $recommended = [
+                              'trail_id' => $top->id,
+                              'trail_name' => $top->trail_name,
+                              'mountain_name' => $top->mountain_name ?? '',
+                              'average_rating' => $top->average_rating ?? 0,
+                              'location_label' => ($top->location?->province ? ($top->location->province . ($top->location?->region ? ', ' . $top->location->region : '')) : ($top->location?->region ?? '')),
+                              'score' => $top->ml_score ?? 0,
+                              'explanation' => 'Recommended for your level'
+                            ];
+                          } elseif (isset($recommendedTrails) && $recommendedTrails->count() > 0) {
+                            $recommended = $recommendedTrails->first();
+                          } else {
+                            $firstTrail = $trails->first();
+                            if ($firstTrail) {
+                              $recommended = [
+                                'trail_id' => $firstTrail->id,
+                                'trail_name' => $firstTrail->trail_name,
+                                'mountain_name' => $firstTrail->mountain_name ?? '',
+                                'average_rating' => $firstTrail->average_rating ?? 0,
+                                'location_label' => ($firstTrail->location?->province ? ($firstTrail->location->province . ($firstTrail->location?->region ? ', ' . $firstTrail->location->region : '')) : ($firstTrail->location?->region ?? '')),
+                                'score' => 0,
+                                'explanation' => 'Fallback trail'
+                              ];
+                            }
+                          }
+                        } elseif (isset($recommendedTrails) && $recommendedTrails->count() > 0) {
+                          $recommended = $recommendedTrails->first();
+                        }
+                      @endphp
+                      @if($recommended)
                       <div class="group relative bg-gradient-to-r from-emerald-50 to-cyan-50 rounded-lg p-3 border border-emerald-200 hover:shadow-md transition-all duration-200 cursor-pointer" 
                            onclick="selectRecommendedTrail({{ $recommended['trail_id'] }}, '{{ addslashes($recommended['trail_name']) }}')">
                         <!-- Recommendation Badge -->
