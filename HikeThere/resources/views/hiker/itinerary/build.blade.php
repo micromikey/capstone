@@ -193,13 +193,13 @@
                         <svg class="w-4 h-4 inline-block mr-1 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                         </svg>
-                        Top Picks for You
+                        Top Pick for You
                       </h4>
                       <span class="text-xs text-gray-500">ML Powered</span>
                     </div>
                     
-                    <div class="space-y-2 max-h-80 overflow-y-auto pr-2">
-                      @foreach($recommendedTrails as $recommended)
+                    <div class="space-y-2">
+                      @php $recommended = $recommendedTrails->first(); @endphp
                       <div class="group relative bg-gradient-to-r from-emerald-50 to-cyan-50 rounded-lg p-3 border border-emerald-200 hover:shadow-md transition-all duration-200 cursor-pointer" 
                            onclick="selectRecommendedTrail({{ $recommended['trail_id'] }}, '{{ addslashes($recommended['trail_name']) }}')">
                         <!-- Recommendation Badge -->
@@ -255,8 +255,8 @@
                           </p>
                           @endif
                         </div>
+                        </div>
                       </div>
-                      @endforeach
                     </div>
                   </div>
                   @endif

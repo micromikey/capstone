@@ -42,26 +42,11 @@
                                         </h3>
                                         <p class="text-sm text-gray-700 mb-4">Scan this QR code with your mobile wallet (GCash, PayMaya, etc.) to complete payment of <strong>₱{{ number_format($booking->price_cents / 100, 2) }}</strong></p>
                                         
+                                        @php
+                                            $qrUrl = $credentials->getQrCodeUrl();
+                                        @endphp
+                                        
                                         <div class="flex justify-center mb-4 bg-white p-4 rounded-lg">
-                                            @php
-                                                $qrUrl = $credentials->getQrCodeUrl();
-                                                // Debug info (remove after testing)
-                                                $debugInfo = [
-                                                    'qr_path' => $credentials->qr_code_path,
-                                                    'qr_url' => $qrUrl,
-                                                    'disk' => config('filesystems.default'),
-                                                    'bucket' => config('filesystems.disks.gcs.bucket'),
-                                                ];
-                                            @endphp
-                                            
-                                            <!-- Debug Info (temporary - remove after testing) -->
-                                            @if(config('app.debug'))
-                                            <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                                                <strong>Debug Info:</strong>
-                                                <pre class="mt-2 text-left">{{ json_encode($debugInfo, JSON_PRETTY_PRINT) }}</pre>
-                                            </div>
-                                            @endif
-                                            
                                             @if($qrUrl)
                                                 <img src="{{ $qrUrl }}" 
                                                      alt="Payment QR Code" 
