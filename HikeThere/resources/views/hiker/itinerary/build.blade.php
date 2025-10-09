@@ -605,9 +605,8 @@
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <!--RIGHT: Controls Card -->
+              <!--RIGHT: Controls Card (kept inside main grid) -->
               <div class="rounded-xl border border-white/70 bg-white/85 p-4 shadow-sm ring-1 ring-black/5 backdrop-blur">
                 <div class="space-y-6">
                   <!-- Trail Information -->
