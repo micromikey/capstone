@@ -54,7 +54,7 @@
                 </div>
             </div>
 
-            <form action="{{ route('organization.trails.emergency-info.update', $trail) }}" method="POST" class="space-y-6">
+            <form action="{{ route('org.trails.emergency-info.update', $trail) }}" method="POST" class="space-y-6">
                 @csrf
                 @method('PUT')
 
@@ -322,7 +322,7 @@
 
                 <!-- Action Buttons -->
                 <div class="flex justify-between items-center bg-white shadow-lg rounded-2xl p-6 border-2 border-gray-200">
-                    <form action="{{ route('organization.trails.emergency-info.destroy', $trail) }}" method="POST" 
+                    <form action="{{ route('org.trails.emergency-info.destroy', $trail) }}" method="POST" 
                           onsubmit="return confirm('Are you sure you want to clear all custom emergency information? The system will revert to auto-generated data.');">
                         @csrf
                         @method('DELETE')
