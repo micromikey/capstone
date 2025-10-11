@@ -1911,7 +1911,8 @@ class ItineraryGeneratorService
                 return null;
             }
 
-            $path = 'color:0xff0000ff|weight:5|' . implode('|', $pathCoords);
+            // Make the trail path thicker and more visible with a bold red line
+            $path = 'color:0xff0000ff|weight:6|' . implode('|', $pathCoords);
 
             // Set map size optimized for web display - wider for better visibility
             $size = '1400x700';
@@ -1929,59 +1930,10 @@ class ItineraryGeneratorService
                 return null;
             }
 
-            // Calculate the optimal bounds to fit the entire path
-            // Find min/max lat/lng to determine the bounding box
-            $allLats = [];
-            $allLngs = [];
-            foreach ($coordinates as $coord) {
-                $lat = $coord['lat'] ?? $coord['latitude'] ?? null;
-                $lng = $coord['lng'] ?? $coord['longitude'] ?? null;
-                if ($lat && $lng) {
-                    $allLats[] = $lat;
-                    $allLngs[] = $lng;
-                }
-            }
-            
-            if (!empty($allLats) && !empty($allLngs)) {
-                $minLat = min($allLats);
-                $maxLat = max($allLats);
-                $minLng = min($allLngs);
-                $maxLng = max($allLngs);
-                
-                // Add 10% padding to bounds for better visibility
-                $latPadding = ($maxLat - $minLat) * 0.1;
-                $lngPadding = ($maxLng - $minLng) * 0.1;
-                
-                $minLat -= $latPadding;
-                $maxLat += $latPadding;
-                $minLng -= $lngPadding;
-                $maxLng += $lngPadding;
-                
-                // Calculate center point
-                $centerLat = ($minLat + $maxLat) / 2;
-                $centerLng = ($minLng + $maxLng) / 2;
-                
-                // Calculate optimal zoom level based on bounding box
-                // This formula approximates the zoom needed to fit the bounds
-                $latDiff = $maxLat - $minLat;
-                $lngDiff = $maxLng - $minLng;
-                
-                // Estimate zoom level (Google Maps zoom levels: 0-21)
-                // Adjust based on the larger dimension
-                $maxDiff = max($latDiff, $lngDiff);
-                $zoom = floor(log(360 / $maxDiff) / log(2)) - 1;
-                $zoom = max(5, min(18, $zoom)); // Clamp between 5 and 18
-            } else {
-                // Fallback to center of start/end
-                $centerLat = ($startLat + $endLat) / 2;
-                $centerLng = ($startLng + $endLng) / 2;
-                $zoom = 12;
-            }
-
-            // Build the complete URL with calculated center and zoom
+            // Let Google Maps automatically calculate the best zoom and center
+            // by NOT specifying center= and zoom= parameters.
+            // Google will automatically fit the map to show all paths and markers optimally.
             $url = $baseUrl . '?size=' . $size .
-                   '&center=' . $centerLat . ',' . $centerLng .
-                   '&zoom=' . $zoom .
                    '&path=' . urlencode($path) .
                    '&markers=' . urlencode('color:green|label:S|' . $startLat . ',' . $startLng) .
                    '&markers=' . urlencode('color:red|label:E|' . $endLat . ',' . $endLng) .
