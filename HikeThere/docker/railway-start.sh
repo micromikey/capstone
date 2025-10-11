@@ -25,9 +25,19 @@ echo "Configuring Nginx for port ${PORT:-9001} (Railway's assigned port)..."
 sed -i "s/listen 0.0.0.0:9001;/listen 0.0.0.0:${PORT:-9001};/" /etc/nginx/sites-available/default
 sed -i "s/listen \[::]:9001;/listen [::]:${PORT:-9001};/" /etc/nginx/sites-available/default
 
-# Set permissions
-echo "Setting permissions..."
+# Ensure storage directories exist and set permissions
+echo "Ensuring storage directories exist..."
+mkdir -p /app/storage/logs \
+    /app/storage/framework/cache \
+    /app/storage/framework/sessions \
+    /app/storage/framework/views \
+    /app/storage/app/public \
+    /app/bootstrap/cache
+
+# Set permissions with full access to prevent permission errors
+echo "Setting permissions (777 for Railway compatibility)..."
 chmod -R 777 /app/storage /app/bootstrap/cache
+chown -R www-data:www-data /app/storage /app/bootstrap/cache || true
 
 # Create .env from example if it doesn't exist (Railway uses env variables)
 if [ ! -f /app/.env ]; then

@@ -85,14 +85,15 @@ RUN cat public/build/.vite/manifest.json || echo "Manifest not created!"
 # Create build directory if npm run build didn't create it
 RUN mkdir -p /app/public/build
 
-# Create necessary directories and set permissions
+# Create necessary directories with full permissions for Railway
 RUN mkdir -p /app/storage/logs \
     /app/storage/framework/cache \
     /app/storage/framework/sessions \
     /app/storage/framework/views \
+    /app/storage/app/public \
     /app/bootstrap/cache \
     && chown -R www-data:www-data /app/storage /app/bootstrap/cache \
-    && chmod -R 775 /app/storage /app/bootstrap/cache
+    && chmod -R 777 /app/storage /app/bootstrap/cache
 
 # Copy nginx configuration
 COPY docker/nginx/default.conf /etc/nginx/sites-available/default
