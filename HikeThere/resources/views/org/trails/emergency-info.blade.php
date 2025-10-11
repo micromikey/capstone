@@ -277,6 +277,23 @@
                         </button>
                     </div>
 
+                    <!-- Interactive Map for Pinning Evacuation Points -->
+                    <div class="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <div>
+                                <h4 class="text-blue-800 font-semibold text-sm">How to add evacuation points:</h4>
+                                <p class="text-blue-700 text-sm mt-1">Click on the map below to pin an evacuation point. Each click will add a new marker and automatically fill in the coordinates.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <div id="evacuation-map" class="w-full h-[500px] rounded-xl border-2 border-gray-300 shadow-lg"></div>
+                    </div>
+
                     <div id="evacuation-points-container" class="space-y-4">
                         @php
                             $evacuationPoints = old('evacuation_points', $trail->emergency_info['evacuation_points'] ?? []);
@@ -351,11 +368,131 @@
     </div>
 
     @push('scripts')
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_api_key') }}&libraries=places"></script>
     <script>
         let emergencyNumberIndex = {{ count($emergencyNumbers) }};
         let hospitalIndex = {{ count($hospitals) }};
         let rangerStationIndex = {{ count($rangerStations) }};
         let evacuationPointIndex = {{ count($evacuationPoints) }};
+        
+        // Google Maps variables
+        let map;
+        let markers = [];
+        let clickListener;
+
+        // Initialize map when page loads
+        window.addEventListener('load', function() {
+            initMap();
+            loadExistingEvacuationPoints();
+        });
+
+        function initMap() {
+            const trailLocation = {
+                lat: {{ $trail->latitude ?? 16.4023 }},
+                lng: {{ $trail->longitude ?? 120.5960 }}
+            };
+
+            map = new google.maps.Map(document.getElementById('evacuation-map'), {
+                center: trailLocation,
+                zoom: 13,
+                mapTypeId: 'terrain',
+                mapTypeControl: true,
+                streetViewControl: false,
+                fullscreenControl: true
+            });
+
+            // Add click listener to map
+            clickListener = map.addListener('click', function(event) {
+                addEvacuationPointFromMap(event.latLng);
+            });
+
+            // Add a marker for the trail location
+            new google.maps.Marker({
+                position: trailLocation,
+                map: map,
+                title: 'Trail Location',
+                icon: {
+                    url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                }
+            });
+        }
+
+        function addEvacuationPointFromMap(latLng) {
+            const lat = latLng.lat();
+            const lng = latLng.lng();
+            const coordinates = lat.toFixed(6) + ', ' + lng.toFixed(6);
+
+            // Add marker to map
+            const marker = new google.maps.Marker({
+                position: latLng,
+                map: map,
+                title: 'Evacuation Point ' + (markers.length + 1),
+                draggable: true,
+                icon: {
+                    url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+                }
+            });
+
+            // Update coordinates when marker is dragged
+            marker.addListener('dragend', function(event) {
+                const newLat = event.latLng.lat();
+                const newLng = event.latLng.lng();
+                const newCoordinates = newLat.toFixed(6) + ', ' + newLng.toFixed(6);
+                const index = markers.indexOf(marker);
+                if (index !== -1) {
+                    const input = document.querySelector(`input[name="evacuation_points[${index}][coordinates]"]`);
+                    if (input) {
+                        input.value = newCoordinates;
+                    }
+                }
+            });
+
+            // Add marker to array
+            markers.push(marker);
+
+            // Add evacuation point form row with coordinates pre-filled
+            addEvacuationPoint(coordinates);
+        }
+
+        function loadExistingEvacuationPoints() {
+            // Load existing evacuation points from the form
+            const existingPoints = @json($evacuationPoints);
+            
+            existingPoints.forEach((point, index) => {
+                if (point.coordinates) {
+                    const coords = point.coordinates.split(',');
+                    if (coords.length === 2) {
+                        const lat = parseFloat(coords[0].trim());
+                        const lng = parseFloat(coords[1].trim());
+                        
+                        if (!isNaN(lat) && !isNaN(lng)) {
+                            const marker = new google.maps.Marker({
+                                position: { lat: lat, lng: lng },
+                                map: map,
+                                title: point.name || 'Evacuation Point ' + (index + 1),
+                                draggable: true,
+                                icon: {
+                                    url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+                                }
+                            });
+
+                            // Update coordinates when marker is dragged
+                            marker.addListener('dragend', function(event) {
+                                const newLat = event.latLng.lat();
+                                const newLng = event.latLng.lng();
+                                const newCoordinates = newLat.toFixed(6) + ', ' + newLng.toFixed(6);
+                                const input = document.querySelector(`input[name="evacuation_points[${index}][coordinates]"]`);
+                                if (input) {
+                                    input.value = newCoordinates;
+                                }
+                            });
+
+                            markers.push(marker);
+                        }
+                    }
+                }
+            });
+        }
 
         function addEmergencyNumber() {
             const container = document.getElementById('emergency-numbers-container');
@@ -474,7 +611,7 @@
             rangerStationIndex++;
         }
 
-        function addEvacuationPoint() {
+        function addEvacuationPoint(coordinates = '') {
             const container = document.getElementById('evacuation-points-container');
             const html = `
                 <div class="evacuation-point-row bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -487,10 +624,11 @@
                                        placeholder="e.g., Trailhead Base Camp" required>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Coordinates (Optional)</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Coordinates <span class="text-yellow-600">(Click map to pin)</span></label>
                                 <input type="text" name="evacuation_points[${evacuationPointIndex}][coordinates]" 
                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                                       placeholder="e.g., 16.5969° N, 120.8844° E">
+                                       placeholder="Click map or enter manually"
+                                       value="${coordinates}">
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
