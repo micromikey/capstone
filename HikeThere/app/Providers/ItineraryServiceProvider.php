@@ -10,6 +10,7 @@ use App\Services\DataNormalizerService;
 use App\Services\IntelligentItineraryService;
 use App\Services\DurationParserService;
 use App\Services\GoogleMapsService;
+use App\Services\EmergencyInfoService;
 
 class ItineraryServiceProvider extends ServiceProvider
 {
@@ -41,6 +42,16 @@ class ItineraryServiceProvider extends ServiceProvider
             );
         });
 
+        $this->app->singleton(GoogleMapsService::class, function ($app) {
+            return new GoogleMapsService();
+        });
+
+        $this->app->singleton(EmergencyInfoService::class, function ($app) {
+            return new EmergencyInfoService(
+                $app->make(GoogleMapsService::class)
+            );
+        });
+
         $this->app->singleton(ItineraryGeneratorService::class, function ($app) {
             return new ItineraryGeneratorService(
                 $app->make(TrailCalculatorService::class),
@@ -48,7 +59,8 @@ class ItineraryServiceProvider extends ServiceProvider
                 $app->make(DataNormalizerService::class),
                 $app->make(IntelligentItineraryService::class),
                 $app->make(DurationParserService::class),
-                $app->make(GoogleMapsService::class)
+                $app->make(GoogleMapsService::class),
+                $app->make(EmergencyInfoService::class)
             );
         });
     }
