@@ -18,7 +18,7 @@
     <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
         <img src="{{ $staticMapUrl }}" 
              alt="Trail Map for {{ $trail['name'] ?? 'Trail' }}" 
-             class="w-full h-96 object-cover rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-white"
+             class="w-full h-[500px] object-contain rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-white"
              loading="lazy">
     </div>
     
