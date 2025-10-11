@@ -17,4 +17,20 @@ class AccountSettingsController extends Controller
         
         return view('account.hiker-settings', compact('user'));
     }
+
+    /**
+     * Update the user's fitness level
+     */
+    public function updateFitnessLevel(Request $request)
+    {
+        $request->validate([
+            'fitness_level' => 'required|in:beginner,intermediate,advanced',
+        ]);
+
+        $user = Auth::user();
+        $user->fitness_level = $request->fitness_level;
+        $user->save();
+
+        return redirect()->back()->with('fitness_updated', 'Your fitness level has been updated successfully! This will affect your future itinerary recommendations.');
+    }
 }

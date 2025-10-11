@@ -21,14 +21,22 @@
                 </div>
                 <h2 class="text-2xl font-bold text-white drop-shadow-lg">Day {{ $day }}</h2>
             </div>
-            <div class="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
-                <p class="text-sm font-bold text-white">{{ $baseDateForDay->toFormattedDateString() }}</p>
+            <div class="flex items-center gap-3">
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20">
+                    <p class="text-sm font-bold text-white">{{ $baseDateForDay->toFormattedDateString() }}</p>
+                </div>
+                <button class="add-activity-btn bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/20 text-white font-medium transition-all duration-200 flex items-center gap-2" data-day="{{ $day }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Add Activity
+                </button>
             </div>
         </div>
     </div>
 
     <div class="overflow-x-auto rounded-b-2xl">
-        <table class="min-w-full table-fixed divide-y-2 divide-emerald-100">
+        <table class="min-w-full table-fixed divide-y-2 divide-emerald-100 activity-list">
             <thead class="bg-gradient-to-r from-emerald-100 to-teal-100">
                 <tr>
                     <th class="px-6 py-4 text-left text-sm font-bold text-emerald-800 border-r-2 border-emerald-200 w-20">Time</th>
@@ -37,11 +45,12 @@
                     <th class="px-6 py-4 text-left text-sm font-bold text-emerald-800 border-r-2 border-emerald-200 w-16">Distance</th>
                     <th class="px-6 py-4 text-left text-sm font-bold text-emerald-800 border-r-2 border-emerald-200 w-24">Weather</th>
                     <th class="px-6 py-4 text-left text-sm font-bold text-emerald-800 border-r-2 border-emerald-200 w-20">Transport</th>
-                    <th class="px-6 py-4 text-left text-sm font-bold text-emerald-800">Notes</th>
+                    <th class="px-6 py-4 text-left text-sm font-bold text-emerald-800 border-r-2 border-emerald-200">Notes</th>
+                    <th class="px-6 py-4 text-center text-sm font-bold text-emerald-800 w-32">Actions</th>
                 </tr>
             </thead>
             <tbody class="bg-white/80 backdrop-blur-sm divide-y-2 divide-emerald-50">
-                @foreach ($activities as $activity)
+                @foreach ($activities as $index => $activity)
                     @php
                         $activity = (array) $activity;
                         $minutes = intval($activity['minutes'] ?? 0);
@@ -96,21 +105,23 @@
                         $notesParts = array_filter([$activityNotes, $weatherAdvice]);
                         $notes = implode(' ', $notesParts);
                     @endphp
-                    <tr class="hover:bg-gradient-to-r hover:from-emerald-25 hover:to-teal-25 transition-all duration-200 border-b-2 border-emerald-50">
+                    <tr class="activity-row hover:bg-gradient-to-r hover:from-emerald-25 hover:to-teal-25 transition-all duration-200 border-b-2 border-emerald-50" 
+                        data-activity-index="{{ $index }}" 
+                        data-activity-id="{{ $activity['id'] ?? '' }}">
                         <td class="px-6 py-4 text-sm font-bold text-emerald-800 border-r-2 border-emerald-100 bg-emerald-50/50">
-                            <span class="bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">{{ $timeLabel }}</span>
+                            <span class="activity-time bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">{{ $timeLabel }}</span>
                         </td>
                         <td class="px-6 py-4 text-sm text-slate-800 border-r-2 border-emerald-100">
-                            <div class="font-bold text-slate-900 mb-1">{{ $activity['title'] ?? 'Activity' }}</div>
+                            <div class="activity-name font-bold text-slate-900 mb-1">{{ $activity['title'] ?? 'Activity' }}</div>
                             @if(!empty($activity['location']))
                                 <div class="text-xs text-teal-700 font-medium bg-teal-50 px-2 py-1 rounded-full inline-block mb-1">📍 {{ $activity['location'] }}</div>
                             @endif
                             @if(!empty($activity['description']))
-                                <div class="text-xs text-slate-600 bg-slate-50 p-2 rounded-lg mt-1">{{ $activity['description'] }}</div>
+                                <div class="activity-description text-xs text-slate-600 bg-slate-50 p-2 rounded-lg mt-1">{{ $activity['description'] }}</div>
                             @endif
                         </td>
                         <td class="px-6 py-4 text-sm font-semibold text-blue-700 border-r-2 border-emerald-100">
-                            <span class="text-blue-700">{{ isset($activity['cum_minutes']) ? $trailCalculator->formatElapsed($activity['cum_minutes']) : '-' }}</span>
+                            <span class="activity-duration text-blue-700"><i class="fas fa-clock text-muted"></i> {{ isset($activity['cum_minutes']) ? $trailCalculator->formatElapsed($activity['cum_minutes']) : '-' }}</span>
                         </td>
                         <td class="px-6 py-4 text-sm font-semibold text-indigo-700 border-r-2 border-emerald-100">
                             <span class="text-indigo-700">{{ isset($activity['cum_distance_km']) ? $trailCalculator->formatDistanceKm($activity['cum_distance_km']) : '-' }}</span>
@@ -186,6 +197,44 @@
                                         Standard hiking conditions - no special preparations needed
                                     </div>
                                 @endif
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-center border-l-2 border-emerald-100">
+                            <div class="flex items-center justify-center gap-2">
+                                <!-- Drag Handle (for reordering) -->
+                                <button class="drag-handle text-gray-400 hover:text-gray-600 cursor-move" title="Drag to reorder">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M7 2a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2V4a2 2 0 00-2-2H7zm3 14a1 1 0 100-2 1 1 0 000 2zm0-4a1 1 0 100-2 1 1 0 000 2zm0-4a1 1 0 100-2 1 1 0 000 2z"></path>
+                                    </svg>
+                                </button>
+                                
+                                <!-- Edit Button -->
+                                <button class="edit-activity-btn bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-xs font-medium transition-colors" title="Edit activity">
+                                    <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </button>
+                                
+                                <!-- Save Button (hidden by default) -->
+                                <button class="save-activity-btn bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md text-xs font-medium transition-colors" style="display:none;" title="Save changes">
+                                    <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </button>
+                                
+                                <!-- Cancel Button (hidden by default) -->
+                                <button class="cancel-edit-btn bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md text-xs font-medium transition-colors" style="display:none;" title="Cancel editing">
+                                    <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                                
+                                <!-- Delete Button -->
+                                <button class="delete-activity-btn bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-xs font-medium transition-colors" title="Delete activity">
+                                    <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
                             </div>
                         </td>
                     </tr>

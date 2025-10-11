@@ -315,6 +315,9 @@ class ItineraryController extends Controller
         return view('hiker.itinerary.print', compact('itinerary', 'weatherData', 'trail', 'build'));
     }
 
+    /**
+     * Generate and download PDF version of the itinerary
+     */
     public function pdf(Itinerary $itinerary)
     {
         // Check if user owns this itinerary
@@ -322,7 +325,95 @@ class ItineraryController extends Controller
             abort(403, 'Unauthorized access to itinerary.');
         }
 
-        return view('hiker.itinerary.pdf', compact('itinerary'));
+        // Get the same data as printView
+        $weatherData = $itinerary->weather_conditions ?? [];
+        $trail = null;
+        $build = $itinerary->transport_details ?? [];
+
+        // Load trail if available
+        if ($itinerary->trail_id) {
+            $trail = \App\Models\Trail::with(['location', 'events' => function($query) {
+                $query->where('is_public', true)
+                      ->whereNotNull('hiking_start_time')
+                      ->orderBy('start_at', 'desc')
+                      ->limit(1);
+            }])->find($itinerary->trail_id);
+            
+            // Fetch fresh weather if possible
+            if ($trail && $trail->latitude && $trail->longitude) {
+                try {
+                    $weatherController = new \App\Http\Controllers\Api\WeatherController();
+                    $weatherRequest = new \Illuminate\Http\Request([
+                        'lat' => $trail->latitude,
+                        'lng' => $trail->longitude
+                    ]);
+                    
+                    $weatherResponse = $weatherController->getForecast($weatherRequest);
+                    $freshWeatherData = $weatherResponse->getData(true);
+                    
+                    if (!isset($freshWeatherData['error'])) {
+                        $formattedWeatherData = $this->formatWeatherDataForItinerary($freshWeatherData, $itinerary->start_date, $itinerary->duration_days ?? 1);
+                        $weatherData = $freshWeatherData;
+                        foreach ($formattedWeatherData as $dayKey => $dayData) {
+                            $weatherData[$dayKey] = $dayData;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Failed to fetch fresh weather data for PDF: ' . $e->getMessage());
+                }
+            }
+        }
+
+        // Generate PDF using DomPDF
+        $pdf = \PDF::loadView('hiker.itinerary.print', compact('itinerary', 'weatherData', 'trail', 'build'));
+        
+        // Set PDF options for better rendering
+        $pdf->setPaper('a4', 'portrait');
+        $pdf->setOptions([
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true,
+            'defaultFont' => 'sans-serif'
+        ]);
+
+        // Generate filename
+        $trailName = $trail ? \Str::slug($trail->trail_name ?? $trail->name ?? 'trail') : 'trail';
+        $date = now()->format('Y-m-d');
+        $filename = "{$trailName}-itinerary-{$date}.pdf";
+
+        // Return PDF download
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Export itinerary as iCal (.ics) file for calendar apps
+     *
+     * @param Itinerary $itinerary
+     * @return \Illuminate\Http\Response
+     */
+    public function ical(Itinerary $itinerary)
+    {
+        // Authorization check
+        if ($itinerary->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized access to itinerary.');
+        }
+
+        // Generate iCal content using the service
+        $icalService = new \App\Services\IcalService();
+        $icalContent = $icalService->generate($itinerary);
+
+        // Generate filename
+        $trailName = $itinerary->trail 
+            ? \Str::slug($itinerary->trail->trail_name ?? $itinerary->trail->name ?? 'trail')
+            : \Str::slug($itinerary->trail_name ?? 'trail');
+        $filename = "{$trailName}-itinerary.ics";
+
+        // Return as downloadable .ics file
+        return response($icalContent)
+            ->header('Content-Type', 'text/calendar; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 
     /**
@@ -2463,5 +2554,189 @@ class ItineraryController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Add a custom activity to an itinerary.
+     */
+    public function addActivity(Request $request, Itinerary $itinerary)
+    {
+        // Check authorization
+        if ($itinerary->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Validate request
+        $validated = $request->validate([
+            'day' => 'required|integer|min:1',
+            'time' => 'required|string',
+            'duration' => 'required|integer|min:1',
+            'activity' => 'required|string|max:255',
+            'description' => 'nullable|string|max:500',
+        ]);
+
+        // Get existing customized activities or initialize empty array
+        $customizedActivities = $itinerary->customized_activities ?? [];
+
+        // Create new activity
+        $newActivity = [
+            'id' => uniqid('custom_', true),
+            'day' => $validated['day'],
+            'time' => $validated['time'],
+            'duration' => $validated['duration'],
+            'activity' => $validated['activity'],
+            'description' => $validated['description'] ?? '',
+            'type' => 'custom',
+            'created_at' => now()->toDateTimeString(),
+        ];
+
+        // Add to customized activities array
+        $customizedActivities[] = $newActivity;
+
+        // Update itinerary
+        $itinerary->customized_activities = $customizedActivities;
+        $itinerary->save();
+
+        return response()->json([
+            'success' => true,
+            'activity' => $newActivity,
+            'message' => 'Activity added successfully'
+        ]);
+    }
+
+    /**
+     * Update an existing activity in the itinerary.
+     */
+    public function updateActivity(Request $request, Itinerary $itinerary, $activityIndex)
+    {
+        // Check authorization
+        if ($itinerary->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Validate request
+        $validated = $request->validate([
+            'time' => 'nullable|string',
+            'duration' => 'nullable|integer|min:1',
+            'activity' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:500',
+        ]);
+
+        // Get existing customized activities
+        $customizedActivities = $itinerary->customized_activities ?? [];
+
+        // Find and update the activity by index or ID
+        $found = false;
+        foreach ($customizedActivities as $index => &$activity) {
+            if ($index == $activityIndex || ($activity['id'] ?? null) == $activityIndex) {
+                // Update fields that were provided
+                if (isset($validated['time'])) $activity['time'] = $validated['time'];
+                if (isset($validated['duration'])) $activity['duration'] = $validated['duration'];
+                if (isset($validated['activity'])) $activity['activity'] = $validated['activity'];
+                if (isset($validated['description'])) $activity['description'] = $validated['description'];
+                
+                $activity['updated_at'] = now()->toDateTimeString();
+                $found = true;
+                break;
+            }
+        }
+
+        if (!$found) {
+            return response()->json(['error' => 'Activity not found'], 404);
+        }
+
+        // Update itinerary
+        $itinerary->customized_activities = $customizedActivities;
+        $itinerary->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Activity updated successfully'
+        ]);
+    }
+
+    /**
+     * Delete a custom activity from the itinerary.
+     */
+    public function deleteActivity(Itinerary $itinerary, $activityIndex)
+    {
+        // Check authorization
+        if ($itinerary->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Get existing customized activities
+        $customizedActivities = $itinerary->customized_activities ?? [];
+
+        // Find and remove the activity
+        $found = false;
+        foreach ($customizedActivities as $index => $activity) {
+            if ($index == $activityIndex || ($activity['id'] ?? null) == $activityIndex) {
+                unset($customizedActivities[$index]);
+                $found = true;
+                break;
+            }
+        }
+
+        if (!$found) {
+            return response()->json(['error' => 'Activity not found'], 404);
+        }
+
+        // Reindex array to avoid gaps
+        $customizedActivities = array_values($customizedActivities);
+
+        // Update itinerary
+        $itinerary->customized_activities = $customizedActivities;
+        $itinerary->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Activity deleted successfully'
+        ]);
+    }
+
+    /**
+     * Reorder activities in the itinerary.
+     */
+    public function reorderActivities(Request $request, Itinerary $itinerary)
+    {
+        // Check authorization
+        if ($itinerary->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Validate request - expects array of activity IDs in new order
+        $validated = $request->validate([
+            'order' => 'required|array',
+            'order.*' => 'required|string',
+        ]);
+
+        // Get existing customized activities
+        $customizedActivities = $itinerary->customized_activities ?? [];
+
+        // Create a map of ID to activity
+        $activityMap = [];
+        foreach ($customizedActivities as $activity) {
+            if (isset($activity['id'])) {
+                $activityMap[$activity['id']] = $activity;
+            }
+        }
+
+        // Reorder based on the provided order
+        $reorderedActivities = [];
+        foreach ($validated['order'] as $id) {
+            if (isset($activityMap[$id])) {
+                $reorderedActivities[] = $activityMap[$id];
+            }
+        }
+
+        // Update itinerary
+        $itinerary->customized_activities = $reorderedActivities;
+        $itinerary->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Activities reordered successfully'
+        ]);
     }
 }

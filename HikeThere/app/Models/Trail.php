@@ -12,8 +12,8 @@ use App\Models\TrailPackage;
 class Trail extends Model
 {
     protected $fillable = [
-    'osm_id', 'name', 'geometry', 'region',
-    'user_id', 'location_id', 'mountain_name', 'trail_name', 'slug',
+        'osm_id', 'name', 'geometry', 'region',
+        'user_id', 'location_id', 'mountain_name', 'trail_name', 'slug',
         // NOTE: the following package-related fields have been moved to the
         // `trail_packages` table and are accessed via the `package()` relation
         // through compatibility accessors below. They are intentionally not
@@ -27,7 +27,7 @@ class Trail extends Model
         'elevation_low', 'estimated_time', 'summary', 'description', 'features',
         'gpx_file', 'coordinates', 'latitude', 'longitude', 'is_active', 'coordinate_generation_method',
         'custom_start_point', 'custom_end_point', 'custom_waypoints', 'metrics_confidence',
-        'activities',
+        'activities', 'emergency_info',
         // Transportation and package-related fields were migrated to
         // `trail_packages` and should be accessed via $trail->package.*
         // (compatibility accessors are provided below).
@@ -42,6 +42,7 @@ class Trail extends Model
         'custom_start_point' => 'array',
         'custom_end_point' => 'array',
         'custom_waypoints' => 'array',
+        'emergency_info' => 'array',
         'is_active' => 'boolean',
         // package-related casts moved to TrailPackage to reflect column move
         'commute_legs' => 'array',

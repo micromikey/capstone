@@ -170,7 +170,14 @@ Route::middleware([
     Route::post('/hiker/itinerary/generate-pdf', [ItineraryController::class, 'generatePdf'])->name('itinerary.generate.pdf');
     Route::get('/itinerary/{itinerary}/print', [ItineraryController::class, 'printView'])->name('itinerary.print');
     Route::get('/itinerary/{itinerary}/pdf', [ItineraryController::class, 'pdf'])->name('itinerary.pdf');
+    Route::get('/itinerary/{itinerary}/ical', [ItineraryController::class, 'ical'])->name('itinerary.ical');
     Route::get('/itinerary/{itinerary}', [ItineraryController::class, 'show'])->name('itinerary.show');
+    
+    // Activity Customization Routes
+    Route::post('/itinerary/{itinerary}/activity', [ItineraryController::class, 'addActivity'])->name('itinerary.activity.add');
+    Route::put('/itinerary/{itinerary}/activity/{activityIndex}', [ItineraryController::class, 'updateActivity'])->name('itinerary.activity.update');
+    Route::delete('/itinerary/{itinerary}/activity/{activityIndex}', [ItineraryController::class, 'deleteActivity'])->name('itinerary.activity.delete');
+    Route::post('/itinerary/{itinerary}/activity/reorder', [ItineraryController::class, 'reorderActivities'])->name('itinerary.activity.reorder');
 
     // Refactored itinerary routes for testing
     Route::get('/itinerary/refactored/preview', [App\Http\Controllers\Hiker\RefactoredItineraryController::class, 'preview'])->name('itinerary.refactored.preview');
@@ -296,6 +303,17 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
     
     // Account Settings route
     Route::get('/org/account/settings', [App\Http\Controllers\AccountSettingsController::class, 'index'])->name('org.account.settings');
+    
+    // Support routes for organizations
+    Route::prefix('support')->name('support.')->group(function () {
+        Route::get('/', [App\Http\Controllers\SupportController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\SupportController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\SupportController::class, 'store'])->name('store');
+        Route::get('/{ticket}', [App\Http\Controllers\SupportController::class, 'show'])->name('show');
+        Route::post('/{ticket}/reply', [App\Http\Controllers\SupportController::class, 'reply'])->name('reply');
+        Route::patch('/{ticket}/status', [App\Http\Controllers\SupportController::class, 'updateStatus'])->name('updateStatus');
+        Route::delete('/{ticket}', [App\Http\Controllers\SupportController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Organization Payment Setup - accessible to approved organizations
@@ -502,6 +520,7 @@ Route::middleware(['auth:sanctum', 'verified', 'user.type:hiker', 'ensure.hiking
 
     // Account Settings route
     Route::get('/account/settings', [App\Http\Controllers\AccountSettingsController::class, 'index'])->name('account.settings');
+    Route::put('/account/fitness', [App\Http\Controllers\AccountSettingsController::class, 'updateFitnessLevel'])->name('account.fitness.update');
 
     // About HikeThere route (for hikers)
     Route::get('/about', function () {

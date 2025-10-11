@@ -121,6 +121,110 @@
                 </div>
             </div>
 
+            <!-- Hiking Preferences Section -->
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg mb-8">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">
+                        <svg class="inline-block w-5 h-5 mr-2 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        {{ __('Hiking Preferences') }}
+                    </h3>
+                    <p class="mt-1 text-sm text-gray-600">
+                        {{ __('Set your fitness level and hiking preferences to get personalized itinerary recommendations.') }}
+                    </p>
+                </div>
+                
+                <div class="px-6 py-4">
+                    <form action="{{ route('account.fitness.update') }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="mb-4">
+                                <h4 class="text-md font-medium text-gray-900">{{ __('Fitness Level') }}</h4>
+                                <p class="text-sm text-gray-600 mb-4">
+                                    {{ __('Your fitness level helps us adjust hiking times and recommend appropriate trails for you.') }}
+                                </p>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <!-- Beginner Option -->
+                                <label class="relative flex items-start p-4 rounded-lg border-2 cursor-pointer transition-all {{ Auth::user()->fitness_level === 'beginner' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-emerald-300 hover:bg-gray-50' }}">
+                                    <input type="radio" name="fitness_level" value="beginner" 
+                                        class="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300" 
+                                        {{ Auth::user()->fitness_level === 'beginner' ? 'checked' : '' }}>
+                                    <span class="ml-3 flex flex-col">
+                                        <span class="block text-sm font-medium text-gray-900">
+                                            🥾 Beginner
+                                        </span>
+                                        <span class="block text-sm text-gray-500">
+                                            New to hiking or prefer leisurely pace. Itineraries will include 30% more time for activities and frequent rest breaks.
+                                        </span>
+                                    </span>
+                                </label>
+
+                                <!-- Intermediate Option -->
+                                <label class="relative flex items-start p-4 rounded-lg border-2 cursor-pointer transition-all {{ Auth::user()->fitness_level === 'intermediate' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-emerald-300 hover:bg-gray-50' }}">
+                                    <input type="radio" name="fitness_level" value="intermediate" 
+                                        class="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300" 
+                                        {{ Auth::user()->fitness_level === 'intermediate' || !Auth::user()->fitness_level ? 'checked' : '' }}>
+                                    <span class="ml-3 flex flex-col">
+                                        <span class="block text-sm font-medium text-gray-900">
+                                            ⛰️ Intermediate
+                                        </span>
+                                        <span class="block text-sm text-gray-500">
+                                            Regular hiker with moderate fitness. Itineraries will use standard hiking paces and moderate break schedules.
+                                        </span>
+                                    </span>
+                                </label>
+
+                                <!-- Advanced Option -->
+                                <label class="relative flex items-start p-4 rounded-lg border-2 cursor-pointer transition-all {{ Auth::user()->fitness_level === 'advanced' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-emerald-300 hover:bg-gray-50' }}">
+                                    <input type="radio" name="fitness_level" value="advanced" 
+                                        class="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300" 
+                                        {{ Auth::user()->fitness_level === 'advanced' ? 'checked' : '' }}>
+                                    <span class="ml-3 flex flex-col">
+                                        <span class="block text-sm font-medium text-gray-900">
+                                            🏔️ Advanced
+                                        </span>
+                                        <span class="block text-sm text-gray-500">
+                                            Experienced hiker with excellent fitness. Itineraries will use faster paces (20% less time) and minimal rest breaks.
+                                        </span>
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div class="mt-6">
+                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 focus:bg-emerald-700 active:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    {{ __('Save Fitness Level') }}
+                                </button>
+                            </div>
+
+                            @if (session('fitness_updated'))
+                                <div class="mt-4 rounded-md bg-green-50 p-4">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-green-800">
+                                                {{ session('fitness_updated') }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Danger Zone Section -->
             @if (Laravel\Jetstream\Jetstream::hasAccountDeletionFeatures())
                 <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">

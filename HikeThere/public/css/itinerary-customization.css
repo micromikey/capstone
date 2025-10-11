@@ -1,0 +1,79 @@
+/* Activity Customization Styles */
+
+.sortable-ghost {
+    opacity: 0.4;
+    background: #e0f2fe;
+}
+
+.activity-row {
+    transition: all 0.3s ease;
+}
+
+.activity-row:hover .drag-handle {
+    opacity: 1;
+}
+
+.drag-handle {
+    opacity: 0.3;
+    transition: opacity 0.2s;
+}
+
+.drag-handle:hover {
+    opacity: 1;
+}
+
+/* Edit mode input styles */
+.edit-time,
+.edit-duration,
+.edit-activity,
+.edit-description {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+}
+
+.edit-time:focus,
+.edit-duration:focus,
+.edit-activity:focus,
+.edit-description:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Modal styles for Add Activity */
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Toast notification styles */
+.swal2-container {
+    z-index: 99999 !important;
+}
+
+/* Button hover animations */
+.edit-activity-btn,
+.delete-activity-btn,
+.save-activity-btn,
+.cancel-edit-btn,
+.add-activity-btn {
+    transition: all 0.2s ease;
+}
+
+.edit-activity-btn:hover,
+.delete-activity-btn:hover,
+.save-activity-btn:hover,
+.cancel-edit-btn:hover,
+.add-activity-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.edit-activity-btn:active,
+.delete-activity-btn:active,
+.save-activity-btn:active,
+.cancel-edit-btn:active,
+.add-activity-btn:active {
+    transform: translateY(0);
+}

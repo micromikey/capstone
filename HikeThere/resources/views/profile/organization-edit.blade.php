@@ -9,7 +9,7 @@
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
-                    <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
+                    <form action="{{ route('org.profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
                         @csrf
                         @method('PUT')
 
@@ -210,7 +210,7 @@
 
                         <!-- Form Actions -->
                         <div class="flex justify-end space-x-3">
-                            <a href="{{ route('custom.profile.show') }}" 
+                            <a href="{{ route('org.profile.show') }}" 
                                class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#336d66]">
                                 Cancel
                             </a>
@@ -388,7 +388,7 @@ document.addEventListener('DOMContentLoaded', function() {
         deleteBtn.addEventListener('click', function() {
             if (!confirm('Are you sure you want to delete your organization logo?')) return;
 
-            const url = "{{ route('profile.picture.delete') }}";
+            const url = "{{ route('org.profile.picture.delete') }}";
             const token = getCsrfToken();
 
             fetch(url, {

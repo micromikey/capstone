@@ -36,20 +36,25 @@ $dateInfo = $generatedData['dateInfo'];
 $dayActivities = $generatedData['dayActivities'];
 $nightActivities = $generatedData['nightActivities'];
 $preHikeActivities = $generatedData['preHikeActivities'] ?? [];
+$emergencyInfo = $generatedData['emergencyInfo'] ?? [];
 @endphp
 
 <x-app-layout>
+    <!-- Activity Customization CSS -->
+    <link rel="stylesheet" href="{{ asset('css/itinerary-customization.css') }}">
+    
     <!-- Floating Navigation -->
     <x-floating-navigation :sections="[
         ['id' => 'itinerary-header', 'title' => 'Trail Overview', 'icon' => '<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m0 0V7m0 0l-4-3m4 3l4-3m-4 3v13\'></path>'],
         ['id' => 'trail-summary', 'title' => 'Trail Summary', 'icon' => '<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z\'></path>'],
+        ['id' => 'emergency-info', 'title' => 'Emergency Info', 'icon' => '<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z\'></path>'],
         ['id' => 'pre-hike-activities', 'title' => 'Pre-hike Transport', 'icon' => '<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z\'></path>'],
         ['id' => 'daily-itinerary', 'title' => 'Daily Itinerary', 'icon' => '<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z\'></path>'],
         ['id' => 'additional-info', 'title' => 'Additional Info', 'icon' => '<path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\'></path>']
     ]" />
 
 	<!-- Enhanced gradient background with nature theme -->
-    <div class="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-teal-50">
+    <div class="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-teal-50" data-itinerary-id="{{ is_object($itinerary) ? $itinerary->id : ($itinerary['id'] ?? 0) }}">
         <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             <div id="itinerary-header" class="bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl border border-emerald-100 p-8 mb-8">
             <!-- Header: Trail Route & Details -->
@@ -68,6 +73,13 @@ $preHikeActivities = $generatedData['preHikeActivities'] ?? [];
                     :staticMapUrl="$generatedData['staticMapUrl'] ?? null"
                 />
             </div>
+
+            <!-- Emergency Information -->
+            @if (!empty($emergencyInfo))
+            <div id="emergency-info" class="mb-8">
+                <x-itinerary.emergency-info :emergencyInfo="$emergencyInfo" />
+            </div>
+            @endif
 
             <!-- Pre-hike Transportation Activities -->
             @if (!empty($preHikeActivities))
@@ -103,8 +115,8 @@ $preHikeActivities = $generatedData['preHikeActivities'] ?? [];
                                                 $isMultiDay = $minutes >= 1440; // 24 hours or more
                                                 
                                                 if ($isMultiDay) {
-                                                    // For multi-day: subtract 24 hours to get actual time on previous day
-                                                    $actualMinutes = $minutes - 1440;
+                                                    // For multi-day: get actual time on previous day (modulo 24 hours)
+                                                    $actualMinutes = $minutes % 1440;
                                                     $hours = intval($actualMinutes / 60);
                                                     $mins = $actualMinutes % 60;
                                                     $dayLabel = ' (Day Before)';
@@ -183,6 +195,18 @@ $preHikeActivities = $generatedData['preHikeActivities'] ?? [];
                         </svg>
                         Print Itinerary
                     </a>
+                    <a href="{{ route('itinerary.pdf', is_object($itinerary) ? $itinerary->id : ($itinerary['id'] ?? 0)) }}" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-lg font-medium transition-colors text-center inline-flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Download PDF
+                    </a>
+                    <a href="{{ route('itinerary.ical', is_object($itinerary) ? $itinerary->id : ($itinerary['id'] ?? 0)) }}" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-lg font-medium transition-colors text-center inline-flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        Add to Calendar
+                    </a>
                     <button id="share-itinerary-btn" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-lg font-medium transition-colors inline-flex items-center justify-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
@@ -214,6 +238,18 @@ $preHikeActivities = $generatedData['preHikeActivities'] ?? [];
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                     </svg>
                     Print Itinerary
+                </a>
+                <a href="{{ route('itinerary.pdf', is_object($itinerary) ? $itinerary->id : ($itinerary['id'] ?? 0)) }}" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-lg font-medium transition-colors text-center inline-flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    Download PDF
+                </a>
+                <a href="{{ route('itinerary.ical', is_object($itinerary) ? $itinerary->id : ($itinerary['id'] ?? 0)) }}" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-lg font-medium transition-colors text-center inline-flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Add to Calendar
                 </a>
                 <button id="floating-share-itinerary-btn" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-lg font-medium transition-colors inline-flex items-center justify-center">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -384,6 +420,12 @@ $preHikeActivities = $generatedData['preHikeActivities'] ?? [];
             }
         });
     </script>
+
+    <!-- Activity Customization JavaScript -->
+    <script src="{{ asset('js/itinerary-customization.js') }}"></script>
+    
+    <!-- SortableJS for drag and drop (optional, include from CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
     <!-- Hide floating navigation when printing -->
     <style media="print">

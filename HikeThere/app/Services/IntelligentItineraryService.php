@@ -47,12 +47,12 @@ class IntelligentItineraryService
     protected function buildPersonalizationProfile($user, $assessment, $preferences, $trailModel, $package)
     {
         $profile = [
-            // User characteristics
-            'fitness_level' => $this->getFitnessLevel($assessment),
+            // User characteristics - prioritize user's fitness_level setting over assessment
+            'fitness_level' => $this->getFitnessLevel($user, $assessment),
             'experience_level' => $this->getExperienceLevel($assessment, $preferences),
             'risk_tolerance' => $this->getRiskTolerance($assessment, $preferences),
             'pace_preference' => $preferences['pace'] ?? 'moderate',
-            'break_frequency' => $this->getBreakFrequency($assessment, $preferences),
+            'break_frequency' => $this->getBreakFrequency($user, $assessment, $preferences),
             
             // Interests and preferences
             'photography_interest' => $preferences['interests']['photography'] ?? false,
@@ -221,8 +221,24 @@ class IntelligentItineraryService
 
     // Helper methods for profile analysis
     
-    protected function getFitnessLevel($assessment)
+    /**
+     * Get fitness level from user profile or assessment
+     * Returns a 1-10 scale for internal calculations
+     */
+    protected function getFitnessLevel($user, $assessment)
     {
+        // First priority: Use user's explicitly set fitness_level (beginner/intermediate/advanced)
+        if ($user && $user->fitness_level) {
+            $fitnessLevelMap = [
+                'beginner' => 3,      // Lower fitness = slower pace, more breaks
+                'intermediate' => 6,   // Moderate fitness = standard pace
+                'advanced' => 9,       // High fitness = faster pace, fewer breaks
+            ];
+            
+            return $fitnessLevelMap[$user->fitness_level] ?? 6;
+        }
+        
+        // Fallback: Use assessment fitness score
         if (!$assessment) return 5; // Default moderate
         
         $fitnessScore = $assessment->fitness_score ?? 50;
@@ -249,12 +265,27 @@ class IntelligentItineraryService
         return 'moderate';
     }
     
-    protected function getBreakFrequency($assessment, $preferences)
+    /**
+     * Determine break frequency based on user fitness level
+     */
+    protected function getBreakFrequency($user, $assessment, $preferences)
     {
-        $fitnessScore = $assessment?->fitness_score ?? 50;
+        // Allow user preference to override
         $preference = $preferences['break_frequency'] ?? null;
-        
         if ($preference) return $preference;
+        
+        // Use fitness_level from user profile
+        if ($user && $user->fitness_level) {
+            $breakMap = [
+                'beginner' => 'frequent',      // More breaks for beginners
+                'intermediate' => 'moderate',   // Standard break schedule
+                'advanced' => 'minimal',        // Fewer breaks for advanced hikers
+            ];
+            return $breakMap[$user->fitness_level] ?? 'moderate';
+        }
+        
+        // Fallback to assessment-based calculation
+        $fitnessScore = $assessment?->fitness_score ?? 50;
         
         if ($fitnessScore < 40) return 'frequent';
         if ($fitnessScore > 80) return 'minimal';
@@ -292,17 +323,48 @@ class IntelligentItineraryService
         return intval($distance / $speed * 60);
     }
     
+    /**
+     * Adjust activity duration based on user's fitness level and preferences
+     * 
+     * Fitness Level Multipliers:
+     * - Beginner (level 1-3): 1.3x slower (30% more time needed)
+     * - Intermediate (level 4-7): 1.0x normal pace
+     * - Advanced (level 8-10): 0.8x faster (20% less time needed)
+     */
     protected function adjustTimeForProfile($baseTime, $profile)
     {
         $multiplier = 1.0;
         
-        // Fitness adjustment
-        if ($profile['fitness_level'] < 4) $multiplier += 0.3;
-        elseif ($profile['fitness_level'] > 8) $multiplier -= 0.15;
+        // Fitness adjustment - more granular based on 1-10 scale
+        $fitnessLevel = $profile['fitness_level'] ?? 5;
         
-        // Pace preference
-        if ($profile['pace_preference'] === 'slow') $multiplier += 0.2;
-        elseif ($profile['pace_preference'] === 'fast') $multiplier -= 0.1;
+        if ($fitnessLevel <= 3) {
+            // Beginner: needs significantly more time
+            $multiplier += 0.30; // 30% slower
+        } elseif ($fitnessLevel <= 5) {
+            // Low-intermediate: slightly slower
+            $multiplier += 0.15; // 15% slower
+        } elseif ($fitnessLevel >= 9) {
+            // Advanced: much faster
+            $multiplier -= 0.20; // 20% faster
+        } elseif ($fitnessLevel >= 7) {
+            // High-intermediate: moderately faster
+            $multiplier -= 0.10; // 10% faster
+        }
+        // Fitness level 6 = no adjustment (1.0x multiplier)
+        
+        // Pace preference adjustment
+        if ($profile['pace_preference'] === 'slow') {
+            $multiplier += 0.15;
+        } elseif ($profile['pace_preference'] === 'fast') {
+            $multiplier -= 0.10;
+        }
+        
+        // Trail difficulty adjustment - harder trails take longer
+        $difficulty = $profile['trail_difficulty'] ?? 'moderate';
+        if ($difficulty === 'difficult' || $difficulty === 'very difficult') {
+            $multiplier += 0.10;
+        }
         
         return intval($baseTime * $multiplier);
     }

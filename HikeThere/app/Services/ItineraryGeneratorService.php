@@ -12,6 +12,7 @@ use App\Services\DataNormalizerService;
 use App\Services\IntelligentItineraryService;
 use App\Services\DurationParserService;
 use App\Services\GoogleMapsService;
+use App\Services\EmergencyInfoService;
 
 class ItineraryGeneratorService
 {
@@ -21,6 +22,7 @@ class ItineraryGeneratorService
     protected $intelligentItinerary;
     protected $durationParser;
     protected $googleMaps;
+    protected $emergencyInfo;
 
     public function __construct(
         TrailCalculatorService $trailCalculator,
@@ -28,7 +30,8 @@ class ItineraryGeneratorService
         DataNormalizerService $dataNormalizer,
         IntelligentItineraryService $intelligentItinerary,
         DurationParserService $durationParser,
-        GoogleMapsService $googleMaps
+        GoogleMapsService $googleMaps,
+        EmergencyInfoService $emergencyInfo
     ) {
         $this->trailCalculator = $trailCalculator;
         $this->weatherHelper = $weatherHelper;
@@ -36,6 +39,7 @@ class ItineraryGeneratorService
         $this->intelligentItinerary = $intelligentItinerary;
         $this->durationParser = $durationParser;
         $this->googleMaps = $googleMaps;
+        $this->emergencyInfo = $emergencyInfo;
     }
 
     /**
@@ -63,6 +67,9 @@ class ItineraryGeneratorService
         // Generate pre-hike transportation activities
         $preHikeActivities = $this->generatePreHikeActivities($trail, $build);
 
+        // Generate emergency information
+        $emergencyInfo = $this->emergencyInfo->getEmergencyInfo($trail);
+
         // Generate static map URL for trail path visualization
         $staticMapUrl = $this->generateStaticMapUrl($trail, $routeData);
 
@@ -76,6 +83,7 @@ class ItineraryGeneratorService
             'preHikeActivities' => $preHikeActivities,
             'dayActivities' => $dayActivities,
             'nightActivities' => $nightActivities,
+            'emergencyInfo' => $emergencyInfo,
             'staticMapUrl' => $staticMapUrl,
         ];
     }
