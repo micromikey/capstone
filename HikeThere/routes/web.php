@@ -260,9 +260,9 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
     Route::patch('/org/trails/{trail}/toggle-status', [OrganizationTrailController::class, 'toggleStatus'])->name('org.trails.toggle-status');
     
     // Emergency Information Management for Trails
-    Route::get('/org/trails/{trail}/emergency-info', [App\Http\Controllers\Organization\EmergencyInfoController::class, 'edit'])->name('organization.trails.emergency-info.edit');
-    Route::put('/org/trails/{trail}/emergency-info', [App\Http\Controllers\Organization\EmergencyInfoController::class, 'update'])->name('organization.trails.emergency-info.update');
-    Route::delete('/org/trails/{trail}/emergency-info', [App\Http\Controllers\Organization\EmergencyInfoController::class, 'destroy'])->name('organization.trails.emergency-info.destroy');
+    Route::get('/org/trails/{trail}/emergency-info', [App\Http\Controllers\Organization\EmergencyInfoController::class, 'edit'])->name('org.trails.emergency-info.edit');
+    Route::put('/org/trails/{trail}/emergency-info', [App\Http\Controllers\Organization\EmergencyInfoController::class, 'update'])->name('org.trails.emergency-info.update');
+    Route::delete('/org/trails/{trail}/emergency-info', [App\Http\Controllers\Organization\EmergencyInfoController::class, 'destroy'])->name('org.trails.emergency-info.destroy');
 
     // Organization locations (inline management)
     Route::get('/org/locations', [OrganizationLocationController::class, 'index'])->name('org.locations.index');

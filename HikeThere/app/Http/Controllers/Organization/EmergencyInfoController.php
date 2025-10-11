@@ -71,7 +71,7 @@ class EmergencyInfoController extends Controller
         ]);
 
         return redirect()
-            ->route('organization.trails.emergency-info.edit', $trail)
+            ->route('org.trails.emergency-info.edit', $trail)
             ->with('success', 'Emergency information updated successfully!');
     }
 
@@ -90,7 +90,7 @@ class EmergencyInfoController extends Controller
         ]);
 
         return redirect()
-            ->route('organization.trails.emergency-info.edit', $trail)
+            ->route('org.trails.emergency-info.edit', $trail)
             ->with('success', 'Emergency information cleared. System will use auto-generated data.');
     }
 }
