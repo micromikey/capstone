@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->enum('fitness_level', ['beginner', 'intermediate', 'advanced'])
+                  ->nullable()
                   ->default('intermediate')
-                  ->after('preferences_onboarded_at')
                   ->comment('User fitness level for personalized itinerary pacing');
         });
     }

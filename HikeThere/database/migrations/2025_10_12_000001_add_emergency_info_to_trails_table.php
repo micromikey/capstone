@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('trails', function (Blueprint $table) {
-            $table->json('emergency_info')->nullable()->after('coordinates')
+            $table->json('emergency_info')->nullable()
                   ->comment('Emergency information including hospitals, ranger stations, evacuation points');
         });
     }

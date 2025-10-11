@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('itineraries', function (Blueprint $table) {
-            $table->json('customized_activities')->nullable()->after('notes')
+            $table->json('customized_activities')->nullable()
                   ->comment('User customized activities (edited, added, removed, reordered)');
         });
     }
