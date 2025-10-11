@@ -55,7 +55,7 @@ $emergencyInfo = $generatedData['emergencyInfo'] ?? [];
 
 	<!-- Enhanced gradient background with nature theme -->
     <div class="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-teal-50" data-itinerary-id="{{ is_object($itinerary) ? $itinerary->id : ($itinerary['id'] ?? 0) }}">
-        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-full mx-auto py-8 px-6 sm:px-8 lg:px-12">
             <div id="itinerary-header" class="bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl border border-emerald-100 p-8 mb-8">
             <!-- Header: Trail Route & Details -->
             <x-itinerary.header 

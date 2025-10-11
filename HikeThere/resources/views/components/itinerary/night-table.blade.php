@@ -28,16 +28,16 @@
     </div>
 
     <div class="overflow-x-auto rounded-b-2xl">
-        <table class="min-w-full table-fixed divide-y-2 divide-indigo-200">
+        <table class="min-w-full divide-y-2 divide-indigo-200">
             <thead class="bg-gradient-to-r from-indigo-900 to-purple-900">
                 <tr>
-                    <th class="px-6 py-4 text-left text-sm font-bold text-white border-r-2 border-indigo-700 w-20">Time</th>
-                    <th class="px-6 py-4 text-left text-sm font-bold text-white border-r-2 border-indigo-700 w-1/4">Activity</th>
-                    <th class="px-6 py-4 text-left text-sm font-bold text-white border-r-2 border-indigo-700 w-16">Elapsed</th>
-                    <th class="px-6 py-4 text-left text-sm font-bold text-white border-r-2 border-indigo-700 w-16">Distance</th>
-                    <th class="px-6 py-4 text-left text-sm font-bold text-white border-r-2 border-indigo-700 w-24">Weather</th>
-                    <th class="px-6 py-4 text-left text-sm font-bold text-white border-r-2 border-indigo-700 w-20">Transport</th>
-                    <th class="px-6 py-4 text-left text-sm font-bold text-white">Notes</th>
+                    <th class="px-4 py-4 text-left text-xs font-bold text-white border-r-2 border-indigo-700 w-24">Time</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-white border-r-2 border-indigo-700" style="min-width: 200px;">Activity</th>
+                    <th class="px-4 py-4 text-left text-xs font-bold text-white border-r-2 border-indigo-700 w-20">Elapsed</th>
+                    <th class="px-4 py-4 text-left text-xs font-bold text-white border-r-2 border-indigo-700 w-20">Distance</th>
+                    <th class="px-4 py-4 text-left text-xs font-bold text-white border-r-2 border-indigo-700 w-28">Weather</th>
+                    <th class="px-4 py-4 text-left text-xs font-bold text-white border-r-2 border-indigo-700 w-24">Transport</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-white" style="min-width: 250px;">Notes</th>
                 </tr>
             </thead>
             <tbody class="bg-slate-50/90 backdrop-blur-sm divide-y-2 divide-indigo-100">
