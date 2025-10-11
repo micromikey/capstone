@@ -35,6 +35,13 @@ class DashboardController extends Controller
         // Get organization's trail IDs
         $trailIds = Trail::where('user_id', $user->id)->pluck('id');
         
+        // Emergency Info Statistics
+        $allTrails = Trail::where('user_id', $user->id)->get();
+        $trailsWithEmergencyInfo = $allTrails->filter(function($trail) {
+            return !empty($trail->emergency_info) && is_array($trail->emergency_info);
+        })->count();
+        $trailsNeedingEmergencyInfo = $totalTrails - $trailsWithEmergencyInfo;
+        
         // Get recent activity (last 30 days)
         $recentActivity = collect();
         
@@ -170,7 +177,9 @@ class DashboardController extends Controller
         return view('org.dashboard', compact(
             'totalTrails',
             'activeEvents',
-            'recentActivity'
+            'recentActivity',
+            'trailsWithEmergencyInfo',
+            'trailsNeedingEmergencyInfo'
         ));
     }
 }
