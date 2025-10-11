@@ -337,15 +337,21 @@
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <div class="flex space-x-2">
-                                                    <a href="{{ route('org.trails.show', $trail) }}" class="text-[#336d66] hover:text-[#2a5a54]">
+                                                <div class="flex flex-wrap gap-2">
+                                                    <a href="{{ route('org.trails.show', $trail) }}" 
+                                                       class="inline-flex items-center px-2.5 py-1.5 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-md transition"
+                                                       title="View Trail">
                                                         View
                                                     </a>
-                                                    <a href="{{ route('org.trails.edit', $trail) }}" class="text-blue-600 hover:text-blue-900">
+                                                    <a href="{{ route('org.trails.edit', $trail) }}" 
+                                                       class="inline-flex items-center px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-md transition"
+                                                       title="Edit Trail">
                                                         Edit
                                                     </a>
-                                                    <a href="{{ route('organization.trails.emergency-info.edit', $trail) }}" class="text-orange-600 hover:text-orange-900 flex items-center gap-1" title="Emergency Info">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <a href="{{ route('org.trails.emergency-info.edit', $trail) }}" 
+                                                       class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-md transition"
+                                                       title="Emergency Information">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                                                         </svg>
                                                         Emergency
@@ -353,14 +359,18 @@
                                                     <form method="POST" action="{{ route('org.trails.toggle-status', $trail) }}" class="inline">
                                                         @csrf
                                                         @method('PATCH')
-                                                        <button type="submit" class="text-yellow-600 hover:text-yellow-900">
+                                                        <button type="submit" 
+                                                                class="inline-flex items-center px-2.5 py-1.5 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 rounded-md transition"
+                                                                title="{{ $trail->is_active ? 'Deactivate' : 'Activate' }} Trail">
                                                             {{ $trail->is_active ? 'Deactivate' : 'Activate' }}
                                                         </button>
                                                     </form>
                                                     <form method="POST" action="{{ route('org.trails.destroy', $trail) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this trail?')">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="text-red-600 hover:text-red-900">
+                                                        <button type="submit" 
+                                                                class="inline-flex items-center px-2.5 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-md transition"
+                                                                title="Delete Trail">
                                                             Delete
                                                         </button>
                                                     </form>

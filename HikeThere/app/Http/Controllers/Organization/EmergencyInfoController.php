@@ -19,7 +19,7 @@ class EmergencyInfoController extends Controller
             abort(403, 'Unauthorized access to trail emergency information');
         }
 
-        return view('organization.trails.emergency-info', compact('trail'));
+        return view('org.trails.emergency-info', compact('trail'));
     }
 
     /**
