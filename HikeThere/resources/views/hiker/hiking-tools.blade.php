@@ -219,9 +219,7 @@
                                     <p class="text-emerald-100">Share your trail experience and conditions</p>
                                 </div>
                                 <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.818-4.818A4 4 0 1119 9m-7 7a2 2 0 100-4 2 2 0 000 4z"></path>
-                                    </svg>
+                                    <span class="iconify text-white" data-icon="mdi:clipboard-check-outline" style="font-size: 2rem;"></span>
                                 </div>
                             </div>
                         </div>

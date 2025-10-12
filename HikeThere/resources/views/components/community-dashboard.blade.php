@@ -1525,6 +1525,18 @@ $imageService = app('App\\Services\\TrailImageService');
             });
         });
 
+        // Check URL parameter to activate the correct main tab on page load
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const mainTabParam = urlParams.get('tab');
+            if (mainTabParam === 'posts' || mainTabParam === 'events') {
+                // Activate the Posts tab if URL has ?tab=posts or ?tab=events
+                setTimeout(() => activateMainTab('posts'), 100);
+            }
+        } catch (e) {
+            console.warn('Could not parse main tab from URL', e);
+        }
+
         // ========================================
         // POSTS TAB FUNCTIONALITY
         // ========================================
