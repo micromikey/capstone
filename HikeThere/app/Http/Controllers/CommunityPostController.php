@@ -36,8 +36,8 @@ class CommunityPostController extends Controller
             
             if ($filter === 'followed' && auth()->check()) {
                 // Get organizations the user follows
-                $followedOrgIds = DB::table('organization_followers')
-                    ->where('user_id', auth()->id())
+                $followedOrgIds = DB::table('user_follows')
+                    ->where('hiker_id', auth()->id())
                     ->pluck('organization_id')
                     ->toArray();
                 

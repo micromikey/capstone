@@ -1997,10 +1997,18 @@ $imageService = app('App\\Services\\TrailImageService');
             const postsFeed = document.getElementById('posts-feed');
             const postsLoading = document.getElementById('posts-loading');
             
+            if (!postsFeed) {
+                console.error('Posts feed element not found');
+                isLoadingPosts = false;
+                return;
+            }
+            
             if (refresh) {
                 currentPage = 1;
                 postsFeed.innerHTML = '';
-                postsLoading.classList.remove('hidden');
+                if (postsLoading) {
+                    postsLoading.classList.remove('hidden');
+                }
             }
             
             // Build URL with filter parameter
@@ -2020,7 +2028,9 @@ $imageService = app('App\\Services\\TrailImageService');
                 })
                 .then(data => {
                     if (data.success) {
-                        postsLoading.classList.add('hidden');
+                        if (postsLoading) {
+                            postsLoading.classList.add('hidden');
+                        }
                         
                         if (data.posts.data.length === 0 && currentPage === 1) {
                             // Customize message based on filter
