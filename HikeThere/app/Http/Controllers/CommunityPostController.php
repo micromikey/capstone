@@ -41,16 +41,30 @@ class CommunityPostController extends Controller
                     ->pluck('organization_id')
                     ->toArray();
                 
+                Log::info('Followed Organizations Filter', [
+                    'user_id' => auth()->id(),
+                    'followed_org_count' => count($followedOrgIds),
+                    'followed_org_ids' => $followedOrgIds
+                ]);
+                
                 if (!empty($followedOrgIds)) {
                     // Get trail IDs from followed organizations
+                    // These are trails created/owned by the organizations the user follows
                     $trailIds = DB::table('trails')
                         ->whereIn('user_id', $followedOrgIds)
                         ->pluck('id')
                         ->toArray();
                     
+                    Log::info('Trails from Followed Organizations', [
+                        'trail_count' => count($trailIds),
+                        'trail_ids' => array_slice($trailIds, 0, 10) // First 10 for brevity
+                    ]);
+                    
                     // Filter posts to only show those about trails from followed organizations
+                    // This includes both posts by the organizations themselves and posts by hikers about these trails
                     if (!empty($trailIds)) {
-                        $query->whereIn('trail_id', $trailIds);
+                        $query->whereIn('trail_id', $trailIds)
+                              ->whereNotNull('trail_id'); // Ensure trail_id is not null
                     } else {
                         // No trails from followed organizations, return empty result
                         $query->whereRaw('1 = 0');

@@ -2023,18 +2023,34 @@ $imageService = app('App\\Services\\TrailImageService');
                         postsLoading.classList.add('hidden');
                         
                         if (data.posts.data.length === 0 && currentPage === 1) {
-                            postsFeed.innerHTML = `
-                                <div class="text-center py-12 bg-white rounded-xl shadow-sm">
-                                    <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
-                                    </svg>
-                                    <h3 class="mt-4 text-lg font-medium text-gray-900">No posts yet</h3>
-                                    <p class="mt-2 text-gray-500">Be the first to share your hiking experience!</p>
-                                    <button onclick="document.getElementById('create-post-btn').click()" class="mt-4 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
-                                        Create Your First Post
-                                    </button>
-                                </div>
-                            `;
+                            // Customize message based on filter
+                            let emptyMessage = '';
+                            if (currentPostsFilter === 'followed') {
+                                emptyMessage = `
+                                    <div class="text-center py-12 bg-white rounded-xl shadow-sm">
+                                        <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                        </svg>
+                                        <h3 class="mt-4 text-lg font-medium text-gray-900">No posts from followed organizations yet</h3>
+                                        <p class="mt-2 text-gray-500">Posts about trails from organizations you follow will appear here.</p>
+                                        <p class="mt-1 text-sm text-gray-400">Try following some organizations or switch to "All Posts" to see more content.</p>
+                                    </div>
+                                `;
+                            } else {
+                                emptyMessage = `
+                                    <div class="text-center py-12 bg-white rounded-xl shadow-sm">
+                                        <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                                        </svg>
+                                        <h3 class="mt-4 text-lg font-medium text-gray-900">No posts yet</h3>
+                                        <p class="mt-2 text-gray-500">Be the first to share your hiking experience!</p>
+                                        <button onclick="document.getElementById('create-post-btn').click()" class="mt-4 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
+                                            Create Your First Post
+                                        </button>
+                                    </div>
+                                `;
+                            }
+                            postsFeed.innerHTML = emptyMessage;
                         } else {
                             data.posts.data.forEach(post => {
                                 postsFeed.appendChild(createPostCard(post));
@@ -2054,7 +2070,26 @@ $imageService = app('App\\Services\\TrailImageService');
                 })
                 .catch(error => {
                     console.error('Error loading posts:', error);
-                    postsLoading.classList.add('hidden');
+                    if (postsLoading) {
+                        postsLoading.classList.add('hidden');
+                    }
+                    
+                    // Show error in feed
+                    if (postsFeed && currentPage === 1) {
+                        postsFeed.innerHTML = `
+                            <div class="text-center py-12 bg-red-50 rounded-xl shadow-sm border border-red-200">
+                                <svg class="mx-auto h-16 w-16 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <h3 class="mt-4 text-lg font-medium text-red-900">Failed to load posts</h3>
+                                <p class="mt-2 text-red-700">${error.message}</p>
+                                <button onclick="loadPosts(true)" class="mt-4 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                                    Try Again
+                                </button>
+                            </div>
+                        `;
+                    }
+                    
                     showToast('error', 'Error loading posts: ' + error.message);
                 })
                 .finally(() => {
