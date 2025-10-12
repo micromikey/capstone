@@ -71,6 +71,78 @@
                 </div>
             </div>
 
+            <!-- Emergency Info Summary Card -->
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg mb-6">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-yellow-500 p-3 rounded-xl">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-medium text-gray-900">Emergency Information Status</h3>
+                                <p class="text-sm text-gray-500">Configure emergency details for hiker safety</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <!-- Configured Trails -->
+                        <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-green-500 p-2 rounded-lg">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-green-900">Emergency Details Configured</p>
+                                    <p class="text-xs text-green-700">Trails with complete emergency information</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-2xl font-bold text-green-600">{{ $trailsWithEmergencyInfo ?? 0 }}</p>
+                                <p class="text-xs text-green-700">{{ Str::plural('Trail', $trailsWithEmergencyInfo ?? 0) }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Needs Attention -->
+                        @if(($trailsNeedingEmergencyInfo ?? 0) > 0)
+                        <div class="flex items-center justify-between p-4 bg-orange-50 rounded-lg border border-orange-200">
+                            <div class="flex items-center gap-3">
+                                <div class="bg-orange-500 p-2 rounded-lg">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-orange-900">Need Attention</p>
+                                    <p class="text-xs text-orange-700">Trails missing emergency information</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-2xl font-bold text-orange-600">{{ $trailsNeedingEmergencyInfo }}</p>
+                                <p class="text-xs text-orange-700">{{ Str::plural('Trail', $trailsNeedingEmergencyInfo) }}</p>
+                            </div>
+                        </div>
+                        @endif
+
+                        <!-- Action Button -->
+                        <div class="pt-2">
+                            <a href="{{ route('org.trails.index') }}" class="w-full text-center px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white rounded-lg font-semibold shadow-lg transition flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                View Emergency Configuration
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Profile Information Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Organization Information -->

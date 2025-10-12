@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 use App\Models\OrganizationProfile;
+use App\Models\Trail;
 
 class ProfileController extends Controller
 {
@@ -16,7 +17,21 @@ class ProfileController extends Controller
         
         if ($user->user_type === 'organization') {
             $organizationProfile = $user->organizationProfile;
-            return view('profile.organization-show', compact('user', 'organizationProfile'));
+            
+            // Emergency Info Statistics
+            $totalTrails = Trail::where('user_id', $user->id)->count();
+            $allTrails = Trail::where('user_id', $user->id)->get();
+            $trailsWithEmergencyInfo = $allTrails->filter(function($trail) {
+                return !empty($trail->emergency_info) && is_array($trail->emergency_info);
+            })->count();
+            $trailsNeedingEmergencyInfo = $totalTrails - $trailsWithEmergencyInfo;
+            
+            return view('profile.organization-show', compact(
+                'user', 
+                'organizationProfile',
+                'trailsWithEmergencyInfo',
+                'trailsNeedingEmergencyInfo'
+            ));
         }
         
         // Load assessment results and itineraries for hikers
