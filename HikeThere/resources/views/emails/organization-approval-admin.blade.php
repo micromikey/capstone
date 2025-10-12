@@ -268,7 +268,7 @@
                 </h3>
                 <div class="document-links">
                     @if($organizationProfile->business_permit_path)
-                        <a href="{{ url('storage/' . $organizationProfile->business_permit_path) }}" class="document-link" target="_blank">
+                        <a href="{{ \App\Helpers\StorageHelper::url($organizationProfile->business_permit_path) }}" class="document-link" target="_blank">
                             <svg class="document-icon" viewBox="0 0 24 24" fill="#336d66">
                                 <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
                             </svg>
@@ -277,7 +277,7 @@
                     @endif
                     
                     @if($organizationProfile->government_id_path)
-                        <a href="{{ url('storage/' . $organizationProfile->government_id_path) }}" class="document-link" target="_blank">
+                        <a href="{{ \App\Helpers\StorageHelper::url($organizationProfile->government_id_path) }}" class="document-link" target="_blank">
                             <svg class="document-icon" viewBox="0 0 24 24" fill="#336d66">
                                 <path d="M22,3H2C0.91,3.04 0.04,3.91 0,5V19C0.04,20.09 0.91,20.96 2,21H22C23.09,20.96 23.96,20.09 24,19V5C23.96,3.91 23.09,3.04 22,3M22,19H2V5H22V19M14,17V15.75C14,14.09 10.66,13.25 9,13.25C7.34,13.25 4,14.09 4,15.75V17H14M9,7A2.5,2.5 0 0,0 6.5,9.5A2.5,2.5 0 0,0 9,12A2.5,2.5 0 0,0 11.5,9.5A2.5,2.5 0 0,0 9,7M14,7V8H20V7H14M14,9V10H20V9H14M14,11V12H18V11H14"/>
                             </svg>
@@ -287,7 +287,7 @@
                     
                     @if($organizationProfile->additional_docs && is_array($organizationProfile->additional_docs))
                         @foreach($organizationProfile->additional_docs as $index => $docPath)
-                            <a href="{{ url('storage/' . $docPath) }}" class="document-link" target="_blank">
+                            <a href="{{ \App\Helpers\StorageHelper::url($docPath) }}" class="document-link" target="_blank">
                                 <svg class="document-icon" viewBox="0 0 24 24" fill="#336d66">
                                     <path d="M14,2L20,8V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V4A2,2 0 0,1 6,2H14M18,20V9H13V4H6V20H18M12,19L8,15H10.5V12H13.5V15H16L12,19Z"/>
                                 </svg>

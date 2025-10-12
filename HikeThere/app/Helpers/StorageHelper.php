@@ -27,10 +27,26 @@ class StorageHelper
         // Use specified disk or default
         $disk = $disk ?? config('filesystems.default', 'public');
         
-        // For GCS, construct the public URL manually
+        // For GCS, use Storage facade which handles URL generation properly
         if ($disk === 'gcs') {
-            $bucket = config('filesystems.disks.gcs.bucket');
-            return "https://storage.googleapis.com/{$bucket}/{$path}";
+            try {
+                // Storage::url() will use the configured GCS URL
+                return Storage::disk('gcs')->url($path);
+            } catch (\Exception $e) {
+                \Log::warning('Failed to generate GCS URL', [
+                    'path' => $path,
+                    'disk' => $disk,
+                    'error' => $e->getMessage()
+                ]);
+                
+                // Fallback to manual construction if Storage::url() fails
+                $bucket = config('filesystems.disks.gcs.bucket');
+                if ($bucket) {
+                    return "https://storage.googleapis.com/{$bucket}/{$path}";
+                }
+                
+                return null;
+            }
         }
         
         // For local/public disk, use Storage facade
