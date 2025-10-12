@@ -77,7 +77,11 @@ $emergencyInfo = $generatedData['emergencyInfo'] ?? [];
             <!-- Emergency Information -->
             @if (!empty($emergencyInfo))
             <div id="emergency-info" class="mb-8">
-                <x-itinerary.emergency-info :emergencyInfo="$emergencyInfo" />
+                <x-itinerary.emergency-info 
+                    :emergencyInfo="$emergencyInfo" 
+                    :trail="$trail"
+                    :user="auth()->user()"
+                />
             </div>
             @endif
 

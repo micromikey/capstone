@@ -1,4 +1,4 @@
-@props(['emergencyInfo'])
+@props(['emergencyInfo', 'trail' => null, 'user' => null])
 
 <div class="bg-red-50 border-2 border-red-200 rounded-xl p-6 shadow-sm">
     <div class="flex items-center mb-4">
@@ -34,8 +34,79 @@
             </div>
         </div>
 
+        {{-- Hiker's Emergency Contact --}}
+        @php
+            $hikerEmergencyContact = $user ?? auth()->user();
+        @endphp
+        <div class="bg-white rounded-lg p-4 border border-red-100">
+            <h4 class="font-semibold text-red-900 mb-3 flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Your Emergency Contact
+            </h4>
+            <div class="space-y-2">
+                @if ($hikerEmergencyContact && ($hikerEmergencyContact->emergency_contact_name || $hikerEmergencyContact->emergency_contact_phone))
+                    <div class="text-sm bg-blue-50 p-3 rounded border border-blue-200">
+                        @if (!empty($hikerEmergencyContact->emergency_contact_name))
+                            <p class="font-semibold text-gray-900">{{ $hikerEmergencyContact->emergency_contact_name }}</p>
+                        @endif
+                        @if (!empty($hikerEmergencyContact->emergency_contact_relationship))
+                            <p class="text-gray-600 text-xs">{{ $hikerEmergencyContact->emergency_contact_relationship }}</p>
+                        @endif
+                        @if (!empty($hikerEmergencyContact->emergency_contact_phone))
+                            <a href="tel:{{ $hikerEmergencyContact->emergency_contact_phone }}" class="font-bold text-blue-600 hover:text-blue-800 text-sm block mt-1">
+                                {{ $hikerEmergencyContact->emergency_contact_phone }}
+                            </a>
+                        @endif
+                    </div>
+                @else
+                    <div class="text-sm text-gray-500 italic">
+                        <p class="mb-2">No emergency contact configured</p>
+                        <a href="{{ route('profile.show') }}" class="text-blue-600 hover:text-blue-800 underline text-xs">
+                            Add emergency contact in your profile
+                        </a>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        {{-- Trail Emergency Contacts --}}
+        @php
+            $trailData = $trail ?? (isset($emergencyInfo['trail']) ? $emergencyInfo['trail'] : null);
+            $trailEmergencyContacts = null;
+            if ($trailData) {
+                if (is_array($trailData)) {
+                    $trailEmergencyContacts = $trailData['emergency_contacts'] ?? null;
+                } elseif (is_object($trailData)) {
+                    $trailEmergencyContacts = $trailData->emergency_contacts ?? null;
+                }
+            }
+        @endphp
+        <div class="bg-white rounded-lg p-4 border border-red-100">
+            <h4 class="font-semibold text-red-900 mb-3 flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Trail Contact Info
+            </h4>
+            <div class="space-y-2">
+                @if (!empty($trailEmergencyContacts))
+                    <div class="text-sm bg-green-50 p-3 rounded border border-green-200">
+                        <div class="whitespace-pre-line text-gray-700">{{ $trailEmergencyContacts }}</div>
+                    </div>
+                @else
+                    <div class="text-sm text-gray-500 italic">
+                        No trail-specific emergency contacts provided
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
         {{-- Hospitals --}}
-        <div class="bg-white rounded-lg p-4 border border-red-100 lg:col-span-2">
+        <div class="bg-white rounded-lg p-4 border border-red-100">
             <h4 class="font-semibold text-red-900 mb-3 flex items-center">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
