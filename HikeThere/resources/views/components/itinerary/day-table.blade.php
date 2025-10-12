@@ -41,11 +41,11 @@
                 <tr>
                     <th class="px-4 py-4 text-left text-xs font-bold text-emerald-800 border-r-2 border-emerald-200 w-24">Time</th>
                     <th class="px-6 py-4 text-left text-xs font-bold text-emerald-800 border-r-2 border-emerald-200" style="min-width: 200px;">Activity</th>
-                    <th class="px-4 py-4 text-left text-xs font-bold text-emerald-800 border-r-2 border-emerald-200 w-20">Elapsed</th>
-                    <th class="px-4 py-4 text-left text-xs font-bold text-emerald-800 border-r-2 border-emerald-200 w-20">Distance</th>
-                    <th class="px-4 py-4 text-left text-xs font-bold text-emerald-800 border-r-2 border-emerald-200 w-28">Weather</th>
-                    <th class="px-4 py-4 text-left text-xs font-bold text-emerald-800 border-r-2 border-emerald-200 w-24">Transport</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-emerald-800 border-r-2 border-emerald-200" style="min-width: 250px;">Notes</th>
+                    <th class="px-4 py-4 text-left text-xs font-bold text-emerald-800 border-r-2 border-emerald-200 w-28">Elapsed</th>
+                    <th class="px-4 py-4 text-left text-xs font-bold text-emerald-800 border-r-2 border-emerald-200 w-28">Distance</th>
+                    <th class="px-4 py-4 text-left text-xs font-bold text-emerald-800 border-r-2 border-emerald-200 w-32">Weather</th>
+                    <th class="px-4 py-4 text-left text-xs font-bold text-emerald-800 border-r-2 border-emerald-200 w-32">Transport</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-emerald-800 border-r-2 border-emerald-200" style="min-width: 200px;">Notes</th>
                     <th class="px-4 py-4 text-center text-xs font-bold text-emerald-800 w-32">Actions</th>
                 </tr>
             </thead>

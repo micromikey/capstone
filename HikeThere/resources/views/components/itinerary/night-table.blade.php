@@ -33,11 +33,11 @@
                 <tr>
                     <th class="px-4 py-4 text-left text-xs font-bold text-white border-r-2 border-indigo-700 w-24">Time</th>
                     <th class="px-6 py-4 text-left text-xs font-bold text-white border-r-2 border-indigo-700" style="min-width: 200px;">Activity</th>
-                    <th class="px-4 py-4 text-left text-xs font-bold text-white border-r-2 border-indigo-700 w-20">Elapsed</th>
-                    <th class="px-4 py-4 text-left text-xs font-bold text-white border-r-2 border-indigo-700 w-20">Distance</th>
-                    <th class="px-4 py-4 text-left text-xs font-bold text-white border-r-2 border-indigo-700 w-28">Weather</th>
-                    <th class="px-4 py-4 text-left text-xs font-bold text-white border-r-2 border-indigo-700 w-24">Transport</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-white" style="min-width: 250px;">Notes</th>
+                    <th class="px-4 py-4 text-left text-xs font-bold text-white border-r-2 border-indigo-700 w-28">Elapsed</th>
+                    <th class="px-4 py-4 text-left text-xs font-bold text-white border-r-2 border-indigo-700 w-28">Distance</th>
+                    <th class="px-4 py-4 text-left text-xs font-bold text-white border-r-2 border-indigo-700 w-32">Weather</th>
+                    <th class="px-4 py-4 text-left text-xs font-bold text-white border-r-2 border-indigo-700 w-32">Transport</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-white" style="min-width: 200px;">Notes</th>
                 </tr>
             </thead>
             <tbody class="bg-slate-50/90 backdrop-blur-sm divide-y-2 divide-indigo-100">
