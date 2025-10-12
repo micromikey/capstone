@@ -167,9 +167,10 @@ Route::middleware([
     Route::get('/itinerary/build/{trail}', [ItineraryController::class, 'buildWithTrail'])->name('itinerary.build.trail');
     // Submission: handle itinerary payloads via ItineraryController@store
     Route::post('/itinerary/generate', [ItineraryController::class, 'store'])->name('itinerary.generate');
-    Route::post('/hiker/itinerary/generate-pdf', [ItineraryController::class, 'generatePdf'])->name('itinerary.generate.pdf');
+    // PDF routes commented out - focusing on print functionality
+    // Route::post('/hiker/itinerary/generate-pdf', [ItineraryController::class, 'generatePdf'])->name('itinerary.generate.pdf');
     Route::get('/itinerary/{itinerary}/print', [ItineraryController::class, 'printView'])->name('itinerary.print');
-    Route::get('/itinerary/{itinerary}/pdf', [ItineraryController::class, 'pdf'])->name('itinerary.pdf');
+    // Route::get('/itinerary/{itinerary}/pdf', [ItineraryController::class, 'pdf'])->name('itinerary.pdf');
     Route::get('/itinerary/{itinerary}/ical', [ItineraryController::class, 'ical'])->name('itinerary.ical');
     Route::get('/itinerary/{itinerary}', [ItineraryController::class, 'show'])->name('itinerary.show');
     

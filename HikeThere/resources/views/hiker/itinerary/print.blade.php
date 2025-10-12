@@ -26,6 +26,7 @@ $dateInfo = $generatedData['dateInfo'];
 $dayActivities = $generatedData['dayActivities'];
 $nightActivities = $generatedData['nightActivities'];
 $preHikeActivities = $generatedData['preHikeActivities'] ?? [];
+$emergencyInfo = $generatedData['emergencyInfo'] ?? [];
 
 // Initialize weather helper for time calculations
 $weatherHelper = app(WeatherHelperService::class);
@@ -243,6 +244,84 @@ $weatherHelper = app(WeatherHelperService::class);
     </div>
     @endif
 
+    <!-- Emergency Information -->
+    @if (!empty($emergencyInfo))
+    <div class="section">
+        <h2 style="color: #dc2626;">🚨 Emergency Information</h2>
+        <div style="background: #fef2f2; border: 2px solid #fca5a5; padding: 8px; border-radius: 6px;">
+            <div class="grid-2" style="gap: 8px;">
+                <!-- Emergency Numbers -->
+                <div style="background: white; padding: 6px; border-radius: 4px; border: 1px solid #fca5a5;">
+                    <h3 style="color: #dc2626; font-size: 9pt; margin-bottom: 4px;">📞 Emergency Numbers</h3>
+                    <div style="font-size: 7pt; line-height: 1.4;">
+                        @foreach ($emergencyInfo['emergency_numbers'] ?? [] as $number)
+                            <div style="margin-bottom: 2px;">
+                                <strong>{{ $number['service'] }}:</strong> {{ $number['number'] }}
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                
+                <!-- Your Emergency Contact -->
+                @php
+                    $hikerEmergencyContact = Auth::user();
+                @endphp
+                <div style="background: white; padding: 6px; border-radius: 4px; border: 1px solid #fca5a5;">
+                    <h3 style="color: #dc2626; font-size: 9pt; margin-bottom: 4px;">👤 Your Emergency Contact</h3>
+                    <div style="font-size: 7pt; line-height: 1.4;">
+                        @if ($hikerEmergencyContact && ($hikerEmergencyContact->emergency_contact_name || $hikerEmergencyContact->emergency_contact_phone))
+                            @if (!empty($hikerEmergencyContact->emergency_contact_name))
+                                <strong>{{ $hikerEmergencyContact->emergency_contact_name }}</strong><br>
+                            @endif
+                            @if (!empty($hikerEmergencyContact->emergency_contact_relationship))
+                                <span style="color: #64748b;">{{ $hikerEmergencyContact->emergency_contact_relationship }}</span><br>
+                            @endif
+                            @if (!empty($hikerEmergencyContact->emergency_contact_phone))
+                                <strong style="color: #2563eb;">{{ $hikerEmergencyContact->emergency_contact_phone }}</strong>
+                            @endif
+                        @else
+                            <span style="color: #64748b; font-style: italic;">No emergency contact configured</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid-2" style="gap: 8px; margin-top: 8px;">
+                <!-- Hospitals -->
+                <div style="background: white; padding: 6px; border-radius: 4px; border: 1px solid #fca5a5;">
+                    <h3 style="color: #dc2626; font-size: 9pt; margin-bottom: 4px;">🏥 Nearest Hospitals</h3>
+                    <div style="font-size: 7pt; line-height: 1.4;">
+                        @foreach (array_slice($emergencyInfo['hospitals'] ?? [], 0, 2) as $hospital)
+                            <div style="margin-bottom: 4px;">
+                                <strong>{{ $hospital['name'] }}</strong><br>
+                                <span style="color: #64748b;">{{ $hospital['address'] }}</span>
+                                @if (!empty($hospital['distance']))
+                                    <br><strong style="color: #dc2626;">~{{ $hospital['distance'] }} away</strong>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                
+                <!-- Trail Emergency Contacts -->
+                @php
+                    $trailEmergencyContacts = is_array($trail) ? ($trail['emergency_contacts'] ?? null) : ($trail->emergency_contacts ?? null);
+                @endphp
+                <div style="background: white; padding: 6px; border-radius: 4px; border: 1px solid #fca5a5;">
+                    <h3 style="color: #dc2626; font-size: 9pt; margin-bottom: 4px;">📋 Trail Contact Info</h3>
+                    <div style="font-size: 7pt; line-height: 1.4;">
+                        @if (!empty($trailEmergencyContacts))
+                            {{ $trailEmergencyContacts }}
+                        @else
+                            <span style="color: #64748b; font-style: italic;">No trail-specific emergency contacts provided</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Pre-hike Transportation -->
     @if (!empty($preHikeActivities))
     <div class="section">
@@ -254,7 +333,7 @@ $weatherHelper = app(WeatherHelperService::class);
                     <th style="width: 22%;">Activity</th>
                     <th style="width: 15%;">Location</th>
                     <th style="width: 15%;">Transport</th>
-                    <th style="width: 38%;">Notes</th>
+                    <th style="width: 38%;">Description / Notes</th>
                 </tr>
             </thead>
             <tbody>
@@ -263,31 +342,36 @@ $weatherHelper = app(WeatherHelperService::class);
                     <td style="font-weight: 600; font-size: 7pt;">
                         @php
                             $minutes = $activity['minutes'] ?? 0;
-                            $baseDateForDay = \Carbon\Carbon::parse($dateInfo['start_date']);
-                            $timeLabel = $weatherHelper->computeTimeForRow($baseDateForDay, $dateInfo['start_time'], 1, $minutes);
+                            $isMultiDay = $minutes >= 1440; // 24 hours or more
                             
-                            // Get weather for pre-hike activity
-                            $weatherLabel = $weatherHelper->getWeatherFor($weatherData, 1, $timeLabel, $activity, $trail) ?? 'Fair / 25°C';
+                            if ($isMultiDay) {
+                                // For multi-day: get actual time on previous day (modulo 24 hours)
+                                $actualMinutes = $minutes % 1440;
+                                $hours = intval($actualMinutes / 60);
+                                $mins = $actualMinutes % 60;
+                                $dayLabel = ' (Day Before)';
+                            } else {
+                                // For same day: normal calculation
+                                $hours = intval($minutes / 60);
+                                $mins = $minutes % 60;
+                                $dayLabel = '';
+                            }
                             
-                            // Use intelligent weather service for consolidated notes (same as original generated view)
-                            $intelligentWeatherService = app(\App\Services\IntelligentWeatherService::class);
-                            $notes = $intelligentWeatherService->generateSmartWeatherNote(
-                                $activity, 
-                                $weatherLabel, 
-                                $trail ?? null, 
-                                0  // Pre-hike is day 0
-                            );
+                            $timeLabel = sprintf('%02d:%02d%s', $hours, $mins, $dayLabel);
                             
                             // Transport for pre-hike
                             $buildArray = is_array($build) ? $build : (array)$build;
                             $transportLabel = $buildArray['vehicle'] ?? 'Transport';
+                            
+                            // Description - mirroring the generated view
+                            $description = $activity['description'] ?? '';
                         @endphp
                         {{ $timeLabel }}
                     </td>
                     <td style="font-size: 7pt;">{{ $activity['title'] }}</td>
                     <td style="font-size: 7pt;">{{ $activity['location'] }}</td>
                     <td style="font-size: 7pt;">{{ $transportLabel }}</td>
-                    <td style="font-size: 6pt;">{{ $notes }}</td>
+                    <td style="font-size: 6pt;">{{ $description }}</td>
                 </tr>
                 @endforeach
             </tbody>
