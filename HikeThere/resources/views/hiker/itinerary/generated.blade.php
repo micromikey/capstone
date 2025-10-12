@@ -37,6 +37,20 @@ $dayActivities = $generatedData['dayActivities'];
 $nightActivities = $generatedData['nightActivities'];
 $preHikeActivities = $generatedData['preHikeActivities'] ?? [];
 $emergencyInfo = $generatedData['emergencyInfo'] ?? [];
+
+// Ensure share token exists for sharing functionality
+if (is_object($itinerary) && empty($itinerary->share_token)) {
+    $itinerary->share_token = \Illuminate\Support\Str::random(32);
+    $itinerary->save();
+} elseif (is_array($itinerary) && empty($itinerary['share_token'])) {
+    // If it's an array, we need to update the actual model
+    $itineraryModel = \App\Models\Itinerary::find($itinerary['id'] ?? null);
+    if ($itineraryModel && empty($itineraryModel->share_token)) {
+        $itineraryModel->share_token = \Illuminate\Support\Str::random(32);
+        $itineraryModel->save();
+        $itinerary['share_token'] = $itineraryModel->share_token;
+    }
+}
 @endphp
 
 <x-app-layout>

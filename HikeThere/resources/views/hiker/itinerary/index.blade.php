@@ -1,3 +1,13 @@
+@php
+// Ensure all itineraries have share tokens
+foreach ($itineraries as $itinerary) {
+    if (empty($itinerary->share_token)) {
+        $itinerary->share_token = \Illuminate\Support\Str::random(32);
+        $itinerary->save();
+    }
+}
+@endphp
+
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
