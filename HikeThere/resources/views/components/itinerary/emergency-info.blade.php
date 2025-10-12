@@ -98,7 +98,6 @@
         </div>
 
         {{-- Off-Limits Areas --}}
-        @if (!empty($emergencyInfo['off_limits_areas']) && count($emergencyInfo['off_limits_areas']) > 0)
         <div class="bg-white rounded-lg p-4 border border-red-100">
             <h4 class="font-semibold text-red-900 mb-3 flex items-center">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -107,23 +106,25 @@
                 Off-Limits Areas
             </h4>
             <div class="space-y-2">
-                @foreach ($emergencyInfo['off_limits_areas'] ?? [] as $area)
-                    <div class="text-sm bg-red-50 p-2 rounded border border-red-200">
-                        <p class="font-semibold text-red-900">🚫 {{ $area['name'] }}</p>
-                        @if (!empty($area['coordinates']))
-                            <p class="text-red-600 text-xs font-mono">{{ $area['coordinates'] }}</p>
-                        @endif
-                        @if (!empty($area['reason']))
-                            <p class="text-red-700 text-xs font-medium">⚠️ {{ $area['reason'] }}</p>
-                        @endif
+                @if (!empty($emergencyInfo['off_limits_areas']) && count($emergencyInfo['off_limits_areas']) > 0)
+                    @foreach ($emergencyInfo['off_limits_areas'] as $area)
+                        <div class="text-sm bg-red-50 p-2 rounded border border-red-200">
+                            <p class="font-semibold text-red-900">🚫 {{ $area['name'] }}</p>
+                            @if (!empty($area['coordinates']))
+                                <p class="text-red-600 text-xs font-mono">{{ $area['coordinates'] }}</p>
+                            @endif
+                            @if (!empty($area['reason']))
+                                <p class="text-red-700 text-xs font-medium">⚠️ {{ $area['reason'] }}</p>
+                            @endif
+                        </div>
+                    @endforeach
+                @else
+                    <div class="text-sm text-gray-500 italic">
+                        No off-limits areas configured for this trail
                     </div>
-                @endforeach
+                @endif
             </div>
         </div>
-        @else
-        {{-- Empty placeholder to maintain grid layout when no off-limits areas --}}
-        <div class="bg-white rounded-lg p-4 border border-red-100 opacity-0 pointer-events-none"></div>
-        @endif
     </div>
 
     {{-- Combined Map for Evacuation Points and Off-Limits Areas --}}
