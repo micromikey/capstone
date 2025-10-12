@@ -31,9 +31,9 @@
                     </x-nav-link>
                     
                     <!-- Trails Dropdown -->
-                    <div class="hidden sm:flex sm:items-center sm:-my-px" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
+                    <div class="hidden sm:flex sm:items-center sm:-my-px sm:ms-10" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
                         <div class="relative">
-                            <a href="{{ route('org.trails.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('org.trails.*') || request()->routeIs('organization.emergency-readiness.*') || request()->routeIs('organization.safety-incidents.*') ? 'border-green-500 text-gray-900 focus:border-green-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:text-gray-700 focus:border-gray-300' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
+                            <a href="{{ route('org.trails.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out focus:outline-none {{ request()->routeIs('org.trails.*') || request()->routeIs('organization.emergency-readiness.*') || request()->routeIs('organization.safety-incidents.*') ? 'border-green-500 text-gray-900 focus:border-green-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300' }}">
                                 <div>{{ __('Trails') }}</div>
                                 <div class="ms-1">
                                     <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -111,9 +111,9 @@
                     </x-nav-link>
                     
                     <!-- Community Dropdown -->
-                    <div class="hidden sm:flex sm:items-center sm:-my-px" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
+                    <div class="hidden sm:flex sm:items-center sm:-my-px sm:ms-10" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
                         <div class="relative">
-                            <a href="{{ route('community.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('community.*') || request()->routeIs('hiker.incidents.*') ? 'border-green-500 text-gray-900 focus:border-green-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:text-gray-700 focus:border-gray-300' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out">
+                            <a href="{{ route('community.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out focus:outline-none {{ request()->routeIs('community.*') || request()->routeIs('hiker.incidents.*') ? 'border-green-500 text-gray-900 focus:border-green-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300' }}">
                                 <div>{{ __('Community') }}</div>
                                 <div class="ms-1">
                                     <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
