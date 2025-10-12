@@ -74,7 +74,7 @@
             </div>
         </div>
 
-        {{-- Evacuation Points --}}
+        {{-- Evacuation Points and Off-Limits Areas Side by Side --}}
         <div class="bg-white rounded-lg p-4 border border-red-100">
             <h4 class="font-semibold text-red-900 mb-3 flex items-center">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,6 +120,9 @@
                 @endforeach
             </div>
         </div>
+        @else
+        {{-- Empty placeholder to maintain grid layout when no off-limits areas --}}
+        <div class="bg-white rounded-lg p-4 border border-red-100 opacity-0 pointer-events-none"></div>
         @endif
     </div>
 
