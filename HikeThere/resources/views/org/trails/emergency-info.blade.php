@@ -337,6 +337,85 @@
                     </div>
                 </div>
 
+                <!-- Off-Limits Areas Section -->
+                <div class="bg-white shadow-lg rounded-2xl p-8 border-2 border-red-100">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-red-500 p-3 rounded-xl">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800">Off-Limits Areas</h3>
+                        </div>
+                        <button type="button" onclick="addOffLimitsArea()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Add Area
+                        </button>
+                    </div>
+
+                    <!-- Interactive Map for Off-Limits Areas -->
+                    <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <div>
+                                <h4 class="text-red-800 font-semibold text-sm">Mark dangerous or restricted areas:</h4>
+                                <p class="text-red-700 text-sm mt-1">Click on the map to mark areas that hikers should avoid (landslide zones, restricted areas, dangerous cliffs, etc.).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <div id="offlimits-map" class="w-full h-[500px] rounded-xl border-2 border-gray-300 shadow-lg"></div>
+                    </div>
+
+                    <div id="offlimits-areas-container" class="space-y-4">
+                        @php
+                            $offLimitsAreas = old('off_limits_areas', $trail->emergency_info['off_limits_areas'] ?? []);
+                        @endphp
+                        
+                        @forelse($offLimitsAreas as $index => $area)
+                            <div class="offlimits-area-row bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <div class="flex items-start gap-4">
+                                    <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Area Name</label>
+                                            <input type="text" name="off_limits_areas[{{ $index }}][name]" 
+                                                   value="{{ $area['name'] ?? '' }}"
+                                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                                   placeholder="e.g., Landslide Zone A" required>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Coordinates <span class="text-red-600">(Click map to pin)</span></label>
+                                            <input type="text" name="off_limits_areas[{{ $index }}][coordinates]" 
+                                                   value="{{ $area['coordinates'] ?? '' }}"
+                                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                                   placeholder="Click map or enter manually">
+                                        </div>
+                                        <div class="md:col-span-2">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Reason / Warning</label>
+                                            <textarea name="off_limits_areas[{{ $index }}][reason]" rows="2"
+                                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                                   placeholder="e.g., Active landslide area - extremely dangerous, do not enter" required>{{ $area['reason'] ?? '' }}</textarea>
+                                        </div>
+                                    </div>
+                                    <button type="button" onclick="removeOffLimitsRow(this)" class="mt-7 text-red-600 hover:text-red-800 transition">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="text-gray-500 text-center py-4">No off-limits areas marked yet.</p>
+                        @endforelse
+                    </div>
+                </div>
+
                 <!-- Action Buttons -->
                 <div class="flex justify-between items-center bg-white shadow-lg rounded-2xl p-6 border-2 border-gray-200">
                     <form action="{{ route('org.trails.emergency-info.destroy', $trail) }}" method="POST" 
@@ -374,25 +453,34 @@
         let hospitalIndex = {{ count($hospitals) }};
         let rangerStationIndex = {{ count($rangerStations) }};
         let evacuationPointIndex = {{ count($evacuationPoints) }};
+        let offLimitsAreaIndex = {{ count($offLimitsAreas ?? []) }};
         
-        // Google Maps variables
-        let map;
-        let markers = [];
-        let clickListener;
+        // Google Maps variables for evacuation points
+        let evacuationMap;
+        let evacuationMarkers = [];
+        let evacuationClickListener;
 
-        // Initialize map when page loads
+        // Google Maps variables for off-limits areas
+        let offLimitsMap;
+        let offLimitsMarkers = [];
+        let offLimitsClickListener;
+
+        // Initialize maps when page loads
         window.addEventListener('load', function() {
-            initMap();
+            initEvacuationMap();
             loadExistingEvacuationPoints();
+            
+            initOffLimitsMap();
+            loadExistingOffLimitsAreas();
         });
 
-        function initMap() {
+        function initEvacuationMap() {
             const trailLocation = {
                 lat: {{ $trail->latitude ?? 16.4023 }},
                 lng: {{ $trail->longitude ?? 120.5960 }}
             };
 
-            map = new google.maps.Map(document.getElementById('evacuation-map'), {
+            evacuationMap = new google.maps.Map(document.getElementById('evacuation-map'), {
                 center: trailLocation,
                 zoom: 13,
                 mapTypeId: 'terrain',
@@ -402,14 +490,45 @@
             });
 
             // Add click listener to map
-            clickListener = map.addListener('click', function(event) {
+            evacuationClickListener = evacuationMap.addListener('click', function(event) {
                 addEvacuationPointFromMap(event.latLng);
             });
 
-            // Add a marker for the trail location
+            // Add a marker for the trail location (blue)
             new google.maps.Marker({
                 position: trailLocation,
-                map: map,
+                map: evacuationMap,
+                title: 'Trail Location',
+                icon: {
+                    url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                }
+            });
+        }
+
+        function initOffLimitsMap() {
+            const trailLocation = {
+                lat: {{ $trail->latitude ?? 16.4023 }},
+                lng: {{ $trail->longitude ?? 120.5960 }}
+            };
+
+            offLimitsMap = new google.maps.Map(document.getElementById('offlimits-map'), {
+                center: trailLocation,
+                zoom: 13,
+                mapTypeId: 'terrain',
+                mapTypeControl: true,
+                streetViewControl: false,
+                fullscreenControl: true
+            });
+
+            // Add click listener to map
+            offLimitsClickListener = offLimitsMap.addListener('click', function(event) {
+                addOffLimitsAreaFromMap(event.latLng);
+            });
+
+            // Add a marker for the trail location (blue)
+            new google.maps.Marker({
+                position: trailLocation,
+                map: offLimitsMap,
                 title: 'Trail Location',
                 icon: {
                     url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
@@ -421,79 +540,73 @@
             const lat = latLng.lat();
             const lng = latLng.lng();
             const coordinates = lat.toFixed(6) + ', ' + lng.toFixed(6);
+            const markerIndex = evacuationMarkers.length;
 
-            // Add marker to map with flag icon
+            // Add marker to map with YELLOW flag
             const marker = new google.maps.Marker({
                 position: latLng,
-                map: map,
-                title: 'Evacuation Point ' + (markers.length + 1),
+                map: evacuationMap,
+                title: 'Evacuation Point ' + (markerIndex + 1),
                 draggable: true,
                 animation: google.maps.Animation.DROP,
                 icon: {
                     path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
                     scale: 6,
-                    fillColor: '#EF4444',
+                    fillColor: '#EAB308', // Yellow color
                     fillOpacity: 1,
-                    strokeColor: '#991B1B',
+                    strokeColor: '#CA8A04',
                     strokeWeight: 2,
                     rotation: 180,
                     anchor: new google.maps.Point(0, 5)
                 },
                 label: {
-                    text: '🚩',
-                    fontSize: '24px',
-                    className: 'marker-label'
+                    text: '�',
+                    fontSize: '24px'
                 }
             });
+
+            // Store marker index as a property
+            marker.markerIndex = markerIndex;
 
             // Add info window with coordinates
             const infoWindow = new google.maps.InfoWindow({
                 content: `
                     <div style="padding: 8px;">
-                        <p style="font-weight: bold; color: #991B1B; margin-bottom: 4px;">Evacuation Point ${markers.length + 1}</p>
+                        <p style="font-weight: bold; color: #CA8A04; margin-bottom: 4px;">Evacuation Point ${markerIndex + 1}</p>
                         <p style="font-size: 12px; color: #6B7280;">Coordinates: ${coordinates}</p>
-                        <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag marker to adjust position</p>
+                        <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag flag to adjust position</p>
                     </div>
                 `
             });
 
-            // Show info window on marker click
             marker.addListener('click', function() {
-                infoWindow.open(map, marker);
+                infoWindow.open(evacuationMap, marker);
             });
 
-            // Update coordinates when marker is dragged
             marker.addListener('dragend', function(event) {
                 const newLat = event.latLng.lat();
                 const newLng = event.latLng.lng();
                 const newCoordinates = newLat.toFixed(6) + ', ' + newLng.toFixed(6);
-                const index = markers.indexOf(marker);
-                if (index !== -1) {
-                    const input = document.querySelector(`input[name="evacuation_points[${index}][coordinates]"]`);
-                    if (input) {
-                        input.value = newCoordinates;
-                    }
-                    
-                    // Update info window
-                    infoWindow.setContent(`
-                        <div style="padding: 8px;">
-                            <p style="font-weight: bold; color: #991B1B; margin-bottom: 4px;">Evacuation Point ${index + 1}</p>
-                            <p style="font-size: 12px; color: #6B7280;">Coordinates: ${newCoordinates}</p>
-                            <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag marker to adjust position</p>
-                        </div>
-                    `);
+                const index = marker.markerIndex;
+                const input = document.querySelector(`input[name="evacuation_points[${index}][coordinates]"]`);
+                if (input) {
+                    input.value = newCoordinates;
                 }
+                
+                infoWindow.setContent(`
+                    <div style="padding: 8px;">
+                        <p style="font-weight: bold; color: #CA8A04; margin-bottom: 4px;">Evacuation Point ${index + 1}</p>
+                        <p style="font-size: 12px; color: #6B7280;">Coordinates: ${newCoordinates}</p>
+                        <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag flag to adjust position</p>
+                    </div>
+                `);
             });
 
-            // Add marker to array
-            markers.push(marker);
-
-            // Add evacuation point form row with coordinates pre-filled
+            evacuationMarkers.push(marker);
             addEvacuationPoint(coordinates);
         }
 
         function loadExistingEvacuationPoints() {
-            // Load existing evacuation points from the form
             const existingPoints = @json($evacuationPoints);
             
             existingPoints.forEach((point, index) => {
@@ -506,44 +619,43 @@
                         if (!isNaN(lat) && !isNaN(lng)) {
                             const marker = new google.maps.Marker({
                                 position: { lat: lat, lng: lng },
-                                map: map,
+                                map: evacuationMap,
                                 title: point.name || 'Evacuation Point ' + (index + 1),
                                 draggable: true,
                                 animation: google.maps.Animation.DROP,
                                 icon: {
                                     path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
                                     scale: 6,
-                                    fillColor: '#EF4444',
+                                    fillColor: '#EAB308', // Yellow
                                     fillOpacity: 1,
-                                    strokeColor: '#991B1B',
+                                    strokeColor: '#CA8A04',
                                     strokeWeight: 2,
                                     rotation: 180,
                                     anchor: new google.maps.Point(0, 5)
                                 },
                                 label: {
-                                    text: '🚩',
-                                    fontSize: '24px',
-                                    className: 'marker-label'
+                                    text: '�',
+                                    fontSize: '24px'
                                 }
                             });
 
-                            // Add info window
+                            marker.markerIndex = index;
+
                             const infoWindow = new google.maps.InfoWindow({
                                 content: `
                                     <div style="padding: 8px;">
-                                        <p style="font-weight: bold; color: #991B1B; margin-bottom: 4px;">${point.name || 'Evacuation Point ' + (index + 1)}</p>
+                                        <p style="font-weight: bold; color: #CA8A04; margin-bottom: 4px;">${point.name || 'Evacuation Point ' + (index + 1)}</p>
                                         ${point.description ? `<p style="font-size: 12px; color: #4B5563; margin-bottom: 4px;">${point.description}</p>` : ''}
                                         <p style="font-size: 11px; color: #6B7280;">Coordinates: ${point.coordinates}</p>
-                                        <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag marker to adjust position</p>
+                                        <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag flag to adjust position</p>
                                     </div>
                                 `
                             });
 
                             marker.addListener('click', function() {
-                                infoWindow.open(map, marker);
+                                infoWindow.open(evacuationMap, marker);
                             });
 
-                            // Update coordinates when marker is dragged
                             marker.addListener('dragend', function(event) {
                                 const newLat = event.latLng.lat();
                                 const newLng = event.latLng.lng();
@@ -553,18 +665,162 @@
                                     input.value = newCoordinates;
                                 }
                                 
-                                // Update info window
                                 infoWindow.setContent(`
                                     <div style="padding: 8px;">
-                                        <p style="font-weight: bold; color: #991B1B; margin-bottom: 4px;">${point.name || 'Evacuation Point ' + (index + 1)}</p>
+                                        <p style="font-weight: bold; color: #CA8A04; margin-bottom: 4px;">${point.name || 'Evacuation Point ' + (index + 1)}</p>
                                         ${point.description ? `<p style="font-size: 12px; color: #4B5563; margin-bottom: 4px;">${point.description}</p>` : ''}
                                         <p style="font-size: 11px; color: #6B7280;">Coordinates: ${newCoordinates}</p>
-                                        <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag marker to adjust position</p>
+                                        <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag flag to adjust position</p>
                                     </div>
                                 `);
                             });
 
-                            markers.push(marker);
+                            evacuationMarkers.push(marker);
+                        }
+                    }
+                }
+            });
+        }
+
+        // OFF-LIMITS AREAS Functions
+        function addOffLimitsAreaFromMap(latLng) {
+            const lat = latLng.lat();
+            const lng = latLng.lng();
+            const coordinates = lat.toFixed(6) + ', ' + lng.toFixed(6);
+            const markerIndex = offLimitsMarkers.length;
+
+            // Add marker to map with RED flag
+            const marker = new google.maps.Marker({
+                position: latLng,
+                map: offLimitsMap,
+                title: 'Off-Limits Area ' + (markerIndex + 1),
+                draggable: true,
+                animation: google.maps.Animation.DROP,
+                icon: {
+                    path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                    scale: 6,
+                    fillColor: '#EF4444', // Red color
+                    fillOpacity: 1,
+                    strokeColor: '#991B1B',
+                    strokeWeight: 2,
+                    rotation: 180,
+                    anchor: new google.maps.Point(0, 5)
+                },
+                label: {
+                    text: '🔴',
+                    fontSize: '24px'
+                }
+            });
+
+            marker.markerIndex = markerIndex;
+
+            const infoWindow = new google.maps.InfoWindow({
+                content: `
+                    <div style="padding: 8px;">
+                        <p style="font-weight: bold; color: #991B1B; margin-bottom: 4px;">⛔ Off-Limits Area ${markerIndex + 1}</p>
+                        <p style="font-size: 12px; color: #6B7280;">Coordinates: ${coordinates}</p>
+                        <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag flag to adjust position</p>
+                    </div>
+                `
+            });
+
+            marker.addListener('click', function() {
+                infoWindow.open(offLimitsMap, marker);
+            });
+
+            marker.addListener('dragend', function(event) {
+                const newLat = event.latLng.lat();
+                const newLng = event.latLng.lng();
+                const newCoordinates = newLat.toFixed(6) + ', ' + newLng.toFixed(6);
+                const index = marker.markerIndex;
+                const input = document.querySelector(`input[name="off_limits_areas[${index}][coordinates]"]`);
+                if (input) {
+                    input.value = newCoordinates;
+                }
+                
+                infoWindow.setContent(`
+                    <div style="padding: 8px;">
+                        <p style="font-weight: bold; color: #991B1B; margin-bottom: 4px;">⛔ Off-Limits Area ${index + 1}</p>
+                        <p style="font-size: 12px; color: #6B7280;">Coordinates: ${newCoordinates}</p>
+                        <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag flag to adjust position</p>
+                    </div>
+                `);
+            });
+
+            offLimitsMarkers.push(marker);
+            addOffLimitsArea(coordinates);
+        }
+
+        function loadExistingOffLimitsAreas() {
+            const existingAreas = @json($offLimitsAreas ?? []);
+            
+            existingAreas.forEach((area, index) => {
+                if (area.coordinates) {
+                    const coords = area.coordinates.split(',');
+                    if (coords.length === 2) {
+                        const lat = parseFloat(coords[0].trim());
+                        const lng = parseFloat(coords[1].trim());
+                        
+                        if (!isNaN(lat) && !isNaN(lng)) {
+                            const marker = new google.maps.Marker({
+                                position: { lat: lat, lng: lng },
+                                map: offLimitsMap,
+                                title: area.name || 'Off-Limits Area ' + (index + 1),
+                                draggable: true,
+                                animation: google.maps.Animation.DROP,
+                                icon: {
+                                    path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                                    scale: 6,
+                                    fillColor: '#EF4444', // Red
+                                    fillOpacity: 1,
+                                    strokeColor: '#991B1B',
+                                    strokeWeight: 2,
+                                    rotation: 180,
+                                    anchor: new google.maps.Point(0, 5)
+                                },
+                                label: {
+                                    text: '🔴',
+                                    fontSize: '24px'
+                                }
+                            });
+
+                            marker.markerIndex = index;
+
+                            const infoWindow = new google.maps.InfoWindow({
+                                content: `
+                                    <div style="padding: 8px;">
+                                        <p style="font-weight: bold; color: #991B1B; margin-bottom: 4px;">⛔ ${area.name || 'Off-Limits Area ' + (index + 1)}</p>
+                                        ${area.reason ? `<p style="font-size: 12px; color: #4B5563; margin-bottom: 4px;">${area.reason}</p>` : ''}
+                                        <p style="font-size: 11px; color: #6B7280;">Coordinates: ${area.coordinates}</p>
+                                        <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag flag to adjust position</p>
+                                    </div>
+                                `
+                            });
+
+                            marker.addListener('click', function() {
+                                infoWindow.open(offLimitsMap, marker);
+                            });
+
+                            marker.addListener('dragend', function(event) {
+                                const newLat = event.latLng.lat();
+                                const newLng = event.latLng.lng();
+                                const newCoordinates = newLat.toFixed(6) + ', ' + newLng.toFixed(6);
+                                const input = document.querySelector(`input[name="off_limits_areas[${index}][coordinates]"]`);
+                                if (input) {
+                                    input.value = newCoordinates;
+                                }
+                                
+                                infoWindow.setContent(`
+                                    <div style="padding: 8px;">
+                                        <p style="font-weight: bold; color: #991B1B; margin-bottom: 4px;">⛔ ${area.name || 'Off-Limits Area ' + (index + 1)}</p>
+                                        ${area.reason ? `<p style="font-size: 12px; color: #4B5563; margin-bottom: 4px;">${area.reason}</p>` : ''}
+                                        <p style="font-size: 11px; color: #6B7280;">Coordinates: ${newCoordinates}</p>
+                                        <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag flag to adjust position</p>
+                                    </div>
+                                `);
+                            });
+
+                            offLimitsMarkers.push(marker);
                         }
                     }
                 }
@@ -726,9 +982,77 @@
             evacuationPointIndex++;
         }
 
+        function addOffLimitsArea(coordinates = '') {
+            const container = document.getElementById('offlimits-areas-container');
+            const html = `
+                <div class="offlimits-area-row bg-gray-50 p-4 rounded-lg border border-gray-200" data-marker-index="${offLimitsAreaIndex}">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Area Name</label>
+                                <input type="text" name="off_limits_areas[${offLimitsAreaIndex}][name]" 
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                       placeholder="e.g., Landslide Zone A" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Coordinates <span class="text-red-600">(Click map to pin)</span></label>
+                                <input type="text" name="off_limits_areas[${offLimitsAreaIndex}][coordinates]" 
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                       placeholder="Click map or enter manually"
+                                       value="${coordinates}">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Reason / Warning</label>
+                                <textarea name="off_limits_areas[${offLimitsAreaIndex}][reason]" rows="2"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                       placeholder="e.g., Active landslide area - extremely dangerous, do not enter" required></textarea>
+                            </div>
+                        </div>
+                        <button type="button" onclick="removeOffLimitsRow(this)" class="mt-7 text-red-600 hover:text-red-800 transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+            offLimitsAreaIndex++;
+        }
+
         function removeRow(button) {
-            button.closest('.emergency-number-row, .hospital-row, .ranger-station-row, .evacuation-point-row').remove();
+            const row = button.closest('.emergency-number-row, .hospital-row, .ranger-station-row, .evacuation-point-row');
+            
+            // If it's an evacuation point row, also remove the marker
+            if (row && row.classList.contains('evacuation-point-row')) {
+                const rows = Array.from(document.querySelectorAll('.evacuation-point-row'));
+                const rowIndex = rows.indexOf(row);
+                
+                if (rowIndex !== -1 && evacuationMarkers[rowIndex]) {
+                    evacuationMarkers[rowIndex].setMap(null); // Remove marker from map
+                    evacuationMarkers.splice(rowIndex, 1); // Remove from array
+                }
+            }
+            
+            row.remove();
+        }
+
+        function removeOffLimitsRow(button) {
+            const row = button.closest('.offlimits-area-row');
+            
+            if (row) {
+                const rows = Array.from(document.querySelectorAll('.offlimits-area-row'));
+                const rowIndex = rows.indexOf(row);
+                
+                if (rowIndex !== -1 && offLimitsMarkers[rowIndex]) {
+                    offLimitsMarkers[rowIndex].setMap(null); // Remove marker from map
+                    offLimitsMarkers.splice(rowIndex, 1); // Remove from array
+                }
+            }
+            
+            row.remove();
         }
     </script>
     @endpush
 </x-app-layout>
+

@@ -51,8 +51,13 @@ class EmergencyInfoController extends Controller
             
             'evacuation_points' => 'nullable|array',
             'evacuation_points.*.name' => 'required|string|max:255',
-            'evacuation_points.*.description' => 'required|string|max:500',
             'evacuation_points.*.coordinates' => 'nullable|string|max:100',
+            'evacuation_points.*.description' => 'required|string|max:1000',
+            
+            'off_limits_areas' => 'nullable|array',
+            'off_limits_areas.*.name' => 'required|string|max:255',
+            'off_limits_areas.*.coordinates' => 'nullable|string|max:100',
+            'off_limits_areas.*.reason' => 'required|string|max:1000',
         ]);
 
         // Build the emergency_info JSON structure
@@ -61,6 +66,7 @@ class EmergencyInfoController extends Controller
             'hospitals' => $validated['hospitals'] ?? [],
             'ranger_stations' => $validated['ranger_stations'] ?? [],
             'evacuation_points' => $validated['evacuation_points'] ?? [],
+            'off_limits_areas' => $validated['off_limits_areas'] ?? [],
             'last_updated' => now()->toDateTimeString(),
             'updated_by' => Auth::user()->name,
         ];
