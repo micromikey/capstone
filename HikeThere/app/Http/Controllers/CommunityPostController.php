@@ -35,19 +35,30 @@ class CommunityPostController extends Controller
             $filter = $request->get('filter', 'all');
             
             if ($filter === 'followed' && auth()->check()) {
-                // Get trails from organizations the user follows
+                // Get organizations the user follows
                 $followedOrgIds = DB::table('organization_followers')
                     ->where('user_id', auth()->id())
-                    ->pluck('organization_id');
+                    ->pluck('organization_id')
+                    ->toArray();
                 
-                // Get trail IDs from followed organizations
-                $trailIds = DB::table('trails')
-                    ->where('created_by', auth()->id())
-                    ->orWhereIn('user_id', $followedOrgIds)
-                    ->pluck('id');
-                
-                // Filter posts to only show those about followed trails
-                $query->whereIn('trail_id', $trailIds);
+                if (!empty($followedOrgIds)) {
+                    // Get trail IDs from followed organizations
+                    $trailIds = DB::table('trails')
+                        ->whereIn('user_id', $followedOrgIds)
+                        ->pluck('id')
+                        ->toArray();
+                    
+                    // Filter posts to only show those about trails from followed organizations
+                    if (!empty($trailIds)) {
+                        $query->whereIn('trail_id', $trailIds);
+                    } else {
+                        // No trails from followed organizations, return empty result
+                        $query->whereRaw('1 = 0');
+                    }
+                } else {
+                    // User doesn't follow any organizations, return empty result
+                    $query->whereRaw('1 = 0');
+                }
             }
 
             // If user is authenticated and wants to see followed organizations' posts
@@ -67,13 +78,16 @@ class CommunityPostController extends Controller
             return view('community.posts.index', compact('posts'));
         } catch (\Exception $e) {
             Log::error('Error in CommunityPost index: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'filter' => $request->get('filter'),
+                'user_id' => auth()->id(),
+                'request' => $request->all()
             ]);
             
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to load posts: ' . $e->getMessage(),
+                    'message' => config('app.debug') ? 'Failed to load posts: ' . $e->getMessage() : 'Failed to load posts',
                     'posts' => ['data' => [], 'total' => 0]
                 ], 500);
             }
