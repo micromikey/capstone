@@ -316,6 +316,60 @@ class ItineraryController extends Controller
     }
 
     /**
+     * Public share view of the itinerary (accessible without authentication)
+     * Shows print-optimized view for sharing
+     */
+    public function publicShare(Itinerary $itinerary)
+    {
+        // Extract stored data from the itinerary
+        $weatherData = $itinerary->weather_conditions ?? [];
+        $trail = null;
+        $build = $itinerary->transport_details ?? [];
+
+        // If we have a trail_id, try to load the trail and fetch fresh weather
+        if ($itinerary->trail_id) {
+            // Eager load trail with location, events to get hiking_start_time
+            $trail = \App\Models\Trail::with(['location', 'events' => function($query) {
+                $query->where('is_public', true)
+                      ->whereNotNull('hiking_start_time')
+                      ->orderBy('start_at', 'desc')
+                      ->limit(1);
+            }])->find($itinerary->trail_id);
+            
+            // Fetch fresh weather data if trail has coordinates
+            if ($trail && $trail->latitude && $trail->longitude) {
+                try {
+                    $weatherController = new \App\Http\Controllers\Api\WeatherController();
+                    $weatherRequest = new \Illuminate\Http\Request([
+                        'lat' => $trail->latitude,
+                        'lng' => $trail->longitude
+                    ]);
+                    
+                    $weatherResponse = $weatherController->getForecast($weatherRequest);
+                    $freshWeatherData = $weatherResponse->getData(true);
+                    
+                    if (!isset($freshWeatherData['error'])) {
+                        // Keep the original API data for dynamic weather AND add formatted data for backward compatibility
+                        $formattedWeatherData = $this->formatWeatherDataForItinerary($freshWeatherData, $itinerary->start_date, $itinerary->duration_days ?? 1);
+                        
+                        // Start with original API data, then add formatted day data
+                        $weatherData = $freshWeatherData;
+                        foreach ($formattedWeatherData as $dayKey => $dayData) {
+                            $weatherData[$dayKey] = $dayData;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Failed to fetch fresh weather data for shared itinerary: ' . $e->getMessage());
+                    // Keep existing weather data as fallback
+                }
+            }
+        }
+
+        // Return the print-optimized view (same view as printView but accessible publicly)
+        return view('hiker.itinerary.print', compact('itinerary', 'weatherData', 'trail', 'build'));
+    }
+
+    /**
      * Generate and download PDF version of the itinerary
      */
     public function pdf(Itinerary $itinerary)
