@@ -123,7 +123,7 @@
     #floating-navigation.collapsed #nav-toggle-btn {
         opacity: 1;
         pointer-events: auto;
-        animation: pulseButton 2s infinite;
+        animation: pulseButton 9s infinite;
     }
 
     #floating-navigation.collapsed #nav-toggle-btn svg {
@@ -139,9 +139,31 @@
         0%, 100% {
             box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
         }
-        50% {
+        5% {
             box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
         }
+        10%, 100% {
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+        }
+    }
+
+    @keyframes pingRing {
+        0%, 100% {
+            opacity: 0;
+        }
+        2% {
+            opacity: 0.75;
+        }
+        5% {
+            opacity: 0;
+        }
+        10%, 100% {
+            opacity: 0;
+        }
+    }
+
+    #floating-navigation.collapsed #nav-toggle-btn .animate-ping {
+        animation: pingRing 9s cubic-bezier(0, 0, 0.2, 1) infinite;
     }
 
     .nav-content {
