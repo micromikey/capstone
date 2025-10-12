@@ -2083,7 +2083,7 @@ $imageService = app('App\\Services\\TrailImageService');
                                 </svg>
                                 <h3 class="mt-4 text-lg font-medium text-red-900">Failed to load posts</h3>
                                 <p class="mt-2 text-red-700">${error.message}</p>
-                                <button onclick="loadPosts(true)" class="mt-4 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                                <button id="retry-load-posts-btn" class="mt-4 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
                                     Try Again
                                 </button>
                             </div>
@@ -2094,8 +2094,17 @@ $imageService = app('App\\Services\\TrailImageService');
                 })
                 .finally(() => {
                     isLoadingPosts = false;
+                    
+                    // Add event listener to retry button if it exists
+                    const retryBtn = document.getElementById('retry-load-posts-btn');
+                    if (retryBtn) {
+                        retryBtn.addEventListener('click', () => loadPosts(true));
+                    }
                 });
         }
+        
+        // Make loadPosts globally accessible for inline onclick handlers
+        window.loadPosts = loadPosts;
 
         // Load more posts
         const loadMoreBtn = document.getElementById('load-more-btn');
