@@ -14,7 +14,7 @@ class HikerProfileController extends Controller
      * Display the hiker's profile for the organization
      * Only accessible for hikers with confirmed bookings
      */
-    public function show($hikerId)
+    public function show(Request $request, $hikerId)
     {
         $organization = Auth::user();
         
@@ -23,15 +23,30 @@ class HikerProfileController extends Controller
             ->where('user_type', 'hiker')
             ->firstOrFail();
         
-        // Verify that this hiker has a confirmed booking with the organization
-        $booking = Booking::where('user_id', $hiker->id)
-            ->whereHas('trail', function($query) use ($organization) {
-                $query->where('organization_id', $organization->id);
-            })
-            ->where('payment_status', 'paid')
-            ->whereIn('status', ['confirmed', 'completed'])
-            ->latest()
-            ->first();
+        // If booking ID is provided in the request, use that specific booking
+        $bookingId = $request->query('booking');
+        
+        if ($bookingId) {
+            // Get the specific booking
+            $booking = Booking::where('id', $bookingId)
+                ->where('user_id', $hiker->id)
+                ->whereHas('trail', function($query) use ($organization) {
+                    $query->where('organization_id', $organization->id);
+                })
+                ->where('payment_status', 'paid')
+                ->whereIn('status', ['confirmed', 'completed'])
+                ->firstOrFail();
+        } else {
+            // Get the latest confirmed/paid booking
+            $booking = Booking::where('user_id', $hiker->id)
+                ->whereHas('trail', function($query) use ($organization) {
+                    $query->where('organization_id', $organization->id);
+                })
+                ->where('payment_status', 'paid')
+                ->whereIn('status', ['confirmed', 'completed'])
+                ->latest()
+                ->first();
+        }
         
         // If no confirmed/paid booking exists, deny access
         if (!$booking) {
@@ -41,8 +56,8 @@ class HikerProfileController extends Controller
         // Get the hiker's latest assessment result
         $latestAssessment = $hiker->latestAssessmentResult;
         
-        // Get the hiker's latest itinerary
-        $latestItinerary = $hiker->latestItinerary;
+        // Get the hiker's latest itinerary for this specific booking
+        $latestItinerary = $booking->itineraries()->latest()->first() ?? $hiker->latestItinerary;
         
         return view('org.community.hiker-profile', compact(
             'hiker',

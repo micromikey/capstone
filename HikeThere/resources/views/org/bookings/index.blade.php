@@ -404,11 +404,16 @@
                                                         $redactedEmail = '';
                                                     }
                                                 @endphp
-                                                <div class="flex items-center">
+                                                <div class="flex items-center justify-between gap-2">
                                                     <div>
                                                         <div class="text-sm font-medium text-gray-900">{{ $redactedName }}</div>
                                                         <div class="text-xs text-gray-500">{{ $redactedEmail }}</div>
                                                     </div>
+                                                    <a href="{{ route('org.community.hiker-profile', ['hiker' => $booking->user_id, 'booking' => $booking->id]) }}" 
+                                                       class="text-xs text-emerald-600 hover:text-emerald-800 font-medium hover:underline whitespace-nowrap"
+                                                       title="View Hiker Profile">
+                                                        View Profile
+                                                    </a>
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
