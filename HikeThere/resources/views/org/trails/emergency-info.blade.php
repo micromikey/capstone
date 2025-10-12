@@ -422,15 +422,44 @@
             const lng = latLng.lng();
             const coordinates = lat.toFixed(6) + ', ' + lng.toFixed(6);
 
-            // Add marker to map
+            // Add marker to map with flag icon
             const marker = new google.maps.Marker({
                 position: latLng,
                 map: map,
                 title: 'Evacuation Point ' + (markers.length + 1),
                 draggable: true,
+                animation: google.maps.Animation.DROP,
                 icon: {
-                    url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+                    path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                    scale: 6,
+                    fillColor: '#EF4444',
+                    fillOpacity: 1,
+                    strokeColor: '#991B1B',
+                    strokeWeight: 2,
+                    rotation: 180,
+                    anchor: new google.maps.Point(0, 5)
+                },
+                label: {
+                    text: '🚩',
+                    fontSize: '24px',
+                    className: 'marker-label'
                 }
+            });
+
+            // Add info window with coordinates
+            const infoWindow = new google.maps.InfoWindow({
+                content: `
+                    <div style="padding: 8px;">
+                        <p style="font-weight: bold; color: #991B1B; margin-bottom: 4px;">Evacuation Point ${markers.length + 1}</p>
+                        <p style="font-size: 12px; color: #6B7280;">Coordinates: ${coordinates}</p>
+                        <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag marker to adjust position</p>
+                    </div>
+                `
+            });
+
+            // Show info window on marker click
+            marker.addListener('click', function() {
+                infoWindow.open(map, marker);
             });
 
             // Update coordinates when marker is dragged
@@ -444,6 +473,15 @@
                     if (input) {
                         input.value = newCoordinates;
                     }
+                    
+                    // Update info window
+                    infoWindow.setContent(`
+                        <div style="padding: 8px;">
+                            <p style="font-weight: bold; color: #991B1B; margin-bottom: 4px;">Evacuation Point ${index + 1}</p>
+                            <p style="font-size: 12px; color: #6B7280;">Coordinates: ${newCoordinates}</p>
+                            <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag marker to adjust position</p>
+                        </div>
+                    `);
                 }
             });
 
@@ -471,9 +509,38 @@
                                 map: map,
                                 title: point.name || 'Evacuation Point ' + (index + 1),
                                 draggable: true,
+                                animation: google.maps.Animation.DROP,
                                 icon: {
-                                    url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+                                    path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                                    scale: 6,
+                                    fillColor: '#EF4444',
+                                    fillOpacity: 1,
+                                    strokeColor: '#991B1B',
+                                    strokeWeight: 2,
+                                    rotation: 180,
+                                    anchor: new google.maps.Point(0, 5)
+                                },
+                                label: {
+                                    text: '🚩',
+                                    fontSize: '24px',
+                                    className: 'marker-label'
                                 }
+                            });
+
+                            // Add info window
+                            const infoWindow = new google.maps.InfoWindow({
+                                content: `
+                                    <div style="padding: 8px;">
+                                        <p style="font-weight: bold; color: #991B1B; margin-bottom: 4px;">${point.name || 'Evacuation Point ' + (index + 1)}</p>
+                                        ${point.description ? `<p style="font-size: 12px; color: #4B5563; margin-bottom: 4px;">${point.description}</p>` : ''}
+                                        <p style="font-size: 11px; color: #6B7280;">Coordinates: ${point.coordinates}</p>
+                                        <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag marker to adjust position</p>
+                                    </div>
+                                `
+                            });
+
+                            marker.addListener('click', function() {
+                                infoWindow.open(map, marker);
                             });
 
                             // Update coordinates when marker is dragged
@@ -485,6 +552,16 @@
                                 if (input) {
                                     input.value = newCoordinates;
                                 }
+                                
+                                // Update info window
+                                infoWindow.setContent(`
+                                    <div style="padding: 8px;">
+                                        <p style="font-weight: bold; color: #991B1B; margin-bottom: 4px;">${point.name || 'Evacuation Point ' + (index + 1)}</p>
+                                        ${point.description ? `<p style="font-size: 12px; color: #4B5563; margin-bottom: 4px;">${point.description}</p>` : ''}
+                                        <p style="font-size: 11px; color: #6B7280;">Coordinates: ${newCoordinates}</p>
+                                        <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag marker to adjust position</p>
+                                    </div>
+                                `);
                             });
 
                             markers.push(marker);

@@ -85,7 +85,10 @@
             <div class="space-y-2">
                 @foreach ($emergencyInfo['evacuation_points'] ?? [] as $point)
                     <div class="text-sm">
-                        <p class="font-semibold text-gray-900">{{ $point['name'] }}</p>
+                        <p class="font-semibold text-gray-900">📍 {{ $point['name'] }}</p>
+                        @if (!empty($point['coordinates']))
+                            <p class="text-gray-500 text-xs font-mono">{{ $point['coordinates'] }}</p>
+                        @endif
                         @if (!empty($point['description']))
                             <p class="text-gray-600 text-xs">{{ $point['description'] }}</p>
                         @endif
@@ -94,6 +97,104 @@
             </div>
         </div>
     </div>
+
+    {{-- Evacuation Points Map --}}
+    @if (!empty($emergencyInfo['evacuation_points']) && count(array_filter($emergencyInfo['evacuation_points'], fn($p) => !empty($p['coordinates']))) > 0)
+    <div class="mt-4 bg-white rounded-lg p-4 border border-red-100">
+        <h4 class="font-semibold text-red-900 mb-3 flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+            Evacuation Points Map
+        </h4>
+        <div id="evacuation-points-map" class="w-full h-[400px] rounded-lg border-2 border-gray-300"></div>
+    </div>
+
+    @push('scripts')
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_api_key') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const evacuationPoints = @json($emergencyInfo['evacuation_points'] ?? []);
+            
+            // Filter points with valid coordinates
+            const validPoints = evacuationPoints.filter(point => {
+                if (!point.coordinates) return false;
+                const coords = point.coordinates.split(',');
+                return coords.length === 2 && !isNaN(parseFloat(coords[0])) && !isNaN(parseFloat(coords[1]));
+            });
+
+            if (validPoints.length === 0) return;
+
+            // Calculate center point
+            let centerLat = 0, centerLng = 0;
+            validPoints.forEach(point => {
+                const coords = point.coordinates.split(',');
+                centerLat += parseFloat(coords[0].trim());
+                centerLng += parseFloat(coords[1].trim());
+            });
+            centerLat /= validPoints.length;
+            centerLng /= validPoints.length;
+
+            // Initialize map
+            const map = new google.maps.Map(document.getElementById('evacuation-points-map'), {
+                center: { lat: centerLat, lng: centerLng },
+                zoom: 13,
+                mapTypeId: 'terrain'
+            });
+
+            const bounds = new google.maps.LatLngBounds();
+
+            // Add markers for each evacuation point
+            validPoints.forEach((point, index) => {
+                const coords = point.coordinates.split(',');
+                const lat = parseFloat(coords[0].trim());
+                const lng = parseFloat(coords[1].trim());
+                const position = { lat: lat, lng: lng };
+
+                // Create marker with flag icon
+                const marker = new google.maps.Marker({
+                    position: position,
+                    map: map,
+                    title: point.name,
+                    label: {
+                        text: String(index + 1),
+                        color: 'white',
+                        fontWeight: 'bold'
+                    },
+                    icon: {
+                        url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                        labelOrigin: new google.maps.Point(16, 10)
+                    }
+                });
+
+                // Create info window
+                const infoContent = `
+                    <div style="padding: 8px; max-width: 250px;">
+                        <h3 style="font-weight: bold; color: #991b1b; margin-bottom: 4px;">🚩 ${point.name}</h3>
+                        ${point.description ? `<p style="font-size: 12px; color: #4b5563; margin-bottom: 4px;">${point.description}</p>` : ''}
+                        <p style="font-size: 11px; color: #6b7280; font-family: monospace;">${point.coordinates}</p>
+                    </div>
+                `;
+
+                const infoWindow = new google.maps.InfoWindow({
+                    content: infoContent
+                });
+
+                marker.addListener('click', function() {
+                    infoWindow.open(map, marker);
+                });
+
+                bounds.extend(position);
+            });
+
+            // Fit map to show all markers
+            if (validPoints.length > 1) {
+                map.fitBounds(bounds);
+            }
+        });
+    </script>
+    @endpush
+    @endif
 
     <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
         <p class="text-xs text-yellow-900 font-medium flex items-center">
