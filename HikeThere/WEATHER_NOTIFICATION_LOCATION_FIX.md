@@ -1,5 +1,63 @@
 # Weather Notification Location Fix
 
+## Latest Update - Location Accuracy Fix
+
+### Problem Identified (New Issue)
+The weather notification was showing **incorrect location data** for "Current Location". For example, showing "Westwood, Los Angeles" when the user is actually in the Philippines.
+
+### Root Cause
+The issue was in `app/Services/WeatherNotificationService.php`:
+
+1. **Incorrect Location Priority**: The service was using the OpenWeather API's location name which could return incorrect reverse geocoding results
+2. **IP Geolocation Issues**: IP-based geolocation might return cached or incorrect coordinates
+3. **Location Label Overriding**: The user's actual location label was being overridden by the API response
+
+### Solution Implemented
+
+#### 1. Fixed Location Label Priority ✅
+**Changed the logic to prioritize user's location over API response**:
+
+```php
+// BEFORE (WRONG):
+$actualLocation = $weather['location_name'] ?? $locationLabel;
+
+// AFTER (CORRECT):
+$actualLocation = $locationLabel;
+
+// Only use API location if we're using default coordinates
+if ($locationSource === 'default' || $locationLabel === 'Current Location') {
+    $actualLocation = $weather['location_name'] ?? $locationLabel;
+}
+```
+
+#### 2. Enhanced Logging for Debugging ✅
+Added comprehensive logging to track:
+- Location source (user profile, IP geolocation, or default)
+- Actual coordinates being sent to weather API
+- API response location vs. final location displayed
+
+#### 3. Improved IP Geolocation ✅
+Enhanced location label building:
+```php
+$locationParts = array_filter([
+    $data['city'] ?? null,
+    $data['region'] ?? null,
+    $data['country_name'] ?? null
+]);
+$locationLabel = implode(', ', $locationParts);
+```
+
+#### 4. Expanded Philippine Cities Database ✅
+Added comprehensive mapping for more locations:
+- **NCR**: Makati, Pasig, Taguig, Paranaque, Las Pinas, Muntinlupa
+- **Luzon**: Laguna, Pampanga, Cavite, Bulacan, Rizal
+- **Visayas**: Iloilo, Bacolod, Tacloban
+- **Mindanao**: Cagayan de Oro, Zamboanga, General Santos
+
+---
+
+## Previous Fix - Manila (Default) Issue
+
 ## Issue
 Weather notifications were showing "Manila (Default)" instead of the actual current location that appears in the dashboard weather system.
 

@@ -112,13 +112,18 @@ class WeatherNotificationService
             // Try multiple approaches to get user's location
             $coords = null;
             $locationLabel = 'Current Location';
+            $locationSource = 'unknown';
             
             // 1. First, try to use user's saved location from profile
             if ($user->location) {
                 $coords = $this->getCoordinatesFromLocation($user->location);
                 if ($coords) {
                     $locationLabel = $user->location;
-                    Log::info('WeatherNotificationService: Using user profile location', ['location' => $user->location]);
+                    $locationSource = 'user_profile';
+                    Log::info('WeatherNotificationService: Using user profile location', [
+                        'location' => $user->location,
+                        'coords' => $coords
+                    ]);
                 }
             }
             
@@ -128,21 +133,52 @@ class WeatherNotificationService
                 if ($ipLocation) {
                     $coords = $ipLocation['coords'];
                     $locationLabel = $ipLocation['location'] ?? 'Current Location';
-                    Log::info('WeatherNotificationService: Using IP-based location', ['location' => $locationLabel]);
+                    $locationSource = 'ip_geolocation';
+                    Log::info('WeatherNotificationService: Using IP-based location', [
+                        'location' => $locationLabel,
+                        'coords' => $coords
+                    ]);
                 }
             }
             
             // 3. Fall back to Manila if nothing else works
             if (!$coords) {
                 $coords = ['lat' => 14.5995, 'lng' => 120.9842];
-                Log::info('WeatherNotificationService: Using default Manila location');
+                $locationLabel = 'Manila';
+                $locationSource = 'default';
+                Log::info('WeatherNotificationService: Using default Manila location', [
+                    'coords' => $coords
+                ]);
             }
+
+            Log::info('WeatherNotificationService: Final coordinates to fetch weather', [
+                'lat' => $coords['lat'],
+                'lng' => $coords['lng'],
+                'source' => $locationSource,
+                'expected_location' => $locationLabel
+            ]);
 
             $weather = $this->fetchWeatherFromAPI($coords['lat'], $coords['lng']);
             
             if ($weather) {
-                // Use the actual location name from the API response, or fallback to our label
-                $actualLocation = $weather['location_name'] ?? $locationLabel;
+                // CRITICAL FIX: Prioritize user's location label over API location name
+                // The API might return a generic or incorrect location name
+                // Only use API location if we used default coordinates or IP geolocation failed
+                $actualLocation = $locationLabel;
+                
+                // Only override with API location name if:
+                // 1. We're using default Manila coordinates, OR
+                // 2. We have no meaningful location label
+                if ($locationSource === 'default' || $locationLabel === 'Current Location') {
+                    $actualLocation = $weather['location_name'] ?? $locationLabel;
+                }
+                
+                Log::info('WeatherNotificationService: Weather fetched successfully', [
+                    'temperature' => $weather['temperature'],
+                    'api_location_name' => $weather['location_name'] ?? 'N/A',
+                    'final_location' => $actualLocation,
+                    'coords_used' => ['lat' => $coords['lat'], 'lng' => $coords['lng']]
+                ]);
                 
                 return [
                     'temperature' => round($weather['temperature'], 1),
@@ -171,26 +207,39 @@ class WeatherNotificationService
             
             // Skip local IPs - but still try alternative geolocation
             if (in_array($ip, ['127.0.0.1', '::1', 'localhost'])) {
-                Log::info('WeatherNotificationService: Local IP detected, trying alternative geolocation');
+                Log::info('WeatherNotificationService: Local IP detected, cannot geolocate');
                 
-                // For local development, try to get location via other means
-                // You could also store last known location in session/database
+                // For local development, return null to use fallback
                 return null;
             }
             
             // Use ipapi.co for geolocation (free, no API key needed)
-            $response = Http::timeout(3)->get("https://ipapi.co/{$ip}/json/");
+            $response = Http::timeout(5)->get("https://ipapi.co/{$ip}/json/");
             
             if ($response->successful()) {
                 $data = $response->json();
                 
+                Log::info('WeatherNotificationService: IP API response', [
+                    'full_response' => $data
+                ]);
+                
                 if (isset($data['latitude']) && isset($data['longitude'])) {
-                    $city = $data['city'] ?? 'Current Location';
+                    // Build a more complete location label
+                    $locationParts = array_filter([
+                        $data['city'] ?? null,
+                        $data['region'] ?? null,
+                        $data['country_name'] ?? null
+                    ]);
+                    
+                    $locationLabel = !empty($locationParts) 
+                        ? implode(', ', $locationParts) 
+                        : 'Current Location';
                     
                     Log::info('WeatherNotificationService: IP geolocation successful', [
-                        'city' => $city,
+                        'location' => $locationLabel,
                         'lat' => $data['latitude'],
-                        'lng' => $data['longitude']
+                        'lng' => $data['longitude'],
+                        'country' => $data['country_name'] ?? 'Unknown'
                     ]);
                     
                     return [
@@ -198,9 +247,14 @@ class WeatherNotificationService
                             'lat' => $data['latitude'],
                             'lng' => $data['longitude']
                         ],
-                        'location' => $city
+                        'location' => $locationLabel
                     ];
                 }
+            } else {
+                Log::warning('WeatherNotificationService: IP geolocation API failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
             }
             
             Log::info('WeatherNotificationService: IP geolocation failed, no coordinates returned');
@@ -303,26 +357,72 @@ class WeatherNotificationService
      */
     protected function getCoordinatesFromLocation(string $location): ?array
     {
-        // Simple mapping for common Philippine cities
+        // Comprehensive mapping for Philippine cities and popular locations
         $cityCoordinates = [
+            // NCR
             'manila' => ['lat' => 14.5995, 'lng' => 120.9842],
             'quezon city' => ['lat' => 14.6760, 'lng' => 121.0437],
-            'cebu' => ['lat' => 10.3157, 'lng' => 123.8854],
-            'davao' => ['lat' => 7.1907, 'lng' => 125.4553],
+            'makati' => ['lat' => 14.5547, 'lng' => 121.0244],
+            'pasig' => ['lat' => 14.5764, 'lng' => 121.0851],
+            'taguig' => ['lat' => 14.5176, 'lng' => 121.0509],
+            'paranaque' => ['lat' => 14.4793, 'lng' => 121.0198],
+            'las pinas' => ['lat' => 14.4453, 'lng' => 120.9820],
+            'muntinlupa' => ['lat' => 14.4081, 'lng' => 121.0414],
+            
+            // Luzon
             'baguio' => ['lat' => 16.4023, 'lng' => 120.5960],
             'tagaytay' => ['lat' => 14.1053, 'lng' => 120.9621],
             'batangas' => ['lat' => 13.7565, 'lng' => 121.0583],
+            'laguna' => ['lat' => 14.2691, 'lng' => 121.4113],
+            'pampanga' => ['lat' => 15.0794, 'lng' => 120.6200],
+            'cavite' => ['lat' => 14.2456, 'lng' => 120.8783],
+            'bulacan' => ['lat' => 14.7942, 'lng' => 120.8794],
+            'rizal' => ['lat' => 14.6037, 'lng' => 121.3084],
+            
+            // Visayas
+            'cebu' => ['lat' => 10.3157, 'lng' => 123.8854],
+            'iloilo' => ['lat' => 10.7202, 'lng' => 122.5621],
+            'bacolod' => ['lat' => 10.6770, 'lng' => 122.9500],
+            'tacloban' => ['lat' => 11.2500, 'lng' => 125.0000],
+            
+            // Mindanao
+            'davao' => ['lat' => 7.1907, 'lng' => 125.4553],
+            'cagayan de oro' => ['lat' => 8.4542, 'lng' => 124.6319],
+            'zamboanga' => ['lat' => 6.9214, 'lng' => 122.0790],
+            'general santos' => ['lat' => 6.1164, 'lng' => 125.1716],
         ];
 
         $location = strtolower(trim($location));
         
-        // Check for exact match or partial match
+        Log::info('WeatherNotificationService: Looking up coordinates for location', [
+            'original_location' => $location
+        ]);
+        
+        // Check for exact match first
+        if (isset($cityCoordinates[$location])) {
+            Log::info('WeatherNotificationService: Exact match found', [
+                'location' => $location,
+                'coords' => $cityCoordinates[$location]
+            ]);
+            return $cityCoordinates[$location];
+        }
+        
+        // Check for partial match
         foreach ($cityCoordinates as $city => $coords) {
-            if (str_contains($location, $city)) {
+            if (str_contains($location, $city) || str_contains($city, $location)) {
+                Log::info('WeatherNotificationService: Partial match found', [
+                    'search' => $location,
+                    'matched' => $city,
+                    'coords' => $coords
+                ]);
                 return $coords;
             }
         }
 
+        Log::info('WeatherNotificationService: No match found for location', [
+            'location' => $location
+        ]);
+        
         return null;
     }
 
