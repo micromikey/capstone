@@ -3,11 +3,20 @@
 <!-- Floating Section Navigation -->
 <div id="floating-navigation" class="fixed top-48 left-10 z-40 transition-all duration-300 transform">
     <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200/50 p-4 min-w-[200px] max-w-[250px]">
-        <!-- Toggle Button (visible when collapsed) -->
-        <button id="nav-toggle-btn" class="absolute -right-3 top-1/2 -translate-y-1/2 bg-green-600 hover:bg-green-700 text-white rounded-full p-2 shadow-lg transition-all duration-300 opacity-0 pointer-events-none">
-            <svg class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        <!-- Toggle Button with Guide Message (visible when collapsed) -->
+        <button id="nav-toggle-btn" class="absolute -right-3 top-1/2 -translate-y-1/2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-full p-3 shadow-2xl transition-all duration-300 opacity-0 pointer-events-none hover:scale-110 group">
+            <svg class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
             </svg>
+            <!-- Tooltip on hover -->
+            <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs font-medium px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-xl">
+                <div class="font-bold text-green-400">HikeThere! 🥾</div>
+                <div class="text-gray-300">I'm your Page Guide!</div>
+                <!-- Arrow pointing left -->
+                <div class="absolute right-full top-1/2 -translate-y-1/2 border-8 border-transparent border-r-gray-900"></div>
+            </div>
+            <!-- Pulsing ring animation -->
+            <div class="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75"></div>
         </button>
 
         <!-- Header -->
@@ -90,18 +99,18 @@
 
     /* Collapsed state styles */
     #floating-navigation.collapsed {
-        opacity: 0.3;
+        opacity: 0.5;
         transform: translateX(-10px);
     }
 
     #floating-navigation.collapsed:hover {
-        opacity: 0.6;
+        opacity: 0.8;
     }
 
     #floating-navigation.collapsed .bg-white\/95 {
         padding: 0.5rem !important;
-        min-width: 40px !important;
-        max-width: 40px !important;
+        min-width: 50px !important;
+        max-width: 50px !important;
     }
 
     #floating-navigation.collapsed .nav-content {
@@ -114,6 +123,7 @@
     #floating-navigation.collapsed #nav-toggle-btn {
         opacity: 1;
         pointer-events: auto;
+        animation: pulseButton 2s infinite;
     }
 
     #floating-navigation.collapsed #nav-toggle-btn svg {
@@ -122,6 +132,16 @@
 
     #floating-navigation:not(.collapsed) #nav-toggle-btn svg {
         transform: rotate(180deg);
+    }
+
+    /* Pulsing animation for the toggle button */
+    @keyframes pulseButton {
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+        }
+        50% {
+            box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+        }
     }
 
     .nav-content {
@@ -363,8 +383,8 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('scroll', function() {
         const currentScrollY = window.scrollY;
         
-        // Collapse on scroll down
-        if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Collapse on any scroll (up or down) after initial scroll threshold
+        if (currentScrollY > 100 && Math.abs(currentScrollY - lastScrollY) > 5) {
             collapseNav();
             resetAutoCollapse();
         }
