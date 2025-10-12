@@ -196,7 +196,7 @@
 
             const bounds = new google.maps.LatLngBounds();
 
-            // Add YELLOW markers for evacuation points
+            // Add YELLOW flag markers for evacuation points
             validEvacuationPoints.forEach((point, index) => {
                 const coords = point.coordinates.split(',');
                 const lat = parseFloat(coords[0].trim());
@@ -207,13 +207,14 @@
                     position: position,
                     map: map,
                     title: point.name,
-                    label: {
-                        text: '🟡',
-                        fontSize: '32px'
-                    },
                     icon: {
-                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>'),
-                        scaledSize: new google.maps.Size(1, 1)
+                        path: 'M 0,0 L -10,-30 L 0,-25 L 0,0 Z',
+                        fillColor: '#EAB308',
+                        fillOpacity: 1,
+                        strokeColor: '#CA8A04',
+                        strokeWeight: 2,
+                        scale: 1.2,
+                        anchor: new google.maps.Point(0, 0)
                     }
                 });
 
@@ -248,13 +249,14 @@
                     position: position,
                     map: map,
                     title: area.name,
-                    label: {
-                        text: '🔴',
-                        fontSize: '32px'
-                    },
                     icon: {
-                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>'),
-                        scaledSize: new google.maps.Size(1, 1)
+                        path: 'M 0,0 L -10,-30 L 0,-25 L 0,0 Z',
+                        fillColor: '#EF4444',
+                        fillOpacity: 1,
+                        strokeColor: '#991B1B',
+                        strokeWeight: 2,
+                        scale: 1.2,
+                        anchor: new google.maps.Point(0, 0)
                     }
                 });
 

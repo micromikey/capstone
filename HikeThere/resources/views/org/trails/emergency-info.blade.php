@@ -500,7 +500,12 @@
                 map: evacuationMap,
                 title: 'Trail Location',
                 icon: {
-                    url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 8,
+                    fillColor: '#3B82F6',
+                    fillOpacity: 1,
+                    strokeColor: '#1E40AF',
+                    strokeWeight: 2
                 }
             });
         }
@@ -542,7 +547,7 @@
             const coordinates = lat.toFixed(6) + ', ' + lng.toFixed(6);
             const markerIndex = evacuationMarkers.length;
 
-            // Add marker to map with YELLOW flag
+            // Add marker to map with YELLOW flag SVG
             const marker = new google.maps.Marker({
                 position: latLng,
                 map: evacuationMap,
@@ -550,18 +555,13 @@
                 draggable: true,
                 animation: google.maps.Animation.DROP,
                 icon: {
-                    path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-                    scale: 6,
-                    fillColor: '#EAB308', // Yellow color
+                    path: 'M 0,0 L -10,-30 L 0,-25 L 0,0 Z',
+                    fillColor: '#EAB308',
                     fillOpacity: 1,
                     strokeColor: '#CA8A04',
                     strokeWeight: 2,
-                    rotation: 180,
-                    anchor: new google.maps.Point(0, 5)
-                },
-                label: {
-                    text: '�',
-                    fontSize: '24px'
+                    scale: 1,
+                    anchor: new google.maps.Point(0, 0)
                 }
             });
 
@@ -624,20 +624,17 @@
                                 draggable: true,
                                 animation: google.maps.Animation.DROP,
                                 icon: {
-                                    path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-                                    scale: 6,
-                                    fillColor: '#EAB308', // Yellow
+                                    path: 'M 0,0 L -10,-30 L 0,-25 L 0,0 Z',
+                                    fillColor: '#EAB308',
                                     fillOpacity: 1,
                                     strokeColor: '#CA8A04',
                                     strokeWeight: 2,
-                                    rotation: 180,
-                                    anchor: new google.maps.Point(0, 5)
-                                },
-                                label: {
-                                    text: '�',
-                                    fontSize: '24px'
+                                    scale: 1,
+                                    anchor: new google.maps.Point(0, 0)
                                 }
                             });
+
+                            // Store marker index as a property
 
                             marker.markerIndex = index;
 
@@ -697,18 +694,13 @@
                 draggable: true,
                 animation: google.maps.Animation.DROP,
                 icon: {
-                    path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-                    scale: 6,
-                    fillColor: '#EF4444', // Red color
+                    path: 'M 0,0 L -10,-30 L 0,-25 L 0,0 Z',
+                    fillColor: '#EF4444',
                     fillOpacity: 1,
                     strokeColor: '#991B1B',
                     strokeWeight: 2,
-                    rotation: 180,
-                    anchor: new google.maps.Point(0, 5)
-                },
-                label: {
-                    text: '🔴',
-                    fontSize: '24px'
+                    scale: 1,
+                    anchor: new google.maps.Point(0, 0)
                 }
             });
 
@@ -717,7 +709,7 @@
             const infoWindow = new google.maps.InfoWindow({
                 content: `
                     <div style="padding: 8px;">
-                        <p style="font-weight: bold; color: #991B1B; margin-bottom: 4px;">⛔ Off-Limits Area ${markerIndex + 1}</p>
+                        <p style="font-weight: bold; color: #991B1B; margin-bottom: 4px;">🚩 Off-Limits Area ${markerIndex + 1}</p>
                         <p style="font-size: 12px; color: #6B7280;">Coordinates: ${coordinates}</p>
                         <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag flag to adjust position</p>
                     </div>
@@ -769,18 +761,13 @@
                                 draggable: true,
                                 animation: google.maps.Animation.DROP,
                                 icon: {
-                                    path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-                                    scale: 6,
-                                    fillColor: '#EF4444', // Red
+                                    path: 'M 0,0 L -10,-30 L 0,-25 L 0,0 Z',
+                                    fillColor: '#EF4444',
                                     fillOpacity: 1,
                                     strokeColor: '#991B1B',
                                     strokeWeight: 2,
-                                    rotation: 180,
-                                    anchor: new google.maps.Point(0, 5)
-                                },
-                                label: {
-                                    text: '🔴',
-                                    fontSize: '24px'
+                                    scale: 1,
+                                    anchor: new google.maps.Point(0, 0)
                                 }
                             });
 
@@ -789,7 +776,7 @@
                             const infoWindow = new google.maps.InfoWindow({
                                 content: `
                                     <div style="padding: 8px;">
-                                        <p style="font-weight: bold; color: #991B1B; margin-bottom: 4px;">⛔ ${area.name || 'Off-Limits Area ' + (index + 1)}</p>
+                                        <p style="font-weight: bold; color: #991B1B; margin-bottom: 4px;">🚩 ${area.name || 'Off-Limits Area ' + (index + 1)}</p>
                                         ${area.reason ? `<p style="font-size: 12px; color: #4B5563; margin-bottom: 4px;">${area.reason}</p>` : ''}
                                         <p style="font-size: 11px; color: #6B7280;">Coordinates: ${area.coordinates}</p>
                                         <p style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">Drag flag to adjust position</p>
