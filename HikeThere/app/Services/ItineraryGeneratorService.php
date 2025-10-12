@@ -71,7 +71,7 @@ class ItineraryGeneratorService
         $emergencyInfo = $this->emergencyInfo->getEmergencyInfo($trail);
 
         // Generate static map URL for trail path visualization
-        $staticMapUrl = $this->generateStaticMapUrl($trail, $routeData);
+        $staticMapUrl = $this->generateStaticMapUrl($trail, $routeData, $emergencyInfo);
 
         return [
             'itinerary' => $itinerary,
@@ -1877,7 +1877,7 @@ class ItineraryGeneratorService
     /**
      * Generate Google Static Maps URL for trail path visualization
      */
-    protected function generateStaticMapUrl($trail, $routeData)
+    protected function generateStaticMapUrl($trail, $routeData, $emergencyInfo = null)
     {
         try {
             $apiKey = config('services.google.maps_api_key');
@@ -1930,16 +1930,54 @@ class ItineraryGeneratorService
                 return null;
             }
 
-            // Let Google Maps automatically calculate the best zoom and center
-            // by NOT specifying center= and zoom= parameters.
-            // Google will automatically fit the map to show all paths and markers optimally.
+            // Build markers array
+            $markers = [];
+            
+            // Start and End markers
+            $markers[] = 'color:green|label:S|' . $startLat . ',' . $startLng;
+            $markers[] = 'color:red|label:E|' . $endLat . ',' . $endLng;
+
+            // Add evacuation points markers (yellow)
+            if (!empty($emergencyInfo['evacuation_points'])) {
+                foreach ($emergencyInfo['evacuation_points'] as $index => $point) {
+                    if (!empty($point['coordinates'])) {
+                        $coords = explode(',', $point['coordinates']);
+                        if (count($coords) === 2) {
+                            $lat = trim($coords[0]);
+                            $lng = trim($coords[1]);
+                            // Yellow markers for evacuation points
+                            $markers[] = 'color:yellow|label:' . ($index + 1) . '|' . $lat . ',' . $lng;
+                        }
+                    }
+                }
+            }
+
+            // Add off-limits areas markers (orange, since Google doesn't support custom colors easily)
+            if (!empty($emergencyInfo['off_limits_areas'])) {
+                foreach ($emergencyInfo['off_limits_areas'] as $index => $area) {
+                    if (!empty($area['coordinates'])) {
+                        $coords = explode(',', $area['coordinates']);
+                        if (count($coords) === 2) {
+                            $lat = trim($coords[0]);
+                            $lng = trim($coords[1]);
+                            // Orange markers for danger zones
+                            $markers[] = 'color:orange|label:X|' . $lat . ',' . $lng;
+                        }
+                    }
+                }
+            }
+
+            // Build URL with all markers
             $url = $baseUrl . '?size=' . $size .
-                   '&path=' . urlencode($path) .
-                   '&markers=' . urlencode('color:green|label:S|' . $startLat . ',' . $startLng) .
-                   '&markers=' . urlencode('color:red|label:E|' . $endLat . ',' . $endLng) .
-                   '&maptype=terrain' .
-                   '&format=png' .
-                   '&key=' . $apiKey;
+                   '&path=' . urlencode($path);
+            
+            foreach ($markers as $marker) {
+                $url .= '&markers=' . urlencode($marker);
+            }
+            
+            $url .= '&maptype=terrain' .
+                    '&format=png' .
+                    '&key=' . $apiKey;
 
             return $url;
 

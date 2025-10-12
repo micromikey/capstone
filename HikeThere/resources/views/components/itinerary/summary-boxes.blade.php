@@ -21,10 +21,37 @@
              class="w-full h-[500px] object-contain rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-white"
              loading="lazy">
     </div>
+
+    <!-- Map Legend -->
+    <div class="mt-4 bg-white/60 backdrop-blur-sm p-4 rounded-xl border border-emerald-200/50">
+        <h4 class="text-sm font-bold text-emerald-800 uppercase tracking-wider mb-3">Map Legend</h4>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+            <div class="flex items-center gap-2">
+                <span class="bg-green-500 text-white px-2 py-1 rounded font-bold shadow">S</span>
+                <span class="text-slate-700 font-medium">Start Point</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="bg-red-500 text-white px-2 py-1 rounded font-bold shadow">E</span>
+                <span class="text-slate-700 font-medium">End Point</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="bg-yellow-400 text-gray-900 px-2 py-1 rounded font-bold shadow">1-9</span>
+                <span class="text-slate-700 font-medium">Evacuation Points</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="bg-orange-500 text-white px-2 py-1 rounded font-bold shadow">X</span>
+                <span class="text-slate-700 font-medium">Off-Limits Areas</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-1 bg-red-600 rounded"></div>
+                <span class="text-slate-700 font-medium">Trail Path</span>
+            </div>
+        </div>
+    </div>
     
     <!-- Route Description Below Map -->
     @if(!empty($trail['route_description']))
-    <div class="mt-6 bg-white/60 backdrop-blur-sm p-4 rounded-xl border border-emerald-200/50">
+    <div class="mt-4 bg-white/60 backdrop-blur-sm p-4 rounded-xl border border-emerald-200/50">
         <h4 class="text-sm font-bold text-emerald-800 uppercase tracking-wider mb-2">Route Details</h4>
         <p class="text-slate-700 leading-relaxed">{{ $trail['route_description'] }}</p>
     </div>
