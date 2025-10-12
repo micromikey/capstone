@@ -63,7 +63,7 @@
                 @else
                     <div class="text-sm text-gray-500 italic">
                         <p class="mb-2">No emergency contact configured</p>
-                        <a href="{{ route('profile.show') }}" class="text-blue-600 hover:text-blue-800 underline text-xs">
+                        <a href="{{ route('custom.profile.show') }}" class="text-blue-600 hover:text-blue-800 underline text-xs">
                             Add emergency contact in your profile
                         </a>
                     </div>
