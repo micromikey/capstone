@@ -11,7 +11,7 @@
         </div>
         <div>
             <h3 class="text-2xl font-bold bg-gradient-to-r from-emerald-700 to-teal-700 bg-clip-text text-transparent">Trail Path Visualization</h3>
-            <p class="text-emerald-600 font-medium mt-1">Interactive route map showing your hiking trail</p>
+            <p class="text-emerald-600 font-medium mt-1">Route map showing your hiking trail</p>
         </div>
     </div>
     

@@ -319,8 +319,11 @@ class ItineraryController extends Controller
      * Public share view of the itinerary (accessible without authentication)
      * Shows print-optimized view for sharing
      */
-    public function publicShare(Itinerary $itinerary)
+    public function publicShare($token)
     {
+        // Find itinerary by share_token instead of ID
+        $itinerary = Itinerary::where('share_token', $token)->firstOrFail();
+        
         // Extract stored data from the itinerary
         $weatherData = $itinerary->weather_conditions ?? [];
         $trail = null;

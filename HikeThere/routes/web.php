@@ -48,8 +48,8 @@ Route::get('/email/verify/notice', function () {
     return view('auth.verify-email-notice');
 })->name('verification.notice.guest');
 
-// Public Itinerary Share Route (accessible without authentication)
-Route::get('/share/itinerary/{itinerary}', [ItineraryController::class, 'publicShare'])->name('itinerary.share.public');
+// Public Itinerary Share Route (accessible without authentication via unique token)
+Route::get('/share/itinerary/{token}', [ItineraryController::class, 'publicShare'])->name('itinerary.share.public');
 
 
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {

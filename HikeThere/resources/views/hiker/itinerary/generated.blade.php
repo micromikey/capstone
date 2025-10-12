@@ -327,7 +327,8 @@ $emergencyInfo = $generatedData['emergencyInfo'] ?? [];
             // Share Itinerary buttons
             const shareBtns = [document.getElementById('share-itinerary-btn'), document.getElementById('floating-share-itinerary-btn')];
             const itineraryId = '{{ is_object($itinerary) ? $itinerary->id : ($itinerary["id"] ?? "") }}';
-            const shareUrl = '{{ route("itinerary.share.public", is_object($itinerary) ? $itinerary->id : ($itinerary["id"] ?? 0)) }}';
+            const shareToken = '{{ is_object($itinerary) ? $itinerary->share_token : ($itinerary["share_token"] ?? "") }}';
+            const shareUrl = shareToken ? '{{ url("/share/itinerary") }}/' + shareToken : window.location.href;
             const trailName = '{{ is_array($trail) ? ($trail["name"] ?? "Trail") : ($trail->name ?? "Trail") }}';
             const startDate = '{{ isset($dateInfo["start_date"]) ? $dateInfo["start_date"]->format("M j, Y") : "" }}';
             const endDate = '{{ isset($dateInfo["end_date"]) ? $dateInfo["end_date"]->format("M j, Y") : "" }}';

@@ -1692,7 +1692,7 @@ $imageService = app('App\Services\TrailImageService');
                             </svg>
                             Create New Itinerary
                         </a>
-                        <a href="{{ route('itinerary.build') }}" class="block w-full bg-gray-100 text-gray-700 text-center py-3 px-6 rounded-2xl font-medium hover:bg-gray-200 transition-all duration-300">
+                        <a href="{{ route('itinerary.index') }}" class="block w-full bg-gray-100 text-gray-700 text-center py-3 px-6 rounded-2xl font-medium hover:bg-gray-200 transition-all duration-300">
                             View All Itineraries
                         </a>
                     </div>

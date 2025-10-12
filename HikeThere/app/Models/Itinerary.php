@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Itinerary extends Model
 {
@@ -36,6 +37,7 @@ class Itinerary extends Model
         'route_data',
         'route_summary',
         'created_at',
+        'share_token',
     ];
 
     protected $casts = [
@@ -55,6 +57,43 @@ class Itinerary extends Model
         'route_summary' => 'array',
         'created_at' => 'datetime',
     ];
+
+    /**
+     * Boot method to auto-generate share token
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($itinerary) {
+            if (empty($itinerary->share_token)) {
+                $itinerary->share_token = static::generateUniqueShareToken();
+            }
+        });
+    }
+
+    /**
+     * Generate a unique share token
+     */
+    protected static function generateUniqueShareToken()
+    {
+        do {
+            $token = Str::random(32); // Generate a 32-character random string
+        } while (static::where('share_token', $token)->exists());
+
+        return $token;
+    }
+
+    /**
+     * Regenerate the share token (useful for security/privacy)
+     */
+    public function regenerateShareToken()
+    {
+        $this->share_token = static::generateUniqueShareToken();
+        $this->save();
+        
+        return $this->share_token;
+    }
 
     public function user()
     {
