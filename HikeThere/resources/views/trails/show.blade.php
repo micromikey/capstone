@@ -739,13 +739,17 @@
                                                     @if(!empty($reviewImages))
                                                         <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2">
                                                             @foreach($reviewImages as $image)
+                                                                @php
+                                                                    // Use StorageHelper to get the correct URL (GCS or local)
+                                                                    $imageUrl = \App\Helpers\StorageHelper::url($image['path']);
+                                                                @endphp
                                                                 <div class="relative group">
-                                                        <img src="{{ asset('storage/' . $image['path']) }}" 
+                                                        <img src="{{ $imageUrl }}" 
                                                             alt="Review photo" 
                                                             loading="lazy"
                                                             decoding="async"
                                                             class="w-full h-20 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity review-image"
-                                                            data-image-src="{{ asset('storage/' . $image['path']) }}"
+                                                            data-image-src="{{ $imageUrl }}"
                                                             data-image-caption="{{ $review->user->name }}">
                                                                 </div>
                                                             @endforeach
@@ -1320,6 +1324,31 @@
     <script id="trail-images" type="application/json">{!! json_encode($imageUrls) !!}</script>
     <script id="image-captions" type="application/json">{!! json_encode($imageCaptions) !!}</script>
     <script id="trail-coordinates" type="application/json">{!! json_encode($trail->coordinates ?? []) !!}</script>
+
+    <script>
+        // Initialize weather data immediately after trail-coordinates is available
+        // This ensures the DOM element exists before we try to access it
+        (function() {
+            // Wait for DOM to be fully ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Small delay to ensure all scripts are parsed
+                    setTimeout(function() {
+                        if (typeof initializeWeatherData === 'function') {
+                            initializeWeatherData();
+                        }
+                    }, 100);
+                });
+            } else {
+                // DOM is already loaded, initialize immediately
+                setTimeout(function() {
+                    if (typeof initializeWeatherData === 'function') {
+                        initializeWeatherData();
+                    }
+                }, 100);
+            }
+        })();
+    </script>
 
     <style>
         .custom-scrollbar::-webkit-scrollbar {
@@ -1936,9 +1965,6 @@
 
                 feedbackElement.textContent = feedback.length > 0 ? feedback.join(', ') : 'Content looks good!';
             }
-
-            // Initialize weather data if coordinates are available
-            initializeWeatherData();
             
             // Initialize floating actions
             initializeFloatingActions();

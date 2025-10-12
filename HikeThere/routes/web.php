@@ -313,17 +313,6 @@ Route::middleware(['auth:sanctum', 'check.approval', 'user.type:organization'])-
     
     // Account Settings route
     Route::get('/org/account/settings', [App\Http\Controllers\AccountSettingsController::class, 'index'])->name('org.account.settings');
-    
-    // Support routes for organizations
-    Route::prefix('support')->name('support.')->group(function () {
-        Route::get('/', [App\Http\Controllers\SupportController::class, 'index'])->name('index');
-        Route::get('/create', [App\Http\Controllers\SupportController::class, 'create'])->name('create');
-        Route::post('/', [App\Http\Controllers\SupportController::class, 'store'])->name('store');
-        Route::get('/{ticket}', [App\Http\Controllers\SupportController::class, 'show'])->name('show');
-        Route::post('/{ticket}/reply', [App\Http\Controllers\SupportController::class, 'reply'])->name('reply');
-        Route::patch('/{ticket}/status', [App\Http\Controllers\SupportController::class, 'updateStatus'])->name('updateStatus');
-        Route::delete('/{ticket}', [App\Http\Controllers\SupportController::class, 'destroy'])->name('destroy');
-    });
 });
 
 // Organization Payment Setup - accessible to approved organizations
@@ -537,22 +526,22 @@ Route::middleware(['auth:sanctum', 'verified', 'user.type:hiker', 'ensure.hiking
         return view('about');
     })->name('about');
 
-    // Support routes
-    Route::prefix('support')->name('support.')->group(function () {
-        Route::get('/', [App\Http\Controllers\SupportController::class, 'index'])->name('index');
-        Route::get('/create', [App\Http\Controllers\SupportController::class, 'create'])->name('create');
-        Route::post('/', [App\Http\Controllers\SupportController::class, 'store'])->name('store');
-        Route::get('/{ticket}', [App\Http\Controllers\SupportController::class, 'show'])->name('show');
-        Route::post('/{ticket}/reply', [App\Http\Controllers\SupportController::class, 'reply'])->name('reply');
-        Route::patch('/{ticket}/status', [App\Http\Controllers\SupportController::class, 'updateStatus'])->name('updateStatus');
-        Route::delete('/{ticket}', [App\Http\Controllers\SupportController::class, 'destroy'])->name('destroy');
-    });
-
     // Account Settings - Preferences
     Route::get('/account/preferences', [App\Http\Controllers\AccountSettings\PreferencesController::class, 'index'])->name('preferences.index');
     Route::post('/account/preferences', [App\Http\Controllers\AccountSettings\PreferencesController::class, 'update'])->name('preferences.update');
     Route::post('/account/preferences/reset', [App\Http\Controllers\AccountSettings\PreferencesController::class, 'reset'])->name('preferences.reset');
     Route::get('/account/preferences/export', [App\Http\Controllers\AccountSettings\PreferencesController::class, 'export'])->name('preferences.export');
+});
+
+// Support routes - accessible to all authenticated users (hikers and organizations)
+Route::middleware(['auth:sanctum'])->prefix('support')->name('support.')->group(function () {
+    Route::get('/', [App\Http\Controllers\SupportController::class, 'index'])->name('index');
+    Route::get('/create', [App\Http\Controllers\SupportController::class, 'create'])->name('create');
+    Route::post('/', [App\Http\Controllers\SupportController::class, 'store'])->name('store');
+    Route::get('/{ticket}', [App\Http\Controllers\SupportController::class, 'show'])->name('show');
+    Route::post('/{ticket}/reply', [App\Http\Controllers\SupportController::class, 'reply'])->name('reply');
+    Route::patch('/{ticket}/status', [App\Http\Controllers\SupportController::class, 'updateStatus'])->name('updateStatus');
+    Route::delete('/{ticket}', [App\Http\Controllers\SupportController::class, 'destroy'])->name('destroy');
 });
 
 // Guest routes (registration and login)
