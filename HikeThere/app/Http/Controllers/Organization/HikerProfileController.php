@@ -34,7 +34,7 @@ class HikerProfileController extends Controller
                 ->whereHas('trail', function($query) use ($organization) {
                     $query->where('user_id', $organization->id); // trails.user_id = organization's id
                 })
-                ->where('payment_status', 'paid')
+                ->whereIn('payment_status', ['paid', 'verified']) // Accept both 'paid' and 'verified'
                 ->whereIn('status', ['confirmed', 'completed'])
                 ->firstOrFail();
         } else {
@@ -43,7 +43,7 @@ class HikerProfileController extends Controller
                 ->whereHas('trail', function($query) use ($organization) {
                     $query->where('user_id', $organization->id); // trails.user_id = organization's id
                 })
-                ->where('payment_status', 'paid')
+                ->whereIn('payment_status', ['paid', 'verified']) // Accept both 'paid' and 'verified'
                 ->whereIn('status', ['confirmed', 'completed'])
                 ->latest()
                 ->first();
