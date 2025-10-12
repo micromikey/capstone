@@ -31,6 +31,25 @@ class CommunityPostController extends Controller
                 $query->where('type', $request->type);
             }
 
+            // Handle filter parameter (all or followed)
+            $filter = $request->get('filter', 'all');
+            
+            if ($filter === 'followed' && auth()->check()) {
+                // Get trails from organizations the user follows
+                $followedOrgIds = DB::table('organization_followers')
+                    ->where('user_id', auth()->id())
+                    ->pluck('organization_id');
+                
+                // Get trail IDs from followed organizations
+                $trailIds = DB::table('trails')
+                    ->where('created_by', auth()->id())
+                    ->orWhereIn('user_id', $followedOrgIds)
+                    ->pluck('id');
+                
+                // Filter posts to only show those about followed trails
+                $query->whereIn('trail_id', $trailIds);
+            }
+
             // If user is authenticated and wants to see followed organizations' posts
             if (auth()->check() && $request->get('following')) {
                 $query->fromFollowedOrganizations(auth()->id());

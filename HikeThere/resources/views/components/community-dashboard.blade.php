@@ -480,6 +480,19 @@ $imageService = app('App\\Services\\TrailImageService');
             </button>
         </div>
 
+        <!-- Posts Filter -->
+        <div class="mb-6 flex items-center gap-3">
+            <span class="text-sm font-medium text-gray-700">Filter:</span>
+            <div class="flex gap-2">
+                <button id="filter-all-posts" class="posts-filter-btn px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 bg-emerald-600 text-white shadow-md" data-filter="all">
+                    All Posts
+                </button>
+                <button id="filter-followed-trails" class="posts-filter-btn px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 bg-gray-200 text-gray-700 hover:bg-gray-300" data-filter="followed">
+                    Followed Trails
+                </button>
+            </div>
+        </div>
+
         <!-- Posts Feed -->
         <div id="posts-feed" class="space-y-6">
             <!-- Loading State -->
@@ -1517,6 +1530,7 @@ $imageService = app('App\\Services\\TrailImageService');
         // ========================================
         let currentPage = 1;
         let isLoadingPosts = false;
+        let currentPostsFilter = 'all'; // Track current filter
         const userType = '{{ auth()->check() ? auth()->user()->user_type : "" }}';
 
         // Create Post Modal
@@ -1989,7 +2003,10 @@ $imageService = app('App\\Services\\TrailImageService');
                 postsLoading.classList.remove('hidden');
             }
             
-            fetch(`{{ route("community.posts.index") }}?page=${currentPage}`, {
+            // Build URL with filter parameter
+            const url = `{{ route("community.posts.index") }}?page=${currentPage}&filter=${currentPostsFilter}`;
+            
+            fetch(url, {
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
@@ -2053,6 +2070,29 @@ $imageService = app('App\\Services\\TrailImageService');
                 loadPosts();
             });
         }
+
+        // Posts Filter Functionality
+        const filterButtons = document.querySelectorAll('.posts-filter-btn');
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const filterType = button.dataset.filter;
+                
+                // Update active state
+                filterButtons.forEach(btn => {
+                    if (btn.dataset.filter === filterType) {
+                        btn.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                        btn.classList.add('bg-emerald-600', 'text-white', 'shadow-md');
+                    } else {
+                        btn.classList.remove('bg-emerald-600', 'text-white', 'shadow-md');
+                        btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                    }
+                });
+                
+                // Update filter and reload posts
+                currentPostsFilter = filterType;
+                loadPosts(true);
+            });
+        });
 
         // TO BE CONTINUED IN NEXT PART - createPostCard function and interactions
         
