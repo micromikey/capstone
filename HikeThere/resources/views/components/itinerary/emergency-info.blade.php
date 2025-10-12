@@ -208,11 +208,11 @@
                     map: map,
                     title: point.name,
                     icon: {
-                        path: 'M 0,0 L -10,-30 L 0,-25 L 0,0 Z',
+                        path: 'M 0,-40 L 0,0 M 0,-40 L 20,-32 L 0,-24 Z',
                         fillColor: '#EAB308',
                         fillOpacity: 1,
                         strokeColor: '#CA8A04',
-                        strokeWeight: 2,
+                        strokeWeight: 2.5,
                         scale: 1.2,
                         anchor: new google.maps.Point(0, 0)
                     }
@@ -250,11 +250,11 @@
                     map: map,
                     title: area.name,
                     icon: {
-                        path: 'M 0,0 L -10,-30 L 0,-25 L 0,0 Z',
+                        path: 'M 0,-40 L 0,0 M 0,-40 L 20,-32 L 0,-24 Z',
                         fillColor: '#EF4444',
                         fillOpacity: 1,
                         strokeColor: '#991B1B',
-                        strokeWeight: 2,
+                        strokeWeight: 2.5,
                         scale: 1.2,
                         anchor: new google.maps.Point(0, 0)
                     }
