@@ -31,7 +31,7 @@ class HikerProfileController extends Controller
             $booking = Booking::where('id', $bookingId)
                 ->where('user_id', $hiker->id)
                 ->whereHas('trail', function($query) use ($organization) {
-                    $query->where('organization_id', $organization->id);
+                    $query->where('user_id', $organization->id); // trails.user_id = organization's id
                 })
                 ->where('payment_status', 'paid')
                 ->whereIn('status', ['confirmed', 'completed'])
@@ -40,7 +40,7 @@ class HikerProfileController extends Controller
             // Get the latest confirmed/paid booking
             $booking = Booking::where('user_id', $hiker->id)
                 ->whereHas('trail', function($query) use ($organization) {
-                    $query->where('organization_id', $organization->id);
+                    $query->where('user_id', $organization->id); // trails.user_id = organization's id
                 })
                 ->where('payment_status', 'paid')
                 ->whereIn('status', ['confirmed', 'completed'])
