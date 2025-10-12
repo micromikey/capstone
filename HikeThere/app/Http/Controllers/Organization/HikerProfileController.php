@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Organization;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Booking;
+use App\Models\Itinerary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -56,8 +57,12 @@ class HikerProfileController extends Controller
         // Get the hiker's latest assessment result
         $latestAssessment = $hiker->latestAssessmentResult;
         
-        // Get the hiker's latest itinerary for this specific booking
-        $latestItinerary = $booking->itineraries()->latest()->first() ?? $hiker->latestItinerary;
+        // Get the hiker's latest itinerary for this specific trail
+        // Itineraries are linked by user_id and trail_id, not booking_id
+        $latestItinerary = Itinerary::where('user_id', $hiker->id)
+            ->where('trail_id', $booking->trail_id)
+            ->latest()
+            ->first() ?? $hiker->latestItinerary;
         
         return view('org.community.hiker-profile', compact(
             'hiker',
