@@ -3,8 +3,15 @@
 <!-- Floating Section Navigation -->
 <div id="floating-navigation" class="fixed top-48 left-10 z-40 transition-all duration-300 transform">
     <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200/50 p-4 min-w-[200px] max-w-[250px]">
+        <!-- Toggle Button (visible when collapsed) -->
+        <button id="nav-toggle-btn" class="absolute -right-3 top-1/2 -translate-y-1/2 bg-green-600 hover:bg-green-700 text-white rounded-full p-2 shadow-lg transition-all duration-300 opacity-0 pointer-events-none">
+            <svg class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </button>
+
         <!-- Header -->
-        <div class="flex items-center mb-3">
+        <div class="flex items-center mb-3 nav-content">
             <h3 class="text-sm font-semibold text-gray-800 flex items-center">
                 <svg class="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -14,7 +21,7 @@
         </div>
 
         <!-- Navigation Links -->
-        <nav class="space-y-1" id="floating-nav-links">
+        <nav class="space-y-1 nav-content" id="floating-nav-links">
             @if(count($sections) > 0)
                 @foreach($sections as $section)
                     <a href="#{{ $section['id'] }}" 
@@ -81,6 +88,47 @@
         scroll-behavior: smooth;
     }
 
+    /* Collapsed state styles */
+    #floating-navigation.collapsed {
+        opacity: 0.3;
+        transform: translateX(-10px);
+    }
+
+    #floating-navigation.collapsed:hover {
+        opacity: 0.6;
+    }
+
+    #floating-navigation.collapsed .bg-white\/95 {
+        padding: 0.5rem !important;
+        min-width: 40px !important;
+        max-width: 40px !important;
+    }
+
+    #floating-navigation.collapsed .nav-content {
+        opacity: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: opacity 0.2s, max-height 0.2s;
+    }
+
+    #floating-navigation.collapsed #nav-toggle-btn {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    #floating-navigation.collapsed #nav-toggle-btn svg {
+        transform: rotate(0deg);
+    }
+
+    #floating-navigation:not(.collapsed) #nav-toggle-btn svg {
+        transform: rotate(180deg);
+    }
+
+    .nav-content {
+        transition: opacity 0.3s, max-height 0.3s;
+        max-height: 1000px;
+    }
+
     /* Hide on mobile and tablet devices for better responsiveness */
     @media (max-width: 1280px) {
         #floating-navigation {
@@ -113,10 +161,52 @@ document.addEventListener('DOMContentLoaded', function() {
     const floatingNav = document.getElementById('floating-navigation');
     const navLinks = document.querySelectorAll('.floating-nav-link');
     const navLinksContainer = document.getElementById('floating-nav-links');
+    const toggleBtn = document.getElementById('nav-toggle-btn');
+    
+    let scrollTimeout;
+    let expandTimeout;
+    let lastScrollY = window.scrollY;
+    let isManuallyExpanded = false;
 
     // Auto-detect sections if enabled and no sections provided
     if (navLinksContainer.textContent.includes('Sections will auto-populate')) {
         autoDetectSections();
+    }
+
+    // Toggle button click handler
+    toggleBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (floatingNav.classList.contains('collapsed')) {
+            expandNav();
+            isManuallyExpanded = true;
+            // Reset auto-collapse after manual expansion
+            resetAutoCollapse();
+        } else {
+            collapseNav();
+            isManuallyExpanded = false;
+        }
+    });
+
+    // Collapse navigation
+    function collapseNav() {
+        floatingNav.classList.add('collapsed');
+        clearTimeout(expandTimeout);
+    }
+
+    // Expand navigation
+    function expandNav() {
+        floatingNav.classList.remove('collapsed');
+    }
+
+    // Reset auto-collapse timer
+    function resetAutoCollapse() {
+        clearTimeout(expandTimeout);
+        expandTimeout = setTimeout(() => {
+            if (!isManuallyExpanded) {
+                expandNav();
+            }
+            isManuallyExpanded = false;
+        }, 10000); // 10 seconds
     }
 
     // Smooth scrolling for navigation links
@@ -269,9 +359,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Scroll event listeners
-    let scrollTimeout;
+    // Scroll event handler
     window.addEventListener('scroll', function() {
+        const currentScrollY = window.scrollY;
+        
+        // Collapse on scroll down
+        if (currentScrollY > lastScrollY && currentScrollY > 100) {
+            collapseNav();
+            resetAutoCollapse();
+        }
+        
+        lastScrollY = currentScrollY;
+        
         // Debounce scroll events for better performance
         clearTimeout(scrollTimeout);
         scrollTimeout = setTimeout(() => {
