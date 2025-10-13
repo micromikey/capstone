@@ -1334,11 +1334,11 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
                         </svg>
                     </a>
-                    <button class="btn-video group">
+                    <button onclick="openBrowseTrailsModal()" class="btn-video group">
                         <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7L8 5z" />
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                         </svg>
-                        <span>Watch Demo</span>
+                        <span>Browse Trails</span>
                     </button>
                 </div>
             </div>
@@ -4553,6 +4553,286 @@ Sample Trails: ${data.sample_trails.length}`);
         window.demonstrateEmergencyFeature = demonstrateEmergencyFeature;
         window.simulateOfflineDemo = simulateOfflineDemo;
         window.demonstrateSafetyMonitoring = demonstrateSafetyMonitoring;
+    </script>
+
+    <!-- Browse Trails Modal -->
+    <div id="browse-trails-modal" class="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-6xl w-full overflow-hidden transform scale-95 transition-transform duration-300" id="browse-modal-content">
+                <!-- Close Button -->
+                <button onclick="closeBrowseTrailsModal()" class="absolute top-6 right-6 z-10 p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 h-[80vh]">
+                    <!-- Left Column: Trail Slideshow -->
+                    <div class="relative bg-gray-900 overflow-hidden">
+                        <div id="trail-slideshow" class="h-full relative">
+                            <!-- Trail slides will be dynamically inserted here -->
+                        </div>
+                        
+                        <!-- Slideshow Navigation -->
+                        <div class="absolute bottom-8 left-0 right-0 flex items-center justify-center space-x-2 z-10">
+                            <button onclick="previousSlide()" class="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                </svg>
+                            </button>
+                            <div id="slide-indicators" class="flex space-x-2">
+                                <!-- Dots will be inserted here -->
+                            </div>
+                            <button onclick="nextSlide()" class="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Logo & Auth -->
+                    <div class="flex flex-col items-center justify-center p-12 bg-gradient-to-br from-white to-gray-50">
+                        <!-- Logo -->
+                        <div class="mb-8">
+                            <div class="flex items-center space-x-3 mb-4">
+                                <img src="{{ asset('img/icon1.png') }}" alt="HikeThere Logo" class="h-16 w-auto">
+                                <span class="text-3xl font-bold text-[#336d66]">HikeThere</span>
+                            </div>
+                            <p class="text-gray-600 text-center text-lg">Your Adventure Starts Here</p>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-10 text-center max-w-md">
+                            <h3 class="text-2xl font-bold text-gray-800 mb-4">Discover Amazing Trails</h3>
+                            <p class="text-gray-600 leading-relaxed">
+                                Join HikeThere to explore trails, plan your adventures, and connect with a community of hiking enthusiasts. Start your journey today!
+                            </p>
+                        </div>
+
+                        <!-- Auth Buttons -->
+                        <div class="w-full max-w-sm space-y-4">
+                            <a href="{{ route('login') }}" class="block w-full btn-mountain text-center py-4 text-lg font-semibold">
+                                Login to Your Account
+                            </a>
+                            <a href="{{ route('register.select') }}" class="block w-full btn-mountain-outline text-center py-4 text-lg font-semibold">
+                                Create New Account
+                            </a>
+                        </div>
+
+                        <!-- Features List -->
+                        <div class="mt-10 space-y-3 text-sm text-gray-600">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-[#336d66]" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                <span>Access detailed trail information</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-[#336d66]" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                <span>Plan and book your adventures</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-[#336d66]" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                <span>Join the hiking community</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        #browse-trails-modal.active {
+            opacity: 1;
+        }
+
+        #browse-trails-modal.active #browse-modal-content {
+            transform: scale(1);
+        }
+
+        .trail-slide {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .trail-slide.active {
+            opacity: 1;
+        }
+
+        .trail-slide-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .trail-slide-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            padding: 40px 30px 30px;
+            color: white;
+        }
+
+        .slide-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .slide-indicator.active {
+            background: white;
+            width: 24px;
+            border-radius: 4px;
+        }
+    </style>
+
+    <script>
+        let currentSlide = 0;
+        let slideInterval;
+        let browseTrails = [];
+
+        function openBrowseTrailsModal() {
+            const modal = document.getElementById('browse-trails-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.add('active');
+            }, 10);
+            
+            // Fetch trails for slideshow
+            fetchTrailsForSlideshow();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeBrowseTrailsModal() {
+            const modal = document.getElementById('browse-trails-modal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+            
+            if (slideInterval) {
+                clearInterval(slideInterval);
+            }
+            document.body.style.overflow = '';
+        }
+
+        function fetchTrailsForSlideshow() {
+            fetch('/api/trails/featured')
+                .then(response => response.json())
+                .then(data => {
+                    browseTrails = data.trails.slice(0, 6); // Get first 6 trails
+                    renderSlideshow();
+                    startSlideshow();
+                })
+                .catch(error => {
+                    console.error('Error fetching trails:', error);
+                    // Use fallback data if API fails
+                    renderFallbackSlideshow();
+                    startSlideshow();
+                });
+        }
+
+        function renderSlideshow() {
+            const slideshow = document.getElementById('trail-slideshow');
+            const indicators = document.getElementById('slide-indicators');
+            
+            slideshow.innerHTML = '';
+            indicators.innerHTML = '';
+            
+            browseTrails.forEach((trail, index) => {
+                // Create slide
+                const slide = document.createElement('div');
+                slide.className = `trail-slide ${index === 0 ? 'active' : ''}`;
+                slide.innerHTML = `
+                    <img src="${trail.image}" alt="${trail.name}" class="trail-slide-image">
+                    <div class="trail-slide-overlay">
+                        <h3 class="text-2xl font-bold mb-2">${trail.name}</h3>
+                        <p class="text-sm text-gray-200 mb-3">${trail.location}</p>
+                        <div class="flex items-center space-x-4 text-sm">
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                                </svg>
+                                ${trail.distance || 'N/A'}
+                            </span>
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                                    <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+                                </svg>
+                                ${trail.difficulty || 'N/A'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+                slideshow.appendChild(slide);
+                
+                // Create indicator
+                const indicator = document.createElement('div');
+                indicator.className = `slide-indicator ${index === 0 ? 'active' : ''}`;
+                indicator.onclick = () => goToSlide(index);
+                indicators.appendChild(indicator);
+            });
+        }
+
+        function renderFallbackSlideshow() {
+            // Fallback trails if API fails
+            browseTrails = [
+                { name: 'Mount Pulag', location: 'Benguet', distance: '8.5 km', difficulty: 'Moderate', image: 'https://images.unsplash.com/photo-1551632811-561732d1e306' },
+                { name: 'Mount Apo', location: 'Davao', distance: '12 km', difficulty: 'Difficult', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4' },
+                { name: 'Taal Volcano', location: 'Batangas', distance: '3 km', difficulty: 'Easy', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b' },
+                { name: 'Mount Ulap', location: 'Benguet', distance: '6 km', difficulty: 'Easy', image: 'https://images.unsplash.com/photo-1519904981063-b0cf448d479e' },
+                { name: 'Mount Pinatubo', location: 'Zambales', distance: '14 km', difficulty: 'Moderate', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4' },
+                { name: 'Mount Batulao', location: 'Batangas', distance: '10 km', difficulty: 'Moderate', image: 'https://images.unsplash.com/photo-1551632811-561732d1e306' }
+            ];
+            renderSlideshow();
+        }
+
+        function startSlideshow() {
+            slideInterval = setInterval(() => {
+                nextSlide();
+            }, 5000); // Change slide every 5 seconds
+        }
+
+        function nextSlide() {
+            goToSlide((currentSlide + 1) % browseTrails.length);
+        }
+
+        function previousSlide() {
+            goToSlide((currentSlide - 1 + browseTrails.length) % browseTrails.length);
+        }
+
+        function goToSlide(index) {
+            const slides = document.querySelectorAll('.trail-slide');
+            const indicators = document.querySelectorAll('.slide-indicator');
+            
+            slides[currentSlide].classList.remove('active');
+            indicators[currentSlide].classList.remove('active');
+            
+            currentSlide = index;
+            
+            slides[currentSlide].classList.add('active');
+            indicators[currentSlide].classList.add('active');
+        }
+
+        // Make functions global
+        window.openBrowseTrailsModal = openBrowseTrailsModal;
+        window.closeBrowseTrailsModal = closeBrowseTrailsModal;
+        window.nextSlide = nextSlide;
+        window.previousSlide = previousSlide;
     </script>
 
     <!-- Google Maps API -->

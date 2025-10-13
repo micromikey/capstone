@@ -210,7 +210,7 @@
                         </a>
 
                         <!-- Manage Profile -->
-                        <a href="{{ route('custom.profile.show') }}" class="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#336d66] rounded-lg border border-gray-200 hover:border-[#336d66] transition-colors">
+                        <a href="{{ route('org.profile.show') }}" class="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#336d66] rounded-lg border border-gray-200 hover:border-[#336d66] transition-colors">
                             <div>
                                 <span class="rounded-lg inline-flex p-3 bg-[#20b6d2]/10 text-[#20b6d2] ring-4 ring-white">
                                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
