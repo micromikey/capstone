@@ -1938,7 +1938,7 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800 mb-2">Smart Trail Recommendations</h2>
-                        <p class="text-gray-600">Learn how our AI-powered recommendation system works</p>
+                        <p class="text-gray-600">Discover how HikeThere helps you find the perfect trail</p>
                     </div>
                     <button onclick="closeFeatureTutorial()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1950,89 +1950,86 @@
             <div class="feature-tutorial-body">
                 <div class="tutorial-step">
                     <div class="step-number">1</div>
-                    <h3 class="text-lg font-semibold mb-3">Tell Us About Your Preferences</h3>
-                    <p class="text-gray-600 mb-4">Our system starts by learning about your hiking experience, fitness level, and adventure preferences.</p>
-                    <div class="tutorial-animation">
-                        <div class="animation-element" style="animation: slideInRight 1.5s ease-out infinite;">
-                            Profile Setup → Skill Level → Preferences
-                        </div>
-                    </div>
-                    <div class="tutorial-benefits">
-                        <div class="benefit-item">
-                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                                <span class="iconify text-white" data-icon="heroicons:check" style="font-size:1rem;"></span>
-                            </div>
-                            <h4 class="font-semibold text-sm">Skill Assessment</h4>
-                            <p class="text-xs text-gray-600">Beginner to Expert levels</p>
-                        </div>
-                        <div class="benefit-item">
-                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                                <span class="iconify text-white" data-icon="heroicons:heart" style="font-size:1rem;"></span>
-                            </div>
-                            <h4 class="font-semibold text-sm">Fitness Tracking</h4>
-                            <p class="text-xs text-gray-600">Personal fitness goals</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="tutorial-step">
-                    <div class="step-number">2</div>
-                    <h3 class="text-lg font-semibold mb-3">AI Analysis & Matching</h3>
-                    <p class="text-gray-600 mb-4">Our machine learning algorithms analyze thousands of trails to find perfect matches for your profile.</p>
-                    <div class="interactive-demo">
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div class="text-center">
-                                <div class="w-16 h-16 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                                    <span class="iconify text-white" data-icon="heroicons:cpu-chip" style="font-size:1.5rem;"></span>
-                                </div>
-                                <h5 class="font-semibold">AI Engine</h5>
-                                <p class="text-xs text-gray-600">Processing preferences</p>
-                            </div>
-                            <div class="text-center">
-                                <div class="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                                    <span class="iconify text-white" data-icon="heroicons:map-pin" style="font-size:1.5rem;"></span>
-                                </div>
-                                <h5 class="font-semibold">Trail Database</h5>
-                                <p class="text-xs text-gray-600">10,000+ trails analyzed</p>
-                            </div>
-                        </div>
-                        <button class="demo-button w-full" onclick="animateRecommendationDemo()">
-                            See AI in Action
-                        </button>
-                    </div>
-                </div>
-
-                <div class="tutorial-step">
-                    <div class="step-number">3</div>
-                    <h3 class="text-lg font-semibold mb-3">Personalized Results</h3>
-                    <p class="text-gray-600 mb-4">Get tailored recommendations with detailed explanations of why each trail matches your preferences.</p>
+                    <h3 class="text-lg font-semibold mb-3">Advanced Search & Filtering</h3>
+                    <p class="text-gray-600 mb-4">Find trails that match your preferences using our comprehensive search and filter system.</p>
                     <div class="bg-gray-50 rounded-lg p-4">
-                        <h5 class="font-semibold mb-2">What You'll See:</h5>
+                        <h5 class="font-semibold mb-3">Available Filters:</h5>
                         <ul class="space-y-2 text-sm text-gray-600">
                             <li class="flex items-center">
                                 <span class="iconify text-green-500 mr-2" data-icon="heroicons:check-circle"></span>
-                                Match percentage score
+                                Difficulty Level (Beginner, Intermediate, Advanced)
                             </li>
                             <li class="flex items-center">
                                 <span class="iconify text-green-500 mr-2" data-icon="heroicons:check-circle"></span>
-                                Difficulty explanation
+                                Location & Mountain Name Search
                             </li>
                             <li class="flex items-center">
                                 <span class="iconify text-green-500 mr-2" data-icon="heroicons:check-circle"></span>
-                                Time and distance estimates
+                                Distance from Your Location (5km - 50km radius)
                             </li>
                             <li class="flex items-center">
                                 <span class="iconify text-green-500 mr-2" data-icon="heroicons:check-circle"></span>
-                                Weather considerations
+                                Quick filters: Beginner-friendly, Popular, Challenging, Scenic
                             </li>
                         </ul>
                     </div>
                 </div>
 
-                <div class="progress-indicator">
-                    <div class="progress-dot active"></div>
-                    <div class="progress-dot"></div>
-                    <div class="progress-dot"></div>
+                <div class="tutorial-step">
+                    <div class="step-number">2</div>
+                    <h3 class="text-lg font-semibold mb-3">Interactive Map Explorer</h3>
+                    <p class="text-gray-600 mb-4">Explore trails visually with our interactive map featuring clustering and real-time location services.</p>
+                    <div class="tutorial-benefits">
+                        <div class="benefit-item">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                <span class="iconify text-blue-600" data-icon="heroicons:map" style="font-size:1.5rem;"></span>
+                            </div>
+                            <h4 class="font-semibold text-sm">Google Maps Integration</h4>
+                            <p class="text-xs text-gray-600">Visual trail locations with satellite view</p>
+                        </div>
+                        <div class="benefit-item">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                <span class="iconify text-green-600" data-icon="heroicons:map-pin" style="font-size:1.5rem;"></span>
+                            </div>
+                            <h4 class="font-semibold text-sm">GPS Trail Paths</h4>
+                            <p class="text-xs text-gray-600">Upload and view actual GPS tracks</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tutorial-step">
+                    <div class="step-number">3</div>
+                    <h3 class="text-lg font-semibold mb-3">Detailed Trail Information</h3>
+                    <p class="text-gray-600 mb-4">Access comprehensive trail details to make informed decisions about your hike.</p>
+                    <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-4">
+                        <h5 class="font-semibold mb-3">Trail Details Include:</h5>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div class="flex items-center">
+                                <span class="iconify text-emerald-600 mr-2" data-icon="heroicons:chart-bar"></span>
+                                <span>Distance & Elevation Gain</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="iconify text-emerald-600 mr-2" data-icon="heroicons:clock"></span>
+                                <span>Estimated Duration</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="iconify text-emerald-600 mr-2" data-icon="heroicons:signal"></span>
+                                <span>Difficulty Rating</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="iconify text-emerald-600 mr-2" data-icon="heroicons:photo"></span>
+                                <span>Photo Galleries</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="iconify text-emerald-600 mr-2" data-icon="heroicons:star"></span>
+                                <span>Reviews & Ratings</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="iconify text-emerald-600 mr-2" data-icon="heroicons:currency-dollar"></span>
+                                <span>Pricing & Booking Info</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2045,7 +2042,7 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800 mb-2">Real-time Trail Conditions</h2>
-                        <p class="text-gray-600">Stay informed with live updates and safety alerts</p>
+                        <p class="text-gray-600">Stay informed with weather forecasts and trail information</p>
                     </div>
                     <button onclick="closeFeatureTutorial()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2057,21 +2054,34 @@
             <div class="feature-tutorial-body">
                 <div class="tutorial-step">
                     <div class="step-number">1</div>
-                    <h3 class="text-lg font-semibold mb-3">Weather Integration</h3>
-                    <p class="text-gray-600 mb-4">Get real-time weather updates specific to trail locations and elevations.</p>
-                    <div class="tutorial-animation">
-                        <div class="grid grid-cols-3 gap-4">
-                            <div class="text-center p-3 bg-blue-50 rounded-lg">
-                                <span class="iconify text-blue-500 text-2xl" data-icon="mdi:weather-sunny"></span>
-                                <p class="text-xs mt-1">Current</p>
+                    <h3 class="text-lg font-semibold mb-3">Comprehensive Weather Forecasts</h3>
+                    <p class="text-gray-600 mb-4">Get detailed weather information specific to each trail location using OpenWeather API integration.</p>
+                    <div class="bg-gradient-to-br from-blue-50 to-sky-50 rounded-lg p-4">
+                        <h5 class="font-semibold mb-3">Weather Data Includes:</h5>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div class="flex items-center">
+                                <span class="iconify text-blue-500 mr-2" data-icon="mdi:thermometer"></span>
+                                <span>Current Temperature</span>
                             </div>
-                            <div class="text-center p-3 bg-yellow-50 rounded-lg">
-                                <span class="iconify text-yellow-500 text-2xl" data-icon="mdi:weather-partly-cloudy"></span>
-                                <p class="text-xs mt-1">6-Hour</p>
+                            <div class="flex items-center">
+                                <span class="iconify text-blue-500 mr-2" data-icon="mdi:weather-cloudy"></span>
+                                <span>Sky Conditions</span>
                             </div>
-                            <div class="text-center p-3 bg-gray-50 rounded-lg">
-                                <span class="iconify text-gray-500 text-2xl" data-icon="mdi:weather-cloudy"></span>
-                                <p class="text-xs mt-1">7-Day</p>
+                            <div class="flex items-center">
+                                <span class="iconify text-blue-500 mr-2" data-icon="mdi:water-percent"></span>
+                                <span>Humidity Levels</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="iconify text-blue-500 mr-2" data-icon="mdi:weather-windy"></span>
+                                <span>Wind Speed & Direction</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="iconify text-blue-500 mr-2" data-icon="mdi:weather-sunset"></span>
+                                <span>Sunrise & Sunset Times</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="iconify text-blue-500 mr-2" data-icon="mdi:calendar-range"></span>
+                                <span>7-Day Forecast</span>
                             </div>
                         </div>
                     </div>
@@ -2079,43 +2089,46 @@
 
                 <div class="tutorial-step">
                     <div class="step-number">2</div>
-                    <h3 class="text-lg font-semibold mb-3">Community Reports</h3>
-                    <p class="text-gray-600 mb-4">Receive real-time updates from fellow hikers about trail conditions, obstacles, and safety concerns.</p>
-                    <div class="interactive-demo">
-                        <div class="space-y-3">
-                            <div class="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
-                                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                                    <span class="iconify text-white text-sm" data-icon="heroicons:check"></span>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-sm font-medium">Trail Clear - Sarah M.</p>
-                                    <p class="text-xs text-gray-600">Reported 2 hours ago</p>
-                                </div>
+                    <h3 class="text-lg font-semibold mb-3">Hourly & Daily Predictions</h3>
+                    <p class="text-gray-600 mb-4">Plan your hike with confidence using hour-by-hour and extended weather forecasts.</p>
+                    <div class="space-y-3">
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <div class="flex items-center mb-2">
+                                <span class="iconify text-yellow-600 mr-2" data-icon="heroicons:clock"></span>
+                                <h5 class="font-semibold text-yellow-800">6-Hour Forecasts</h5>
                             </div>
-                            <div class="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg">
-                                <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
-                                    <span class="iconify text-white text-sm" data-icon="heroicons:exclamation-triangle"></span>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-sm font-medium">Muddy sections after mile 3 - Mike R.</p>
-                                    <p class="text-xs text-gray-600">Reported 45 minutes ago</p>
-                                </div>
+                            <p class="text-sm text-yellow-700">Track weather changes throughout your hiking day with detailed hourly predictions.</p>
+                        </div>
+                        <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                            <div class="flex items-center mb-2">
+                                <span class="iconify text-purple-600 mr-2" data-icon="heroicons:calendar"></span>
+                                <h5 class="font-semibold text-purple-800">Weekly Planning</h5>
                             </div>
+                            <p class="text-sm text-purple-700">Choose the best day for your adventure with 7-day weather calendars in your itinerary planner.</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="tutorial-step">
                     <div class="step-number">3</div>
-                    <h3 class="text-lg font-semibold mb-3">Official Alerts</h3>
-                    <p class="text-gray-600 mb-4">Receive official notifications from park services and local authorities about closures and safety warnings.</p>
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                        <div class="flex items-center mb-2">
-                            <span class="iconify text-red-500 mr-2" data-icon="heroicons:exclamation-triangle"></span>
-                            <h5 class="font-semibold text-red-800">Sample Alert</h5>
-                        </div>
-                        <p class="text-sm text-red-700">Trail closure on Blue Ridge Trail from mile 5-7 due to bridge maintenance. Expected reopening: March 15th.</p>
-                        <p class="text-xs text-red-600 mt-1">Posted by: National Park Service</p>
+                    <h3 class="text-lg font-semibold mb-3">Smart Weather Caching</h3>
+                    <p class="text-gray-600 mb-4">Fast loading times with intelligent weather data caching and automatic updates.</p>
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h5 class="font-semibold text-green-800 mb-2">Performance Features:</h5>
+                        <ul class="space-y-2 text-sm text-green-700">
+                            <li class="flex items-start">
+                                <span class="iconify text-green-600 mr-2 mt-0.5" data-icon="heroicons:check-circle"></span>
+                                <span><strong>Cached Weather Data:</strong> Stores recent forecasts for instant loading</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="iconify text-green-600 mr-2 mt-0.5" data-icon="heroicons:check-circle"></span>
+                                <span><strong>Fallback System:</strong> Shows cached data while fetching fresh updates</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="iconify text-green-600 mr-2 mt-0.5" data-icon="heroicons:check-circle"></span>
+                                <span><strong>Location-Specific:</strong> Weather data tailored to each trail's coordinates</span>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -2129,7 +2142,7 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800 mb-2">Community & Safety Network</h2>
-                        <p class="text-gray-600">Connect with hikers and access emergency support</p>
+                        <p class="text-gray-600">Connect with hikers and share your experiences</p>
                     </div>
                     <button onclick="closeFeatureTutorial()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2141,61 +2154,71 @@
             <div class="feature-tutorial-body">
                 <div class="tutorial-step">
                     <div class="step-number">1</div>
-                    <h3 class="text-lg font-semibold mb-3">Find Hiking Partners</h3>
-                    <p class="text-gray-600 mb-4">Connect with experienced hikers in your area and join group adventures.</p>
-                    <div class="tutorial-animation">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="text-center p-4 bg-blue-50 rounded-lg">
-                                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                                    <span class="iconify text-white" data-icon="heroicons:user-group"></span>
-                                </div>
-                                <h5 class="font-semibold text-sm">Group Hikes</h5>
-                                <p class="text-xs text-gray-600">Join scheduled adventures</p>
-                            </div>
-                            <div class="text-center p-4 bg-green-50 rounded-lg">
-                                <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                                    <span class="iconify text-white" data-icon="heroicons:chat-bubble-left-right"></span>
-                                </div>
-                                <h5 class="font-semibold text-sm">Local Forums</h5>
-                                <p class="text-xs text-gray-600">Discuss trails & tips</p>
-                            </div>
-                        </div>
+                    <h3 class="text-lg font-semibold mb-3">Community Dashboard</h3>
+                    <p class="text-gray-600 mb-4">Share your hiking experiences and connect with fellow adventurers through our interactive community platform.</p>
+                    <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-4">
+                        <h5 class="font-semibold mb-3 text-emerald-800">Community Features:</h5>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li class="flex items-start">
+                                <span class="iconify text-emerald-600 mr-2 mt-0.5" data-icon="heroicons:pencil-square"></span>
+                                <span><strong>Create Posts:</strong> Share stories, photos, and tips from your hikes</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="iconify text-emerald-600 mr-2 mt-0.5" data-icon="heroicons:heart"></span>
+                                <span><strong>Like & Comment:</strong> Engage with other hikers' adventures</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="iconify text-emerald-600 mr-2 mt-0.5" data-icon="heroicons:bookmark"></span>
+                                <span><strong>Follow Trails:</strong> Get updates from your favorite hiking spots</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="iconify text-emerald-600 mr-2 mt-0.5" data-icon="heroicons:funnel"></span>
+                                <span><strong>Smart Filters:</strong> View all posts or filter by followed trails</span>
+                            </li>
+                        </ul>
                     </div>
                 </div>
 
                 <div class="tutorial-step">
                     <div class="step-number">2</div>
-                    <h3 class="text-lg font-semibold mb-3">Emergency Support System</h3>
-                    <p class="text-gray-600 mb-4">Access 24/7 emergency assistance and location sharing for safety.</p>
-                    <div class="interactive-demo">
-                        <button class="demo-button mb-4" onclick="demonstrateEmergencyFeature()">
-                            <span class="iconify mr-2" data-icon="heroicons:phone"></span>
-                            Demonstrate Emergency Alert
-                        </button>
-                        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                            <h5 class="font-semibold text-red-800 mb-2">Emergency Features:</h5>
-                            <ul class="space-y-1 text-sm text-red-700">
-                                <li>• One-touch emergency contacts</li>
-                                <li>• GPS location sharing</li>
-                                <li>• Integration with local rescue services</li>
-                                <li>• Offline emergency protocols</li>
-                            </ul>
+                    <h3 class="text-lg font-semibold mb-3">Trail Reviews & Ratings</h3>
+                    <p class="text-gray-600 mb-4">Help others make informed decisions by sharing your trail experiences and reading reviews from the community.</p>
+                    <div class="space-y-3">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div class="flex items-center mb-2">
+                                <span class="iconify text-blue-600 mr-2" data-icon="heroicons:star"></span>
+                                <h5 class="font-semibold text-blue-800">Rate Your Experience</h5>
+                            </div>
+                            <p class="text-sm text-blue-700">Leave star ratings and detailed reviews to help other hikers choose the right trail.</p>
+                        </div>
+                        <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                            <div class="flex items-center mb-2">
+                                <span class="iconify text-purple-600 mr-2" data-icon="heroicons:photo"></span>
+                                <h5 class="font-semibold text-purple-800">Photo Sharing</h5>
+                            </div>
+                            <p class="text-sm text-purple-700">Upload photos to showcase trail conditions, views, and memorable moments.</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="tutorial-step">
                     <div class="step-number">3</div>
-                    <h3 class="text-lg font-semibold mb-3">Share Your Adventures</h3>
-                    <p class="text-gray-600 mb-4">Post photos, reviews, and tips to help fellow hikers discover amazing trails.</p>
-                    <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4">
-                        <div class="flex items-center space-x-4">
-                            <div class="w-16 h-16 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
-                                <span class="iconify text-white text-xl" data-icon="heroicons:camera"></span>
+                    <h3 class="text-lg font-semibold mb-3">Real-Time Updates</h3>
+                    <p class="text-gray-600 mb-4">Stay connected with instant notifications and live activity feeds.</p>
+                    <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                        <h5 class="font-semibold text-orange-800 mb-3">Live Features:</h5>
+                        <div class="space-y-2 text-sm text-orange-700">
+                            <div class="flex items-center">
+                                <span class="iconify text-orange-600 mr-2" data-icon="heroicons:bell"></span>
+                                <span>Notifications for likes, comments, and new followers</span>
                             </div>
-                            <div>
-                                <h5 class="font-semibold">Adventure Stories</h5>
-                                <p class="text-sm text-gray-600">Share photos, rate trails, and inspire others</p>
+                            <div class="flex items-center">
+                                <span class="iconify text-orange-600 mr-2" data-icon="heroicons:arrow-path"></span>
+                                <span>Auto-refreshing community feed (every 30 seconds)</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="iconify text-orange-600 mr-2" data-icon="heroicons:user-group"></span>
+                                <span>See who completed trails recently</span>
                             </div>
                         </div>
                     </div>
@@ -2211,7 +2234,7 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800 mb-2">Offline Maps & GPS</h2>
-                        <p class="text-gray-600">Never lose your way with detailed offline navigation</p>
+                        <p class="text-gray-600">Navigate with confidence using GPS trail paths</p>
                     </div>
                     <button onclick="closeFeatureTutorial()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2223,21 +2246,25 @@
             <div class="feature-tutorial-body">
                 <div class="tutorial-step">
                     <div class="step-number">1</div>
-                    <h3 class="text-lg font-semibold mb-3">Download High-Quality Maps</h3>
-                    <p class="text-gray-600 mb-4">Access detailed topographic maps with trail markings, elevation data, and points of interest.</p>
-                    <div class="tutorial-animation">
-                        <div class="bg-gradient-to-br from-green-50 to-blue-50 rounded-lg p-6 text-center">
-                            <div class="inline-flex items-center space-x-3">
-                                <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
-                                    <span class="iconify text-white text-xl" data-icon="heroicons:cloud-arrow-down"></span>
-                                </div>
-                                <div class="text-left">
-                                    <p class="font-semibold">Map Download</p>
-                                    <p class="text-sm text-gray-600">HD Topographic Data</p>
-                                </div>
-                                <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
-                                    <span class="iconify text-white text-xl" data-icon="heroicons:device-phone-mobile"></span>
-                                </div>
+                    <h3 class="text-lg font-semibold mb-3">GPS File Upload System</h3>
+                    <p class="text-gray-600 mb-4">Upload actual GPS tracks from your hiking devices or apps to show real trail paths on the map.</p>
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4">
+                        <h5 class="font-semibold mb-3 text-indigo-800">Supported File Formats:</h5>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="text-center p-3 bg-white rounded-lg border border-indigo-200">
+                                <span class="iconify text-indigo-600 text-2xl mb-1" data-icon="heroicons:document"></span>
+                                <p class="text-xs font-semibold">GPX Files</p>
+                                <p class="text-xs text-gray-600">GPS Exchange</p>
+                            </div>
+                            <div class="text-center p-3 bg-white rounded-lg border border-indigo-200">
+                                <span class="iconify text-indigo-600 text-2xl mb-1" data-icon="heroicons:document"></span>
+                                <p class="text-xs font-semibold">KML Files</p>
+                                <p class="text-xs text-gray-600">Google Earth</p>
+                            </div>
+                            <div class="text-center p-3 bg-white rounded-lg border border-indigo-200">
+                                <span class="iconify text-indigo-600 text-2xl mb-1" data-icon="heroicons:document"></span>
+                                <p class="text-xs font-semibold">KMZ Files</p>
+                                <p class="text-xs text-gray-600">Compressed KML</p>
                             </div>
                         </div>
                     </div>
@@ -2245,53 +2272,50 @@
 
                 <div class="tutorial-step">
                     <div class="step-number">2</div>
-                    <h3 class="text-lg font-semibold mb-3">GPS Tracking Without Cell Service</h3>
-                    <p class="text-gray-600 mb-4">Your phone's GPS works even without internet connection, keeping you on track anywhere.</p>
-                    <div class="interactive-demo">
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div class="text-center p-4 border-2 border-green-200 rounded-lg">
-                                <span class="iconify text-green-500 text-3xl mb-2" data-icon="heroicons:signal"></span>
-                                <p class="font-semibold text-green-700">GPS Active</p>
-                                <p class="text-xs text-gray-600">Satellite connection</p>
+                    <h3 class="text-lg font-semibold mb-3">Interactive Trail Mapping</h3>
+                    <p class="text-gray-600 mb-4">View detailed trail paths with elevation profiles and waypoint information directly on Google Maps.</p>
+                    <div class="space-y-3">
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <div class="flex items-center mb-2">
+                                <span class="iconify text-green-600 mr-2" data-icon="heroicons:map"></span>
+                                <h5 class="font-semibold text-green-800">Visual Trail Paths</h5>
                             </div>
-                            <div class="text-center p-4 border-2 border-red-200 rounded-lg">
-                                <span class="iconify text-red-500 text-3xl mb-2" data-icon="heroicons:wifi"></span>
-                                <p class="font-semibold text-red-700">No Internet</p>
-                                <p class="text-xs text-gray-600">Still works!</p>
-                            </div>
+                            <p class="text-sm text-green-700">See the exact route displayed as a line on the map with accurate GPS coordinates.</p>
                         </div>
-                        <button class="demo-button w-full" onclick="simulateOfflineDemo()">
-                            See Offline Mode Demo
-                        </button>
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div class="flex items-center mb-2">
+                                <span class="iconify text-blue-600 mr-2" data-icon="heroicons:chart-bar"></span>
+                                <h5 class="font-semibold text-blue-800">Auto-Calculated Metrics</h5>
+                            </div>
+                            <p class="text-sm text-blue-700">Distance, elevation gain, and difficulty are automatically extracted from GPS data.</p>
+                        </div>
                     </div>
                 </div>
 
                 <div class="tutorial-step">
                     <div class="step-number">3</div>
-                    <h3 class="text-lg font-semibold mb-3">Advanced Navigation Features</h3>
-                    <p class="text-gray-600 mb-4">Waypoint marking, route planning, and breadcrumb trail tracking.</p>
-                    <div class="space-y-3">
-                        <div class="flex items-center p-3 bg-blue-50 rounded-lg">
-                            <span class="iconify text-blue-500 mr-3" data-icon="heroicons:map-pin"></span>
-                            <div>
-                                <p class="font-semibold text-sm">Waypoint Marking</p>
-                                <p class="text-xs text-gray-600">Save important locations</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center p-3 bg-purple-50 rounded-lg">
-                            <span class="iconify text-purple-500 mr-3" data-icon="heroicons:arrow-path"></span>
-                            <div>
-                                <p class="font-semibold text-sm">Route Planning</p>
-                                <p class="text-xs text-gray-600">Plan your entire journey</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center p-3 bg-green-50 rounded-lg">
-                            <span class="iconify text-green-500 mr-3" data-icon="heroicons:chart-bar"></span>
-                            <div>
-                                <p class="font-semibold text-sm">Elevation Profile</p>
-                                <p class="text-xs text-gray-600">See elevation changes</p>
-                            </div>
-                        </div>
+                    <h3 class="text-lg font-semibold mb-3">Multiple Mapping Integrations</h3>
+                    <p class="text-gray-600 mb-4">Access different map views and trail data from various sources.</p>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h5 class="font-semibold mb-3">Available Map Systems:</h5>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li class="flex items-start">
+                                <span class="iconify text-gray-600 mr-2 mt-0.5" data-icon="heroicons:map-pin"></span>
+                                <span><strong>Google Maps:</strong> Satellite, terrain, and street views for trail visualization</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="iconify text-gray-600 mr-2 mt-0.5" data-icon="heroicons:globe-alt"></span>
+                                <span><strong>OpenStreetMap Integration:</strong> Community-sourced trail data and points of interest</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="iconify text-gray-600 mr-2 mt-0.5" data-icon="heroicons:arrow-down-tray"></span>
+                                <span><strong>Downloadable Tracks:</strong> Export GPS files for use on your hiking devices</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="iconify text-gray-600 mr-2 mt-0.5" data-icon="heroicons:pencil"></span>
+                                <span><strong>Manual Drawing Tool:</strong> Draw trails directly on the map if you don't have GPS files</span>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -2305,7 +2329,7 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800 mb-2">Trip Planning Tools</h2>
-                        <p class="text-gray-600">Plan every detail of your hiking adventure</p>
+                        <p class="text-gray-600">Build comprehensive itineraries with our advanced planner</p>
                     </div>
                     <button onclick="closeFeatureTutorial()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2317,72 +2341,76 @@
             <div class="feature-tutorial-body">
                 <div class="tutorial-step">
                     <div class="step-number">1</div>
-                    <h3 class="text-lg font-semibold mb-3">Smart Packing Lists</h3>
-                    <p class="text-gray-600 mb-4">Get customized packing recommendations based on trail difficulty, weather, and season.</p>
-                    <div class="tutorial-animation">
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="text-center p-3 bg-yellow-50 rounded-lg">
-                                <span class="iconify text-yellow-600 text-2xl" data-icon="heroicons:sun"></span>
-                                <p class="text-xs mt-1 font-medium">Summer Gear</p>
-                            </div>
-                            <div class="text-center p-3 bg-blue-50 rounded-lg">
-                                <span class="iconify text-blue-600 text-2xl" data-icon="heroicons:snowflake"></span>
-                                <p class="text-xs mt-1 font-medium">Winter Gear</p>
-                            </div>
-                            <div class="text-center p-3 bg-gray-50 rounded-lg">
-                                <span class="iconify text-gray-600 text-2xl" data-icon="heroicons:cloud-drizzle"></span>
-                                <p class="text-xs mt-1 font-medium">Rain Gear</p>
-                            </div>
-                        </div>
+                    <h3 class="text-lg font-semibold mb-3">Interactive Itinerary Builder</h3>
+                    <p class="text-gray-600 mb-4">Create detailed day-by-day plans with our comprehensive itinerary system featuring map integration and activity customization.</p>
+                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4">
+                        <h5 class="font-semibold mb-3 text-purple-800">Itinerary Features:</h5>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li class="flex items-start">
+                                <span class="iconify text-purple-600 mr-2 mt-0.5" data-icon="heroicons:calendar"></span>
+                                <span><strong>Multi-Day Planning:</strong> Organize trips spanning multiple days and nights</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="iconify text-purple-600 mr-2 mt-0.5" data-icon="heroicons:map"></span>
+                                <span><strong>Interactive Map:</strong> Select trails, stopovers, and side trips visually</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="iconify text-purple-600 mr-2 mt-0.5" data-icon="heroicons:pencil-square"></span>
+                                <span><strong>Custom Activities:</strong> Add meals, rest stops, and special activities</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="iconify text-purple-600 mr-2 mt-0.5" data-icon="heroicons:truck"></span>
+                                <span><strong>Transportation Planning:</strong> Include vehicle or included transport options</span>
+                            </li>
+                        </ul>
                     </div>
                 </div>
 
                 <div class="tutorial-step">
                     <div class="step-number">2</div>
-                    <h3 class="text-lg font-semibold mb-3">Time & Distance Calculator</h3>
-                    <p class="text-gray-600 mb-4">Get accurate estimates for hiking time based on your fitness level and trail difficulty.</p>
-                    <div class="interactive-demo">
-                        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4">
-                            <div class="flex justify-between items-center mb-3">
-                                <span class="font-semibold">Trail: Blue Ridge Summit</span>
-                                <span class="text-sm text-gray-600">8.5 miles</span>
+                    <h3 class="text-lg font-semibold mb-3">Smart Weather Integration</h3>
+                    <p class="text-gray-600 mb-4">Plan with confidence using weather forecasts and intelligent activity recommendations.</p>
+                    <div class="space-y-3">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div class="flex items-center mb-2">
+                                <span class="iconify text-blue-600 mr-2" data-icon="mdi:weather-partly-cloudy"></span>
+                                <h5 class="font-semibold text-blue-800">Weather Calendar</h5>
                             </div>
-                            <div class="space-y-2">
-                                <div class="flex justify-between">
-                                    <span class="text-sm">Beginner Hiker:</span>
-                                    <span class="text-sm font-medium">5.5 hours</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-sm">Intermediate Hiker:</span>
-                                    <span class="text-sm font-medium">4.0 hours</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-sm">Expert Hiker:</span>
-                                    <span class="text-sm font-medium">3.0 hours</span>
-                                </div>
+                            <p class="text-sm text-blue-700">View 7-day weather forecasts for selected trails with hourly predictions to choose the best hiking days.</p>
+                        </div>
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <div class="flex items-center mb-2">
+                                <span class="iconify text-green-600 mr-2" data-icon="heroicons:light-bulb"></span>
+                                <h5 class="font-semibold text-green-800">Activity Recommendations</h5>
                             </div>
+                            <p class="text-sm text-green-700">Get intelligent suggestions for gear, precautions, and timing based on weather and trail conditions.</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="tutorial-step">
                     <div class="step-number">3</div>
-                    <h3 class="text-lg font-semibold mb-3">Weather & Safety Planning</h3>
-                    <p class="text-gray-600 mb-4">Comprehensive weather forecasts with safety recommendations and backup plans.</p>
-                    <div class="space-y-3">
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-3">
-                            <div class="flex items-center mb-2">
-                                <span class="iconify text-green-500 mr-2" data-icon="heroicons:check-circle"></span>
-                                <span class="font-semibold text-green-800">Good Conditions</span>
+                    <h3 class="text-lg font-semibold mb-3">Booking & Payment Integration</h3>
+                    <p class="text-gray-600 mb-4">Seamlessly book trails and manage payments directly from your itinerary.</p>
+                    <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                        <h5 class="font-semibold text-orange-800 mb-3">Booking System:</h5>
+                        <div class="space-y-2 text-sm text-orange-700">
+                            <div class="flex items-center">
+                                <span class="iconify text-orange-600 mr-2" data-icon="heroicons:calendar-days"></span>
+                                <span>Real-time availability checking for fully booked dates</span>
                             </div>
-                            <p class="text-sm text-green-700">Clear skies, 72°F, light winds - Perfect for hiking!</p>
-                        </div>
-                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                            <div class="flex items-center mb-2">
-                                <span class="iconify text-yellow-500 mr-2" data-icon="heroicons:exclamation-triangle"></span>
-                                <span class="font-semibold text-yellow-800">Caution Advised</span>
+                            <div class="flex items-center">
+                                <span class="iconify text-orange-600 mr-2" data-icon="heroicons:credit-card"></span>
+                                <span>Integrated payment via GCash with automatic calculation</span>
                             </div>
-                            <p class="text-sm text-yellow-700">Possible afternoon thunderstorms - Consider shorter trail</p>
+                            <div class="flex items-center">
+                                <span class="iconify text-orange-600 mr-2" data-icon="heroicons:receipt-percent"></span>
+                                <span>Track booking status and payment verification in real-time</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="iconify text-orange-600 mr-2" data-icon="heroicons:arrow-path"></span>
+                                <span>Edit or cancel bookings with automatic notifications</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2397,7 +2425,7 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-800 mb-2">Safety Framework</h2>
-                        <p class="text-gray-600">Comprehensive safety guidelines and emergency protocols</p>
+                        <p class="text-gray-600">Comprehensive safety guidelines and emergency information system</p>
                     </div>
                     <button onclick="closeFeatureTutorial()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2409,81 +2437,75 @@
             <div class="feature-tutorial-body">
                 <div class="tutorial-step">
                     <div class="step-number">1</div>
-                    <h3 class="text-lg font-semibold mb-3">Pre-Trip Safety Check</h3>
-                    <p class="text-gray-600 mb-4">Complete safety checklist before every hike to ensure you're prepared.</p>
-                    <div class="space-y-2">
-                        <div class="flex items-center p-2 bg-green-50 rounded">
-                            <span class="iconify text-green-500 mr-2" data-icon="heroicons:check-circle"></span>
-                            <span class="text-sm">Emergency contacts shared</span>
-                        </div>
-                        <div class="flex items-center p-2 bg-green-50 rounded">
-                            <span class="iconify text-green-500 mr-2" data-icon="heroicons:check-circle"></span>
-                            <span class="text-sm">Weather conditions checked</span>
-                        </div>
-                        <div class="flex items-center p-2 bg-green-50 rounded">
-                            <span class="iconify text-green-500 mr-2" data-icon="heroicons:check-circle"></span>
-                            <span class="text-sm">Emergency kit packed</span>
-                        </div>
-                        <div class="flex items-center p-2 bg-green-50 rounded">
-                            <span class="iconify text-green-500 mr-2" data-icon="heroicons:check-circle"></span>
-                            <span class="text-sm">Route plan documented</span>
-                        </div>
+                    <h3 class="text-lg font-semibold mb-3">Emergency Information System</h3>
+                    <p class="text-gray-600 mb-4">Access critical emergency information and contact details specific to each trail location.</p>
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <h5 class="font-semibold text-red-800 mb-3">Emergency Info Includes:</h5>
+                        <ul class="space-y-2 text-sm text-red-700">
+                            <li class="flex items-start">
+                                <span class="iconify text-red-600 mr-2 mt-0.5" data-icon="heroicons:phone"></span>
+                                <span><strong>Emergency Contacts:</strong> Local rescue services, park rangers, and medical facilities</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="iconify text-red-600 mr-2 mt-0.5" data-icon="heroicons:map-pin"></span>
+                                <span><strong>Nearest Hospital:</strong> Distance and directions to closest medical center</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="iconify text-red-600 mr-2 mt-0.5" data-icon="heroicons:identification"></span>
+                                <span><strong>Police Station:</strong> Contact info and location of local authorities</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="iconify text-red-600 mr-2 mt-0.5" data-icon="heroicons:building-office"></span>
+                                <span><strong>Management Office:</strong> Trail organization's emergency contact</span>
+                            </li>
+                        </ul>
                     </div>
                 </div>
 
                 <div class="tutorial-step">
                     <div class="step-number">2</div>
-                    <h3 class="text-lg font-semibold mb-3">During-Hike Monitoring</h3>
-                    <p class="text-gray-600 mb-4">Real-time safety monitoring and automatic check-ins.</p>
-                    <div class="interactive-demo">
-                        <div class="bg-blue-50 rounded-lg p-4 mb-4">
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="font-semibold">Live Safety Status</span>
-                                <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <h3 class="text-lg font-semibold mb-3">Safety Guidelines & Readiness Assessment</h3>
+                    <p class="text-gray-600 mb-4">Prepare properly with comprehensive safety checklists and emergency preparedness information.</p>
+                    <div class="space-y-3">
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <div class="flex items-center mb-2">
+                                <span class="iconify text-yellow-600 mr-2" data-icon="heroicons:clipboard-document-check"></span>
+                                <h5 class="font-semibold text-yellow-800">Pre-Hike Safety Checklist</h5>
                             </div>
-                            <div class="space-y-2 text-sm">
-                                <div class="flex justify-between">
-                                    <span>Last Check-in:</span>
-                                    <span class="font-medium">5 min ago</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>Location Shared:</span>
-                                    <span class="font-medium text-green-600">Active</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>Emergency Contacts:</span>
-                                    <span class="font-medium">3 notified</span>
-                                </div>
-                            </div>
+                            <p class="text-sm text-yellow-700">Trail-specific safety recommendations including required gear, weather warnings, and terrain considerations.</p>
                         </div>
-                        <button class="demo-button w-full" onclick="demonstrateSafetyMonitoring()">
-                            See Live Monitoring
-                        </button>
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div class="flex items-center mb-2">
+                                <span class="iconify text-blue-600 mr-2" data-icon="heroicons:shield-check"></span>
+                                <h5 class="font-semibold text-blue-800">Emergency Readiness</h5>
+                            </div>
+                            <p class="text-sm text-blue-700">Guidance on what to do in emergencies, including first aid tips and communication protocols.</p>
+                        </div>
                     </div>
                 </div>
 
                 <div class="tutorial-step">
                     <div class="step-number">3</div>
-                    <h3 class="text-lg font-semibold mb-3">Emergency Response</h3>
-                    <p class="text-gray-600 mb-4">Immediate emergency assistance and rescue coordination.</p>
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                        <h5 class="font-semibold text-red-800 mb-3">Emergency Features:</h5>
-                        <div class="space-y-2">
-                            <div class="flex items-center">
-                                <span class="iconify text-red-500 mr-2" data-icon="heroicons:phone"></span>
-                                <span class="text-sm">One-touch 911 calling</span>
+                    <h3 class="text-lg font-semibold mb-3">Organization Safety Support</h3>
+                    <p class="text-gray-600 mb-4">Trail organizations provide structured safety guidelines and emergency response procedures.</p>
+                    <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-4">
+                        <h5 class="font-semibold mb-3 text-emerald-800">Organization Features:</h5>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700">
+                            <div class="flex items-start">
+                                <span class="iconify text-emerald-600 mr-2 mt-0.5" data-icon="heroicons:document-text"></span>
+                                <span><strong>Safety Documents:</strong> Trail-specific safety PDFs and guidelines</span>
                             </div>
-                            <div class="flex items-center">
-                                <span class="iconify text-red-500 mr-2" data-icon="heroicons:map-pin"></span>
-                                <span class="text-sm">GPS coordinates to emergency services</span>
+                            <div class="flex items-start">
+                                <span class="iconify text-emerald-600 mr-2 mt-0.5" data-icon="heroicons:exclamation-triangle"></span>
+                                <span><strong>Risk Warnings:</strong> Current alerts about trail conditions</span>
                             </div>
-                            <div class="flex items-center">
-                                <span class="iconify text-red-500 mr-2" data-icon="heroicons:user-group"></span>
-                                <span class="text-sm">Automatic family/friend notifications</span>
+                            <div class="flex items-start">
+                                <span class="iconify text-emerald-600 mr-2 mt-0.5" data-icon="heroicons:user-group"></span>
+                                <span><strong>Group Size Limits:</strong> Safety-based capacity management</span>
                             </div>
-                            <div class="flex items-center">
-                                <span class="iconify text-red-500 mr-2" data-icon="heroicons:document-text"></span>
-                                <span class="text-sm">Medical information sharing</span>
+                            <div class="flex items-start">
+                                <span class="iconify text-emerald-600 mr-2 mt-0.5" data-icon="heroicons:calendar"></span>
+                                <span><strong>Seasonal Closures:</strong> Updates on accessibility and restrictions</span>
                             </div>
                         </div>
                     </div>
@@ -4556,27 +4578,27 @@ Sample Trails: ${data.sample_trails.length}`);
     </script>
 
     <!-- Browse Trails Modal -->
-    <div id="browse-trails-modal" class="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-3xl shadow-2xl max-w-6xl w-full overflow-hidden transform scale-95 transition-transform duration-300" id="browse-modal-content">
+    <div id="browse-trails-modal" class="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4 py-8">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-6xl w-full overflow-hidden transform scale-95 transition-transform duration-300 relative my-auto" id="browse-modal-content">
                 <!-- Close Button -->
-                <button onclick="closeBrowseTrailsModal()" class="absolute top-6 right-6 z-10 p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <button onclick="closeBrowseTrailsModal()" class="absolute top-4 right-4 z-20 p-2 bg-white hover:bg-gray-100 rounded-full transition-colors shadow-lg">
                     <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 h-[80vh]">
+                <div class="grid grid-cols-1 lg:grid-cols-2">
                     <!-- Left Column: Trail Slideshow -->
-                    <div class="relative bg-gray-900 overflow-hidden">
+                    <div class="relative bg-gray-900 overflow-hidden h-64 md:h-96 lg:h-[600px]">
                         <div id="trail-slideshow" class="h-full relative">
                             <!-- Trail slides will be dynamically inserted here -->
                         </div>
                         
                         <!-- Slideshow Navigation -->
-                        <div class="absolute bottom-8 left-0 right-0 flex items-center justify-center space-x-2 z-10">
+                        <div class="absolute bottom-4 md:bottom-8 left-0 right-0 flex items-center justify-center space-x-2 z-10">
                             <button onclick="previousSlide()" class="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                                 </svg>
                             </button>
@@ -4584,7 +4606,7 @@ Sample Trails: ${data.sample_trails.length}`);
                                 <!-- Dots will be inserted here -->
                             </div>
                             <button onclick="nextSlide()" class="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                 </svg>
                             </button>
@@ -4592,50 +4614,50 @@ Sample Trails: ${data.sample_trails.length}`);
                     </div>
 
                     <!-- Right Column: Logo & Auth -->
-                    <div class="flex flex-col items-center justify-center p-12 bg-gradient-to-br from-white to-gray-50">
+                    <div class="flex flex-col items-center justify-center p-6 md:p-8 lg:p-12 bg-gradient-to-br from-white to-gray-50">
                         <!-- Logo -->
-                        <div class="mb-8">
-                            <div class="flex items-center space-x-3 mb-4">
-                                <img src="{{ asset('img/icon1.png') }}" alt="HikeThere Logo" class="h-16 w-auto">
-                                <span class="text-3xl font-bold text-[#336d66]">HikeThere</span>
+                        <div class="mb-6 md:mb-8">
+                            <div class="flex items-center space-x-2 md:space-x-3 mb-3 md:mb-4 justify-center">
+                                <img src="{{ asset('img/icon1.png') }}" alt="HikeThere Logo" class="h-12 md:h-16 w-auto">
+                                <span class="text-2xl md:text-3xl font-bold text-[#336d66]">HikeThere</span>
                             </div>
-                            <p class="text-gray-600 text-center text-lg">Your Adventure Starts Here</p>
+                            <p class="text-gray-600 text-center text-base md:text-lg">Your Adventure Starts Here</p>
                         </div>
 
                         <!-- Description -->
-                        <div class="mb-10 text-center max-w-md">
-                            <h3 class="text-2xl font-bold text-gray-800 mb-4">Discover Amazing Trails</h3>
-                            <p class="text-gray-600 leading-relaxed">
+                        <div class="mb-6 md:mb-8 lg:mb-10 text-center max-w-md">
+                            <h3 class="text-xl md:text-2xl font-bold text-gray-800 mb-3 md:mb-4">Discover Amazing Trails</h3>
+                            <p class="text-sm md:text-base text-gray-600 leading-relaxed">
                                 Join HikeThere to explore trails, plan your adventures, and connect with a community of hiking enthusiasts. Start your journey today!
                             </p>
                         </div>
 
                         <!-- Auth Buttons -->
-                        <div class="w-full max-w-sm space-y-4">
-                            <a href="{{ route('login') }}" class="block w-full btn-mountain text-center py-4 text-lg font-semibold">
+                        <div class="w-full max-w-sm space-y-3 md:space-y-4">
+                            <a href="{{ route('login') }}" class="block w-full btn-mountain text-center py-3 md:py-4 text-base md:text-lg font-semibold">
                                 Login to Your Account
                             </a>
-                            <a href="{{ route('register.select') }}" class="block w-full btn-mountain-outline text-center py-4 text-lg font-semibold">
+                            <a href="{{ route('register.select') }}" class="block w-full btn-mountain-outline text-center py-3 md:py-4 text-base md:text-lg font-semibold">
                                 Create New Account
                             </a>
                         </div>
 
                         <!-- Features List -->
-                        <div class="mt-10 space-y-3 text-sm text-gray-600">
+                        <div class="mt-6 md:mt-8 lg:mt-10 space-y-2 md:space-y-3 text-xs md:text-sm text-gray-600">
                             <div class="flex items-center space-x-2">
-                                <svg class="w-5 h-5 text-[#336d66]" fill="currentColor" viewBox="0 0 20 20">
+                                <svg class="w-4 h-4 md:w-5 md:h-5 text-[#336d66] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                                 </svg>
                                 <span>Access detailed trail information</span>
                             </div>
                             <div class="flex items-center space-x-2">
-                                <svg class="w-5 h-5 text-[#336d66]" fill="currentColor" viewBox="0 0 20 20">
+                                <svg class="w-4 h-4 md:w-5 md:h-5 text-[#336d66] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                                 </svg>
                                 <span>Plan and book your adventures</span>
                             </div>
                             <div class="flex items-center space-x-2">
-                                <svg class="w-5 h-5 text-[#336d66]" fill="currentColor" viewBox="0 0 20 20">
+                                <svg class="w-4 h-4 md:w-5 md:h-5 text-[#336d66] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                                 </svg>
                                 <span>Join the hiking community</span>
