@@ -20,7 +20,69 @@
                 <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">{{ session('success') }}</div>
             @endif
 
-            <!-- Floating Filters Sidebar -->
+            <!-- Mobile Toggle Buttons -->
+            <div class="lg:hidden mb-4 flex gap-2">
+                <button onclick="toggleMobileFilters()" class="flex-1 bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-4 rounded-lg shadow-md border border-gray-200 transition-colors flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    Filters
+                </button>
+                <button onclick="toggleMobileStats()" class="flex-1 bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-4 rounded-lg shadow-md border border-gray-200 transition-colors flex items-center justify-center xl:hidden">
+                    <svg class="w-5 h-5 mr-2 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Statistics
+                </button>
+            </div>
+
+            <!-- Mobile Filters Modal -->
+            <div id="mobile-filters-modal" class="hidden fixed inset-0 z-50 lg:hidden">
+                <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="toggleMobileFilters()"></div>
+                <div class="fixed inset-x-0 bottom-0 max-h-[85vh] bg-white rounded-t-2xl shadow-2xl transform transition-transform duration-300">
+                    <div class="sticky top-0 bg-white border-b border-gray-200 rounded-t-2xl px-4 py-3 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                            </svg>
+                            Filters
+                        </h3>
+                        <button onclick="toggleMobileFilters()" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto max-h-[calc(85vh-60px)] p-4" id="mobile-filters-content">
+                        <!-- Content will be cloned from desktop filters -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Stats Modal -->
+            <div id="mobile-stats-modal" class="hidden fixed inset-0 z-50 xl:hidden">
+                <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="toggleMobileStats()"></div>
+                <div class="fixed inset-x-0 bottom-0 max-h-[85vh] bg-white rounded-t-2xl shadow-2xl transform transition-transform duration-300">
+                    <div class="sticky top-0 bg-white border-b border-gray-200 rounded-t-2xl px-4 py-3 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Event Statistics
+                        </h3>
+                        <button onclick="toggleMobileStats()" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto max-h-[calc(85vh-60px)] p-4" id="mobile-stats-content">
+                        <!-- Content will be cloned from desktop stats -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Floating Filters Sidebar (Desktop) -->
             <div id="floating-filters" class="fixed top-56 left-10 z-40 transition-all duration-300 transform hidden lg:block">
                 <div class="bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/50 p-4 w-64 max-h-[calc(100vh-14rem)] overflow-y-auto">
                     <div class="flex items-center justify-between mb-3">
@@ -134,8 +196,7 @@
                 </div>
             </div>
 
-            <!-- Event Stats -->
-            <!-- Floating Statistics Dashboard (Right) -->
+            <!-- Floating Statistics Dashboard (Desktop) -->
             <div id="floating-stats" class="fixed top-56 right-10 z-40 transition-all duration-300 transform hidden xl:block">
                 <div class="bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/50 p-4 w-72 max-h-[calc(100vh-14rem)] overflow-y-auto">
                     <div class="flex items-center mb-4">
@@ -296,4 +357,59 @@
             </div>
         </div>
     </div>
+
+    <!-- Mobile Filters & Stats Toggle Script -->
+    <script>
+        // Clone desktop filters/stats content to mobile modals on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const desktopFilters = document.querySelector('#floating-filters > div');
+            const desktopStats = document.querySelector('#floating-stats > div');
+            const mobileFiltersContent = document.getElementById('mobile-filters-content');
+            const mobileStatsContent = document.getElementById('mobile-stats-content');
+            
+            if (desktopFilters && mobileFiltersContent) {
+                mobileFiltersContent.innerHTML = desktopFilters.innerHTML;
+            }
+            
+            if (desktopStats && mobileStatsContent) {
+                mobileStatsContent.innerHTML = desktopStats.innerHTML;
+            }
+        });
+
+        function toggleMobileFilters() {
+            const modal = document.getElementById('mobile-filters-modal');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            } else {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function toggleMobileStats() {
+            const modal = document.getElementById('mobile-stats-modal');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            } else {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Close modals on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const filtersModal = document.getElementById('mobile-filters-modal');
+                const statsModal = document.getElementById('mobile-stats-modal');
+                if (!filtersModal.classList.contains('hidden')) {
+                    toggleMobileFilters();
+                }
+                if (!statsModal.classList.contains('hidden')) {
+                    toggleMobileStats();
+                }
+            }
+        });
+    </script>
 </x-app-layout>
