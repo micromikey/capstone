@@ -57,7 +57,7 @@ class TrailController extends Controller
         $category = $request->get('category', '');
         $filter = $request->get('filter', '');
         $page = $request->get('page', 1);
-        $limit = $request->get('limit', 9);
+        $limit = $request->get('limit', 100); // Increased from 9 to 100 to show more trails
         $offset = ($page - 1) * $limit;
 
         // Defensive: some deployments migrated away from the legacy `name` column.

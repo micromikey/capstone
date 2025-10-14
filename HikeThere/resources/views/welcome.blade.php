@@ -2709,7 +2709,7 @@
         // Initialize hero trail showcase
         async function initHeroTrailsShowcase() {
             try {
-                const response = await fetch(`${API_BASE_URL}/trails/search-trails?limit=9`);
+                const response = await fetch(`${API_BASE_URL}/trails/search-trails?limit=100`);
                 const data = await response.json();
 
                 if (data.success && data.trails.length > 0) {
@@ -4842,7 +4842,7 @@ Sample Trails: ${data.sample_trails.length}`);
 
         function fetchTrailsForSlideshow() {
             // Fetch random trails from the database using the same endpoint as hero trails
-            fetch('/api/trails/search-trails?limit=20')
+            fetch('/api/trails/search-trails?limit=100')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Failed to fetch trails');
