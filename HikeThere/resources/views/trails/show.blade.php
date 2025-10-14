@@ -2003,6 +2003,7 @@
         // Weather functionality with caching
         const WEATHER_CACHE_DURATION_MS = 2 * 60 * 1000; // 2 minutes cache
         let weatherFetchInProgress = false;
+        let pendingHourlyData = null; // Store hourly data if it arrives before current weather renders
 
         // Helper: Get cached weather data if still valid
         function getCachedWeather(cacheKey) {
@@ -2074,10 +2075,7 @@
             if (cachedForecast) {
                 console.log('Loading forecast from cache');
                 displayForecast(cachedForecast.data);
-                // Wait for current weather to render the hourly container
-                setTimeout(() => {
-                    displayHourlyForecast(cachedForecast.data.hourly || []);
-                }, 100);
+                displayHourlyForecast(cachedForecast.data.hourly || []);
             }
 
             // Fetch fresh data (will update the UI and cache)
@@ -2130,8 +2128,7 @@
                 .then(data => {
                     if (data.error) {
                         displayWeatherError('forecast-weather', 'Unable to load forecast');
-                        // Wait for current weather container before showing hourly error
-                        setTimeout(() => displayHourlyError(), 100);
+                        displayHourlyError();
                         return;
                     }
                     
@@ -2140,17 +2137,12 @@
                     
                     // Display the data
                     displayForecast(data);
-                    
-                    // Wait a bit to ensure current weather has rendered the hourly container
-                    setTimeout(() => {
-                        displayHourlyForecast(data.hourly || []);
-                    }, 100);
+                    displayHourlyForecast(data.hourly || []);
                 })
                 .catch(error => {
                     console.error('Error fetching forecast:', error);
                     displayWeatherError('forecast-weather', 'Failed to load forecast data');
-                    // Wait for current weather container before showing hourly error
-                    setTimeout(() => displayHourlyError(), 100);
+                    displayHourlyError();
                 });
         }
 
@@ -2206,6 +2198,15 @@
 
             // Store current weather data for hourly forecast
             window.currentWeatherData = data;
+            
+            // Check if hourly data arrived before current weather was rendered
+            if (pendingHourlyData) {
+                console.log('Displaying pending hourly data');
+                setTimeout(() => {
+                    displayHourlyForecast(pendingHourlyData);
+                    pendingHourlyData = null; // Clear after displaying
+                }, 50);
+            }
         }
 
         function displayForecast(data) {
@@ -2246,6 +2247,13 @@
 
         function displayHourlyForecast(hourlyData) {
             const container = document.getElementById('hourly-forecast-container');
+            
+            // If container doesn't exist yet, store data for later
+            if (!container) {
+                console.log('Hourly forecast container not ready, storing data');
+                pendingHourlyData = hourlyData;
+                return;
+            }
             
             if (!hourlyData || hourlyData.length === 0) {
                 displayHourlyError();
