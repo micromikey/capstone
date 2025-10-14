@@ -355,9 +355,9 @@
                         @endif
                     </div>
 
-                    <!-- Interactive Trail Map with Route - 2D/3D Tabs -->
+                    <!-- Interactive Trail Map with Route -->
                     @if($trail->coordinates && count($trail->coordinates) > 0)
-                        <div id="trail-map" class="mb-8" x-data="{ activeMapTab: '2d' }">
+                        <div id="trail-map" class="mb-8">
                             <div class="flex items-center justify-between mb-3">
                                 <h3 class="text-lg font-semibold text-gray-900">Trail Route & Map</h3>
                                 <div class="flex gap-2">
@@ -379,89 +379,39 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- 2D/3D Map Tabs -->
-                            <div class="border-b border-gray-200 mb-4">
-                                <nav class="flex gap-2" aria-label="Map View Tabs">
-                                    <button 
-                                        @click="activeMapTab = '2d'"
-                                        :class="activeMapTab === '2d' ? 'border-green-600 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                                        class="inline-flex items-center px-4 py-2 border-b-2 font-medium text-sm transition-colors"
-                                    >
-                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m0 0L9 7"/>
-                                        </svg>
-                                        2D Map View
-                                    </button>
-                                    <button 
-                                        @click="activeMapTab = '3d'"
-                                        :class="activeMapTab === '3d' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                                        class="inline-flex items-center px-4 py-2 border-b-2 font-medium text-sm transition-colors"
-                                    >
-                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                                        </svg>
-                                        3D Visualization
-                                        <span class="ml-2 px-2 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">NEW</span>
-                                    </button>
-                                </nav>
-                            </div>
                             
-                            <!-- 2D Map Tab Content -->
-                            <div x-show="activeMapTab === '2d'" x-transition>
-                                <!-- Location Tracking Status -->
-                                <div id="tracking-status" class="hidden mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center">
-                                            <div class="animate-pulse w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
-                                            <span class="text-blue-800 font-medium">Tracking your location...</span>
-                                        </div>
-                                        <button id="stop-tracking" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Stop Tracking</button>
+                            <!-- Location Tracking Status -->
+                            <div id="tracking-status" class="hidden mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="animate-pulse w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+                                        <span class="text-blue-800 font-medium">Tracking your location...</span>
                                     </div>
-                                    <div class="mt-2 text-sm text-blue-700">
-                                        <span id="distance-from-trail">Distance from trail: Calculating...</span>
-                                        <br>
-                                        <span id="progress-percentage">Progress: 0%</span>
-                                    </div>
+                                    <button id="stop-tracking" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Stop Tracking</button>
                                 </div>
-
-                                <div class="bg-gray-50 rounded-lg p-4">
-                                    <div id="interactive-trail-map" style="height: 500px; width: 100%; border-radius: 8px;"></div>
-                                    <div class="mt-4 flex flex-wrap gap-4 text-sm text-gray-600">
-                                        <div class="flex items-center">
-                                            <div class="w-4 h-1 bg-red-500 mr-2"></div>
-                                            Trail Route
-                                        </div>
-                                        <div class="flex items-center">
-                                            <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                                            Start Point
-                                        </div>
-                                        <div class="flex items-center">
-                                            <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                                            End Point
-                                        </div>
-                                    </div>
+                                <div class="mt-2 text-sm text-blue-700">
+                                    <span id="distance-from-trail">Distance from trail: Calculating...</span>
+                                    <br>
+                                    <span id="progress-percentage">Progress: 0%</span>
                                 </div>
                             </div>
 
-                            <!-- 3D Map Tab Content -->
-                            <div x-show="activeMapTab === '3d'" x-transition>
-                                @if(config('services.google.maps_3d_enabled'))
-                                    <x-trail-3d-preview 
-                                        :trail="$trail" 
-                                        mode="full"
-                                        :autoTour="true"
-                                        :showControls="true"
-                                    />
-                                @else
-                                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-                                        <svg class="w-12 h-12 text-yellow-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                                        </svg>
-                                        <h4 class="text-lg font-semibold text-yellow-800 mb-2">3D View Coming Soon</h4>
-                                        <p class="text-yellow-700">The immersive 3D trail visualization is currently being configured. Please check back soon!</p>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div id="interactive-trail-map" style="height: 500px; width: 100%; border-radius: 8px;"></div>
+                                <div class="mt-4 flex flex-wrap gap-4 text-sm text-gray-600">
+                                    <div class="flex items-center">
+                                        <div class="w-4 h-1 bg-red-500 mr-2"></div>
+                                        Trail Route
                                     </div>
-                                @endif
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                                        Start Point
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                                        End Point
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     @else
