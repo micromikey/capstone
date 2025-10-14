@@ -4578,9 +4578,8 @@ Sample Trails: ${data.sample_trails.length}`);
     </script>
 
     <!-- Browse Trails Modal -->
-    <div id="browse-trails-modal" class="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300 overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen p-4 py-8">
-            <div class="bg-white rounded-3xl shadow-2xl max-w-6xl w-full overflow-hidden transform scale-95 transition-transform duration-300 relative my-auto" id="browse-modal-content">
+    <div id="browse-trails-modal" class="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden transform scale-95 transition-transform duration-300 relative" id="browse-modal-content">
                 <!-- Close Button -->
                 <button onclick="closeBrowseTrailsModal()" class="absolute top-4 right-4 z-20 p-2 bg-white hover:bg-gray-100 rounded-full transition-colors shadow-lg">
                     <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4588,9 +4587,9 @@ Sample Trails: ${data.sample_trails.length}`);
                     </svg>
                 </button>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 lg:h-[600px]">
+                <div class="grid grid-cols-1 lg:grid-cols-2 max-h-[90vh]">
                     <!-- Left Column: Trail Slideshow -->
-                    <div class="relative bg-gray-900 overflow-hidden h-64 md:h-96 lg:h-full">
+                    <div class="relative bg-gray-900 overflow-hidden h-64 md:h-96 lg:h-auto lg:min-h-[500px] lg:max-h-[90vh]">
                         <div id="trail-slideshow" class="h-full relative">
                             <!-- Trail slides will be dynamically inserted here -->
                         </div>
@@ -4614,7 +4613,7 @@ Sample Trails: ${data.sample_trails.length}`);
                     </div>
 
                     <!-- Right Column: Logo & Auth -->
-                    <div class="flex flex-col items-center justify-center p-6 md:p-8 lg:p-12 bg-gradient-to-br from-white to-gray-50">
+                    <div class="flex flex-col items-center justify-center p-6 md:p-8 lg:p-12 bg-gradient-to-br from-white to-gray-50 overflow-y-auto">
                         <!-- Logo -->
                         <div class="mb-6 md:mb-8">
                             <div class="flex items-center space-x-2 md:space-x-3 mb-3 md:mb-4 justify-center">
@@ -4752,8 +4751,8 @@ Sample Trails: ${data.sample_trails.length}`);
         }
 
         function fetchTrailsForSlideshow() {
-            // Fetch real trails from the database
-            fetch('/api/trails?limit=6')
+            // Fetch random trails from the database (limit 5)
+            fetch('/api/trails?limit=20&random=true')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Failed to fetch trails');
@@ -4762,16 +4761,21 @@ Sample Trails: ${data.sample_trails.length}`);
                 })
                 .then(data => {
                     // Handle different response formats
-                    const trails = Array.isArray(data) ? data : (data.trails || data.data || []);
+                    let trails = Array.isArray(data) ? data : (data.trails || data.data || []);
                     
                     if (trails.length > 0) {
-                        browseTrails = trails.slice(0, 6).map(trail => ({
+                        // Randomize and limit to 5 trails
+                        trails = trails.sort(() => Math.random() - 0.5).slice(0, 5);
+                        
+                        browseTrails = trails.map(trail => ({
                             name: trail.name || trail.trail_name || 'Unnamed Trail',
                             location: trail.location_name || trail.location || trail.mountain_name || 'Unknown Location',
                             distance: trail.length ? `${trail.length} km` : (trail.distance || 'N/A'),
                             difficulty: (trail.difficulty || 'Moderate').charAt(0).toUpperCase() + (trail.difficulty || 'Moderate').slice(1),
                             image: trail.featured_image || trail.image || trail.images?.[0] || 'https://images.unsplash.com/photo-1551632811-561732d1e306'
                         }));
+                        
+                        console.log('Loaded trails for slideshow:', browseTrails);
                         renderSlideshow();
                         startSlideshow();
                     } else {
@@ -4841,14 +4845,13 @@ Sample Trails: ${data.sample_trails.length}`);
         }
 
         function renderFallbackSlideshow() {
-            // Fallback trails if API fails
+            // Fallback trails if API fails (limit to 5)
             browseTrails = [
                 { name: 'Mount Pulag', location: 'Benguet', distance: '8.5 km', difficulty: 'Moderate', image: 'https://images.unsplash.com/photo-1551632811-561732d1e306' },
                 { name: 'Mount Apo', location: 'Davao', distance: '12 km', difficulty: 'Difficult', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4' },
                 { name: 'Taal Volcano', location: 'Batangas', distance: '3 km', difficulty: 'Easy', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b' },
                 { name: 'Mount Ulap', location: 'Benguet', distance: '6 km', difficulty: 'Easy', image: 'https://images.unsplash.com/photo-1519904981063-b0cf448d479e' },
-                { name: 'Mount Pinatubo', location: 'Zambales', distance: '14 km', difficulty: 'Moderate', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4' },
-                { name: 'Mount Batulao', location: 'Batangas', distance: '10 km', difficulty: 'Moderate', image: 'https://images.unsplash.com/photo-1551632811-561732d1e306' }
+                { name: 'Mount Pinatubo', location: 'Zambales', distance: '14 km', difficulty: 'Moderate', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4' }
             ];
             renderSlideshow();
         }
