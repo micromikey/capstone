@@ -23,8 +23,21 @@
                 </div>
             @endif
 
-            <!-- Floating Statistics Dashboard (Right) -->
-            <div id="floating-dashboard" class="fixed top-56 right-10 z-40 transition-all duration-300 transform hidden xl:block">
+            <!-- Circular FAB Toggle Button -->
+            <div class="fixed bottom-6 left-6 z-50">
+                <!-- Statistics FAB -->
+                <button onclick="toggleStats()" id="stats-fab" class="group relative w-14 h-14 bg-[#336d66] hover:bg-[#2a5a54] text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <span class="absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                        Statistics
+                    </span>
+                </button>
+            </div>
+
+            <!-- Statistics Panel (Hidden by default) -->
+            <div id="floating-stats" class="fixed top-20 left-6 z-40 transition-all duration-300 transform translate-x-[-120%] opacity-0">
                 <div class="bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/50 p-4 w-72 max-h-[calc(100vh-14rem)] overflow-y-auto">
                     <div class="flex items-center mb-4">
                         <svg class="w-5 h-5 mr-2 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -205,4 +218,43 @@
             </div>
         </div>
     </div>
+
+    <!-- Circular FAB Toggle Script -->
+    <script>
+        let statsOpen = false;
+
+        function toggleStats() {
+            const panel = document.getElementById('floating-stats');
+            const fab = document.getElementById('stats-fab');
+            
+            statsOpen = !statsOpen;
+            
+            if (statsOpen) {
+                panel.classList.remove('translate-x-[-120%]', 'opacity-0');
+                panel.classList.add('translate-x-0', 'opacity-100');
+                fab.classList.add('ring-4', 'ring-[#336d66]/30');
+            } else {
+                panel.classList.add('translate-x-[-120%]', 'opacity-0');
+                panel.classList.remove('translate-x-0', 'opacity-100');
+                fab.classList.remove('ring-4', 'ring-[#336d66]/30');
+            }
+        }
+
+        // Close panel on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && statsOpen) {
+                toggleStats();
+            }
+        });
+
+        // Close panel when clicking outside
+        document.addEventListener('click', function(e) {
+            const statsPanel = document.getElementById('floating-stats');
+            const statsFab = document.getElementById('stats-fab');
+            
+            if (statsOpen && !statsPanel.contains(e.target) && !statsFab.contains(e.target)) {
+                toggleStats();
+            }
+        });
+    </script>
 </x-app-layout>

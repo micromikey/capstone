@@ -30,15 +30,25 @@
                 </div>
             @endif
 
-            <!-- Circular FAB Toggle Button -->
-            <div class="fixed bottom-6 left-6 z-50">
+            <!-- Circular FAB Toggle Buttons -->
+            <div class="fixed bottom-6 left-6 z-50 flex flex-col gap-3">
                 <!-- Filters FAB -->
                 <button onclick="toggleFilters()" id="filters-fab" class="group relative w-14 h-14 bg-[#336d66] hover:bg-[#2a5a54] text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                     </svg>
                     <span class="absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                        Filters & Sorting
+                        Filters
+                    </span>
+                </button>
+
+                <!-- Statistics FAB -->
+                <button onclick="toggleStats()" id="stats-fab" class="group relative w-14 h-14 bg-[#336d66] hover:bg-[#2a5a54] text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <span class="absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                        Statistics
                     </span>
                 </button>
             </div>
@@ -174,14 +184,14 @@
                 </div>
             </div>
 
-            <!-- Floating Revenue Dashboard (Right) -->
-            <div id="floating-dashboard" class="fixed top-56 right-10 z-40 transition-all duration-300 transform hidden xl:block">
+            <!-- Statistics Panel (Hidden by default) -->
+            <div id="floating-stats" class="fixed top-20 left-6 z-40 transition-all duration-300 transform translate-x-[-120%] opacity-0">
                 <div class="bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/50 p-4 w-72 max-h-[calc(100vh-14rem)] overflow-y-auto">
                     <div class="flex items-center mb-4">
                         <svg class="w-5 h-5 mr-2 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
-                        <h3 class="text-sm font-semibold text-gray-800">Revenue Dashboard</h3>
+                        <h3 class="text-sm font-semibold text-gray-800">Booking Statistics</h3>
                     </div>
 
                     <div class="space-y-3">
@@ -545,10 +555,16 @@
     <!-- Circular FAB Toggle Script -->
     <script>
         let filtersOpen = false;
+        let statsOpen = false;
 
         function toggleFilters() {
             const panel = document.getElementById('floating-filters');
             const fab = document.getElementById('filters-fab');
+            
+            // Close stats if open
+            if (statsOpen) {
+                toggleStats();
+            }
             
             filtersOpen = !filtersOpen;
             
@@ -563,20 +579,49 @@
             }
         }
 
-        // Close panel on escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && filtersOpen) {
+        function toggleStats() {
+            const panel = document.getElementById('floating-stats');
+            const fab = document.getElementById('stats-fab');
+            
+            // Close filters if open
+            if (filtersOpen) {
                 toggleFilters();
+            }
+            
+            statsOpen = !statsOpen;
+            
+            if (statsOpen) {
+                panel.classList.remove('translate-x-[-120%]', 'opacity-0');
+                panel.classList.add('translate-x-0', 'opacity-100');
+                fab.classList.add('ring-4', 'ring-[#336d66]/30');
+            } else {
+                panel.classList.add('translate-x-[-120%]', 'opacity-0');
+                panel.classList.remove('translate-x-0', 'opacity-100');
+                fab.classList.remove('ring-4', 'ring-[#336d66]/30');
+            }
+        }
+
+        // Close panels on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (filtersOpen) toggleFilters();
+                if (statsOpen) toggleStats();
             }
         });
 
-        // Close panel when clicking outside
+        // Close panels when clicking outside
         document.addEventListener('click', function(e) {
             const filtersPanel = document.getElementById('floating-filters');
             const filtersFab = document.getElementById('filters-fab');
+            const statsPanel = document.getElementById('floating-stats');
+            const statsFab = document.getElementById('stats-fab');
             
             if (filtersOpen && !filtersPanel.contains(e.target) && !filtersFab.contains(e.target)) {
                 toggleFilters();
+            }
+            
+            if (statsOpen && !statsPanel.contains(e.target) && !statsFab.contains(e.target)) {
+                toggleStats();
             }
         });
     </script>
