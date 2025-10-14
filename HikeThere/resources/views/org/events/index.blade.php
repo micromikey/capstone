@@ -20,70 +20,31 @@
                 <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">{{ session('success') }}</div>
             @endif
 
-            <!-- Mobile Toggle Buttons -->
-            <div class="lg:hidden mb-4 flex gap-2">
-                <button onclick="toggleMobileFilters()" class="flex-1 bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-4 rounded-lg shadow-md border border-gray-200 transition-colors flex items-center justify-center">
-                    <svg class="w-5 h-5 mr-2 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Circular FAB Toggle Buttons -->
+            <div class="fixed bottom-6 left-6 z-50 flex flex-col gap-3">
+                <!-- Filters FAB -->
+                <button onclick="toggleFilters()" id="filters-fab" class="group relative w-14 h-14 bg-[#336d66] hover:bg-[#2a5a54] text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                     </svg>
-                    Filters
+                    <span class="absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                        Filters
+                    </span>
                 </button>
-                <button onclick="toggleMobileStats()" class="flex-1 bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-4 rounded-lg shadow-md border border-gray-200 transition-colors flex items-center justify-center xl:hidden">
-                    <svg class="w-5 h-5 mr-2 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+
+                <!-- Statistics FAB -->
+                <button onclick="toggleStats()" id="stats-fab" class="group relative w-14 h-14 bg-[#336d66] hover:bg-[#2a5a54] text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
-                    Statistics
+                    <span class="absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                        Statistics
+                    </span>
                 </button>
             </div>
 
-            <!-- Mobile Filters Modal -->
-            <div id="mobile-filters-modal" class="hidden fixed inset-0 z-50 lg:hidden">
-                <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="toggleMobileFilters()"></div>
-                <div class="fixed inset-x-0 bottom-0 max-h-[85vh] bg-white rounded-t-2xl shadow-2xl transform transition-transform duration-300">
-                    <div class="sticky top-0 bg-white border-b border-gray-200 rounded-t-2xl px-4 py-3 flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                            </svg>
-                            Filters
-                        </h3>
-                        <button onclick="toggleMobileFilters()" class="text-gray-500 hover:text-gray-700">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="overflow-y-auto max-h-[calc(85vh-60px)] p-4" id="mobile-filters-content">
-                        <!-- Content will be cloned from desktop filters -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Mobile Stats Modal -->
-            <div id="mobile-stats-modal" class="hidden fixed inset-0 z-50 xl:hidden">
-                <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="toggleMobileStats()"></div>
-                <div class="fixed inset-x-0 bottom-0 max-h-[85vh] bg-white rounded-t-2xl shadow-2xl transform transition-transform duration-300">
-                    <div class="sticky top-0 bg-white border-b border-gray-200 rounded-t-2xl px-4 py-3 flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            Event Statistics
-                        </h3>
-                        <button onclick="toggleMobileStats()" class="text-gray-500 hover:text-gray-700">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="overflow-y-auto max-h-[calc(85vh-60px)] p-4" id="mobile-stats-content">
-                        <!-- Content will be cloned from desktop stats -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Floating Filters Sidebar (Desktop) -->
-            <div id="floating-filters" class="fixed top-56 left-10 z-40 transition-all duration-300 transform hidden lg:block">
+            <!-- Filters Panel (Hidden by default) -->
+            <div id="floating-filters" class="fixed top-20 left-6 z-40 transition-all duration-300 transform translate-x-[-120%] opacity-0">
                 <div class="bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/50 p-4 w-64 max-h-[calc(100vh-14rem)] overflow-y-auto">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="text-sm font-semibold text-gray-800 flex items-center">
@@ -196,8 +157,8 @@
                 </div>
             </div>
 
-            <!-- Floating Statistics Dashboard (Desktop) -->
-            <div id="floating-stats" class="fixed top-56 right-10 z-40 transition-all duration-300 transform hidden xl:block">
+            <!-- Statistics Panel (Hidden by default) -->
+            <div id="floating-stats" class="fixed top-20 right-6 z-40 transition-all duration-300 transform translate-x-[120%] opacity-0">
                 <div class="bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/50 p-4 w-72 max-h-[calc(100vh-14rem)] overflow-y-auto">
                     <div class="flex items-center mb-4">
                         <svg class="w-5 h-5 mr-2 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -358,57 +319,66 @@
         </div>
     </div>
 
-    <!-- Mobile Filters & Stats Toggle Script -->
+    <!-- Circular FAB Toggle Script -->
     <script>
-        // Clone desktop filters/stats content to mobile modals on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const desktopFilters = document.querySelector('#floating-filters > div');
-            const desktopStats = document.querySelector('#floating-stats > div');
-            const mobileFiltersContent = document.getElementById('mobile-filters-content');
-            const mobileStatsContent = document.getElementById('mobile-stats-content');
+        let filtersOpen = false;
+        let statsOpen = false;
+
+        function toggleFilters() {
+            const panel = document.getElementById('floating-filters');
+            const fab = document.getElementById('filters-fab');
             
-            if (desktopFilters && mobileFiltersContent) {
-                mobileFiltersContent.innerHTML = desktopFilters.innerHTML;
+            filtersOpen = !filtersOpen;
+            
+            if (filtersOpen) {
+                panel.classList.remove('translate-x-[-120%]', 'opacity-0');
+                panel.classList.add('translate-x-0', 'opacity-100');
+                fab.classList.add('ring-4', 'ring-[#336d66]/30');
+            } else {
+                panel.classList.add('translate-x-[-120%]', 'opacity-0');
+                panel.classList.remove('translate-x-0', 'opacity-100');
+                fab.classList.remove('ring-4', 'ring-[#336d66]/30');
             }
+        }
+
+        function toggleStats() {
+            const panel = document.getElementById('floating-stats');
+            const fab = document.getElementById('stats-fab');
             
-            if (desktopStats && mobileStatsContent) {
-                mobileStatsContent.innerHTML = desktopStats.innerHTML;
+            statsOpen = !statsOpen;
+            
+            if (statsOpen) {
+                panel.classList.remove('translate-x-[120%]', 'opacity-0');
+                panel.classList.add('translate-x-0', 'opacity-100');
+                fab.classList.add('ring-4', 'ring-[#336d66]/30');
+            } else {
+                panel.classList.add('translate-x-[120%]', 'opacity-0');
+                panel.classList.remove('translate-x-0', 'opacity-100');
+                fab.classList.remove('ring-4', 'ring-[#336d66]/30');
+            }
+        }
+
+        // Close panels on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (filtersOpen) toggleFilters();
+                if (statsOpen) toggleStats();
             }
         });
 
-        function toggleMobileFilters() {
-            const modal = document.getElementById('mobile-filters-modal');
-            if (modal.classList.contains('hidden')) {
-                modal.classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
-            } else {
-                modal.classList.add('hidden');
-                document.body.style.overflow = '';
+        // Close panels when clicking outside
+        document.addEventListener('click', function(e) {
+            const filtersPanel = document.getElementById('floating-filters');
+            const statsPanel = document.getElementById('floating-stats');
+            const filtersFab = document.getElementById('filters-fab');
+            const statsFab = document.getElementById('stats-fab');
+            
+            if (filtersOpen && !filtersPanel.contains(e.target) && !filtersFab.contains(e.target)) {
+                toggleFilters();
             }
-        }
-
-        function toggleMobileStats() {
-            const modal = document.getElementById('mobile-stats-modal');
-            if (modal.classList.contains('hidden')) {
-                modal.classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
-            } else {
-                modal.classList.add('hidden');
-                document.body.style.overflow = '';
-            }
-        }
-
-        // Close modals on escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                const filtersModal = document.getElementById('mobile-filters-modal');
-                const statsModal = document.getElementById('mobile-stats-modal');
-                if (!filtersModal.classList.contains('hidden')) {
-                    toggleMobileFilters();
-                }
-                if (!statsModal.classList.contains('hidden')) {
-                    toggleMobileStats();
-                }
+            
+            if (statsOpen && !statsPanel.contains(e.target) && !statsFab.contains(e.target)) {
+                toggleStats();
             }
         });
     </script>
