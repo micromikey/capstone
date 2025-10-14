@@ -1325,31 +1325,6 @@
     <script id="image-captions" type="application/json">{!! json_encode($imageCaptions) !!}</script>
     <script id="trail-coordinates" type="application/json">{!! json_encode($trail->coordinates ?? []) !!}</script>
 
-    <script>
-        // Initialize weather data immediately after trail-coordinates is available
-        // This ensures the DOM element exists before we try to access it
-        (function() {
-            // Wait for DOM to be fully ready
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', function() {
-                    // Small delay to ensure all scripts are parsed
-                    setTimeout(function() {
-                        if (typeof initializeWeatherData === 'function') {
-                            initializeWeatherData();
-                        }
-                    }, 100);
-                });
-            } else {
-                // DOM is already loaded, initialize immediately
-                setTimeout(function() {
-                    if (typeof initializeWeatherData === 'function') {
-                        initializeWeatherData();
-                    }
-                }, 100);
-            }
-        })();
-    </script>
-
     <style>
         .custom-scrollbar::-webkit-scrollbar {
             height: 4px;
@@ -2099,7 +2074,10 @@
             if (cachedForecast) {
                 console.log('Loading forecast from cache');
                 displayForecast(cachedForecast.data);
-                displayHourlyForecast(cachedForecast.data.hourly || []);
+                // Wait for current weather to render the hourly container
+                setTimeout(() => {
+                    displayHourlyForecast(cachedForecast.data.hourly || []);
+                }, 100);
             }
 
             // Fetch fresh data (will update the UI and cache)
@@ -2152,7 +2130,8 @@
                 .then(data => {
                     if (data.error) {
                         displayWeatherError('forecast-weather', 'Unable to load forecast');
-                        displayHourlyError();
+                        // Wait for current weather container before showing hourly error
+                        setTimeout(() => displayHourlyError(), 100);
                         return;
                     }
                     
@@ -2161,12 +2140,17 @@
                     
                     // Display the data
                     displayForecast(data);
-                    displayHourlyForecast(data.hourly || []);
+                    
+                    // Wait a bit to ensure current weather has rendered the hourly container
+                    setTimeout(() => {
+                        displayHourlyForecast(data.hourly || []);
+                    }, 100);
                 })
                 .catch(error => {
                     console.error('Error fetching forecast:', error);
                     displayWeatherError('forecast-weather', 'Failed to load forecast data');
-                    displayHourlyError();
+                    // Wait for current weather container before showing hourly error
+                    setTimeout(() => displayHourlyError(), 100);
                 });
         }
 
@@ -2609,6 +2593,9 @@
 
         // Event listeners
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize weather data first
+            initializeWeatherData();
+            
             // Initialize map when page loads
             if (document.getElementById('interactive-trail-map')) {
                 initTrailMap();
