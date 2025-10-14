@@ -65,7 +65,25 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <meta name="google-maps-api-key" content="{{ config('services.google.maps_api_key') }}" />
 
-
+    <!-- Google Maps API with 3D Tiles Support -->
+    @if(config('services.google.maps_3d_enabled') && config('services.google.maps_3d_id'))
+    <script>
+        // Initialize Google Maps callback
+        window.initGoogleMaps = function() {
+            console.log('Google Maps API with 3D tiles loaded successfully');
+            window.googleMapsLoaded = true;
+            window.googleMaps3DEnabled = true;
+            // Dispatch event for components waiting for Google Maps
+            window.dispatchEvent(new Event('googleMapsReady'));
+        };
+    </script>
+    <script async defer 
+        src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_api_key') }}&map_ids={{ config('services.google.maps_3d_id') }}&libraries=places,geometry&callback=initGoogleMaps">
+    </script>
+    
+    <!-- 3D Trail Map Script -->
+    @vite(['resources/js/trail-3d-map.js'])
+    @endif
 
     <!-- Styles -->
     @livewireStyles

@@ -33,6 +33,8 @@ return [
 
     'google' => [
         'maps_api_key' => env('GOOGLE_MAPS_API_KEY'),
+        'maps_3d_enabled' => env('GOOGLE_MAPS_3D_ENABLED', false),
+        'maps_3d_id' => env('GOOGLE_MAPS_3D_MAP_ID'),
     ],
 
     'openrouteservice' => [
