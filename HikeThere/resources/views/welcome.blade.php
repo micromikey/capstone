@@ -3362,7 +3362,7 @@ Sample Trails: ${data.sample_trails.length}`);
                 if (category) params.append('category', category);
                 if (filter) params.append('filter', filter);
                 params.append('page', page);
-                params.append('limit', 9);
+                params.append('limit', 100); // Increased from 9 to 100 to show more results
 
                 const response = await fetch(`${API_BASE_URL}/trails/search-trails?${params.toString()}`);
                 const data = await response.json();
