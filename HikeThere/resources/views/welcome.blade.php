@@ -1644,11 +1644,20 @@
                             <input
                                 id="trail-search-input"
                                 type="text"
-                                placeholder="Search trails, locations, or difficulty levels..."
-                                class="mountain-search w-full p-4 pl-12 pr-16 text-lg rounded-2xl border-2 border-gray-200 focus:ring-4 focus:ring-[#20b6d2]/20 focus:border-[#20b6d2] transition-all duration-300 shadow-lg" />
-                            <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                placeholder="Start typing to search trails, locations, or difficulty..."
+                                class="mountain-search w-full p-4 pl-12 pr-32 text-lg rounded-2xl border-2 border-gray-200 focus:ring-4 focus:ring-[#20b6d2]/20 focus:border-[#20b6d2] transition-all duration-300 shadow-lg" />
+                            <svg id="search-icon" class="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
+                            <svg id="search-loading-icon" class="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-[#336d66] animate-spin hidden" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <button id="clear-search-btn" class="absolute right-24 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-300 hidden p-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
                             <button id="search-btn" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-[#336d66] text-white px-6 py-2 rounded-xl hover:bg-[#20b6d2] transition-colors duration-300">
                                 Search
                             </button>
@@ -4209,18 +4218,35 @@ Sample Trails: ${data.sample_trails.length}`);
             const loadingState = document.getElementById('loading-state');
             const defaultCards = document.getElementById('default-cards');
             const searchResults = document.getElementById('search-results');
+            const searchIcon = document.getElementById('search-icon');
+            const searchLoadingIcon = document.getElementById('search-loading-icon');
 
             if (loadingState) {
                 defaultCards.classList.add('hidden');
                 searchResults.classList.add('hidden');
                 loadingState.classList.remove('hidden');
             }
+
+            // Show loading icon in search input
+            if (searchIcon && searchLoadingIcon) {
+                searchIcon.classList.add('hidden');
+                searchLoadingIcon.classList.remove('hidden');
+            }
         }
 
         function hideLoading() {
             const loadingState = document.getElementById('loading-state');
+            const searchIcon = document.getElementById('search-icon');
+            const searchLoadingIcon = document.getElementById('search-loading-icon');
+
             if (loadingState) {
                 loadingState.classList.add('hidden');
+            }
+
+            // Hide loading icon, show search icon
+            if (searchIcon && searchLoadingIcon) {
+                searchIcon.classList.remove('hidden');
+                searchLoadingIcon.classList.add('hidden');
             }
         }
 
@@ -4270,16 +4296,83 @@ Sample Trails: ${data.sample_trails.length}`);
             }
         }
 
-        // Search functionality
+        // Debounce function for real-time search
+        let searchDebounceTimer;
+        function debounceSearch(callback, delay = 500) {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(callback, delay);
+        }
+
+        // Real-time search as user types
+        document.getElementById('trail-search-input').addEventListener('input', function() {
+            const query = this.value.trim();
+            const filter = document.getElementById('trail-filter').value;
+            const clearBtn = document.getElementById('clear-search-btn');
+
+            // Show/hide clear button based on input
+            if (this.value.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+
+            // If both search and filter are empty, show default cards
+            if (query === '' && !filter) {
+                clearTimeout(searchDebounceTimer); // Cancel any pending search
+                hideResults();
+                return;
+            }
+
+            // Show loading state immediately for better UX
+            const searchResults = document.getElementById('search-results');
+            if (query.length >= 2 || filter) { // Start searching after 2 characters
+                showLoading();
+                
+                // Debounce the actual search to avoid too many API calls
+                debounceSearch(() => {
+                    performSearch(query, '', filter, 1);
+                }, 300); // 300ms delay - fast enough for good UX
+            } else if (query.length === 1) {
+                // Show hint for user to type more
+                searchResults.classList.remove('hidden');
+                const defaultCards = document.getElementById('default-cards');
+                defaultCards.classList.add('hidden');
+                
+                const resultsContainer = document.getElementById('results-container');
+                resultsContainer.innerHTML = `
+                    <div class="col-span-full text-center py-8">
+                        <div class="w-16 h-16 bg-[#336d66]/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-[#336d66]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-gray-600">Type at least 2 characters to search...</p>
+                    </div>
+                `;
+            }
+        });
+
+        // Clear search button
+        document.getElementById('clear-search-btn').addEventListener('click', function() {
+            document.getElementById('trail-search-input').value = '';
+            this.classList.add('hidden');
+            clearTimeout(searchDebounceTimer);
+            hideResults();
+            document.getElementById('trail-search-input').focus();
+        });
+
+        // Search button click - trigger immediate search
         document.getElementById('search-btn').addEventListener('click', function() {
+            clearTimeout(searchDebounceTimer); // Cancel any pending debounced search
             const query = document.getElementById('trail-search-input').value.trim();
             const filter = document.getElementById('trail-filter').value;
             performSearch(query, '', filter, 1);
         });
 
-        // Search on Enter key
+        // Search on Enter key - trigger immediate search
         document.getElementById('trail-search-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
+                clearTimeout(searchDebounceTimer); // Cancel any pending debounced search
                 const query = this.value.trim();
                 const filter = document.getElementById('trail-filter').value;
                 performSearch(query, '', filter, 1);
@@ -4288,26 +4381,12 @@ Sample Trails: ${data.sample_trails.length}`);
 
         // Filter dropdown change
         document.getElementById('trail-filter').addEventListener('change', function() {
+            clearTimeout(searchDebounceTimer); // Cancel any pending search
             const query = document.getElementById('trail-search-input').value.trim();
             const filter = this.value;
             // If there's a search query, search with the filter applied
             // If no search query, apply filter to all trails
             performSearch(query, '', filter, 1);
-        });
-
-        // Clear search when input is empty
-        document.getElementById('trail-search-input').addEventListener('input', function() {
-            const query = this.value.trim();
-            const filter = document.getElementById('trail-filter').value;
-
-            // If both search and filter are empty, show default cards
-            if (query === '' && !filter) {
-                hideResults();
-            }
-            // If search is empty but filter exists, show filtered results
-            else if (query === '' && filter) {
-                performSearch('', '', filter, 1);
-            }
         });
 
         // Show More button
