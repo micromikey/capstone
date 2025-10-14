@@ -1419,16 +1419,16 @@
 
                                     <!-- Previous Button -->
                                     <button id="prev-image-btn" onclick="previousModalImage()"
-                                        class="absolute inset-y-0 left-0 flex items-center ml-4 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm transition-all opacity-0 invisible">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        class="absolute inset-y-0 left-0 flex items-center ml-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm transition-all opacity-0 invisible">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                                         </svg>
                                     </button>
 
                                     <!-- Next Button -->
                                     <button id="next-image-btn" onclick="nextModalImage()"
-                                        class="absolute inset-y-0 right-0 flex items-center mr-4 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm transition-all opacity-0 invisible">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        class="absolute inset-y-0 right-0 flex items-center mr-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm transition-all opacity-0 invisible">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                         </svg>
                                     </button>
@@ -1588,9 +1588,9 @@
                                     <span class="text-gray-600">Difficulty</span>
                                     <span id="modal-difficulty-text" class="font-semibold text-gray-800">Beginner</span>
                                 </div>
-                                <div class="flex justify-between items-center">
+                                <div id="modal-best-season-container" class="flex justify-between items-center">
                                     <span class="text-gray-600">Best Season</span>
-                                    <span class="font-semibold text-gray-800">Spring - Fall</span>
+                                    <span id="modal-best-season" class="font-semibold text-gray-800">Spring - Fall</span>
                                 </div>
                             </div>
                         </div>
@@ -3559,6 +3559,16 @@ Sample Trails: ${data.sample_trails.length}`);
             document.getElementById('modal-completed-count').textContent = trail.completions_count || trail.completed_count || 0;
             document.getElementById('modal-difficulty-text').textContent = trail.difficulty_label || trail.difficulty_level || trail.difficulty || 'Moderate';
 
+            // Update best season
+            const bestSeasonContainer = document.getElementById('modal-best-season-container');
+            const bestSeasonElement = document.getElementById('modal-best-season');
+            if (trail.best_season) {
+                bestSeasonElement.textContent = trail.best_season;
+                bestSeasonContainer.classList.remove('hidden');
+            } else {
+                bestSeasonContainer.classList.add('hidden');
+            }
+
             // Update difficulty badge
             const difficultyBadge = document.getElementById('modal-difficulty-badge');
             const difficulty = trail.difficulty_label || trail.difficulty_level || trail.difficulty || 'Moderate';
@@ -4752,8 +4762,8 @@ Sample Trails: ${data.sample_trails.length}`);
         }
 
         function fetchTrailsForSlideshow() {
-            // Fetch random trails from the database (limit 5)
-            fetch('/api/trails?limit=20&random=true')
+            // Fetch random trails from the database using the same endpoint as hero trails
+            fetch('/api/trails/search-trails?limit=20')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Failed to fetch trails');
@@ -4761,19 +4771,20 @@ Sample Trails: ${data.sample_trails.length}`);
                     return response.json();
                 })
                 .then(data => {
-                    // Handle different response formats
-                    let trails = Array.isArray(data) ? data : (data.trails || data.data || []);
+                    // Handle the search-trails response format
+                    let trails = data.trails || [];
                     
                     if (trails.length > 0) {
-                        // Randomize and limit to 5 trails
+                        // Randomize and limit to 5 trails for slideshow
                         trails = trails.sort(() => Math.random() - 0.5).slice(0, 5);
                         
                         browseTrails = trails.map(trail => ({
                             name: trail.name || trail.trail_name || 'Unnamed Trail',
-                            location: trail.location_name || trail.location || trail.mountain_name || 'Unknown Location',
-                            distance: trail.length ? `${trail.length} km` : (trail.distance || 'N/A'),
-                            difficulty: (trail.difficulty || 'Moderate').charAt(0).toUpperCase() + (trail.difficulty || 'Moderate').slice(1),
-                            image: trail.featured_image || trail.image || trail.images?.[0] || 'https://images.unsplash.com/photo-1551632811-561732d1e306'
+                            location: trail.location || 'Unknown Location',
+                            distance: trail.distance || 'N/A',
+                            difficulty: trail.difficulty || 'Moderate',
+                            image: trail.featured_image || trail.image || 'https://images.unsplash.com/photo-1551632811-561732d1e306',
+                            slug: trail.slug
                         }));
                         
                         console.log('Loaded trails for slideshow:', browseTrails);
@@ -4810,6 +4821,16 @@ Sample Trails: ${data.sample_trails.length}`);
                 // Create slide
                 const slide = document.createElement('div');
                 slide.className = `trail-slide ${index === 0 ? 'active' : ''}`;
+                
+                // Make slide clickable if slug exists
+                if (trail.slug) {
+                    slide.style.cursor = 'pointer';
+                    slide.onclick = () => {
+                        closeBrowseTrailsModal();
+                        viewTrailDetails(trail.slug);
+                    };
+                }
+                
                 slide.innerHTML = `
                     <img src="${trail.image}" 
                          alt="${trail.name}" 
@@ -4833,6 +4854,7 @@ Sample Trails: ${data.sample_trails.length}`);
                                 ${trail.difficulty}
                             </span>
                         </div>
+                        ${trail.slug ? '<p class="text-xs mt-3 opacity-75">Click to view details</p>' : ''}
                     </div>
                 `;
                 slideshow.appendChild(slide);

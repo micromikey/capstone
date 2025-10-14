@@ -172,6 +172,7 @@ class TrailController extends Controller
                 'summary' => $trail->summary,
                 'organization' => $trail->user ? $trail->user->display_name : 'Unknown',
                 'created_at' => $trail->created_at->format('Y-m-d'),
+                'best_season' => $trail->best_season,
                     'tags' => $this->generateTrailTags($trail),
                     'activities' => $trail->activities ?? []
             ];
