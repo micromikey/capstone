@@ -68,23 +68,54 @@ class TrailController extends Controller
             ->with(['location', 'user', 'primaryImage', 'reviews']);
 
         if (!empty($query)) {
-                        $searchTerm = trim($query);
-                        $trailsQuery->where(function ($q) use ($searchTerm, $hasNameColumn) {
-                                $q->where('trail_name', 'LIKE', "%{$searchTerm}%")
-                                    ->orWhere('mountain_name', 'LIKE', "%{$searchTerm}%");
+            $searchTerm = trim($query);
+            
+            // Map user-friendly difficulty terms to database values
+            $difficultyMap = [
+                'easy' => ['beginner', 'easy'],
+                'moderate' => ['intermediate', 'moderate'],
+                'challenging' => ['advanced', 'hard', 'difficult', 'very_hard', 'challenging'],
+                'hard' => ['advanced', 'hard', 'difficult', 'very_hard', 'challenging'],
+                'difficult' => ['advanced', 'hard', 'difficult', 'very_hard', 'challenging'],
+            ];
+            
+            $trailsQuery->where(function ($q) use ($searchTerm, $hasNameColumn, $difficultyMap) {
+                // Search in trail name
+                $q->where('trail_name', 'LIKE', "%{$searchTerm}%")
+                    // Search in mountain name
+                    ->orWhere('mountain_name', 'LIKE', "%{$searchTerm}%");
 
-                                if ($hasNameColumn) {
-                                        $q->orWhere('name', 'LIKE', "%{$searchTerm}%");
-                                }
+                // Search in legacy name column if it exists
+                if ($hasNameColumn) {
+                    $q->orWhere('name', 'LIKE', "%{$searchTerm}%");
+                }
 
-                                $q->orWhere('difficulty', 'LIKE', "%{$searchTerm}%")
-                                    ->orWhere('description', 'LIKE', "%{$searchTerm}%")
-                                    ->orWhere('summary', 'LIKE', "%{$searchTerm}%")
-                                    ->orWhereHas('location', function ($locationQuery) use ($searchTerm) {
-                                            $locationQuery->where('name', 'LIKE', "%{$searchTerm}%")
-                                                                     ->orWhere('province', 'LIKE', "%{$searchTerm}%");
-                                    });
-                        });
+                // Search in difficulty with smart mapping
+                $searchLower = strtolower($searchTerm);
+                if (isset($difficultyMap[$searchLower])) {
+                    // If user searches "easy", "moderate", etc., search for mapped values
+                    $q->orWhereIn('difficulty', $difficultyMap[$searchLower]);
+                } else {
+                    // Otherwise, do a normal LIKE search
+                    $q->orWhere('difficulty', 'LIKE', "%{$searchTerm}%");
+                }
+                
+                // Search in description and summary
+                $q->orWhere('description', 'LIKE', "%{$searchTerm}%")
+                    ->orWhere('summary', 'LIKE', "%{$searchTerm}%")
+                    // Search in location name, province, and region
+                    ->orWhereHas('location', function ($locationQuery) use ($searchTerm) {
+                        $locationQuery->where('name', 'LIKE', "%{$searchTerm}%")
+                            ->orWhere('province', 'LIKE', "%{$searchTerm}%")
+                            ->orWhere('region', 'LIKE', "%{$searchTerm}%")
+                            ->orWhere('country', 'LIKE', "%{$searchTerm}%");
+                    })
+                    // Search in organization/user name
+                    ->orWhereHas('user', function ($userQuery) use ($searchTerm) {
+                        $userQuery->where('name', 'LIKE', "%{$searchTerm}%")
+                            ->orWhere('organization_name', 'LIKE', "%{$searchTerm}%");
+                    });
+            });
         }
 
         // Handle category filters
