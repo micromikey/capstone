@@ -80,41 +80,66 @@ class TrailController extends Controller
             ];
             
             $trailsQuery->where(function ($q) use ($searchTerm, $hasNameColumn, $difficultyMap) {
-                // Search in trail name
-                $q->where('trail_name', 'LIKE', "%{$searchTerm}%")
-                    // Search in mountain name
-                    ->orWhere('mountain_name', 'LIKE', "%{$searchTerm}%");
+                // Search in trail name (handle NULL)
+                $q->where(function($subQ) use ($searchTerm) {
+                    $subQ->whereNotNull('trail_name')
+                         ->where('trail_name', 'LIKE', "%{$searchTerm}%");
+                })
+                // Search in mountain name (handle NULL)
+                ->orWhere(function($subQ) use ($searchTerm) {
+                    $subQ->whereNotNull('mountain_name')
+                         ->where('mountain_name', 'LIKE', "%{$searchTerm}%");
+                });
 
                 // Search in legacy name column if it exists
                 if ($hasNameColumn) {
-                    $q->orWhere('name', 'LIKE', "%{$searchTerm}%");
+                    $q->orWhere(function($subQ) use ($searchTerm) {
+                        $subQ->whereNotNull('name')
+                             ->where('name', 'LIKE', "%{$searchTerm}%");
+                    });
                 }
 
                 // Search in difficulty with smart mapping
                 $searchLower = strtolower($searchTerm);
                 if (isset($difficultyMap[$searchLower])) {
                     // If user searches "easy", "moderate", etc., search for mapped values
-                    $q->orWhereIn('difficulty', $difficultyMap[$searchLower]);
+                    $q->orWhere(function($subQ) use ($difficultyMap, $searchLower) {
+                        $subQ->whereNotNull('difficulty')
+                             ->whereIn('difficulty', $difficultyMap[$searchLower]);
+                    });
                 } else {
                     // Otherwise, do a normal LIKE search
-                    $q->orWhere('difficulty', 'LIKE', "%{$searchTerm}%");
+                    $q->orWhere(function($subQ) use ($searchTerm) {
+                        $subQ->whereNotNull('difficulty')
+                             ->where('difficulty', 'LIKE', "%{$searchTerm}%");
+                    });
                 }
                 
-                // Search in description and summary
-                $q->orWhere('description', 'LIKE', "%{$searchTerm}%")
-                    ->orWhere('summary', 'LIKE', "%{$searchTerm}%")
-                    // Search in location name, province, and region
-                    ->orWhereHas('location', function ($locationQuery) use ($searchTerm) {
-                        $locationQuery->where('name', 'LIKE', "%{$searchTerm}%")
+                // Search in description and summary (handle NULL)
+                $q->orWhere(function($subQ) use ($searchTerm) {
+                    $subQ->whereNotNull('description')
+                         ->where('description', 'LIKE', "%{$searchTerm}%");
+                })
+                ->orWhere(function($subQ) use ($searchTerm) {
+                    $subQ->whereNotNull('summary')
+                         ->where('summary', 'LIKE', "%{$searchTerm}%");
+                })
+                // Search in location fields (only if relationship exists)
+                ->orWhereHas('location', function ($locationQuery) use ($searchTerm) {
+                    $locationQuery->where(function($subQ) use ($searchTerm) {
+                        $subQ->where('name', 'LIKE', "%{$searchTerm}%")
                             ->orWhere('province', 'LIKE', "%{$searchTerm}%")
                             ->orWhere('region', 'LIKE', "%{$searchTerm}%")
                             ->orWhere('country', 'LIKE', "%{$searchTerm}%");
-                    })
-                    // Search in organization/user name
-                    ->orWhereHas('user', function ($userQuery) use ($searchTerm) {
-                        $userQuery->where('name', 'LIKE', "%{$searchTerm}%")
+                    });
+                })
+                // Search in organization/user name (only if relationship exists)
+                ->orWhereHas('user', function ($userQuery) use ($searchTerm) {
+                    $userQuery->where(function($subQ) use ($searchTerm) {
+                        $subQ->where('name', 'LIKE', "%{$searchTerm}%")
                             ->orWhere('organization_name', 'LIKE', "%{$searchTerm}%");
                     });
+                });
             });
         }
 
@@ -174,6 +199,18 @@ class TrailController extends Controller
 
         // Get total count before applying limit
         $totalCount = $trailsQuery->count();
+        
+        // Log the SQL query for debugging (only in development)
+        if (config('app.debug')) {
+            \Log::info('Search Query', [
+                'search_term' => $query,
+                'category' => $category,
+                'filter' => $filter,
+                'total_count' => $totalCount,
+                'sql' => $trailsQuery->toSql(),
+                'bindings' => $trailsQuery->getBindings()
+            ]);
+        }
         
         // Apply pagination
         $trails = $trailsQuery->skip($offset)->take($limit)->get();
