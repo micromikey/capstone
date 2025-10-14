@@ -124,7 +124,7 @@
                                                 </p>
                                             </div>
                                             <a x-show="notification.data?.itinerary_id" 
-                                               :href="`/hiker/itinerary/${notification.data?.itinerary_id}`"
+                                               :href="`/itinerary/${notification.data?.itinerary_id}`"
                                                class="inline-block mt-2 text-xs font-medium text-blue-600 hover:text-blue-800">
                                                 View Itinerary →
                                             </a>
