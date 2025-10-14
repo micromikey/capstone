@@ -4588,9 +4588,9 @@ Sample Trails: ${data.sample_trails.length}`);
                     </svg>
                 </button>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2">
+                <div class="grid grid-cols-1 lg:grid-cols-2 lg:h-[600px]">
                     <!-- Left Column: Trail Slideshow -->
-                    <div class="relative bg-gray-900 overflow-hidden h-64 md:h-96 lg:h-[600px]">
+                    <div class="relative bg-gray-900 overflow-hidden h-64 md:h-96 lg:h-full">
                         <div id="trail-slideshow" class="h-full relative">
                             <!-- Trail slides will be dynamically inserted here -->
                         </div>
@@ -4752,12 +4752,34 @@ Sample Trails: ${data.sample_trails.length}`);
         }
 
         function fetchTrailsForSlideshow() {
-            fetch('/api/trails/featured')
-                .then(response => response.json())
+            // Fetch real trails from the database
+            fetch('/api/trails?limit=6')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch trails');
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    browseTrails = data.trails.slice(0, 6); // Get first 6 trails
-                    renderSlideshow();
-                    startSlideshow();
+                    // Handle different response formats
+                    const trails = Array.isArray(data) ? data : (data.trails || data.data || []);
+                    
+                    if (trails.length > 0) {
+                        browseTrails = trails.slice(0, 6).map(trail => ({
+                            name: trail.name || trail.trail_name || 'Unnamed Trail',
+                            location: trail.location_name || trail.location || trail.mountain_name || 'Unknown Location',
+                            distance: trail.length ? `${trail.length} km` : (trail.distance || 'N/A'),
+                            difficulty: (trail.difficulty || 'Moderate').charAt(0).toUpperCase() + (trail.difficulty || 'Moderate').slice(1),
+                            image: trail.featured_image || trail.image || trail.images?.[0] || 'https://images.unsplash.com/photo-1551632811-561732d1e306'
+                        }));
+                        renderSlideshow();
+                        startSlideshow();
+                    } else {
+                        // No trails found, use fallback
+                        console.warn('No trails found in database, using fallback');
+                        renderFallbackSlideshow();
+                        startSlideshow();
+                    }
                 })
                 .catch(error => {
                     console.error('Error fetching trails:', error);
@@ -4771,6 +4793,11 @@ Sample Trails: ${data.sample_trails.length}`);
             const slideshow = document.getElementById('trail-slideshow');
             const indicators = document.getElementById('slide-indicators');
             
+            if (!slideshow || !indicators) {
+                console.error('Slideshow elements not found');
+                return;
+            }
+            
             slideshow.innerHTML = '';
             indicators.innerHTML = '';
             
@@ -4779,23 +4806,26 @@ Sample Trails: ${data.sample_trails.length}`);
                 const slide = document.createElement('div');
                 slide.className = `trail-slide ${index === 0 ? 'active' : ''}`;
                 slide.innerHTML = `
-                    <img src="${trail.image}" alt="${trail.name}" class="trail-slide-image">
+                    <img src="${trail.image}" 
+                         alt="${trail.name}" 
+                         class="trail-slide-image"
+                         onerror="this.src='https://images.unsplash.com/photo-1551632811-561732d1e306'">
                     <div class="trail-slide-overlay">
-                        <h3 class="text-2xl font-bold mb-2">${trail.name}</h3>
-                        <p class="text-sm text-gray-200 mb-3">${trail.location}</p>
-                        <div class="flex items-center space-x-4 text-sm">
+                        <h3 class="text-2xl md:text-3xl font-bold mb-2">${trail.name}</h3>
+                        <p class="text-sm md:text-base text-gray-200 mb-3">${trail.location}</p>
+                        <div class="flex items-center space-x-4 text-xs md:text-sm">
                             <span class="flex items-center">
                                 <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
                                 </svg>
-                                ${trail.distance || 'N/A'}
+                                ${trail.distance}
                             </span>
                             <span class="flex items-center">
                                 <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
                                     <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
                                 </svg>
-                                ${trail.difficulty || 'N/A'}
+                                ${trail.difficulty}
                             </span>
                         </div>
                     </div>
