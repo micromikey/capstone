@@ -118,6 +118,11 @@
                     <div class="text-sm">
                         <p class="font-semibold text-gray-900">{{ $hospital['name'] }}</p>
                         <p class="text-gray-600 text-xs">{{ $hospital['address'] }}</p>
+                        @if (!empty($hospital['phone']))
+                            <a href="tel:{{ $hospital['phone'] }}" class="font-bold text-red-600 hover:text-red-800 text-xs block mt-1">
+                                📞 {{ $hospital['phone'] }}
+                            </a>
+                        @endif
                         @if (!empty($hospital['distance']))
                             <p class="text-red-600 text-xs font-semibold">~{{ $hospital['distance'] }} away</p>
                         @endif
