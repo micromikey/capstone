@@ -418,17 +418,12 @@
 
                 <!-- Action Buttons -->
                 <div class="flex justify-between items-center bg-white shadow-lg rounded-2xl p-6 border-2 border-gray-200">
-                    <form action="{{ route('org.trails.emergency-info.destroy', $trail) }}" method="POST" 
-                          onsubmit="return confirm('Are you sure you want to clear all custom emergency information? The system will revert to auto-generated data.');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="text-gray-600 hover:text-gray-800 flex items-center gap-2 transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
-                            Clear All Data
-                        </button>
-                    </form>
+                    <button type="button" onclick="document.getElementById('delete-form').submit();" class="text-gray-600 hover:text-gray-800 flex items-center gap-2 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        Clear All Data
+                    </button>
 
                     <div class="flex gap-3">
                         <a href="{{ route('org.trails.index') }}" class="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition">
@@ -442,6 +437,13 @@
                         </button>
                     </div>
                 </div>
+            </form>
+
+            <!-- Separate Delete Form (outside main form) -->
+            <form id="delete-form" action="{{ route('org.trails.emergency-info.destroy', $trail) }}" method="POST" 
+                  onsubmit="return confirm('Are you sure you want to clear all custom emergency information? The system will revert to auto-generated data.');" class="hidden">
+                @csrf
+                @method('DELETE')
             </form>
         </div>
     </div>
